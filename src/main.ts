@@ -22,12 +22,16 @@ async function bootstrap(): Promise<void> {
       "https://interno.estuturno.cl",
       "https://interno.estuturno.app",
       "https://interno.easuavez.com",
+      "https://app.easuavez.com",
       "https://event.estuturno.app",
       "https://event.easuavez.com",
+      "https://event-store.easuavez.com",
       "https://consumer.estuturno.app",
       "https://consumer.easuavez.com",
+      "https://event-consumer.easuavez.com",
       "https://query.estuturno.app",
       "https://query.easuavez.com",
+      "https://query-stack.easuavez.com",
     ]
   }
   app.use((req, res, next) => {
