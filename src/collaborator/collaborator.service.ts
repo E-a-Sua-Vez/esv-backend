@@ -137,13 +137,16 @@ export class CollaboratorService {
       if (!collaborator.firstPasswordChanged) {
         collaborator.firstPasswordChanged = true;
       }
-      let days = Math.abs(new Date().getTime() - collaborator.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
-      if (days < 1) {
-        throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+      if (collaborator.lastPasswordChanged) {
+        let days = Math.abs(new Date().getTime() - collaborator.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
+        if (days < 1) {
+          throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+      } else {
+        collaborator.lastPasswordChanged = new Date();
+        collaborator = await this.update(user, collaborator);
+        return collaborator;
       }
-      collaborator.lastPasswordChanged = new Date();
-      collaborator = await this.update(user, collaborator);
-      return collaborator;
     } else {
       throw new HttpException('Colaborador no existe', HttpStatus.INTERNAL_SERVER_ERROR);
     }
