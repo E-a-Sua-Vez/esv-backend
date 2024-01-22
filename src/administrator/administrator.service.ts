@@ -92,13 +92,16 @@ export class AdministratorService {
       if (!administrator.firstPasswordChanged) {
         administrator.firstPasswordChanged = true;
       }
-      let days = Math.abs(new Date().getTime() - administrator.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
-      if (days >= 1) {
-        throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+      if (administrator.lastPasswordChanged) {
+        let days = Math.abs(new Date().getTime() - administrator.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
+        if (days >= 1) {
+          throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+      } else {
+        administrator.lastPasswordChanged = new Date();
+        administrator = await this.administratorRepository.update(administrator);
+        return administrator;
       }
-      administrator.lastPasswordChanged = new Date();
-      administrator = await this.administratorRepository.update(administrator);
-      return administrator;
     } else {
       throw new HttpException('Administrador no existe', HttpStatus.INTERNAL_SERVER_ERROR);
     }
