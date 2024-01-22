@@ -1,0 +1,49 @@
+import { Controller, Get, Param, Body, Patch, UseGuards, Post } from '@nestjs/common';
+import { AdministratorService } from './administrator.service';
+import { Administrator } from './administrator.entity';
+import { AuthGuard } from 'src/auth/auth.guard';
+
+@Controller('administrator')
+export class AdministratorController {
+    constructor(private readonly administratorService: AdministratorService) {
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/:id')
+    public async getAdministratorById(@Param() params: any): Promise<Administrator> {
+        const { id } = params;
+        return this.administratorService.getAdministratorById(id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('')
+    public async createAdministrator(@Body() body: any): Promise<Administrator> {
+        const { name, businessId, commerceIds, email } = body;
+        return this.administratorService.createAdministrator(name, businessId, commerceIds, email);
+    }
+
+    @Get('/email/:email')
+    public async getAdministratorByEmail(@Param() params: any): Promise<Administrator> {
+        const { email } = params;
+        return this.administratorService.getAdministratorByEmail(email);
+    }
+
+    @Get('/email/:email/master')
+    public async getMasterAdministratorByEmail(@Param() params: any): Promise<Administrator> {
+        const { email } = params;
+        return this.administratorService.getMasterAdministratorByEmail(email);
+    }
+
+    @Patch('/register-token/:id')
+    public async registerToken(@Param() params: any, @Body() body: any): Promise<Administrator> {
+        const { id } = params;
+        const { token } = body;
+        return this.administratorService.updateToken(id, token);
+    }
+
+    @Patch('/change-password/:id')
+    public async changePassword(@Param() params: any): Promise<Administrator> {
+        const { id } = params;
+        return this.administratorService.changePassword(id);
+    }
+}

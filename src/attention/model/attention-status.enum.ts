@@ -1,0 +1,8 @@
+export enum AttentionStatus {
+    PENDING = 'PENDING',
+    PROCESSING = 'PROCESSING',
+    TERMINATED = 'TERMINATED',
+    CANCELLED = 'CANCELLED',
+    REACTIVATED = 'REACTIVATED',
+    RATED = 'RATED'
+}
