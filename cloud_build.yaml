@@ -2,10 +2,10 @@ steps:
   # build the container image
   - name: "gcr.io/cloud-builders/docker"
     args:
-      ["build", "-t", "gcr.io/estuturno-cl/estuturno-backend:${SHORT_SHA}", "."]
+      ["build", "-t", "gcr.io/estuturno-411922/ett-backend:${SHORT_SHA}", "."]
     # push the container image to Container Registry
   - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/estuturno-cl/estuturno-backend:${SHORT_SHA}"]
+    args: ["push", "gcr.io/estuturno-411922/ett-backend:${SHORT_SHA}"]
     # deploy container image to Cloud Run
   - name: "gcr.io/cloud-builders/gcloud"
     args:
@@ -13,9 +13,9 @@ steps:
         "beta",
         "run",
         "deploy",
-        "estuturno-backend",
+        "ett-backend",
         "--image",
-        "gcr.io/estuturno-cl/estuturno-backend:${SHORT_SHA}",
+        "gcr.io/estuturno-411922/ett-backend:${SHORT_SHA}",
         "--region",
         "us-central1",
         "--allow-unauthenticated",
@@ -23,4 +23,4 @@ steps:
     env:
       - "PORT=8080"
 images:
-  - gcr.io/estuturno-cl/estuturno-backend
+  - gcr.io/estuturno-411922/ett-backend
