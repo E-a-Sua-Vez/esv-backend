@@ -9,11 +9,13 @@ export class RolController {
     constructor(private readonly rolService: RolService) {
     }
 
+    @UseGuards(AuthGuard)
     @Get('/')
     public async getRoles(): Promise<Rol[]> {
         return this.rolService.getRoles();
     }
 
+    @UseGuards(AuthGuard)
     @Get('/:id')
     public async getRolById(@Param() params: any): Promise<Rol> {
         const { id } = params;
