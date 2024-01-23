@@ -28,6 +28,12 @@ export class PlanController {
     }
 
     @UseGuards(AuthGuard)
+    @Post('/init')
+    public async initPlan(@User() user): Promise<Plan[]> {
+        return this.planService.initPlan(user);
+    }
+
+    @UseGuards(AuthGuard)
     @Post('/')
     public async createPlan(@User() user, @Body() body: Plan): Promise<Plan> {
         const { name, country, description, price, periodicity, order, online, onlinePrice, saving, onlineSaving } = body;

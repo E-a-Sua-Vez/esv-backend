@@ -5,6 +5,7 @@ import { publish } from 'ett-events-lib';
 import PlanUpdated from './events/PlanUpdated';
 import PlanCreated from './events/PlanCreated';
 import { Periodicity } from './model/periodicity.enum';
+import * as plans from './model/plan.json';
 
 export class PlanService {
   constructor(
@@ -42,6 +43,45 @@ export class PlanService {
     const planUpdatedEvent = new PlanUpdated(new Date(), planUpdated, { user });
     publish(planUpdatedEvent);
     return planUpdated;
+  }
+
+  public async initPlan(user: string): Promise<Plan[]> {
+    let plansCreated = [];
+    const plansToCreate = plans;
+    for (let i = 0; i < plansToCreate.length; i++) {
+      const planToCreate = plansToCreate[i];
+      let plan = new Plan();
+      const {
+        name,
+        description,
+        online,
+        active,
+        currency,
+        price,
+        periodicity,
+        order,
+        permissions
+      } = planToCreate;
+      plan.name = name;
+      plan.description = description;
+      plan.country = '',
+      plan.online = online;
+      plan.currency = currency || '';
+      plan.price = price;
+      plan.saving = 0;
+      plan.onlinePrice = 0;
+      plan.onlineSaving = 0;
+      plan.periodicity = Periodicity.monthly;
+      plan.order = order;
+      plan.permissions = permissions;
+      plan.active = active;
+      plan.createdAt = new Date();
+      const rolCreated = await this.planRepository.create(plan);
+      plansCreated.push(rolCreated);
+      const rolCreatedEvent = new PlanCreated(new Date(), rolCreated, { user });
+      publish(rolCreatedEvent);
+    }
+    return plansCreated;
   }
 
   public async createPlan(user: string, name: string, country: string, description: string, price: number, periodicity: Periodicity, order: number, online, onlinePrice: number, saving: number, onlineSaving: number): Promise<Plan> {
