@@ -4,3 +4,4 @@ local.env
 env.sh
 .env
 env_br.sh
+env_net.sh
