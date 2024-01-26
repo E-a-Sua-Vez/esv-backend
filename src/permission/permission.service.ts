@@ -56,9 +56,7 @@ export class PermissionService {
     }
     if (Object.keys(userPermissions).length > 0) {
       Object.keys(userPermissions).forEach(permission => {
-        if (permissions[permission]) {
-          permissions[permission] = userPermissions[permission];
-        }
+        permissions[permission] = userPermissions[permission];
       })
     }
     return permissions;
@@ -108,9 +106,7 @@ export class PermissionService {
     }
     if (Object.keys(userPermissions).length > 0) {
       Object.keys(userPermissions).forEach(permission => {
-        if (permissions[permission]) {
-          permissions[permission] = userPermissions[permission];
-        }
+        permissions[permission] = userPermissions[permission];
       })
     }
     return permissions;

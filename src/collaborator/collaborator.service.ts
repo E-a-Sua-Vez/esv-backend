@@ -39,6 +39,8 @@ export class CollaboratorService {
       if (permissions) {
         collaborator.permissions = permissions;
       }
+    } else {
+      throw new HttpException(`Colaborador no existe`, HttpStatus.NOT_FOUND);
     }
     return collaborator;
   }
@@ -153,12 +155,15 @@ export class CollaboratorService {
   }
 
   public async updateCollaboratorPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Collaborator> {
-    let plan = await this.getCollaboratorById(id);
-    if (plan) {
-      if (plan.permissions) {
-        plan.permissions[permissionName] = permissionValue;
+    let collaborator = await this.getCollaboratorById(id);
+    if (collaborator) {
+      if (!collaborator.permissions) {
+        collaborator.permissions = {}
+      }
+      if (collaborator.permissions) {
+        collaborator.permissions[permissionName] = permissionValue;
       }
     }
-    return await this.update(user, plan);
+    return await this.update(user, collaborator);
   }
 }

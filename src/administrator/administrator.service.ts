@@ -82,7 +82,6 @@ export class AdministratorService {
       publish(administratorCreatedEvent);
       return administratorCreated;
     } catch(error) {
-      console.log("🚀 ~ AdministratorService ~ createAdministrator ~ error:", error);
       throw new HttpException(`Hubo un problema al crear el administrador: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -144,12 +143,15 @@ export class AdministratorService {
   }
 
   public async updateAdministratorPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Administrator> {
-    let plan = await this.getAdministratorById(id);
-    if (plan) {
-      if (plan.permissions) {
-        plan.permissions[permissionName] = permissionValue;
+    let administrator = await this.getAdministratorById(id);
+    if (administrator) {
+      if (!administrator.permissions) {
+        administrator.permissions = {}
+      }
+      if (administrator.permissions) {
+        administrator.permissions[permissionName] = permissionValue;
       }
     }
-    return await this.update(user, plan);
+    return await this.update(user, administrator);
   }
 }

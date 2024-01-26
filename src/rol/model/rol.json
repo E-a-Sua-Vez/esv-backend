@@ -230,7 +230,8 @@
             "administrators.admin.edit": true,
             "administrators.admin.add": true,
             "administrators.admin.update": true,
-            "administrators.admin.view": true
+            "administrators.admin.view": true,
+            "permissions.admin.users": true
         }
     },
     {

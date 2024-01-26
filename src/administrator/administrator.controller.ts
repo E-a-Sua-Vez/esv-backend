@@ -19,7 +19,6 @@ export class AdministratorController {
     @UseGuards(AuthGuard)
     @Post()
     public async createAdministrator(@User() user, @Body() body: any): Promise<Administrator> {
-        console.log("🚀 ~ AdministratorController ~ createAdministrator ~ body:", body);
         const { name, businessId, commercesId, email } = body;
         return this.administratorService.createAdministrator(user, name, businessId, commercesId, email);
     }
