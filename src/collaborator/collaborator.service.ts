@@ -1,4 +1,4 @@
-import { Collaborator } from './collaborator.entity';
+import { Collaborator } from './model/collaborator.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
@@ -150,5 +150,15 @@ export class CollaboratorService {
     } else {
       throw new HttpException('Colaborador no existe', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  public async updateCollaboratorPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Collaborator> {
+    let plan = await this.getCollaboratorById(id);
+    if (plan) {
+      if (plan.permissions) {
+        plan.permissions[permissionName] = permissionValue;
+      }
+    }
+    return await this.update(user, plan);
   }
 }

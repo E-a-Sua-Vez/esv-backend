@@ -1,7 +1,7 @@
 import { User } from '../../user/user.entity';
 import { Commerce } from '../../commerce/model/commerce.entity';
 import { Queue } from '../../queue/queue.entity';
-import { Collaborator } from '../../collaborator/collaborator.entity';
+import { Collaborator } from '../../collaborator/model/collaborator.entity';
 import { Module } from '../../module/module.entity';
 
 export class AttentionDetailsDto {

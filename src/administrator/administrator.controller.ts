@@ -1,7 +1,8 @@
 import { Controller, Get, Param, Body, Patch, UseGuards, Post } from '@nestjs/common';
 import { AdministratorService } from './administrator.service';
-import { Administrator } from './administrator.entity';
+import { Administrator } from './model/administrator.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { User } from 'src/auth/user.decorator';
 
 @Controller('administrator')
 export class AdministratorController {
@@ -16,10 +17,11 @@ export class AdministratorController {
     }
 
     @UseGuards(AuthGuard)
-    @Post('')
-    public async createAdministrator(@Body() body: any): Promise<Administrator> {
-        const { name, businessId, commerceIds, email } = body;
-        return this.administratorService.createAdministrator(name, businessId, commerceIds, email);
+    @Post()
+    public async createAdministrator(@User() user, @Body() body: any): Promise<Administrator> {
+        console.log("🚀 ~ AdministratorController ~ createAdministrator ~ body:", body);
+        const { name, businessId, commercesId, email } = body;
+        return this.administratorService.createAdministrator(user, name, businessId, commercesId, email);
     }
 
     @Get('/email/:email')
@@ -45,5 +47,28 @@ export class AdministratorController {
     public async changePassword(@Param() params: any): Promise<Administrator> {
         const { id } = params;
         return this.administratorService.changePassword(id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/businessId/:businessId')
+    public async getAdministratorsByBusinessId(@Param() params: any): Promise<Administrator[]> {
+        const { businessId } = params;
+        return this.administratorService.getAdministratorsByBusinessId(businessId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/:id')
+    public async updateAdministrator(@User() user, @Param() params: any, @Body() body: any): Promise<Administrator> {
+        const { id } = params;
+        const { active, commercesId } = body;
+        return this.administratorService.updateAdministrator(user, id, commercesId, active);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/:id/permission')
+    public async updateAdministratorPermission(@User() user, @Param() params: any, @Body() body: any): Promise<Administrator> {
+        const { id } = params;
+        const { name, value } = body;
+        return this.administratorService.updateAdministratorPermission(user, id, name, value);
     }
 }

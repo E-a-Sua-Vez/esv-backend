@@ -6,7 +6,7 @@ export class Administrator {
     name: string;
     active: boolean;
     businessId: string;
-    commerceIds: [string];
+    commercesId: string[];
     rolId: string;
     email: string;
     password: string;

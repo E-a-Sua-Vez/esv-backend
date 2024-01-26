@@ -42,7 +42,7 @@ export class PlanController {
 
     @UseGuards(AuthGuard)
     @Patch('/:id/permission')
-    public async updateRolPermission(@User() user, @Param() params: any, @Body() body: any): Promise<Plan> {
+    public async updatePlanPermission(@User() user, @Param() params: any, @Body() body: any): Promise<Plan> {
         const { id } = params;
         const { name, value } = body;
         return this.planService.updatePlanPermission(user, id, name, value);

@@ -1,8 +1,11 @@
-import { Administrator } from './administrator.entity';
+import { Administrator } from './model/administrator.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { PermissionService } from '../permission/permission.service';
+import { publish } from 'ett-events-lib';
+import AdministratorUpdated from './events/AdministratorUpdated';
+import AdministratorCreated from './events/AdministratorCreated';
 
 export class AdministratorService {
   constructor(
@@ -64,16 +67,24 @@ export class AdministratorService {
     return await this.administratorRepository.update(administrator);
   }
 
-  public async createAdministrator(name: string, businessId: string, commerceIds: [string], email: string): Promise<Administrator> {
-    let administrator = new Administrator();
-    administrator.name = name;
-    administrator.commerceIds = commerceIds;
-    administrator.email = email;
-    administrator.active = true;
-    administrator.businessId = businessId;
-    administrator.password = '';
-    administrator.firstPasswordChanged = false;
-    return await this.administratorRepository.create(administrator);
+  public async createAdministrator(user: string, name: string, businessId: string, commercesId: string[], email: string): Promise<Administrator> {
+    try {
+      let administrator = new Administrator();
+      administrator.name = name;
+      administrator.commercesId = commercesId || [];
+      administrator.email = email;
+      administrator.active = true;
+      administrator.businessId = businessId;
+      administrator.password = '';
+      administrator.firstPasswordChanged = false;
+      const administratorCreated = await this.administratorRepository.create(administrator);
+      const administratorCreatedEvent = new AdministratorCreated(new Date(), administratorCreated, { user });
+      publish(administratorCreatedEvent);
+      return administratorCreated;
+    } catch(error) {
+      console.log("🚀 ~ AdministratorService ~ createAdministrator ~ error:", error);
+      throw new HttpException(`Hubo un problema al crear el administrador: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   public async changeStatus(id: string, action: boolean): Promise<Administrator> {
@@ -105,5 +116,40 @@ export class AdministratorService {
     } else {
       throw new HttpException('Administrador no existe', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  public async getAdministratorsByBusinessId(businessId: string): Promise<Administrator[]> {
+    return await this.administratorRepository
+    .whereEqualTo('businessId', businessId)
+    .orderByAscending('name')
+    .find();
+  }
+
+  public async updateAdministrator(user: string, id: string, commercesId: string[], active: boolean): Promise<Administrator> {
+    let administrator = await this.getAdministratorById(id);
+    if (commercesId) {
+      administrator.commercesId = commercesId;
+    }
+    if (active !== undefined) {
+      administrator.active = active;
+    }
+    return await this.update(user, administrator);
+  }
+
+  public async update(user: string, administrator: Administrator): Promise<Administrator> {
+    const administratorUpdated = await this.administratorRepository.update(administrator);
+    const administratorUpdatedEvent = new AdministratorUpdated(new Date(), administratorUpdated, { user });
+    publish(administratorUpdatedEvent);
+    return administratorUpdated;
+  }
+
+  public async updateAdministratorPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Administrator> {
+    let plan = await this.getAdministratorById(id);
+    if (plan) {
+      if (plan.permissions) {
+        plan.permissions[permissionName] = permissionValue;
+      }
+    }
+    return await this.update(user, plan);
   }
 }

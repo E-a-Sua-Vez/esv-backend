@@ -223,7 +223,14 @@
             "dashboard.attention-rating-avg.view": true,
             "modules.admin.add": true,
             "roles.admin.add": true,
-            "dashboard.attention-no-device.view": true
+            "dashboard.attention-no-device.view": true,
+            "business.main-menu.administrators-admin": true,
+            "administrators.admin.limit": 5,
+            "administrators.admin.read": true,
+            "administrators.admin.edit": true,
+            "administrators.admin.add": true,
+            "administrators.admin.update": true,
+            "administrators.admin.view": true
         }
     },
     {

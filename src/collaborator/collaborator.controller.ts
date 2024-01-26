@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CollaboratorService } from './collaborator.service';
-import { Collaborator } from './collaborator.entity';
+import { Collaborator } from './model/collaborator.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 
@@ -75,5 +75,13 @@ export class CollaboratorController {
     public async changePassword(@User() user, @Param() params: any): Promise<Collaborator> {
         const { id } = params;
         return this.collaboratorService.changePassword(user, id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/:id/permission')
+    public async updateCollaboratorPermission(@User() user, @Param() params: any, @Body() body: any): Promise<Collaborator> {
+        const { id } = params;
+        const { name, value } = body;
+        return this.collaboratorService.updateCollaboratorPermission(user, id, name, value);
     }
 }
