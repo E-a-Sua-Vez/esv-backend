@@ -4,6 +4,7 @@ import { BusinessService } from '../business/business.service';
 import { PlanService } from '../plan/plan.service';
 import { CommerceService } from 'src/commerce/commerce.service';
 import { PlanActivationService } from '../plan-activation/plan-activation.service';
+import { UserType } from '../commerce/model/user-type.enum';
 
 @Injectable()
 export class PermissionService {
@@ -20,7 +21,7 @@ export class PermissionService {
     let rolPermissions = {};
     let planPermissions = {};
     let planActivatedPermissions = {};
-    const rol = await this.rolService.getRolByName('business');
+    const rol = await this.rolService.getRolByName(UserType.BUSINESS);
     if (rol && rol.permissions) {
       rolPermissions = rol.permissions;
     }
@@ -67,7 +68,7 @@ export class PermissionService {
     let rolPermissions = {};
     let planPermissions = {};
     let planActivatedPermissions = {};
-    const rol = await this.rolService.getRolByName('collaborator');
+    const rol = await this.rolService.getRolByName(UserType.COLLABORATOR);
     if (rol && rol.permissions) {
       rolPermissions = rol.permissions;
     }
@@ -116,7 +117,7 @@ export class PermissionService {
     let permissions = {};
     let rolPermissions = {};
 
-    const rol = await this.rolService.getRolByName('master');
+    const rol = await this.rolService.getRolByName(UserType.MASTER);
     if (rol && rol.permissions) {
       rolPermissions = rol.permissions;
     }
