@@ -231,7 +231,9 @@
             "administrators.admin.add": true,
             "administrators.admin.update": true,
             "administrators.admin.view": true,
-            "permissions.admin.users": true
+            "permissions.admin.users": true,
+            "collaborator.main-menu.dashboard": true,
+            "collaborator.main-menu.queue-manage": true
         }
     },
     {

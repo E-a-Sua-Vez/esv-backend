@@ -176,7 +176,7 @@ export class AttentionService {
     const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
     if (type) {
       if (type === AttentionType.NODEVICE) {
-        attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel);
+        attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId);
       }
     } else if (onlySurvey) {
       if (onlySurvey.active) {

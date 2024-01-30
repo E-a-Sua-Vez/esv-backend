@@ -7,6 +7,7 @@ import { publish } from 'ett-events-lib';
 import CollaboratorCreated from './events/CollaboratorCreated';
 import CollaboratorUpdated from './events/CollaboratorUpdated';
 import { PermissionService } from 'src/permission/permission.service';
+import * as defaultPermissions from './model/default-permissions.json';
 
 @Injectable()
 export class CollaboratorService {
@@ -113,6 +114,9 @@ export class CollaboratorService {
       }
       collaborator.active = true;
       collaborator.alias = alias || name;
+      if (defaultPermissions) {
+        collaborator.permissions = defaultPermissions;
+      }
       const collaboratorCreated = await this.collaboratorRepository.create(collaborator);
       const collaboratorCreatedEvent = new CollaboratorCreated(new Date(), collaboratorCreated, { user });
       publish(collaboratorCreatedEvent);
