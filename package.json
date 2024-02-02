@@ -16,13 +16,14 @@
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix"
   },
   "dependencies": {
-    "@nestjs/axios": "2.0.0",
     "@google-cloud/firestore": "^6.4.1",
+    "@nestjs/axios": "2.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
     "aws-sdk": "^2.699.0",
+    "bottleneck": "^2.19.5",
     "class-validator": "^0.14.0",
     "ett-events-lib": "1.0.1",
     "firebase": "^9.14.0",

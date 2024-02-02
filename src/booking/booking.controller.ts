@@ -27,9 +27,9 @@ export class BookingController {
 
     @UseGuards(AuthGuard)
     @Get('/queue/:queueId/date/:date')
-    public async getBookingsByDate(@Param() params: any): Promise<Booking[]> {
+    public async getBookingsByQueueAndDate(@Param() params: any): Promise<Booking[]> {
         const { date, queueId } = params;
-        return this.bookingService.getBookingsByDate(queueId, date);
+        return this.bookingService.getBookingsByQueueAndDate(queueId, date);
     }
 
     @UseGuards(AuthGuard)
@@ -44,5 +44,12 @@ export class BookingController {
     public async cancelBooking(@User() user, @Param() params: any, @Body() body: any): Promise<Booking> {
         const { id } = params;
         return this.bookingService.cancelBooking(user, id);
+    }
+
+    //@UseGuards(AuthGuard)
+    @Patch('/process/:date')
+    public async processBookings(@Param() params: any): Promise<Booking> {
+        const { date } = params;
+        return this.bookingService.processBookings(date);
     }
 }

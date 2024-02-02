@@ -11,6 +11,7 @@ import { ModuleModule } from '../module/module.module';
 import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
 import { CommerceModule } from '../commerce/commerce.module';
 import { BookingDefaultBuilder } from './builders/booking-default';
+import { AttentionModule } from 'src/attention/attention.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { BookingDefaultBuilder } from './builders/booking-default';
     forwardRef(() => NotificationModule),
     forwardRef(() => UserModule),
     forwardRef(() => ModuleModule),
-    forwardRef(() => FeatureToggleModule)
+    forwardRef(() => FeatureToggleModule),
+    forwardRef(() => AttentionModule)
   ],
   providers: [
     BookingService,

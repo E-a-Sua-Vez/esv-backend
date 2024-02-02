@@ -167,7 +167,7 @@ export class AttentionService {
     .find();
   }
 
-  public async createAttention(queueId: string, collaboratorId?: string, channel: string = AttentionChannel.QR, userIn?: User, type?: AttentionType): Promise<Attention> {
+  public async createAttention(queueId: string, collaboratorId?: string, channel: string = AttentionChannel.QR, userIn?: User, type?: AttentionType, status?: AttentionStatus): Promise<Attention> {
     let attentionCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const newUser = userIn ? userIn : new User();
@@ -190,7 +190,11 @@ export class AttentionService {
         attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
       }
     } else {
-      attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
+      if (status && status === 'CANCELLED') {
+        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, AttentionStatus.CANCELLED);
+      } else {
+        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
+      }
     }
     if (user.email !== undefined) {
       await this.attentionEmail(attentionCreated.id);

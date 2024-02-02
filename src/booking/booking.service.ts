@@ -18,6 +18,10 @@ import { BookingDefaultBuilder } from './builders/booking-default';
 import { BookingDetailsDto } from './dto/booking-details.dto';
 import { BookingStatus } from './model/booking-status.enum';
 import BookingUpdated from './events/BookingUpdated';
+import { AttentionService } from 'src/attention/attention.service';
+import Bottleneck from "bottleneck";
+import { AttentionType } from 'src/attention/model/attention-type.enum';
+import { Attention } from 'src/attention/model/attention.entity';
 
 @Injectable()
 export class BookingService {
@@ -29,6 +33,7 @@ export class BookingService {
     private featureToggleService: FeatureToggleService,
     private commerceService: CommerceService,
     private bookingDefaultBuilder: BookingDefaultBuilder,
+    private attentionService: AttentionService
   ) { }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -38,11 +43,11 @@ export class BookingService {
   public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
-    const dateBookings = await this.getBookingsByDate(queueId, date);
+    const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);
     const dateFormatted = new Date(date);
     const newDate = new Date(dateFormatted.setDate(dateFormatted.getDate()));
     const newDateFormatted = newDate.toISOString().slice(0,10);
-    const booked = await this.getPendingBookingsByDate(queueId, newDateFormatted);
+    const booked = await this.getPendingBookingsByQueueAndDate(queueId, newDateFormatted);
     if (booked.length >= queue.limit) {
       throw new HttpException(`Limite de la fila ${queue.id} - ${queue.name} (${queue.limit}) alcanzado para la fecha ${newDateFormatted}`, HttpStatus.INTERNAL_SERVER_ERROR);
     } else {
@@ -59,16 +64,30 @@ export class BookingService {
     return bookingCreated;
   }
 
-  public async getBookingsByDate(queueId: string, date: string): Promise<Booking[]> {
+  public async getBookingsByDate(date: string): Promise<Booking[]> {
+    return await this.bookingRepository
+      .whereEqualTo('date', date)
+      .orderByDescending('number')
+      .find();
+  }
+
+  public async getBookingsByQueueAndDate(queueId: string, date: string): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
       .find();
   }
 
-  public async getPendingBookingsByDate(queueId: string, date: string): Promise<Booking[]> {
+  public async getPendingBookingsByQueueAndDate(queueId: string, date: string): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
+      .whereEqualTo('date', date)
+      .whereEqualTo('status', BookingStatus.PENDING)
+      .find();
+  }
+
+  public async getPendingBookingsByDate(date: string): Promise<Booking[]> {
+    return await this.bookingRepository
       .whereEqualTo('date', date)
       .whereEqualTo('status', BookingStatus.PENDING)
       .find();
@@ -123,7 +142,7 @@ export class BookingService {
 
   public async bookingWhatsapp(booking: Booking): Promise<Booking[]> {
     const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.EMAIL);
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.WHATSAPP);
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'whatsapp-booking')){
       toNotify.push(booking.number);
@@ -131,7 +150,7 @@ export class BookingService {
     const notified = [];
     let message = '';
     let type;
-    toNotify.forEach(async count => {
+    toNotify.forEach(async () => {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
         if(user.notificationOn) {
@@ -200,8 +219,8 @@ ${link}
     }
   }
 
-  public async update(user: string, attention: Booking): Promise<Booking> {
-    const bookingUpdated = await this.bookingRepository.update(attention);
+  public async update(user: string, booking: Booking): Promise<Booking> {
+    const bookingUpdated = await this.bookingRepository.update(booking);
     const bookingUpdatedEvent = new BookingUpdated(new Date(), bookingUpdated, { user });
     publish(bookingUpdatedEvent);
     return bookingUpdated;
@@ -215,9 +234,57 @@ ${link}
       booking.cancelledAt = new Date();
       booking.cancelled = true;
       await this.update(user, booking);
-    }catch(error){
-      throw `Hubo un problema al cancelar la reserva: ${error.message}`;
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al cancelar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return booking;
+  }
+
+  private async processBooking(user: string, booking: Booking, attentionId: string): Promise<Booking> {
+    let bookingToUpdate = booking;
+    bookingToUpdate.processed = true;
+    bookingToUpdate.processedAt = new Date();
+    bookingToUpdate.status = BookingStatus.PROCESSED;
+    bookingToUpdate.attentionId = attentionId;
+    const bookingUpdated = await this.update(user, bookingToUpdate);
+    return bookingUpdated;
+  }
+
+  private async createAttention(body: any, booking: Booking): Promise<Attention> {
+    const { queueId, channel, user, status } = body;
+    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, status);
+    await this.processBooking('ett', booking, attention.id);
+    return attention;
+  }
+
+  public async processBookings(date: string): Promise<any> {
+    if (!date) {
+      throw new HttpException(`Error procesando Reservas: Fecha inválida`, HttpStatus.BAD_REQUEST);
+    }
+    const bookings = await this.getPendingBookingsByDate(date);
+    const limiter = new Bottleneck({
+      minTime: 1000
+    });
+    const toProcess = bookings.length;
+    const responses = [];
+    const errors = [];
+    if (bookings && bookings.length > 0) {
+      for(let i = 0; i < bookings.length; i++) {
+        const booking = bookings[i];
+        const body = {
+          queueId: booking.queueId,
+          channel: booking.channel,
+          user: booking.user,
+          status: booking.status
+        }
+        limiter.schedule(async () => {
+          const attention = await this.createAttention(body, booking)
+          responses.push(attention);
+        });
+      }
+      await limiter.stop({ dropWaitingJobs: false });
+    }
+    const response = { toProcess, processed: responses.length, errors: errors.length };
+    return response;
   }
 }
