@@ -109,6 +109,18 @@ export class FeatureToggleService {
       {
         name: 'email-monthly-commerce-statistics',
         type: 'EMAIL',
+      },
+      {
+        name: 'email-booking',
+        type: 'EMAIL',
+      },
+      {
+        name: 'whatsapp-booking',
+        type: 'WHATSAPP',
+      },
+      {
+        name: 'booking-active',
+        type: 'PRODUCT'
       }
     ]
   }

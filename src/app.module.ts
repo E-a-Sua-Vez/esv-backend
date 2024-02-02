@@ -23,6 +23,7 @@ import { SuggestionModule } from './suggestion/suggestion.module';
 import { FeatureModule } from './feature/feature.module';
 import { PlanActivationModule } from './plan-activation/plan-activation.module';
 import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
+import { BookingModule } from './booking/booking.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SurveyPersonalizedModule } from './survey-personalized/survey-personali
     FeatureModule,
     PlanActivationModule,
     SurveyPersonalizedModule,
+    BookingModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
