@@ -93,6 +93,13 @@ export class BookingService {
       .find();
   }
 
+  public async getActiveBookingsByDate(date: string): Promise<Booking[]> {
+    return await this.bookingRepository
+      .whereEqualTo('date', date)
+      .whereIn('status', [BookingStatus.PENDING])
+      .find();
+  }
+
   public async getBookingsBeforeYouByDate(number: number, queueId: string, date: string): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
@@ -230,7 +237,7 @@ ${link}
     let booking = undefined;
     try {
       booking = await this.getBookingById(id);
-      booking.status = BookingStatus.CANCELLED;
+      booking.status = BookingStatus.RESERVE_CANCELLED;
       booking.cancelledAt = new Date();
       booking.cancelled = true;
       await this.update(user, booking);
@@ -261,7 +268,7 @@ ${link}
     if (!date) {
       throw new HttpException(`Error procesando Reservas: Fecha inválida`, HttpStatus.BAD_REQUEST);
     }
-    const bookings = await this.getPendingBookingsByDate(date);
+    const bookings = await this.getActiveBookingsByDate(date);
     const limiter = new Bottleneck({
       minTime: 1000
     });

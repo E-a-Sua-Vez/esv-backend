@@ -5,7 +5,6 @@ import { BookingBuilderInterface } from '../../shared/interfaces/booking-builder
 import { BookingStatus } from '../model/booking-status.enum';
 import { BookingType } from '../model/booking-type.enum';
 import { Booking } from '../model/booking.entity';
-import { QueueService } from '../../queue/queue.service';
 import { Queue } from '../../queue/queue.entity';
 import BookingCreated from '../events/BookingCreated';
 import { publish } from 'ett-events-lib';
@@ -15,8 +14,7 @@ import { User } from 'src/user/user.entity';
 export class BookingDefaultBuilder implements BookingBuilderInterface {
   constructor(
     @InjectRepository(Booking)
-    private bookingRepository = getRepository(Booking),
-    private queueService: QueueService,
+    private bookingRepository = getRepository(Booking)
   ){}
 
   async create(number: number, date: string, queue: Queue, channel?: string, user?: User): Promise<Booking> {
@@ -33,11 +31,8 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
       booking.user = user;
     }
     let bookingCreated = await this.bookingRepository.create(booking);
-    await this.queueService.updateQueue('', queue);
-
     const bookingCreatedEvent = new BookingCreated(new Date(), bookingCreated);
     publish(bookingCreatedEvent);
-
     return bookingCreated;
   }
 }

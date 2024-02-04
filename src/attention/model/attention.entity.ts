@@ -1,5 +1,6 @@
 import { Collection } from 'fireorm';
 import { User } from 'src/user/user.entity';
+import { AttentionStatus } from './attention-status.enum';
 
 @Collection('attention')
 export class Attention {
@@ -10,7 +11,7 @@ export class Attention {
     endAt: Date;
     number: number;
     queueId: string;
-    status: string;
+    status: AttentionStatus;
     userId: string;
     moduleId: string;
     comment: string;
@@ -26,4 +27,6 @@ export class Attention {
     user: User;
     ratedAt: Date;
     rateDuration: number;
+    cancelled: boolean;
+    cancelledAt: Date;
 }

@@ -1,5 +1,5 @@
 export enum BookingStatus {
     PENDING = 'PENDING',
     PROCESSED = 'PROCESSED',
-    CANCELLED = 'CANCELLED'
+    RESERVE_CANCELLED = 'RESERVE_CANCELLED'
 }

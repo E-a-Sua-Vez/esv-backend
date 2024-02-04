@@ -23,6 +23,7 @@ import { AttentionDetailsDto } from './dto/attention-details.dto';
 import { CommerceService } from '../commerce/commerce.service';
 import { User } from '../user/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
+import { MAX_LENGTH } from 'class-validator';
 
 @Injectable()
 export class AttentionService {
@@ -68,7 +69,6 @@ export class AttentionService {
       attentionDetailsDto.type = attention.type;
       attentionDetailsDto.assistingCollaboratorId = attention.assistingCollaboratorId;
       attentionDetailsDto.channel = attention.channel;
-
       if (attention.queueId) {
           attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
           attentionDetailsDto.commerce = await this.commerceService.getCommerceById(attentionDetailsDto.queue.commerceId);
@@ -129,9 +129,28 @@ export class AttentionService {
     }
   }
 
-  public async getAttentionDetailsByQueue(status: AttentionStatus, queueId: string): Promise<AttentionDetailsDto[]> {
+  public async getAvailableAttentionDetailsByNumber(number: number, queueId: string): Promise<AttentionDetailsDto> {
+    const attention = await this.getAvailableAttentionByNumber(+number, queueId);
+    if (attention.length > 0) {
+      return await this.getAttentionDetails(attention[0].id);
+    }
+  }
+
+  public async getAttentionDetailsByQueueAndStatuses(status: AttentionStatus, queueId: string): Promise<AttentionDetailsDto[]> {
     const result = [];
-    const attentions = await this.getAttentionByQueue(status, queueId);
+    const attentions = await this.getAttentionByQueueAndStatus(status, queueId);
+    if (attentions.length > 0) {
+      for(let i = 0; i < attentions.length; i++) {
+        const attention = await this.getAttentionUserDetails(attentions[i].id);
+        result.push(attention);
+      }
+    }
+    return result;
+  }
+
+  public async getAvailableAttentionDetailsByQueues(queueId: string): Promise<AttentionDetailsDto[]> {
+    const result = [];
+    const attentions = await this.getAvailableAttentiosnByQueue(queueId);
     if (attentions.length > 0) {
       for(let i = 0; i < attentions.length; i++) {
         const attention = await this.getAttentionUserDetails(attentions[i].id);
@@ -145,6 +164,14 @@ export class AttentionService {
     return await this.attentionRepository.whereEqualTo('queueId', queueId)
     .whereEqualTo('number', number)
     .whereEqualTo('status', status)
+    .orderByDescending('createdAt')
+    .find();
+  }
+
+  public async getAvailableAttentionByNumber(number: number, queueId: string): Promise<Attention[]> {
+    return await this.attentionRepository.whereEqualTo('queueId', queueId)
+    .whereEqualTo('number', number)
+    .whereIn('status', [AttentionStatus.USER_CANCELLED, AttentionStatus.PENDING])
     .orderByDescending('createdAt')
     .find();
   }
@@ -163,6 +190,20 @@ export class AttentionService {
   public async getAttentionByQueue(status: AttentionStatus, queueId: string): Promise<Attention[]> {
     return await this.attentionRepository.whereEqualTo('queueId', queueId)
     .whereEqualTo('status', status)
+    .orderByAscending('createdAt')
+    .find();
+  }
+
+  public async getAttentionByQueueAndStatus(status: AttentionStatus, queueId: string): Promise<Attention[]> {
+    return await this.attentionRepository.whereEqualTo('queueId', queueId)
+    .whereEqualTo('status', status)
+    .orderByAscending('createdAt')
+    .find();
+  }
+
+  public async getAvailableAttentiosnByQueue(queueId: string): Promise<Attention[]> {
+    return await this.attentionRepository.whereEqualTo('queueId', queueId)
+    .whereIn('status', [AttentionStatus.USER_CANCELLED, AttentionStatus.PENDING])
     .orderByAscending('createdAt')
     .find();
   }
@@ -190,11 +231,7 @@ export class AttentionService {
         attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
       }
     } else {
-      if (status && status === 'CANCELLED') {
-        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, AttentionStatus.CANCELLED);
-      } else {
-        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
-      }
+       attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
     }
     if (user.email !== undefined) {
       await this.attentionEmail(attentionCreated.id);
@@ -233,27 +270,35 @@ export class AttentionService {
   }
 
   public async attend(user: string, number: number, queueId: string, collaboratorId: string, commerceLanguage: string) {
-    const attention = (await this.getAttentionByNumber(number, AttentionStatus.PENDING, queueId))[0];
-    const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
-    let queue = await this.queueService.getQueueById(attention.queueId);
-    try {
-      attention.collaboratorId = collaborator.id;
-      attention.moduleId = collaborator.moduleId;
-      queue.currentAttentionNumber = queue.currentAttentionNumber + 1;
-      const currentAttention = (await this.getAttentionByNumber(queue.currentAttentionNumber, AttentionStatus.PENDING, queue.id))[0];
-      if(currentAttention) {
-        queue.currentAttentionId = currentAttention.id;
-      }else{
-        queue.currentAttentionId = '';
+    let attention = (await this.getAvailableAttentionByNumber(number, queueId))[0];
+    if (attention) {
+      let queue = await this.queueService.getQueueById(attention.queueId);
+      try {
+        if (attention.status === AttentionStatus.PENDING) {
+          const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
+          attention.collaboratorId = collaborator.id;
+          attention.moduleId = collaborator.moduleId;
+          attention.status = AttentionStatus.PROCESSING;
+
+          queue.currentAttentionNumber = queue.currentAttentionNumber + 1;
+          const currentAttention = (await this.getAvailableAttentionByNumber(queue.currentAttentionNumber, queue.id))[0];
+          if(currentAttention) {
+            queue.currentAttentionId = currentAttention.id;
+          } else{
+            queue.currentAttentionId = '';
+          }
+          await this.queueService.updateQueue(user, queue);
+
+          await this.notify(attention.id, collaborator.moduleId, commerceLanguage);
+          attention = await this.update(user, attention);
+          await this.notifyEmail(attention.id, collaborator.moduleId, commerceLanguage);
+        } else if (attention.status === AttentionStatus.USER_CANCELLED){
+          attention = await this.finishCancelledAttention(user, attention.id);
+        }
+        return attention;
+      } catch(error) {
+        throw 'Hubo un problema al procesar la atención';
       }
-      await this.queueService.updateQueue(user, queue);
-      attention.status = AttentionStatus.PROCESSING;
-      await this.notify(attention.id, collaborator.moduleId, commerceLanguage);
-      await this.update(user, attention);
-      await this.notifyEmail(attention.id, collaborator.moduleId, commerceLanguage);
-      return attention;
-    } catch(error) {
-      throw 'Hubo un problema al procesar la atención';
     }
   }
 
@@ -310,6 +355,25 @@ export class AttentionService {
       }
       await this.csatEmail(attention.id);
       await this.csatWhatsapp(attention.id);
+      return this.update(user, attention);
+    }
+    return attention;
+  }
+
+  public async finishCancelledAttention(user: string, attentionId: string): Promise<Attention> {
+    let attention = await this.getAttentionById(attentionId);
+    if (attention.status === AttentionStatus.USER_CANCELLED) {
+      attention.status = AttentionStatus.TERMINATED_RESERVE_CANCELLED;
+      attention.endAt = new Date();
+      let queue = await this.queueService.getQueueById(attention.queueId);
+      queue.currentAttentionNumber = queue.currentAttentionNumber + 1;
+      const currentAttention = (await this.getAvailableAttentionByNumber(queue.currentAttentionNumber, queue.id))[0];
+      if(currentAttention) {
+        queue.currentAttentionId = currentAttention.id;
+      }else{
+        queue.currentAttentionId = '';
+      }
+      await this.queueService.updateQueue(user, queue);
       return this.update(user, attention);
     }
     return attention;
@@ -526,6 +590,17 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
     const userCreated = await this.userService.createUser(name, undefined, undefined, commerceId, queueId);
     attention.userId = userCreated.id;
     return await this.update(user, attention);
+  }
+
+  public async cancelAttention(user: string, attentionId: string): Promise<Attention> {
+    let attention = await this.getAttentionById(attentionId);
+    if (attention.status === AttentionStatus.PENDING) {
+      attention.status = AttentionStatus.USER_CANCELLED;
+      attention.cancelled = true;
+      attention.cancelledAt = new Date();
+      attention = await this.update(user, attention);
+    }
+    return attention;
   }
 
   public async cancellAtentions(): Promise<string> {

@@ -35,10 +35,24 @@ export class AttentionController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/available/details/queue/:queueId/number/:number')
+    public async getAvailableAttentionDetailsByNumber(@Param() params: any): Promise<AttentionDetailsDto> {
+        const { queueId, number } = params;
+        return this.attentionService.getAvailableAttentionDetailsByNumber(number, queueId);
+    }
+
+    @UseGuards(AuthGuard)
     @Get('/details/queue/:queueId/status/:status')
     public async getAttentionDetailsByQueue(@Param() params: any): Promise<AttentionDetailsDto[]> {
         const { queueId, status } = params;
-        return this.attentionService.getAttentionDetailsByQueue(status, queueId);
+        return this.attentionService.getAttentionDetailsByQueueAndStatuses(status, queueId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/available/details/queue/:queueId')
+    public async getAvailableAttentiosnByQueue(@Param() params: any): Promise<AttentionDetailsDto[]> {
+        const { queueId } = params;
+        return this.attentionService.getAvailableAttentionDetailsByQueues(queueId);
     }
 
     @UseGuards(AuthGuard)
@@ -73,6 +87,13 @@ export class AttentionController {
     }
 
     @UseGuards(AuthGuard)
+    @Patch('/finish-cancelled/:id')
+    public async finishCancelledAttention(@User() user, @Param() params: any): Promise<Attention> {
+        const { id } = params;
+        return this.attentionService.finishCancelledAttention(user, id);
+    }
+
+    @UseGuards(AuthGuard)
     @Patch('/reactivate/:number')
     public async reactivate(@User() user, @Param() params: any, @Body() body: any): Promise<Attention> {
         const { number } = params;
@@ -100,6 +121,13 @@ export class AttentionController {
     @Patch('/cancell/all')
     public async cancellAtentions(): Promise<string> {
         return this.attentionService.cancellAtentions();
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/cancel/:id')
+    public async cancelAttention(@User() user, @Param() params: any): Promise<Attention> {
+        const { id } = params;
+        return this.attentionService.cancelAttention(user, id);
     }
 
 }

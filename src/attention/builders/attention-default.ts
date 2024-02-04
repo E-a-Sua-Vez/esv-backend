@@ -18,10 +18,10 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     private queueService: QueueService,
   ){}
 
-  async create(queue: Queue, collaboratorId?: string, channel?: string, userId?: string, status?: string): Promise<Attention> {
+  async create(queue: Queue, collaboratorId?: string, channel?: string, userId?: string): Promise<Attention> {
     const currentNumber = queue.currentNumber;
     let attention = new Attention();
-    attention.status = status || AttentionStatus.PENDING;
+    attention.status = AttentionStatus.PENDING;
     attention.type = AttentionType.STANDARD;
     attention.createdAt = new Date();
     attention.queueId = queue.id;
