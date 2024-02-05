@@ -58,13 +58,17 @@ export class BookingService {
         const amountOfBookings = dateBookings.length || 0;
         bookingNumber = amountOfBookings + 1;
       }
-      console.log("🚀 ~ BookingService ~ createBooking ~ bookingNumber:", bookingNumber);
-      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block);
-      if (user.email !== undefined) {
-        await this.bookingEmail(bookingCreated);
-      }
-      if (user.phone !== undefined) {
-        await this.bookingWhatsapp(bookingCreated);
+      const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(queueId, date, bookingNumber);
+      if (alreadyBooked.length > 0) {
+        throw new HttpException(`Ya fue realizada una reserva en este bloque ${bookingNumber}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      } else {
+        bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block);
+        if (user.email !== undefined) {
+          await this.bookingEmail(bookingCreated);
+        }
+        if (user.phone !== undefined) {
+          await this.bookingWhatsapp(bookingCreated);
+        }
       }
     }
     return bookingCreated;
@@ -88,6 +92,15 @@ export class BookingService {
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
+      .whereEqualTo('status', BookingStatus.PENDING)
+      .find();
+  }
+
+  public async getPendingBookingsByNumberAndQueueAndDate(queueId: string, date: string, number: number): Promise<Booking[]> {
+    return await this.bookingRepository
+      .whereEqualTo('queueId', queueId)
+      .whereEqualTo('date', date)
+      .whereEqualTo('number', number)
       .whereEqualTo('status', BookingStatus.PENDING)
       .find();
   }

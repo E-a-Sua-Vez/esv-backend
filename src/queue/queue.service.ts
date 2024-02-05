@@ -15,10 +15,6 @@ export class QueueService {
   ) {}
 
   private getQueueBlockDetails(queue: Queue): Queue {
-    queue.blockTime = 75;
-    queue.serviceInfo.break = true;
-    queue.serviceInfo.breakHourFrom = 12;
-    queue.serviceInfo.breakHourTo = 13;
     let hourBlocks: Block[] = [];
     if (queue.blockTime &&
       queue.serviceInfo &&
@@ -146,7 +142,7 @@ export class QueueService {
     return queueUpdated;
   }
 
-  public async createQueue(user: string, commerceId: string, name: string, limit: number, estimatedTime: number, order: number, serviceInfo: ServiceInfo): Promise<Queue> {
+  public async createQueue(user: string, commerceId: string, name: string, limit: number, estimatedTime: number, order: number, serviceInfo: ServiceInfo, blockTime: number = 60): Promise<Queue> {
     let queue = new Queue();
     queue.commerceId = commerceId;
     queue.name = name;
@@ -159,6 +155,7 @@ export class QueueService {
     queue.createdAt = new Date();
     queue.order = order;
     queue.serviceInfo = serviceInfo;
+    queue.blockTime = blockTime;
     const queueCreated = await this.queueRepository.create(queue);
     const queueCreatedEvent = new QueueCreated(new Date(), queueCreated, { user });
     publish(queueCreatedEvent);

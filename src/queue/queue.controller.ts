@@ -33,8 +33,8 @@ export class QueueController {
     @UseGuards(AuthGuard)
     @Post('/')
     public async createQueue(@User() user, @Body() body: Queue): Promise<Queue> {
-        const { commerceId, name, limit, estimatedTime, order, serviceInfo} = body;
-        return this.queueService.createQueue(user, commerceId, name, limit, estimatedTime, order, serviceInfo);
+        const { commerceId, name, limit, estimatedTime, order, serviceInfo, blockTime } = body;
+        return this.queueService.createQueue(user, commerceId, name, limit, estimatedTime, order, serviceInfo, blockTime);
     }
 
     @UseGuards(AuthGuard)

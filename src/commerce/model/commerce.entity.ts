@@ -32,6 +32,9 @@ export class ServiceInfo {
     attentionDays: number[];
     attentionHourFrom: number;
     attentionHourTo: number;
+    break: boolean;
+    breakHourFrom: number;
+    breakHourTo: number;
 }
 
 @Collection('commerce')

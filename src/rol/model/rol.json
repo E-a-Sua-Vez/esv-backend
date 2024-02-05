@@ -233,7 +233,8 @@
             "administrators.admin.view": true,
             "permissions.admin.users": true,
             "collaborator.main-menu.dashboard": true,
-            "collaborator.main-menu.queue-manage": true
+            "collaborator.main-menu.queue-manage": true,
+            "collaborator.main-menu.booking-manage": true
         }
     },
     {
