@@ -1,6 +1,12 @@
 import { Collection } from 'fireorm';
 import { User } from 'src/user/user.entity';
 
+export class Block {
+    number: number;
+    hourFrom: string;
+    hourTo: string;
+}
+
 @Collection('booking')
 export class Booking {
     id: string;
@@ -20,4 +26,5 @@ export class Booking {
     cancelled: boolean;
     attentionId: string;
     user: User;
+    block?: Block;
 }

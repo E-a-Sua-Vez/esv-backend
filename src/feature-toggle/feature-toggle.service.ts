@@ -121,6 +121,14 @@ export class FeatureToggleService {
       {
         name: 'booking-active',
         type: 'PRODUCT'
+      },
+      {
+        name: 'booking-block-active',
+        type: 'PRODUCT'
+      },
+      {
+        name: 'attention-user-not-required',
+        type: 'PRODUCT'
       }
     ]
   }

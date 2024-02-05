@@ -6,7 +6,7 @@ import { AttentionStatus } from '../model/attention-status.enum';
 import { AttentionType } from '../model/attention-type.enum';
 import { Attention } from '../model/attention.entity';
 import { QueueService } from '../../queue/queue.service';
-import { Queue } from '../../queue/queue.entity';
+import { Queue } from '../../queue/model/queue.entity';
 import AttentionCreated from '../events/AttentionCreated';
 import { publish } from 'ett-events-lib';
 

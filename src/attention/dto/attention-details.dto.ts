@@ -1,6 +1,6 @@
 import { User } from '../../user/user.entity';
 import { Commerce } from '../../commerce/model/commerce.entity';
-import { Queue } from '../../queue/queue.entity';
+import { Queue } from '../../queue/model/queue.entity';
 import { Collaborator } from '../../collaborator/model/collaborator.entity';
 import { Module } from '../../module/module.entity';
 

@@ -1,4 +1,4 @@
-import { Booking } from './model/booking.entity';
+import { Block, Booking } from './model/booking.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
@@ -20,7 +20,6 @@ import { BookingStatus } from './model/booking-status.enum';
 import BookingUpdated from './events/BookingUpdated';
 import { AttentionService } from 'src/attention/attention.service';
 import Bottleneck from "bottleneck";
-import { AttentionType } from 'src/attention/model/attention-type.enum';
 import { Attention } from 'src/attention/model/attention.entity';
 
 @Injectable()
@@ -40,10 +39,10 @@ export class BookingService {
     return await this.bookingRepository.findById(id);
   }
 
-  public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User): Promise<Booking> {
+  public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User, block?: Block): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
-    const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);
+
     const dateFormatted = new Date(date);
     const newDate = new Date(dateFormatted.setDate(dateFormatted.getDate()));
     const newDateFormatted = newDate.toISOString().slice(0,10);
@@ -51,9 +50,16 @@ export class BookingService {
     if (booked.length >= queue.limit) {
       throw new HttpException(`Limite de la fila ${queue.id} - ${queue.name} (${queue.limit}) alcanzado para la fecha ${newDateFormatted}`, HttpStatus.INTERNAL_SERVER_ERROR);
     } else {
-      const amountOfBookings = dateBookings.length || 0;
-      const bookingNumber = amountOfBookings + 1;
-      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user);
+      let bookingNumber;
+      if (block && Object.keys(block).length > 0) {
+        bookingNumber = block.number;
+      } else {
+        const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);
+        const amountOfBookings = dateBookings.length || 0;
+        bookingNumber = amountOfBookings + 1;
+      }
+      console.log("🚀 ~ BookingService ~ createBooking ~ bookingNumber:", bookingNumber);
+      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block);
       if (user.email !== undefined) {
         await this.bookingEmail(bookingCreated);
       }
@@ -211,6 +217,7 @@ ${link}
       bookingDetailsDto.cancelledAt= booking.cancelledAt;
       bookingDetailsDto.cancelled = booking.cancelled;
       bookingDetailsDto.attentionId = booking.attentionId;
+      bookingDetailsDto.block = booking.block;
       if (booking.queueId) {
           bookingDetailsDto.queue = await this.queueService.getQueueById(booking.queueId);
           bookingDetailsDto.commerce = await this.commerceService.getCommerceById(bookingDetailsDto.queue.commerceId);

@@ -1,5 +1,5 @@
 import { Collection } from 'fireorm';
-import { Queue } from 'src/queue/queue.entity';
+import { Queue } from 'src/queue/model/queue.entity';
 import { Country } from 'src/shared/model/country.enum';
 import { Laguage } from 'src/shared/model/language.enum';
 import { FeatureToggle } from '../../feature-toggle/model/feature-toggle.entity';

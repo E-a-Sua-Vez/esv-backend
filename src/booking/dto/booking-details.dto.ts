@@ -1,6 +1,7 @@
 import { User } from '../../user/user.entity';
 import { Commerce } from '../../commerce/model/commerce.entity';
-import { Queue } from '../../queue/queue.entity';
+import { Queue } from '../../queue/model/queue.entity';
+import { Block } from '../model/booking.entity';
 
 export class BookingDetailsDto {
   id: string;
@@ -22,5 +23,6 @@ export class BookingDetailsDto {
     beforeYou: number;
     user: User;
     commerce: Commerce;
-    queue: Queue
+    queue: Queue;
+    block: Block;
 }

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { QueueService } from './queue.service';
-import { Queue } from './queue.entity';
+import { Queue } from './model/queue.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { SimpleGuard } from '../auth/simple.guard';
 import { User } from 'src/auth/user.decorator';
@@ -41,8 +41,8 @@ export class QueueController {
     @Patch('/:id')
     public async updateQueue(@User() user, @Param() params: any, @Body() body: Queue): Promise<Queue> {
         const { id } = params;
-        const { limit, estimatedTime, order, active, serviceInfo } = body;
-        return this.queueService.updateQueueConfigurations(user, id, limit, estimatedTime, order, active, serviceInfo);
+        const { limit, estimatedTime, order, active, serviceInfo, blockTime } = body;
+        return this.queueService.updateQueueConfigurations(user, id, limit, estimatedTime, order, active, serviceInfo, blockTime);
     }
 
     @UseGuards(SimpleGuard)

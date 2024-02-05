@@ -4,6 +4,7 @@ import { Booking } from './model/booking.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { BookingDetailsDto } from './dto/booking-details.dto';
 import { User } from 'src/auth/user.decorator';
+import { SimpleGuard } from 'src/auth/simple.guard';
 
 @Controller('booking')
 export class BookingController {
@@ -21,8 +22,9 @@ export class BookingController {
     @UseGuards(AuthGuard)
     @Post()
     public async createBooking(@Body() body: any): Promise<Booking> {
-        const { queueId, channel, user, date } = body;
-        return this.bookingService.createBooking(queueId, channel, date, user);
+        console.log("🚀 ~ BookingController ~ createBooking ~ body:", body);
+        const { queueId, channel, user, date, block } = body;
+        return this.bookingService.createBooking(queueId, channel, date, user, block);
     }
 
     @UseGuards(AuthGuard)
@@ -46,7 +48,7 @@ export class BookingController {
         return this.bookingService.cancelBooking(user, id);
     }
 
-    //@UseGuards(AuthGuard)
+    // @UseGuards(SimpleGuard)
     @Patch('/process/:date')
     public async processBookings(@Param() params: any): Promise<Booking> {
         const { date } = params;

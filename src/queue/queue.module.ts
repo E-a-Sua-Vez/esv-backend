@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 import { QueueController } from './queue.controller';
-import { Queue } from './queue.entity';
+import { Queue } from './model/queue.entity';
 import { QueueService } from './queue.service';
 
 @Module({

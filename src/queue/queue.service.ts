@@ -1,10 +1,11 @@
-import { Queue, ServiceInfo } from './queue.entity';
+import { Block, Queue, ServiceInfo } from './model/queue.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import QueueCreated from './events/QueueCreated';
 import QueueUpdated from './events/QueueUpdated';
+import { timeConvert } from 'src/shared/utils/date';
 
 @Injectable()
 export class QueueService {
@@ -13,29 +14,105 @@ export class QueueService {
     private queueRepository = getRepository(Queue)
   ) {}
 
+  private getQueueBlockDetails(queue: Queue): Queue {
+    queue.blockTime = 75;
+    queue.serviceInfo.break = true;
+    queue.serviceInfo.breakHourFrom = 12;
+    queue.serviceInfo.breakHourTo = 13;
+    let hourBlocks: Block[] = [];
+    if (queue.blockTime &&
+      queue.serviceInfo &&
+      queue.serviceInfo.attentionHourFrom &&
+      queue.serviceInfo.attentionHourTo) {
+      if (!queue.serviceInfo.break) {
+        const minsFrom = queue.serviceInfo.attentionHourFrom * 60;
+        const minsTo = queue.serviceInfo.attentionHourTo * 60;
+        const minsTotal = minsTo - minsFrom;
+        const blocksAmount = Math.floor(minsTotal / queue.blockTime);
+        const blocks = [];
+        for(let i = 1; i <= blocksAmount; i ++) {
+          const block: Block = {
+            number: i,
+            hourFrom: timeConvert((minsFrom + (queue.blockTime * (i - 1)))),
+            hourTo: timeConvert((minsFrom + (queue.blockTime * i))),
+          }
+          blocks.push(block);
+        }
+      } else {
+        const minsFrom1 = queue.serviceInfo.attentionHourFrom * 60;
+        const minsTo1 = queue.serviceInfo.breakHourFrom * 60;
+        const minsFrom2 = queue.serviceInfo.breakHourTo * 60;
+        const minsTo2 = queue.serviceInfo.attentionHourTo * 60;
+        const minsTotal1 = minsTo1 - minsFrom1;
+        const minsTotal2 = minsTo2 - minsFrom2;
+        const blocksAmount1 = Math.floor(minsTotal1 / queue.blockTime);
+        const blocksAmount2 = Math.floor(minsTotal2 / queue.blockTime);
+        const blocks: Block[] = [];
+        let countBlock = 1;
+        for(let i = 1; i <= blocksAmount1; i ++) {
+          const block: Block = {
+            number: countBlock,
+            hourFrom: timeConvert((minsFrom1 + (queue.blockTime * (i - 1)))),
+            hourTo: timeConvert((minsFrom1 + (queue.blockTime * i))),
+          }
+          blocks.push(block);
+          countBlock++;
+        }
+        for(let i = 1; i <= blocksAmount2; i ++) {
+          const block: Block = {
+            number: countBlock,
+            hourFrom: timeConvert((minsFrom2 + (queue.blockTime * (i - 1)))),
+            hourTo: timeConvert((minsFrom2 + (queue.blockTime * i))),
+          }
+          blocks.push(block);
+          countBlock++;
+        }
+        hourBlocks = blocks;
+      }
+      queue.serviceInfo.blocks = hourBlocks;
+    }
+    return queue;
+  }
+
   public async getQueueById(id: string): Promise<Queue> {
-    return await this.queueRepository.findById(id);
+    let queue = await this.queueRepository.findById(id);
+    return this.getQueueBlockDetails(queue);
   }
 
   public async getQueues(): Promise<Queue[]> {
-    return await this.queueRepository.find();
+    let queues: Queue[] = [];
+    const result = await this.queueRepository.find();
+    result.forEach(queue => {
+      queues.push(this.getQueueBlockDetails(queue));
+    })
+    return queues;
   }
 
   public async getQueueByCommerce(commerceId: string): Promise<Queue[]> {
-    return await this.queueRepository.whereEqualTo('commerceId', commerceId)
+    let queues: Queue[] = [];
+    const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
       .orderByAscending('order')
       .find();
+    result.forEach(queue => {
+      queues.push(this.getQueueBlockDetails(queue));
+    })
+    return queues;
   }
 
   public async getActiveQueuesByCommerce(commerceId: string): Promise<Queue[]> {
-    return await this.queueRepository
+    let queues: Queue[] = [];
+    const result = await this.queueRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('active', true)
       .orderByAscending('order')
       .find();
+    result.forEach(queue => {
+      queues.push(this.getQueueBlockDetails(queue));
+    })
+    return queues;
   }
 
-  public async updateQueueConfigurations(user, id, limit, estimatedTime, order, active, serviceInfo): Promise<Queue> {
+  public async updateQueueConfigurations(user, id, limit, estimatedTime, order, active, serviceInfo, blockTime = 60): Promise<Queue> {
     try {
       let queue = await this.queueRepository.findById(id);
       if (limit) {
@@ -52,6 +129,9 @@ export class QueueService {
       }
       if (serviceInfo !== undefined) {
         queue.serviceInfo = serviceInfo;
+      }
+      if (blockTime !== undefined) {
+        queue.blockTime = blockTime;
       }
       return await this.updateQueue(user, queue);
     }catch(error) {
