@@ -49,7 +49,7 @@ export class BookingController {
 
     @UseGuards(SimpleGuard)
     @Patch('/process')
-    public async processBookings(@Param() params: any): Promise<Booking> {
+    public async processBookings(): Promise<Booking> {
         const date = new Date().toISOString().slice(0,10);
         return this.bookingService.processBookings(date);
     }
