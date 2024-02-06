@@ -1,4 +1,4 @@
-import { Attention } from './model/attention.entity';
+import { Attention, Block } from './model/attention.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
@@ -24,6 +24,7 @@ import { CommerceService } from '../commerce/commerce.service';
 import { User } from '../user/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { MAX_LENGTH } from 'class-validator';
+import { AttentionReserveBuilder } from './builders/attention-reserve';
 
 @Injectable()
 export class AttentionService {
@@ -39,6 +40,7 @@ export class AttentionService {
     private attentionDefaultBuilder: AttentionDefaultBuilder,
     private attentionSurveyBuilder: AttentionSurveyBuilder,
     private attentionNoDeviceBuilder: AttentionNoDeviceBuilder,
+    private attentionReserveBuilder: AttentionReserveBuilder,
     private commerceService: CommerceService
   ) { }
 
@@ -69,6 +71,7 @@ export class AttentionService {
       attentionDetailsDto.type = attention.type;
       attentionDetailsDto.assistingCollaboratorId = attention.assistingCollaboratorId;
       attentionDetailsDto.channel = attention.channel;
+      attentionDetailsDto.block = attention.block;
       if (attention.queueId) {
           attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
           attentionDetailsDto.commerce = await this.commerceService.getCommerceById(attentionDetailsDto.queue.commerceId);
@@ -113,6 +116,7 @@ export class AttentionService {
       attentionDetailsDto.channel = attention.channel;
       attentionDetailsDto.notificationOn = attention.notificationOn;
       attentionDetailsDto.notificationEmailOn = attention.notificationEmailOn;
+      attentionDetailsDto.block = attention.block;
       if (attention.userId !== undefined) {
           attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -131,6 +135,13 @@ export class AttentionService {
 
   public async getAvailableAttentionDetailsByNumber(number: number, queueId: string): Promise<AttentionDetailsDto> {
     const attention = await this.getAvailableAttentionByNumber(+number, queueId);
+    if (attention.length > 0) {
+      return await this.getAttentionDetails(attention[0].id);
+    }
+  }
+
+  public async getNextAvailableAttentionDetails(queueId: string): Promise<AttentionDetailsDto> {
+    const attention = await this.getAvailableAttentiosnByQueue(queueId);
     if (attention.length > 0) {
       return await this.getAttentionDetails(attention[0].id);
     }
@@ -203,12 +214,19 @@ export class AttentionService {
 
   public async getAvailableAttentiosnByQueue(queueId: string): Promise<Attention[]> {
     return await this.attentionRepository.whereEqualTo('queueId', queueId)
-    .whereIn('status', [AttentionStatus.USER_CANCELLED, AttentionStatus.PENDING])
-    .orderByAscending('createdAt')
+    .whereIn('status', [AttentionStatus.PENDING])
+    .orderByAscending('number')
     .find();
   }
 
-  public async createAttention(queueId: string, collaboratorId?: string, channel: string = AttentionChannel.QR, userIn?: User, type?: AttentionType, status?: AttentionStatus): Promise<Attention> {
+  public async createAttention(
+      queueId: string,
+      collaboratorId?: string,
+      channel: string = AttentionChannel.QR,
+      userIn?: User,
+      type?: AttentionType,
+      block?: Block
+    ): Promise<Attention> {
     let attentionCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const newUser = userIn ? userIn : new User();
@@ -230,6 +248,8 @@ export class AttentionService {
       } else {
         attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
       }
+    } else if (block && block.number) {
+      attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, channel, userId, block);
     } else {
        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
     }

@@ -3,6 +3,7 @@ import { Commerce } from '../../commerce/model/commerce.entity';
 import { Queue } from '../../queue/model/queue.entity';
 import { Collaborator } from '../../collaborator/model/collaborator.entity';
 import { Module } from '../../module/module.entity';
+import { Block } from '../model/attention.entity';
 
 export class AttentionDetailsDto {
   id: string;
@@ -32,4 +33,5 @@ export class AttentionDetailsDto {
   module: Module;
   notificationOn: boolean;
   notificationEmailOn: boolean;
+  block: Block;
 }

@@ -13,6 +13,7 @@ import { AttentionDefaultBuilder } from './builders/attention-default';
 import { AttentionSurveyBuilder } from './builders/attention-survey';
 import { CommerceModule } from '../commerce/commerce.module';
 import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
+import { AttentionReserveBuilder } from './builders/attention-reserve';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
     AttentionService,
     AttentionDefaultBuilder,
     AttentionSurveyBuilder,
-    AttentionNoDeviceBuilder
+    AttentionNoDeviceBuilder,
+    AttentionReserveBuilder
   ],
   exports: [AttentionService],
   controllers: [AttentionController],

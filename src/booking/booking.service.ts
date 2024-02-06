@@ -60,7 +60,7 @@ export class BookingService {
       }
       const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(queueId, date, bookingNumber);
       if (alreadyBooked.length > 0) {
-        throw new HttpException(`Ya fue realizada una reserva en este bloque ${bookingNumber}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}`, HttpStatus.INTERNAL_SERVER_ERROR);
       } else {
         bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block);
         if (user.email !== undefined) {
@@ -108,14 +108,8 @@ export class BookingService {
   public async getPendingBookingsByDate(date: string): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('date', date)
-      .whereEqualTo('status', BookingStatus.PENDING)
-      .find();
-  }
-
-  public async getActiveBookingsByDate(date: string): Promise<Booking[]> {
-    return await this.bookingRepository
-      .whereEqualTo('date', date)
       .whereIn('status', [BookingStatus.PENDING])
+      .orderByAscending('number')
       .find();
   }
 
@@ -277,9 +271,9 @@ ${link}
     return bookingUpdated;
   }
 
-  private async createAttention(body: any, booking: Booking): Promise<Attention> {
-    const { queueId, channel, user, status } = body;
-    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, status);
+  private async createAttention(booking: Booking): Promise<Attention> {
+    const { queueId, channel, user, status, block } = booking;
+    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block);
     await this.processBooking('ett', booking, attention.id);
     return attention;
   }
@@ -288,7 +282,7 @@ ${link}
     if (!date) {
       throw new HttpException(`Error procesando Reservas: Fecha inválida`, HttpStatus.BAD_REQUEST);
     }
-    const bookings = await this.getActiveBookingsByDate(date);
+    const bookings = await this.getPendingBookingsByDate(date);
     const limiter = new Bottleneck({
       minTime: 1000
     });
@@ -298,14 +292,8 @@ ${link}
     if (bookings && bookings.length > 0) {
       for(let i = 0; i < bookings.length; i++) {
         const booking = bookings[i];
-        const body = {
-          queueId: booking.queueId,
-          channel: booking.channel,
-          user: booking.user,
-          status: booking.status
-        }
         limiter.schedule(async () => {
-          const attention = await this.createAttention(body, booking)
+          const attention = await this.createAttention(booking)
           responses.push(attention);
         });
       }
