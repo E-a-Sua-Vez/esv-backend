@@ -47,9 +47,16 @@ export class BookingController {
         return this.bookingService.cancelBooking(user, id);
     }
 
-    // @UseGuards(SimpleGuard)
-    @Patch('/process/:date')
+    @UseGuards(SimpleGuard)
+    @Patch('/process')
     public async processBookings(@Param() params: any): Promise<Booking> {
+        const date = new Date().toISOString().slice(0,10);
+        return this.bookingService.processBookings(date);
+    }
+
+    @UseGuards(SimpleGuard)
+    @Patch('/process/date/:date')
+    public async processDateBookings(@Param() params: any): Promise<Booking> {
         const { date } = params;
         return this.bookingService.processBookings(date);
     }
