@@ -39,6 +39,10 @@ export class AttentionReserveBuilder implements BuilderInterface {
     if (userId !== undefined) {
       attention.userId = userId;
     }
+    const existingAttention = await this.getAttentionByNumberAndDate(attention.number, attention.queueId, new Date());
+    if (existingAttention && existingAttention.length > 0) {
+      throw new HttpException(`Ya existe una atención con este numero para esta fecha`, HttpStatus.BAD_REQUEST);
+    }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attentionCreated.number;
     if (queue.currentNumber === 1) {
@@ -50,5 +54,23 @@ export class AttentionReserveBuilder implements BuilderInterface {
     publish(attentionCreatedEvent);
 
     return attentionCreated;
+  }
+
+  public async getAttentionByNumberAndDate(number: number, queueId: string, date: Date): Promise<Attention[]> {
+    const startDate = date.toISOString().slice(0,10);
+    const dateValue = new Date(startDate);
+    return await this.attentionRepository
+      .whereEqualTo('queueId', queueId)
+      .whereEqualTo('number', number)
+      .whereIn('status', [
+        AttentionStatus.PENDING,
+        AttentionStatus.PROCESSING,
+        AttentionStatus.RATED,
+        AttentionStatus.TERMINATED,
+        AttentionStatus.REACTIVATED
+      ])
+      .whereGreaterOrEqualThan('createdAt', dateValue)
+      .orderByDescending('createdAt')
+      .find();
   }
 }

@@ -23,7 +23,6 @@ import { AttentionDetailsDto } from './dto/attention-details.dto';
 import { CommerceService } from '../commerce/commerce.service';
 import { User } from '../user/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
-import { MAX_LENGTH } from 'class-validator';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 
 @Injectable()
@@ -210,7 +209,8 @@ export class AttentionService {
   public async getAttentionByNumberAndDate(number: number, status: AttentionStatus, queueId: string, date: Date): Promise<Attention[]> {
     const startDate = date.toISOString().slice(0,10);
     const dateValue = new Date(startDate);
-    return await this.attentionRepository.whereEqualTo('queueId', queueId)
+    return await this.attentionRepository
+      .whereEqualTo('queueId', queueId)
       .whereEqualTo('number', number)
       .whereEqualTo('status', status)
       .whereGreaterOrEqualThan('createdAt', dateValue)
