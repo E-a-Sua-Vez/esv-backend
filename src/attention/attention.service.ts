@@ -243,7 +243,8 @@ export class AttentionService {
   }
 
   public async getAvailableAttentiosnByQueue(queueId: string): Promise<Attention[]> {
-    return await this.attentionRepository.whereEqualTo('queueId', queueId)
+    return await this.attentionRepository
+    .whereEqualTo('queueId', queueId)
     .whereIn('status', [AttentionStatus.PENDING])
     .orderByAscending('number')
     .find();
