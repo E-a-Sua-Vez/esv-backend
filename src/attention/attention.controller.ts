@@ -63,6 +63,20 @@ export class AttentionController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/queue/:queueId/date/:date')
+    public async getAttentionByDate(@Param() params: any): Promise<Attention[]> {
+        const { queueId, date } = params;
+        return this.attentionService.getAttentionByDate(queueId, date);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/processing/details/queue/:queueId')
+    public async getProcessingAttentionDetailsByQueue(@Param() params: any): Promise<AttentionDetailsDto[]> {
+        const { queueId } = params;
+        return this.attentionService.getProcessingAttentionDetailsByQueue(queueId);
+    }
+
+    @UseGuards(AuthGuard)
     @Post()
     public async createAttention(@Body() body: any): Promise<Attention> {
         const { queueId, collaboratorId, channel, user, type, block } = body;

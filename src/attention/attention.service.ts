@@ -88,7 +88,7 @@ export class AttentionService {
       }
       return attentionDetailsDto;
     } catch(error) {
-      throw `Hubo un problema al obtener detalles de la atención: ${error.message}`;
+      throw new HttpException(`Hubo un problema al obtener detalles de la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -122,7 +122,7 @@ export class AttentionService {
       }
       return attentionDetailsDto;
     } catch(error) {
-      throw `Hubo un problema al obtener detalles de la atención: ${error.message}`;
+      throw new HttpException(`Hubo un problema al obtener detalles de la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -187,12 +187,42 @@ export class AttentionService {
     .find();
   }
 
+  public async getProcessingAttentionsByQueue(queueId: string): Promise<Attention[]> {
+    return await this.attentionRepository
+      .whereEqualTo('queueId', queueId)
+      .whereIn('status', [AttentionStatus.REACTIVATED, AttentionStatus.PROCESSING])
+      .orderByDescending('createdAt')
+      .find();
+  }
+
+  public async getProcessingAttentionDetailsByQueue(queueId: string): Promise<AttentionDetailsDto[]> {
+    const result = [];
+    const attentions = await this.getProcessingAttentionsByQueue(queueId);
+    if (attentions.length > 0) {
+      for(let i = 0; i < attentions.length; i++) {
+        const attention = await this.getAttentionUserDetails(attentions[i].id);
+        result.push(attention);
+      }
+    }
+    return result;
+  }
+
   public async getAttentionByNumberAndDate(number: number, status: AttentionStatus, queueId: string, date: Date): Promise<Attention[]> {
     const startDate = date.toISOString().slice(0,10);
     const dateValue = new Date(startDate);
     return await this.attentionRepository.whereEqualTo('queueId', queueId)
       .whereEqualTo('number', number)
       .whereEqualTo('status', status)
+      .whereGreaterOrEqualThan('createdAt', dateValue)
+      .orderByDescending('createdAt')
+      .find();
+  }
+
+  public async getAttentionByDate(queueId: string, date: Date): Promise<Attention[]> {
+    const startDate = new Date(date).toISOString().slice(0,10);
+    const dateValue = new Date(startDate);
+    return await this.attentionRepository
+      .whereEqualTo('queueId', queueId)
       .whereGreaterOrEqualThan('createdAt', dateValue)
       .orderByDescending('createdAt')
       .find();
@@ -235,7 +265,11 @@ export class AttentionService {
     const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
     if (type) {
       if (type === AttentionType.NODEVICE) {
-        attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId);
+        if (block && block.number) {
+          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block);
+        } else {
+          attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId);
+        }
       }
     } else if (onlySurvey) {
       if (onlySurvey.active) {
@@ -249,7 +283,7 @@ export class AttentionService {
         attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
       }
     } else if (block && block.number) {
-      attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, channel, userId, block);
+      attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block);
     } else {
        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
     }
@@ -317,7 +351,7 @@ export class AttentionService {
         }
         return attention;
       } catch(error) {
-        throw 'Hubo un problema al procesar la atención';
+        throw new HttpException(`Hubo un problema al procesar la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
@@ -341,7 +375,7 @@ export class AttentionService {
       await this.queueService.updateQueue(user, queue);
       await this.update(user, attention);
     } else {
-      throw 'Hubo un problema, esta atención no puede ser saltada';
+      throw new HttpException(`Hubo un problema, esta atención no puede ser saltada`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return attention;
   }
@@ -357,7 +391,7 @@ export class AttentionService {
       const result = await this.update(user, attention);
       return result;
     } catch(error) {
-      throw `Hubo un problema esta atención no está cancelada`;
+      throw new HttpException(`Hubo un problema esta atención no está cancelada`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

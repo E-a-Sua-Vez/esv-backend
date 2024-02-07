@@ -34,6 +34,7 @@ export class CommerceService {
     let commerceAux = commerce;
     commerceAux.queues = await this.queueService.getActiveQueuesByCommerce(id);
     commerceAux.surveys = await this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id);
+    commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
     return commerceAux;
   }
 

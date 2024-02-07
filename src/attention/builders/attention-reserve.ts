@@ -18,13 +18,13 @@ export class AttentionReserveBuilder implements BuilderInterface {
     private queueService: QueueService,
   ){}
 
-  async create(queue: Queue, collaboratorId?: string, channel?: string, userId?: string, block?: Block): Promise<Attention> {
+  async create(queue: Queue, collaboratorId?: string, type?: AttentionType, channel?: string, userId?: string, block?: Block): Promise<Attention> {
     if (!block) {
       throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
     }
     let attention = new Attention();
     attention.status = AttentionStatus.PENDING;
-    attention.type = AttentionType.STANDARD;
+    attention.type = type || AttentionType.STANDARD;
     attention.createdAt = new Date();
     attention.queueId = queue.id;
     attention.commerceId = queue.commerceId;
