@@ -3,5 +3,5 @@ export enum NotificationTemplate {
     ESTUTURNO = 'its-your-turn',
     CSAT = 'csat',
     MONTHLY_COMMERCE_STATISTICS = 'statistics-commerce',
-    RESERVA = 'booking'
+    RESERVA = 'your-reserve'
 }

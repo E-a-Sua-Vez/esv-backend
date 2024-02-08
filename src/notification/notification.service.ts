@@ -285,4 +285,57 @@ export class NotificationService {
       notification.comment = error.message;
     }
   }
+
+  public async createBookingEmailNotification(
+    email: string,
+    type: NotificationType,
+    bookingId: string,
+    commerceId: string,
+    queueId: string,
+    template: string,
+    reserveNumber: number,
+    reserveDate: string,
+    reserveBlock: string,
+    commerce: string,
+    link: string,
+    logo: string
+  ){
+    let notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.EMAIL;
+    notification.type = type;
+    notification.bookingId = bookingId;
+    notification.commerceId = commerceId;
+    notification.queueId = queueId;
+    let metadata;
+    try {
+      const templateData = {
+        reserveNumber,
+        reserveBlock,
+        reserveDate,
+        commerce,
+        link,
+        logo
+      };
+      const data: EmailInputDto = {
+        Source: process.env.EMAIL_SOURCE,
+        Destination: {
+          ToAddresses: [email]
+        },
+        Template: template,
+        TemplateData: JSON.stringify(templateData)
+      };
+      metadata = await this.emailNotify(email, data, template);
+      if (this.emailProvider === NotificationProvider.AWS) {
+        notification.twilioId = 'N/A';
+        notification.providerId = metadata['MessageId'] || 'N/I';
+      }
+      notification.provider = this.emailProvider;
+      const notificationCreated = await this.notificationRepository.create(notification);
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      publish(notificationCreatedEvent);
+    } catch (error) {
+      notification.comment = error.message;
+    }
+  }
 }

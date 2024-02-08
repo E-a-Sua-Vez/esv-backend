@@ -42,7 +42,6 @@ export class BookingService {
   public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User, block?: Block): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
-
     const dateFormatted = new Date(date);
     const newDate = new Date(dateFormatted.setDate(dateFormatted.getDate()));
     const newDateFormatted = newDate.toISOString().slice(0,10);
@@ -143,16 +142,26 @@ export class BookingService {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         if (booking.user.email) {
           const template = `${NotificationTemplate.RESERVA}-${commerceLanguage}`;
-          const link = `${process.env.BACKEND_URL}/interno/fila/${booking.queueId}/atencion/${booking.id}`;
+          const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
           const bookingNumber = booking.number;
+          const bookingDate = booking.date;
+          const bookingblock = `${booking.block.hourFrom} - ${booking.block.hourTo}`;
           const commerce = bookingCommerce.name;
-          await this.notificationService.createAttentionEmailNotification(
-            booking.user.email, booking.userId,
-            NotificationType.RESERVA, booking.id,
-            booking.commerceId, booking.queueId,
-            template, bookingNumber,
-            commerce, link, logo);
+          await this.notificationService.createBookingEmailNotification(
+            booking.user.email,
+            NotificationType.RESERVA,
+            booking.id,
+            booking.commerceId,
+            booking.queueId,
+            template,
+            bookingNumber,
+            bookingDate,
+            bookingblock,
+            commerce,
+            link,
+            logo
+          );
           notified.push(booking);
         }
       }

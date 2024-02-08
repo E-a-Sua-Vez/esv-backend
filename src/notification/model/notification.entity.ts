@@ -12,6 +12,7 @@ export class Notification {
     providerId: string;
     provider: string;
     attentionId: string;
+    bookingId: string;
     commerceId: string;
     queueId: string;
     comment: string = 'OK';
