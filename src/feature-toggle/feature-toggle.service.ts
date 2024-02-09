@@ -129,7 +129,19 @@ export class FeatureToggleService {
       {
         name: 'attention-user-not-required',
         type: 'PRODUCT'
-      }
+      },
+      {
+        name: 'booking-waitlist-active',
+        type: 'PRODUCT'
+      },
+      {
+        name: 'email-waitlist',
+        type: 'EMAIL',
+      },
+      {
+        name: 'whatsapp-waitlist',
+        type: 'WHATSAPP',
+      },
     ]
   }
   public async createFeatureToggle(user: string, name: string, commerceId: string, type: string): Promise<FeatureToggle> {

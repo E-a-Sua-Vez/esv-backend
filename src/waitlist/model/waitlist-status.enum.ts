@@ -1,0 +1,5 @@
+export enum WaitlistStatus {
+    PENDING = 'PENDING',
+    PROCESSED = 'PROCESSED',
+    RESERVE_CANCELLED = 'RESERVE_CANCELLED'
+}

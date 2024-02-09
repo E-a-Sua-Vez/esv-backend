@@ -21,6 +21,9 @@ import BookingUpdated from './events/BookingUpdated';
 import { AttentionService } from 'src/attention/attention.service';
 import Bottleneck from "bottleneck";
 import { Attention } from 'src/attention/model/attention.entity';
+import { WaitlistService } from '../waitlist/waitlist.service';
+import { Waitlist } from 'src/waitlist/model/waitlist.entity';
+import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
 
 @Injectable()
 export class BookingService {
@@ -32,7 +35,8 @@ export class BookingService {
     private featureToggleService: FeatureToggleService,
     private commerceService: CommerceService,
     private bookingDefaultBuilder: BookingDefaultBuilder,
-    private attentionService: AttentionService
+    private attentionService: AttentionService,
+    private waitlistService: WaitlistService
   ) { }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -134,11 +138,11 @@ export class BookingService {
     const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.EMAIL);
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'email-booking')){
-      toNotify.push(booking.number);
+      toNotify.push(booking);
     }
     const notified = [];
     const commerceLanguage = bookingCommerce.localeInfo.language;
-    toNotify.forEach(async () => {
+    toNotify.forEach(async (booking) => {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         if (booking.user.email) {
           const template = `${NotificationTemplate.RESERVA}-${commerceLanguage}`;
@@ -174,12 +178,12 @@ export class BookingService {
     const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.WHATSAPP);
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'whatsapp-booking')){
-      toNotify.push(booking.number);
+      toNotify.push(booking);
     }
     const notified = [];
     let message = '';
     let type;
-    toNotify.forEach(async () => {
+    toNotify.forEach(async (booking) => {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
         if(user.notificationOn) {
@@ -263,7 +267,8 @@ ${link}
       booking.status = BookingStatus.RESERVE_CANCELLED;
       booking.cancelledAt = new Date();
       booking.cancelled = true;
-      await this.update(user, booking);
+      booking = await this.update(user, booking);
+      this.waitlistService.notifyWaitListFormCancelledBooking(booking);
     } catch (error) {
       throw new HttpException(`Hubo un problema al cancelar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -310,5 +315,35 @@ ${link}
     }
     const response = { toProcess, processed: responses.length, errors: errors.length };
     return response;
+  }
+
+  public async createBookingFromWaitlist(waitlistId: string, blockNumber: number): Promise<Booking> {
+    let booking: Booking = undefined;
+    let waitlist: Waitlist = undefined;
+    if (waitlistId) {
+      waitlist = await this.waitlistService.getWaitlistById(waitlistId);
+      if (waitlist) {
+        if (waitlist.status !== WaitlistStatus.PENDING) {
+          throw new HttpException(`Error procesando Waitlist: Ya fue procesada`, HttpStatus.BAD_REQUEST);
+        }
+        const queue = await this.queueService.getQueueById(waitlist.queueId);
+        const blocks = queue.serviceInfo.blocks;
+        let block = undefined;
+        if (blocks && blocks.length > 0) {
+          block = blocks.filter(block => {
+            return block.number.toString() === blockNumber.toString();
+          })[0];
+        }
+        booking = await this.createBooking(waitlist.queueId, waitlist.channel, waitlist.date, waitlist.user, block);
+        if (booking && booking.id) {
+          waitlist.bookingId = booking.id;
+          waitlist.status = WaitlistStatus.PROCESSED;
+          waitlist.processed = true;
+          waitlist.processedAt = new Date();
+          await this.waitlistService.update('', waitlist);
+        }
+      }
+    }
+    return booking;
   }
 }

@@ -34,6 +34,7 @@ export class QueueService {
           }
           blocks.push(block);
         }
+        hourBlocks = blocks;
       } else {
         const minsFrom1 = queue.serviceInfo.attentionHourFrom * 60;
         const minsTo1 = queue.serviceInfo.breakHourFrom * 60;

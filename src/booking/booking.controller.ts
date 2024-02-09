@@ -60,4 +60,11 @@ export class BookingController {
         const { date } = params;
         return this.bookingService.processBookings(date);
     }
+
+    @UseGuards(AuthGuard)
+    @Post('/waitlist/:id/block/:number')
+    public async createBookingFromWaitlist(@Param() params: any, @Body() body: any): Promise<Booking> {
+        const { id, number } = params;
+        return this.bookingService.createBookingFromWaitlist(id, number);
+    }
 }
