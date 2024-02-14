@@ -231,7 +231,7 @@ export class BookingService {
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
           ?
-`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Deve vir no dia *${booking.date}*.
+`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Deve vir no dia *${booking.date}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
 
 Lémbre-se, seu número de reserva é: *${booking.number}*. Mais detalhes neste link:
 
@@ -239,7 +239,7 @@ ${link}
 
 Obrigado!`
           :
-`Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${booking.date}*.
+`Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${booking.date}* ${booking.block && booking.block.hourFrom ? ` a las ${booking.block.hourFrom}.` : `.`}
 
 Recuerda, tu número de reserva es: *${booking.number}*. Más detalles en este link:
 
@@ -273,7 +273,7 @@ ${link}
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
           ?
-`Olá, lembre-se da sua reserva em *${bookingCommerce.name}*! Deve vir no dia *${booking.date}*.
+`Olá, lembre-se da sua reserva em *${bookingCommerce.name}*! Deve vir no dia *${booking.date}* ${booking.block && booking.block.hourFrom ? `as ${booking.block.hourFrom}.` : `.`}
 
 Poderá comparecer? Se sua resposta for *NÃO* por favor cancele sua reserva neste link:
 
@@ -281,7 +281,7 @@ ${link}
 
 Obrigado!`
           :
-`Hola, recuerda tu reserva en *${bookingCommerce.name}*. Debes venir el dia *${booking.date}*.
+`Hola, recuerda tu reserva en *${bookingCommerce.name}*. Debes venir el dia *${booking.date}* ${booking.block && booking.block.hourFrom ? `a las ${booking.block.hourFrom}.` : `.`}
 
 Podrás venir? Si tu respues es *NO* por favor cancela tu reserva en este link:
 
