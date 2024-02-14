@@ -530,7 +530,7 @@ Recuerda, tu número de atención es: *${attention.number}*.`;
                 moduleNumber = module.name;
                 colaboratorName = collaborator.name;
                 type = NotificationType.ESTUTURNO;
-                templateType = NotificationTemplate.ESTUTURNO;
+                templateType = NotificationTemplate.ITSYOURTURN;
                 break;
               }
             }
@@ -560,7 +560,7 @@ Recuerda, tu número de atención es: *${attention.number}*.`;
     toNotify.forEach(async count => {
       if (attention !== undefined && attention.type === AttentionType.STANDARD) {
         if (attention.user.email) {
-          const template = `${NotificationTemplate.TUTURNO}-${commerceLanguage}`;
+          const template = `${NotificationTemplate.YOURTURN}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/fila/${attention.queueId}/atencion/${attention.id}`;
           const logo = `${process.env.BACKEND_URL}/${attention.commerce.logo}`;
           const attentionNumber = attention.number;

@@ -145,7 +145,7 @@ export class BookingService {
     toNotify.forEach(async (booking) => {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         if (booking.user.email) {
-          const template = `${NotificationTemplate.RESERVA}-${commerceLanguage}`;
+          const template = `${NotificationTemplate.BOOKING}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
           const bookingNumber = booking.number;
@@ -155,6 +155,46 @@ export class BookingService {
           await this.notificationService.createBookingEmailNotification(
             booking.user.email,
             NotificationType.RESERVA,
+            booking.id,
+            booking.commerceId,
+            booking.queueId,
+            template,
+            bookingNumber,
+            bookingDate,
+            bookingblock,
+            commerce,
+            link,
+            logo
+          );
+          notified.push(booking);
+        }
+      }
+    });
+    return notified;
+  }
+
+  public async bookingConfirmEmail(booking: Booking): Promise<Booking[]> {
+    const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.EMAIL);
+    let toNotify = [];
+    if(this.featureToggleIsActive(featureToggle, 'booking-email-confirm')){
+      toNotify.push(booking);
+    }
+    const notified = [];
+    const commerceLanguage = bookingCommerce.localeInfo.language;
+    toNotify.forEach(async (booking) => {
+      if (booking !== undefined && booking.type === BookingType.STANDARD) {
+        if (booking.user.email) {
+          const template = `${NotificationTemplate.BOOKING_CONFIRM}-${commerceLanguage}`;
+          const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
+          const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
+          const bookingNumber = booking.number;
+          const bookingDate = booking.date;
+          const bookingblock = `${booking.block.hourFrom} - ${booking.block.hourTo}`;
+          const commerce = bookingCommerce.name;
+          await this.notificationService.createBookingEmailNotification(
+            booking.user.email,
+            NotificationType.BOOKING_CONFIRM,
             booking.id,
             booking.commerceId,
             booking.queueId,
@@ -202,6 +242,48 @@ Obrigado!`
 `Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${booking.date}*.
 
 Recuerda, tu número de reserva es: *${booking.number}*. Más detalles en este link:
+
+${link}
+
+¡Muchas gracias!
+`;
+          await this.notificationService.createWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
+          notified.push(booking);
+        }
+      }
+    });
+    return notified;
+  }
+
+  public async bookingConfirmWhatsapp(booking: Booking): Promise<Booking[]> {
+    const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.WHATSAPP);
+    let toNotify = [];
+    if(this.featureToggleIsActive(featureToggle, 'booking-whatsapp-confirm')){
+      toNotify.push(booking);
+    }
+    const notified = [];
+    let message = '';
+    let type;
+    toNotify.forEach(async (booking) => {
+      if (booking !== undefined && booking.type === BookingType.STANDARD) {
+        const user = booking.user;
+        if(user.notificationOn) {
+          type = NotificationType.BOOKING_CONFIRM;
+          const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
+          message = bookingCommerce.localeInfo.language === 'pt'
+          ?
+`Olá, lembre-se da sua reserva em *${bookingCommerce.name}*! Deve vir no dia *${booking.date}*.
+
+Poderá comparecer? Se sua resposta for *NÃO* por favor cancele sua reserva neste link:
+
+${link}
+
+Obrigado!`
+          :
+`Hola, recuerda tu reserva en *${bookingCommerce.name}*. Debes venir el dia *${booking.date}*.
+
+Podrás venir? Si tu respues es *NO* por favor cancela tu reserva en este link:
 
 ${link}
 
@@ -286,7 +368,7 @@ ${link}
   }
 
   private async createAttention(booking: Booking): Promise<Attention> {
-    const { queueId, channel, user, status, block } = booking;
+    const { queueId, channel, user, block } = booking;
     const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block);
     await this.processBooking('ett', booking, attention.id);
     return attention;
@@ -345,5 +427,29 @@ ${link}
       }
     }
     return booking;
+  }
+
+  public async confirmNotifyBookings(daysBefore: number = 1): Promise<any> {
+    const date = new Date(new Date(new Date().setMonth(new Date().getMonth() - daysBefore)).setDate(0)).toISOString().slice(0, 10);
+    const bookings = await this.getPendingBookingsByDate(date);
+    const limiter = new Bottleneck({
+      minTime: 1500
+    });
+    const toProcess = bookings.length;
+    const responses = [];
+    const errors = [];
+    if (bookings && bookings.length > 0) {
+      for(let i = 0; i < bookings.length; i++) {
+        const booking = bookings[i];
+        limiter.schedule(async () => {
+          await this.bookingConfirmEmail(booking);
+          await this.bookingConfirmWhatsapp(booking);
+          responses.push(booking);
+        });
+      }
+      await limiter.stop({ dropWaitingJobs: false });
+    }
+    const response = { toProcess, processed: responses.length, errors: errors.length };
+    return response;
   }
 }

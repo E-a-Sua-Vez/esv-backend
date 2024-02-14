@@ -67,4 +67,11 @@ export class BookingController {
         const { id, number } = params;
         return this.bookingService.createBookingFromWaitlist(id, number);
     }
+
+    @UseGuards(AuthGuard)
+    @Post('/confirm')
+    public async confirmNotifyBookings(@Body() body: any): Promise<Booking> {
+        const { daysBefore } = body;
+        return this.bookingService.confirmNotifyBookings(daysBefore);
+    }
 }

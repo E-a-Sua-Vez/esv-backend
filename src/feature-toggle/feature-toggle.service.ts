@@ -142,6 +142,14 @@ export class FeatureToggleService {
         name: 'whatsapp-waitlist',
         type: 'WHATSAPP',
       },
+      {
+        name: 'booking-whatsapp-confirm',
+        type: 'WHATSAPP'
+      },
+      {
+        name: 'booking-email-confirm',
+        type: 'EMAIL'
+      }
     ]
   }
   public async createFeatureToggle(user: string, name: string, commerceId: string, type: string): Promise<FeatureToggle> {
