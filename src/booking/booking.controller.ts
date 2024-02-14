@@ -68,7 +68,7 @@ export class BookingController {
         return this.bookingService.createBookingFromWaitlist(id, number);
     }
 
-    @UseGuards(AuthGuard)
+    @UseGuards(SimpleGuard)
     @Post('/confirm')
     public async confirmNotifyBookings(@Body() body: any): Promise<Booking> {
         const { daysBefore } = body;
