@@ -365,7 +365,7 @@ export class AttentionService {
     const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
     let queue = await this.queueService.getQueueById(attention.queueId);
     if (attention.status === AttentionStatus.PROCESSING || attention.status === AttentionStatus.REACTIVATED) {
-      attention.status = AttentionStatus.CANCELLED;
+      attention.status = AttentionStatus.SKIPED;
       attention.collaboratorId = collaborator.id;
       let currentAttention = (await this.getAttentionByNumber(queue.currentAttentionNumber, AttentionStatus.PENDING, queue.id))[0];
       if (currentAttention && currentAttention.id !== undefined) {
@@ -383,7 +383,7 @@ export class AttentionService {
 
   public async reactivate(user: string, number: number, queueId: string, collaboratorId: string) {
     try {
-      const attention = (await this.getAttentionByNumberAndDate(number, AttentionStatus.CANCELLED, queueId, new Date()))[0];
+      const attention = (await this.getAttentionByNumberAndDate(number, AttentionStatus.SKIPED, queueId, new Date()))[0];
       const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
       attention.status = AttentionStatus.REACTIVATED;
       attention.collaboratorId = collaborator.id;
@@ -392,7 +392,7 @@ export class AttentionService {
       const result = await this.update(user, attention);
       return result;
     } catch(error) {
-      throw new HttpException(`Hubo un problema esta atención no está cancelada`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Hubo un problema esta atención no está saltada`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
