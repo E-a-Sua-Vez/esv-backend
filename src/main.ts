@@ -50,6 +50,6 @@ async function bootstrap(): Promise<void> {
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   const server = await app.listen(process.env.PORT || 3000);
-  server.setTimeout(30000);
+  server.setTimeout(60000);
 }
 bootstrap();

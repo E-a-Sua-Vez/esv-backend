@@ -27,4 +27,7 @@ export class Booking {
     attentionId: string;
     user: User;
     block?: Block;
+    confirmNotified: boolean = false;
+    confirmNotifiedEmail: boolean = false;
+    confirmNotifiedWhatsapp: boolean = false;
 }

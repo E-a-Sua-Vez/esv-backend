@@ -108,11 +108,12 @@ export class BookingService {
       .find();
   }
 
-  public async getPendingBookingsByDate(date: string): Promise<Booking[]> {
+  public async getPendingBookingsByDate(date: string, limit: number = 100): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('date', date)
       .whereIn('status', [BookingStatus.PENDING])
       .orderByAscending('number')
+      .limit(limit)
       .find();
   }
 
@@ -175,16 +176,16 @@ export class BookingService {
 
   public async bookingConfirmEmail(booking: Booking): Promise<Booking[]> {
     const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.EMAIL);
+    const featureToggle = bookingCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'booking-email-confirm')){
       toNotify.push(booking);
     }
     const notified = [];
     const commerceLanguage = bookingCommerce.localeInfo.language;
-    toNotify.forEach(async (booking) => {
+    if (toNotify.length === 1) {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
-        if (booking.user.email) {
+        if (booking.user && booking.user.email) {
           const template = `${NotificationTemplate.BOOKING_CONFIRM}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
@@ -209,7 +210,7 @@ export class BookingService {
           notified.push(booking);
         }
       }
-    });
+    };
     return notified;
   }
 
@@ -223,10 +224,10 @@ export class BookingService {
     const notified = [];
     let message = '';
     let type;
-    toNotify.forEach(async (booking) => {
+    if (toNotify.length === 1) {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
-        if(user.notificationOn) {
+        if(user && user.notificationOn) {
           type = NotificationType.RESERVA;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
@@ -251,13 +252,13 @@ ${link}
           notified.push(booking);
         }
       }
-    });
+    };
     return notified;
   }
 
   public async bookingConfirmWhatsapp(booking: Booking): Promise<Booking[]> {
     const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.WHATSAPP);
+    const featureToggle = bookingCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'booking-whatsapp-confirm')){
       toNotify.push(booking);
@@ -265,10 +266,10 @@ ${link}
     const notified = [];
     let message = '';
     let type;
-    toNotify.forEach(async (booking) => {
+    if (toNotify.length === 1) {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
-        if(user.notificationOn) {
+        if(user && user.notificationOn) {
           type = NotificationType.BOOKING_CONFIRM;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
@@ -293,7 +294,7 @@ ${link}
           notified.push(booking);
         }
       }
-    });
+    };
     return notified;
   }
 
@@ -378,9 +379,10 @@ ${link}
     if (!date) {
       throw new HttpException(`Error procesando Reservas: Fecha inválida`, HttpStatus.BAD_REQUEST);
     }
-    const bookings = await this.getPendingBookingsByDate(date);
+    const bookings = await this.getPendingBookingsByDate(date, 25);
     const limiter = new Bottleneck({
-      minTime: 1000
+      minTime: 1000,
+      maxConcurrent: 10
     });
     const toProcess = bookings.length;
     const responses = [];
@@ -430,26 +432,52 @@ ${link}
   }
 
   public async confirmNotifyBookings(daysBefore: number = 1): Promise<any> {
-    const date = new Date(new Date(new Date().setMonth(new Date().getMonth() - daysBefore)).setDate(0)).toISOString().slice(0, 10);
-    const bookings = await this.getPendingBookingsByDate(date);
+    const date = new Date(new Date(new Date().setDate(new Date().getDate() + daysBefore))).toISOString().slice(0, 10);
+    let bookings = [];
+    const pendingBookings = await this.getPendingBookingsByDate(date, 25);
+    if (!pendingBookings || pendingBookings.length === 0) {
+      throw new HttpException(`Sin Reservas para confirmar`, HttpStatus.OK);
+    }
+    bookings = pendingBookings.filter(booking => {
+      if (booking.confirmNotified === undefined || booking.confirmNotified === false) {
+        return booking;
+      }
+    })
     const limiter = new Bottleneck({
-      minTime: 1500
+      minTime: 1000,
+      maxConcurrent: 10
     });
     const toProcess = bookings.length;
     const responses = [];
     const errors = [];
+    let emails = [];
+    let messages = [];
     if (bookings && bookings.length > 0) {
       for(let i = 0; i < bookings.length; i++) {
-        const booking = bookings[i];
+        let booking = bookings[i];
         limiter.schedule(async () => {
-          await this.bookingConfirmEmail(booking);
-          await this.bookingConfirmWhatsapp(booking);
+          try {
+            const email = await this.bookingConfirmEmail(booking);
+            const message = await this.bookingConfirmWhatsapp(booking);
+            if (email && email[0] && email[0].id) {
+              booking.confirmNotifiedEmail = true;
+              emails.push(email[0]);
+            }
+            if (message && message[0] && message[0].id) {
+              booking.confirmNotifiedWhatsapp = true;
+              messages.push(message[0]);
+            }
+            booking.confirmNotified = true;
+            await this.update('ett', booking);
+          } catch (error) {
+            errors.push(error.message);
+          }
           responses.push(booking);
         });
       }
       await limiter.stop({ dropWaitingJobs: false });
     }
-    const response = { toProcess, processed: responses.length, errors: errors.length };
+    const response = { toProcess, processed: responses.length, emails: emails.length, messages: messages.length, errors: errors.length };
     return response;
   }
 }

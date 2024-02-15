@@ -70,7 +70,7 @@ export class BookingController {
 
     @UseGuards(SimpleGuard)
     @Post('/confirm')
-    public async confirmNotifyBookings(@Body() body: any): Promise<Booking> {
+    public async confirmNotifyBookings(@Body() body: any): Promise<any> {
         const { daysBefore } = body;
         return this.bookingService.confirmNotifyBookings(daysBefore);
     }
