@@ -74,4 +74,11 @@ export class BookingController {
         const { daysBefore } = body;
         return this.bookingService.confirmNotifyBookings(daysBefore);
     }
+
+    @UseGuards(AuthGuard)
+    @Get('/pending/queue/:queueId/from/:dateFrom/to/:dateTo')
+    public async getPendingBookingsBetweenDates(@Param() params: any): Promise<any> {
+        const { queueId, dateFrom, dateTo } = params;
+        return this.bookingService.getPendingBookingsBetweenDates(queueId, dateFrom, dateTo);
+    }
 }

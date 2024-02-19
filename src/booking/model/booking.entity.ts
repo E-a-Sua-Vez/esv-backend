@@ -14,6 +14,7 @@ export class Booking {
     queueId: string;
     number: number;
     date: string;
+    dateFormatted: Date;
     createdAt: Date;
     type: string;
     channel: string;

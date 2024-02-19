@@ -14,63 +14,6 @@ export class QueueService {
     private queueRepository = getRepository(Queue)
   ) {}
 
-  private getQueueBlockDetails(queue: Queue): Queue {
-    let hourBlocks: Block[] = [];
-    if (queue.blockTime &&
-      queue.serviceInfo &&
-      queue.serviceInfo.attentionHourFrom &&
-      queue.serviceInfo.attentionHourTo) {
-      if (!queue.serviceInfo.break) {
-        const minsFrom = queue.serviceInfo.attentionHourFrom * 60;
-        const minsTo = queue.serviceInfo.attentionHourTo * 60;
-        const minsTotal = minsTo - minsFrom;
-        const blocksAmount = Math.floor(minsTotal / queue.blockTime);
-        const blocks = [];
-        for(let i = 1; i <= blocksAmount; i ++) {
-          const block: Block = {
-            number: i,
-            hourFrom: timeConvert((minsFrom + (queue.blockTime * (i - 1)))),
-            hourTo: timeConvert((minsFrom + (queue.blockTime * i))),
-          }
-          blocks.push(block);
-        }
-        hourBlocks = blocks;
-      } else {
-        const minsFrom1 = queue.serviceInfo.attentionHourFrom * 60;
-        const minsTo1 = queue.serviceInfo.breakHourFrom * 60;
-        const minsFrom2 = queue.serviceInfo.breakHourTo * 60;
-        const minsTo2 = queue.serviceInfo.attentionHourTo * 60;
-        const minsTotal1 = minsTo1 - minsFrom1;
-        const minsTotal2 = minsTo2 - minsFrom2;
-        const blocksAmount1 = Math.floor(minsTotal1 / queue.blockTime);
-        const blocksAmount2 = Math.floor(minsTotal2 / queue.blockTime);
-        const blocks: Block[] = [];
-        let countBlock = 1;
-        for(let i = 1; i <= blocksAmount1; i ++) {
-          const block: Block = {
-            number: countBlock,
-            hourFrom: timeConvert((minsFrom1 + (queue.blockTime * (i - 1)))),
-            hourTo: timeConvert((minsFrom1 + (queue.blockTime * i))),
-          }
-          blocks.push(block);
-          countBlock++;
-        }
-        for(let i = 1; i <= blocksAmount2; i ++) {
-          const block: Block = {
-            number: countBlock,
-            hourFrom: timeConvert((minsFrom2 + (queue.blockTime * (i - 1)))),
-            hourTo: timeConvert((minsFrom2 + (queue.blockTime * i))),
-          }
-          blocks.push(block);
-          countBlock++;
-        }
-        hourBlocks = blocks;
-      }
-      queue.serviceInfo.blocks = hourBlocks;
-    }
-    return queue;
-  }
-
   public async getQueueById(id: string): Promise<Queue> {
     let queue = await this.queueRepository.findById(id);
     return this.getQueueBlockDetails(queue);
@@ -177,4 +120,63 @@ export class QueueService {
     }
     return 'Las filas fueron reiniciadas exitosamente';
   }
+
+  public getQueueBlockDetails(queue: Queue): Queue {
+    let hourBlocks: Block[] = [];
+    if (queue.blockTime &&
+      queue.serviceInfo &&
+      queue.serviceInfo.attentionHourFrom &&
+      queue.serviceInfo.attentionHourTo) {
+      if (!queue.serviceInfo.break) {
+        const minsFrom = queue.serviceInfo.attentionHourFrom * 60;
+        const minsTo = queue.serviceInfo.attentionHourTo * 60;
+        const minsTotal = minsTo - minsFrom;
+        const blocksAmount = Math.floor(minsTotal / queue.blockTime);
+        const blocks = [];
+        for(let i = 1; i <= blocksAmount; i ++) {
+          const block: Block = {
+            number: i,
+            hourFrom: timeConvert((minsFrom + (queue.blockTime * (i - 1)))),
+            hourTo: timeConvert((minsFrom + (queue.blockTime * i))),
+          }
+          blocks.push(block);
+        }
+        hourBlocks = blocks;
+      } else {
+        const minsFrom1 = queue.serviceInfo.attentionHourFrom * 60;
+        const minsTo1 = queue.serviceInfo.breakHourFrom * 60;
+        const minsFrom2 = queue.serviceInfo.breakHourTo * 60;
+        const minsTo2 = queue.serviceInfo.attentionHourTo * 60;
+        const minsTotal1 = minsTo1 - minsFrom1;
+        const minsTotal2 = minsTo2 - minsFrom2;
+        const blocksAmount1 = Math.floor(minsTotal1 / queue.blockTime);
+        const blocksAmount2 = Math.floor(minsTotal2 / queue.blockTime);
+        const blocks: Block[] = [];
+        let countBlock = 1;
+        for(let i = 1; i <= blocksAmount1; i ++) {
+          const block: Block = {
+            number: countBlock,
+            hourFrom: timeConvert((minsFrom1 + (queue.blockTime * (i - 1)))),
+            hourTo: timeConvert((minsFrom1 + (queue.blockTime * i))),
+          }
+          blocks.push(block);
+          countBlock++;
+        }
+        for(let i = 1; i <= blocksAmount2; i ++) {
+          const block: Block = {
+            number: countBlock,
+            hourFrom: timeConvert((minsFrom2 + (queue.blockTime * (i - 1)))),
+            hourTo: timeConvert((minsFrom2 + (queue.blockTime * i))),
+          }
+          blocks.push(block);
+          countBlock++;
+        }
+        hourBlocks = blocks;
+      }
+      queue.serviceInfo.blocks = hourBlocks;
+    }
+    return queue;
+  }
+
+
 }

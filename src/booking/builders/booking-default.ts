@@ -24,6 +24,8 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     booking.createdAt = new Date();
     booking.queueId = queue.id;
     booking.date = date;
+    const [year,month,day] = date.split('-');
+    booking.dateFormatted = new Date(+year, +month - 1, +day);
     booking.commerceId = queue.commerceId;
     booking.number = number
     booking.channel = channel;

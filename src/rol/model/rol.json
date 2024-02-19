@@ -99,7 +99,22 @@
             "dashboard.attention-rating-avg.view": true,
             "modules.admin.add": true,
             "dashboard.attention-no-device.view": true,
-            "queues.admin.limit": 5
+            "queues.admin.limit": 5,
+            "collaborator.main-menu.dashboard": true,
+            "collaborator.main-menu.queue-manage": true,
+            "collaborator.main-menu.booking-manage": true,
+            "reports.admin.bookings": true,
+            "reports.admin.waitlist": true,
+            "dashboard.booking-number-evolution.view": true,
+            "dashboard.attention-day-distribution.view": true,
+            "dashboard.booking-day-distribution.view": true,
+            "dashboard.booking-hour-distribution.view": true,
+            "dashboard.booking-flow.view": true,
+            "dashboard.graphs-attentions.view": true,
+            "dashboard.graphs-bookings.view": true,
+            "dashboard.attention-nps-avg.view": true,
+            "dashboard.attention-comments-avg.view": true,
+            "dashboard.attention-collaborators.view": true
         }
     },
     {
@@ -246,7 +261,8 @@
             "dashboard.graphs-bookings.view": true,
             "dashboard.attention-nps-avg.view": true,
             "dashboard.attention-comments-avg.view": true,
-            "dashboard.attention-collaborators.view": true
+            "dashboard.attention-collaborators.view": true,
+            "dashboard.booking-number.view": true
         }
     },
     {
@@ -256,7 +272,10 @@
             "collaborator.attention.skip": true,
             "collaborator.module.update": true,
             "collaborator.attention.attend": true,
-            "collaborator.attention.finish": true
+            "collaborator.attention.finish": true,
+            "collaborator.main-menu.dashboard": true,
+            "collaborator.main-menu.queue-manage": true,
+            "collaborator.main-menu.booking-manage": true
         },
         "name": "collaborator",
         "description": "Permisos para el rol COLLABORATOR",

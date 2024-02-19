@@ -1,4 +1,4 @@
-import { Block, Booking } from './model/booking.entity';
+import { Booking } from './model/booking.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
@@ -24,6 +24,7 @@ import { Attention } from 'src/attention/model/attention.entity';
 import { WaitlistService } from '../waitlist/waitlist.service';
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
+import { Block } from '../waitlist/model/waitlist.entity';
 
 @Injectable()
 export class BookingService {
@@ -123,6 +124,19 @@ export class BookingService {
       .whereEqualTo('date', date)
       .whereEqualTo('status', BookingStatus.PENDING)
       .whereLessThan('number', number)
+      .find();
+  }
+
+  public async getPendingBookingsBetweenDates(queueId: string, dateFrom: Date, dateTo: Date): Promise<Booking[]> {
+    const startDate = new Date(dateFrom).toISOString().slice(0,10);
+    const endDate = new Date(dateTo).toISOString().slice(0,10);
+    const dateFromValue = new Date(startDate);
+    const dateToValue = new Date(endDate);
+    return await this.bookingRepository
+      .whereEqualTo('queueId', queueId)
+      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereGreaterOrEqualThan('dateFormatted', dateFromValue)
+      .whereLessOrEqualThan('dateFormatted', dateToValue)
       .find();
   }
 
