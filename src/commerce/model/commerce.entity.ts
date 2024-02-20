@@ -35,6 +35,15 @@ export class ServiceInfo {
     break: boolean;
     breakHourFrom: number;
     breakHourTo: number;
+    personalized: boolean;
+    personalizedHours: Record<number, PersonalizedHour>;
+    holiday: boolean;
+    holidays: Record<string, string[]>;
+}
+
+class PersonalizedHour {
+    attentionHourFrom: number;
+    attentionHourTo: number;
 }
 
 @Collection('commerce')

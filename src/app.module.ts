@@ -25,6 +25,7 @@ import { PlanActivationModule } from './plan-activation/plan-activation.module';
 import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
 import { BookingModule } from './booking/booking.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
+import { BlockModule } from './block/block.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     SurveyPersonalizedModule,
     BookingModule,
     WaitlistModule,
+    BlockModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

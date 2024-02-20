@@ -5,7 +5,9 @@ import { Queue } from './model/queue.entity';
 import { QueueService } from './queue.service';
 
 @Module({
-  imports: [FireormModule.forFeature([Queue])],
+  imports: [
+    FireormModule.forFeature([Queue]),
+  ],
   providers: [QueueService],
   exports: [QueueService],
   controllers: [QueueController],

@@ -121,7 +121,7 @@ export class QueueService {
     return 'Las filas fueron reiniciadas exitosamente';
   }
 
-  public getQueueBlockDetails(queue: Queue): Queue {
+  private getQueueBlockDetails(queue: Queue): Queue {
     let hourBlocks: Block[] = [];
     if (queue.blockTime &&
       queue.serviceInfo &&

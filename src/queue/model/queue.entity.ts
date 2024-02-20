@@ -7,6 +7,7 @@ export class Block {
 }
 
 export class ServiceInfo {
+    sameCommeceHours: boolean;
     attentionDays: number[];
     attentionHourFrom: number;
     attentionHourTo: number;
@@ -14,6 +15,15 @@ export class ServiceInfo {
     breakHourFrom: number;
     breakHourTo: number;
     blocks: Block[];
+    personalized: boolean;
+    personalizedHours: Record<number, PersonalizedHour>;
+    holiday: boolean;
+    holidays: Record<string, string[]>;
+}
+
+class PersonalizedHour {
+    attentionHourFrom: number;
+    attentionHourTo: number;
 }
 
 @Collection('queue')
