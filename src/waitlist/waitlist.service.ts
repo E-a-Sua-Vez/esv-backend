@@ -151,7 +151,7 @@ ${link}
 
 ¡Muchas gracias!
 `;
-          await this.notificationService.createWhatsappNotification(user.phone, waitlist.id, message, type, waitlist.id, waitlist.commerceId, waitlist.queueId);
+          await this.notificationService.createWaitlistWhatsappNotification(user.phone, waitlist.id, message, type, waitlist.id, waitlist.commerceId, waitlist.queueId);
           notified.push(waitlist);
         }
       }

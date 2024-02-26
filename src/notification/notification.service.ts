@@ -342,7 +342,7 @@ export class NotificationService {
   public async createWaitlistEmailNotification(
     email: string,
     type: NotificationType,
-    bookingId: string,
+    waitlistId: string,
     commerceId: string,
     queueId: string,
     template: string,
@@ -356,7 +356,7 @@ export class NotificationService {
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
-    notification.bookingId = bookingId;
+    notification.waitlistId = waitlistId;
     notification.commerceId = commerceId;
     notification.queueId = queueId;
     let metadata;
@@ -388,5 +388,81 @@ export class NotificationService {
     } catch (error) {
       notification.comment = error.message;
     }
+  }
+
+  public async createBookingWhatsappNotification(
+    phone: string,
+    userId: string,
+    message: string,
+    type: NotificationType,
+    bookingId: string,
+    commerceId: string,
+    queueId: string
+  ){
+    let notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.WHATSAPP;
+    notification.type = type;
+    notification.receiver = userId;
+    notification.bookingId = bookingId;
+    notification.commerceId = commerceId;
+    notification.queueId = queueId;
+    notification.provider = this.whatsappProvider;
+    const notificationCreated = await this.notificationRepository.create(notification);
+    const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated);
+    publish(notificationCreatedEvent);
+    let metadata;
+    try {
+      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId);
+      if (this.whatsappProvider === NotificationProvider.TWILIO) {
+        notificationCreated.twilioId = metadata['sid'];
+        notificationCreated.providerId = metadata['sid'];
+      }
+      if (this.whatsappProvider === NotificationProvider.WHATSGW) {
+        notificationCreated.twilioId = 'N/A';
+        notificationCreated.providerId = metadata['message_id'] || 'N/I';
+      }
+    } catch (error) {
+      notificationCreated.comment = error.message;
+    }
+    return await this.update(notificationCreated);
+  }
+
+  public async createWaitlistWhatsappNotification(
+    phone: string,
+    userId: string,
+    message: string,
+    type: NotificationType,
+    waitlistId: string,
+    commerceId: string,
+    queueId: string
+  ){
+    let notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.WHATSAPP;
+    notification.type = type;
+    notification.receiver = userId;
+    notification.waitlistId = waitlistId;
+    notification.commerceId = commerceId;
+    notification.queueId = queueId;
+    notification.provider = this.whatsappProvider;
+    const notificationCreated = await this.notificationRepository.create(notification);
+    const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated);
+    publish(notificationCreatedEvent);
+    let metadata;
+    try {
+      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId);
+      if (this.whatsappProvider === NotificationProvider.TWILIO) {
+        notificationCreated.twilioId = metadata['sid'];
+        notificationCreated.providerId = metadata['sid'];
+      }
+      if (this.whatsappProvider === NotificationProvider.WHATSGW) {
+        notificationCreated.twilioId = 'N/A';
+        notificationCreated.providerId = metadata['message_id'] || 'N/I';
+      }
+    } catch (error) {
+      notificationCreated.comment = error.message;
+    }
+    return await this.update(notificationCreated);
   }
 }

@@ -169,7 +169,7 @@ export class BookingService {
           const commerce = bookingCommerce.name;
           await this.notificationService.createBookingEmailNotification(
             booking.user.email,
-            NotificationType.RESERVA,
+            NotificationType.BOOKING,
             booking.id,
             booking.commerceId,
             booking.queueId,
@@ -242,7 +242,7 @@ export class BookingService {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
         if(user && user.notificationOn) {
-          type = NotificationType.RESERVA;
+          type = NotificationType.BOOKING;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
           ?
@@ -262,7 +262,7 @@ ${link}
 
 ¡Muchas gracias!
 `;
-          await this.notificationService.createWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
+          await this.notificationService.createBookingWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
           notified.push(booking);
         }
       }
