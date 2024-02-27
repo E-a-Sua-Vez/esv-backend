@@ -16,6 +16,7 @@ export class ServiceInfo {
     breakHourTo: number;
     blocks: Block[];
     personalized: boolean;
+    walkin: boolean;
     personalizedHours: Record<number, PersonalizedHour>;
     holiday: boolean;
     holidays: Record<string, string[]>;

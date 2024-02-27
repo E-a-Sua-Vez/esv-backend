@@ -127,6 +127,10 @@ export class FeatureToggleService {
         type: 'PRODUCT'
       },
       {
+        name: 'booking-block-walkin',
+        type: 'PRODUCT'
+      },
+      {
         name: 'attention-user-not-required',
         type: 'PRODUCT'
       },
