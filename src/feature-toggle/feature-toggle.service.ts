@@ -153,7 +153,11 @@ export class FeatureToggleService {
       {
         name: 'booking-email-confirm',
         type: 'EMAIL'
-      }
+      },
+      {
+        name: 'attention-voice-command',
+        type: 'PRODUCT'
+      },
     ]
   }
   public async createFeatureToggle(user: string, name: string, commerceId: string, type: string): Promise<FeatureToggle> {
