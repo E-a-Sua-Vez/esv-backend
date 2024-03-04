@@ -103,4 +103,20 @@ export class UserService {
       throw `Hubo un problema al modificar el usuario: ${error.message}`;
     }
   }
+
+  public async update(user: string, userById: User): Promise<User> {
+    const userUpdated = await this.userRepository.update(userById);
+    const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
+    publish(userUpdatedEvent);
+    return userUpdated;
+  }
+
+  public async contactUser(user: string, id: string): Promise<User> {
+    let userById = await this.getUserById(id);
+    if (userById && userById.contacted !== true) {
+      userById.contacted = true;
+      userById.contactedDate = new Date();
+    }
+    return await this.update(user, userById);
+  }
 }
