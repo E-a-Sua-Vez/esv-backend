@@ -1,0 +1,5 @@
+export enum QueueType {
+    STANDARD = 'STANDARD',
+    COLLABORATOR = 'COLLABORATOR',
+    SERVICE = 'SERVICE'
+}

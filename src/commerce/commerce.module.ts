@@ -9,6 +9,8 @@ import { SurveyPersonalizedModule } from '../survey-personalized/survey-personal
 import { NotificationModule } from '../notification/notification.module';
 import { HttpModule } from '@nestjs/axios';
 import { QueryStackClient } from './infrastructure/query-stack-client';
+import { CollaboratorModule } from '../collaborator/collaborator.module';
+import { ServiceModule } from '../service/service.module';
 
 @Module({
   imports: [

@@ -27,12 +27,18 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     attention.queueId = queue.id;
     attention.commerceId = queue.commerceId;
     attention.number = currentNumber + 1;
+    if (queue.collaboratorId !== undefined) {
+      attention.collaboratorId = queue.collaboratorId;
+    }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
     }
     attention.channel = channel;
     if (userId !== undefined) {
       attention.userId = userId;
+    }
+    if (queue.serviceId !== undefined) {
+      attention.serviceId = queue.serviceId;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attention.number;

@@ -1,9 +1,16 @@
 import { Collection } from 'fireorm';
+import { UserType } from './user-type.enum';
+
+export class PersonalInfo {
+    gender: string;
+    birthday: Date;
+}
 
 @Collection('user')
 export class User {
     id: string;
     frequentCustomer: boolean;
+    type: UserType;
     idNumber: string;
     name: string;
     lastName: string;
@@ -16,4 +23,5 @@ export class User {
     notificationOn: boolean = false;
     notificationEmailOn: boolean = false;
     updatedAt: Date;
+    personalInfo: PersonalInfo;
 }

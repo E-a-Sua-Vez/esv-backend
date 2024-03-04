@@ -6,6 +6,7 @@ import { publish } from 'ett-events-lib';
 import QueueCreated from './events/QueueCreated';
 import QueueUpdated from './events/QueueUpdated';
 import { timeConvert } from 'src/shared/utils/date';
+import { QueueType } from './model/queue-type.enum';
 
 @Injectable()
 export class QueueService {
@@ -37,6 +38,28 @@ export class QueueService {
       queues.push(this.getQueueBlockDetails(queue));
     })
     return queues;
+  }
+
+  public async getGroupedQueueByCommerce(commerceId: string): Promise<Record<string, Queue[]>> {
+    let grupedQueues = {};
+    let queues: Queue[] = [];
+    const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
+      .orderByAscending('order')
+      .find();
+    result.forEach(queue => {
+      queues.push(this.getQueueBlockDetails(queue));
+    })
+    if (queues && queues.length > 0) {
+      grupedQueues = queues.reduce((acc, conf) => {
+        const type = conf.type;
+        if (!acc[type]) {
+          acc[type] = [];
+        }
+        acc[type].push(conf);
+        return acc;
+      }, {});
+    }
+    return grupedQueues;
   }
 
   public async getActiveQueuesByCommerce(commerceId: string): Promise<Queue[]> {
@@ -86,9 +109,10 @@ export class QueueService {
     return queueUpdated;
   }
 
-  public async createQueue(user: string, commerceId: string, name: string, limit: number, estimatedTime: number, order: number, serviceInfo: ServiceInfo, blockTime: number = 60): Promise<Queue> {
+  public async createQueue(user: string, commerceId: string, type: QueueType, name: string, tag: string, limit: number, estimatedTime: number, order: number, serviceInfo: ServiceInfo, blockTime: number = 60, collaboratorId: string, serviceId: string): Promise<Queue> {
     let queue = new Queue();
     queue.commerceId = commerceId;
+    queue.type = type || QueueType.STANDARD;
     queue.name = name;
     queue.limit = limit;
     queue.estimatedTime = estimatedTime;
@@ -100,6 +124,13 @@ export class QueueService {
     queue.order = order;
     queue.serviceInfo = serviceInfo;
     queue.blockTime = blockTime;
+    if (collaboratorId) {
+      queue.collaboratorId = collaboratorId;
+    }
+    if (serviceId) {
+      queue.serviceId = serviceId;
+    }
+    queue.tag = tag;
     const queueCreated = await this.queueRepository.create(queue);
     const queueCreatedEvent = new QueueCreated(new Date(), queueCreated, { user });
     publish(queueCreatedEvent);

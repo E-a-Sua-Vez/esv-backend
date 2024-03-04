@@ -11,7 +11,7 @@ import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
 import { BookingType } from './model/booking-type.enum';
 import { BookingChannel } from './model/booking-channel.enum';
 import { CommerceService } from '../commerce/commerce.service';
-import { User } from '../user/user.entity';
+import { User } from '../user/model/user.entity';
 import { publish } from 'ett-events-lib';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { BookingDefaultBuilder } from './builders/booking-default';

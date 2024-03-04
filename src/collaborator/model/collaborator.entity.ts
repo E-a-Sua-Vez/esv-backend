@@ -16,5 +16,6 @@ export class Collaborator {
     bot: boolean;
     firstPasswordChanged: boolean;
     lastPasswordChanged: Date;
+    servicesId: string[];
     permissions: Record<string, boolean|number>;
 }

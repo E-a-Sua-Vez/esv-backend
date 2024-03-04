@@ -1,4 +1,4 @@
-import { User } from './user.entity';
+import { User, PersonalInfo } from './model/user.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
@@ -19,7 +19,7 @@ export class UserService {
     return await this.userRepository.find();
   }
 
-  public async createUser(name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean): Promise<User> {
+  public async createUser(name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<User> {
     let user = new User();
     if (name) {
       user.name = name;
@@ -48,6 +48,10 @@ export class UserService {
     if (notificationEmailOn !== undefined) {
       user.notificationEmailOn = notificationEmailOn;
     }
+    if (personalInfo !== undefined) {
+      user.personalInfo = personalInfo;
+    }
+    user.type
     user.frequentCustomer = false;
     user.createdAt = new Date();
     const userCreated = await this.userRepository.create(user);
@@ -58,7 +62,7 @@ export class UserService {
     return userCreated;
   }
 
-  public async updateUser(user: string, id: string, name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean): Promise<User> {
+  public async updateUser(user: string, id: string, name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<User> {
     try {
       let userById = await this.userRepository.findById(id);
       if (name) {
@@ -87,6 +91,9 @@ export class UserService {
       }
       if (notificationEmailOn !== undefined) {
         userById.notificationEmailOn = notificationEmailOn;
+      }
+      if (personalInfo !== undefined) {
+        userById.personalInfo = personalInfo;
       }
       const userUpdated = await this.userRepository.update(userById);
       const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });

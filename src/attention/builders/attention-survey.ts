@@ -29,11 +29,17 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     attention.number = currentNumber + 1;
     attention.endAt = new Date();
     attention.channel = channel;
+    if (queue.collaboratorId !== undefined) {
+      attention.collaboratorId = queue.collaboratorId;
+    }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
     }
     if (userId !== undefined) {
       attention.userId = userId;
+    }
+    if (queue.serviceId !== undefined) {
+      attention.serviceId = queue.serviceId;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attention.number;

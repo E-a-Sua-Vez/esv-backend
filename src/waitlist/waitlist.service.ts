@@ -11,7 +11,7 @@ import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
 import { WaitlistType } from './model/waitlist-type.enum';
 import { WaitlistChannel } from './model/waitlist-channel.enum';
 import { CommerceService } from '../commerce/commerce.service';
-import { User } from '../user/user.entity';
+import { User } from '../user/model/user.entity';
 import { publish } from 'ett-events-lib';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { WaitlistDefaultBuilder } from './builders/waitlist-default';

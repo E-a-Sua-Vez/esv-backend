@@ -39,8 +39,8 @@ export class CollaboratorController {
     @Patch('/:id')
     public async updateCollaborator(@User() user, @Param() params: any, @Body() body: any): Promise<Collaborator> {
         const { id } = params;
-        const { alias, phone, moduleId, active } = body;
-        return this.collaboratorService.updateCollaborator(user, id, moduleId, phone, active, alias);
+        const { alias, phone, moduleId, active, servicesId } = body;
+        return this.collaboratorService.updateCollaborator(user, id, moduleId, phone, active, alias, servicesId);
     }
 
     @UseGuards(AuthGuard)
@@ -60,8 +60,8 @@ export class CollaboratorController {
     @UseGuards(AuthGuard)
     @Post()
     public async createCollaborator(@User() user, @Body() body: Collaborator): Promise<Collaborator> {
-        const { name,  commerceId, email, phone, moduleId, bot, alias } = body;
-        return this.collaboratorService.createCollaborator(user, name, commerceId, email, phone, moduleId, bot, alias);
+        const { name, commerceId, email, phone, moduleId, bot, alias, servicesId } = body;
+        return this.collaboratorService.createCollaborator(user, name, commerceId, email, phone, moduleId, bot, alias, servicesId);
     }
 
     @Patch('/register-token/:id')

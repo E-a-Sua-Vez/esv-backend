@@ -1,4 +1,7 @@
 import { Collection } from 'fireorm';
+import { QueueType } from './queue-type.enum';
+import { Collaborator } from '../../collaborator/model/collaborator.entity';
+import { Service } from '../../service/model/service.entity';
 
 export class Block {
     number: number;
@@ -34,12 +37,18 @@ export class Queue {
     currentAttentionNumber: number;
     currentAttentionId: string;
     commerceId: string;
+    type: QueueType;
     active: boolean;
     createdAt: Date;
     limit: number;
     name: string;
+    tag: string;
     order: number;
     estimatedTime: number;
     blockTime: number;
+    collaboratorId?: string;
+    serviceId?: string;
     serviceInfo: ServiceInfo;
+    collaborator: Collaborator;
+    service: Service;
 }

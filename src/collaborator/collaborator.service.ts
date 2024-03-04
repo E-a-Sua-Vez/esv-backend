@@ -68,7 +68,7 @@ export class CollaboratorService {
     return collaboratorUpdated;
   }
 
-  public async updateCollaborator(user: string, id: string, moduleId: string, phone: string, active: boolean, alias: string): Promise<Collaborator> {
+  public async updateCollaborator(user: string, id: string, moduleId: string, phone: string, active: boolean, alias: string, servicesId: string[]): Promise<Collaborator> {
     let collaborator = await this.getCollaboratorById(id);
     if (moduleId) {
       collaborator.moduleId = moduleId;
@@ -82,6 +82,9 @@ export class CollaboratorService {
     if (alias) {
       collaborator.alias = alias;
     }
+    if (servicesId) {
+      collaborator.servicesId = servicesId;
+    }
     return await this.update(user, collaborator);
   }
 
@@ -92,7 +95,7 @@ export class CollaboratorService {
     return await this.update(user, collaborator);
   }
 
-  public async createCollaborator(user: string, name: string, commerceId: string, email: string, phone: string, moduleId: string, bot: boolean = false, alias: string): Promise<Collaborator> {
+  public async createCollaborator(user: string, name: string, commerceId: string, email: string, phone: string, moduleId: string, bot: boolean = false, alias: string, servicesId: string[]): Promise<Collaborator> {
     try {
       let collaborator = new Collaborator();
       collaborator.name = name;
@@ -116,6 +119,9 @@ export class CollaboratorService {
       collaborator.alias = alias || name;
       if (defaultPermissions) {
         collaborator.permissions = defaultPermissions;
+      }
+      if (servicesId) {
+        collaborator.servicesId = servicesId;
       }
       const collaboratorCreated = await this.collaboratorRepository.create(collaborator);
       const collaboratorCreatedEvent = new CollaboratorCreated(new Date(), collaboratorCreated, { user });

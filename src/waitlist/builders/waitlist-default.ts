@@ -8,7 +8,7 @@ import { Block, Waitlist } from '../model/waitlist.entity';
 import { Queue } from '../../queue/model/queue.entity';
 import WaitlistCreated from '../events/WaitlistCreated';
 import { publish } from 'ett-events-lib';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/user/model/user.entity';
 
 @Injectable()
 export class WaitlistDefaultBuilder implements WaitlistBuilderInterface {

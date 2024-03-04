@@ -26,6 +26,7 @@ import { SurveyPersonalizedModule } from './survey-personalized/survey-personali
 import { BookingModule } from './booking/booking.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { BlockModule } from './block/block.module';
+import { ServiceModule } from './service/service.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { BlockModule } from './block/block.module';
     BookingModule,
     WaitlistModule,
     BlockModule,
+    ServiceModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

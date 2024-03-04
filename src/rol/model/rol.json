@@ -262,7 +262,14 @@
             "dashboard.attention-nps-avg.view": true,
             "dashboard.attention-comments-avg.view": true,
             "dashboard.attention-collaborators.view": true,
-            "dashboard.booking-number.view": true
+            "dashboard.booking-number.view": true,
+            "business.main-menu.service-admin": true,
+            "services.admin.limit": 5,
+            "services.admin.read": true,
+            "services.admin.edit": true,
+            "services.admin.add": true,
+            "services.admin.update": true,
+            "services.admin.view": true
         }
     },
     {

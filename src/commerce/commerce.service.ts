@@ -16,6 +16,8 @@ import { NotificationTemplate } from '../notification/model/notification-templat
 import { FeatureToggleName } from 'src/feature-toggle/model/feature-toggle.enum';
 import { FeatureToggle } from 'src/feature-toggle/model/feature-toggle.entity';
 import CommerceCreated from './events/CommerceCreated';
+import { CollaboratorService } from '../collaborator/collaborator.service';
+import { ServiceService } from '../service/service.service';
 
 @Injectable()
 export class CommerceService {
@@ -35,6 +37,15 @@ export class CommerceService {
     commerceAux.queues = await this.queueService.getActiveQueuesByCommerce(id);
     commerceAux.surveys = await this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id);
     commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
+    return commerceAux;
+  }
+
+  public async getCommerceDetails(id: string): Promise<Commerce> {
+    let commerce = await this.commerceRepository.findById(id);
+    let commerceAux = commerce;
+    commerceAux.queues = await this.queueService.getActiveQueuesByCommerce(id);
+    commerceAux.surveys = await this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id);
+    commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(id);
     return commerceAux;
   }
 

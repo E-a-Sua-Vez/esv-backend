@@ -18,6 +18,13 @@ export class CommerceController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('details/:id')
+    public async getCommerceDetails(@Param() params: any): Promise<Commerce> {
+        const { id } = params;
+        return this.commerceService.getCommerceDetails(id);
+    }
+
+    @UseGuards(AuthGuard)
     @Get('/keyName/:keyName')
     public async getCommerceByKeyName(@Param() params: any): Promise<Commerce> {
         const { keyName } = params;

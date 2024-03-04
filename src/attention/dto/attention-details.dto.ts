@@ -1,4 +1,4 @@
-import { User } from '../../user/user.entity';
+import { User } from '../../user/model/user.entity';
 import { Commerce } from '../../commerce/model/commerce.entity';
 import { Queue } from '../../queue/model/queue.entity';
 import { Collaborator } from '../../collaborator/model/collaborator.entity';
@@ -13,6 +13,7 @@ export class AttentionDetailsDto {
   endAt: Date;
   number: number;
   queueId: string;
+  serviceId: string;
   status: string;
   userId: string;
   moduleId: string;

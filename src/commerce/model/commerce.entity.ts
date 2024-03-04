@@ -5,6 +5,8 @@ import { Laguage } from 'src/shared/model/language.enum';
 import { FeatureToggle } from '../../feature-toggle/model/feature-toggle.entity';
 import { Category } from './category.enum';
 import { SurveyPersonalized } from '../../survey-personalized/model/survey-personalized.entity';
+import { Collaborator } from 'src/collaborator/model/collaborator.entity';
+import { Service } from 'src/service/model/service.entity';
 
 export class LocaleInfo {
     country: Country;
@@ -68,4 +70,6 @@ export class Commerce {
     category: Category;
     url: string;
     createdAt: Date;
+    collaborators: Collaborator[];
+    services: Service[];
 }

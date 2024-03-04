@@ -21,7 +21,7 @@ import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionChannel } from './model/attention-channel.enum';
 import { AttentionDetailsDto } from './dto/attention-details.dto';
 import { CommerceService } from '../commerce/commerce.service';
-import { User } from '../user/user.entity';
+import { User } from '../user/model/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 

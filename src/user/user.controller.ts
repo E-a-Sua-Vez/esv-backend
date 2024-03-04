@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './user.entity';
+import { User } from './model/user.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 
 @Controller('user')
@@ -24,7 +24,7 @@ export class UserController {
     @UseGuards(AuthGuard)
     @Post()
     public async createUser(@Body() body: any): Promise<User> {
-        const {name, phone, email, commerceId, queueId } = body;
-        return this.userService.createUser(name, phone, email, commerceId, queueId);
+        const {name, phone, email, commerceId, queueId, personalInfo } = body;
+        return this.userService.createUser(name, phone, email, commerceId, queueId, personalInfo);
     }
 }

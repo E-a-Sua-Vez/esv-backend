@@ -31,10 +31,17 @@ export class QueueController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('grouped/commerce/:commerceId')
+    public async getGroupedQueueByCommerce(@Param() params: any): Promise<Record<string, Queue[]>> {
+        const { commerceId } = params;
+        return this.queueService.getGroupedQueueByCommerce(commerceId);
+    }
+
+    @UseGuards(AuthGuard)
     @Post('/')
     public async createQueue(@User() user, @Body() body: Queue): Promise<Queue> {
-        const { commerceId, name, limit, estimatedTime, order, serviceInfo, blockTime } = body;
-        return this.queueService.createQueue(user, commerceId, name, limit, estimatedTime, order, serviceInfo, blockTime);
+        const { commerceId, type, name, tag, limit, estimatedTime, order, serviceInfo, blockTime, collaboratorId, serviceId } = body;
+        return this.queueService.createQueue(user, commerceId, type, name, tag, limit, estimatedTime, order, serviceInfo, blockTime, collaboratorId, serviceId);
     }
 
     @UseGuards(AuthGuard)

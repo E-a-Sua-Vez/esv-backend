@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 import { UserController } from './user.controller';
-import { User } from './user.entity';
+import { User } from './model/user.entity';
 import { UserService } from './user.service';
 
 @Module({

@@ -158,6 +158,10 @@ export class FeatureToggleService {
         name: 'attention-voice-command',
         type: 'PRODUCT'
       },
+      {
+        name: 'attention-queue-typegrouped',
+        type: 'PRODUCT'
+      }
     ]
   }
   public async createFeatureToggle(user: string, name: string, commerceId: string, type: string): Promise<FeatureToggle> {

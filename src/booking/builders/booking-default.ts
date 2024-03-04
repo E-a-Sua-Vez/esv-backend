@@ -8,7 +8,7 @@ import { Block, Booking } from '../model/booking.entity';
 import { Queue } from '../../queue/model/queue.entity';
 import BookingCreated from '../events/BookingCreated';
 import { publish } from 'ett-events-lib';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/user/model/user.entity';
 
 @Injectable()
 export class BookingDefaultBuilder implements BookingBuilderInterface {

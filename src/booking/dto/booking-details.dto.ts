@@ -1,4 +1,4 @@
-import { User } from '../../user/user.entity';
+import { User } from '../../user/model/user.entity';
 import { Commerce } from '../../commerce/model/commerce.entity';
 import { Queue } from '../../queue/model/queue.entity';
 import { Block } from '../model/booking.entity';

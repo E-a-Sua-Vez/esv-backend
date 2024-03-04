@@ -1,5 +1,5 @@
 import { Collection } from 'fireorm';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/user/model/user.entity';
 import { AttentionStatus } from './attention-status.enum';
 
 export class Block {
@@ -13,6 +13,7 @@ export class Attention {
     id: string;
     commerceId: string;
     collaboratorId: string;
+    serviceId: string;
     createdAt: Date;
     endAt: Date;
     number: number;
