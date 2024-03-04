@@ -12,7 +12,7 @@
   "dashboard.reports.surveys-management": false,
   "dashboard.attention-duration-evolution.view": false,
   "dashboard.reports.graphs": false,
-  "dashboard.surveys-management.view": false,
+  "dashboard.surveys-management.view": true,
   "dashboard.attention-hour-distribution.view": false,
   "dashboard.reports.surveys-consolidated": false,
   "dashboard.attention-time-avg.view": false,

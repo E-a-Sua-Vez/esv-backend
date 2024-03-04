@@ -114,7 +114,17 @@
             "dashboard.graphs-bookings.view": true,
             "dashboard.attention-nps-avg.view": true,
             "dashboard.attention-comments-avg.view": true,
-            "dashboard.attention-collaborators.view": true
+            "dashboard.attention-collaborators.view": true,
+            "business.main-menu.service-admin": true,
+            "services.admin.limit": 5,
+            "services.admin.read": true,
+            "services.admin.edit": true,
+            "services.admin.add": true,
+            "services.admin.update": true,
+            "services.admin.view": true,
+            "dashboard.tracing.view": true,
+            "dashboard.attentions-management.view": true,
+            "dashboard.reports.attentions-management": true
         }
     },
     {
@@ -269,7 +279,10 @@
             "services.admin.edit": true,
             "services.admin.add": true,
             "services.admin.update": true,
-            "services.admin.view": true
+            "services.admin.view": true,
+            "dashboard.tracing.view": true,
+            "dashboard.attentions-management.view": true,
+            "dashboard.reports.attentions-management": true
         }
     },
     {
@@ -282,7 +295,9 @@
             "collaborator.attention.finish": true,
             "collaborator.main-menu.dashboard": true,
             "collaborator.main-menu.queue-manage": true,
-            "collaborator.main-menu.booking-manage": true
+            "collaborator.main-menu.booking-manage": true,
+            "collaborator.main-menu.tracing": true,
+            "dashboard.surveys-management.view": true
         },
         "name": "collaborator",
         "description": "Permisos para el rol COLLABORATOR",
