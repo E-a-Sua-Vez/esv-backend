@@ -41,7 +41,7 @@ export class QueueService {
   }
 
   public async getGroupedQueueByCommerce(commerceId: string): Promise<Record<string, Queue[]>> {
-    let grupedQueues = {};
+    let groupedQueues = {};
     let queues: Queue[] = [];
     const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
       .orderByAscending('order')
@@ -50,7 +50,7 @@ export class QueueService {
       queues.push(this.getQueueBlockDetails(queue));
     })
     if (queues && queues.length > 0) {
-      grupedQueues = queues.reduce((acc, conf) => {
+      groupedQueues = queues.reduce((acc, conf) => {
         const type = conf.type;
         if (!acc[type]) {
           acc[type] = [];
@@ -59,7 +59,7 @@ export class QueueService {
         return acc;
       }, {});
     }
-    return grupedQueues;
+    return groupedQueues;
   }
 
   public async getActiveQueuesByCommerce(commerceId: string): Promise<Queue[]> {

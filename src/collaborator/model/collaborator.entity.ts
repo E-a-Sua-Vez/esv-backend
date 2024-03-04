@@ -1,4 +1,5 @@
 import { Collection } from 'fireorm';
+import { CollaboratorType } from './collaborator-type.enum';
 
 @Collection('collaborator')
 export class Collaborator {
@@ -6,6 +7,7 @@ export class Collaborator {
     name: string;
     active: boolean;
     commerceId: string;
+    type: CollaboratorType;
     administratorId: string;
     alias: string;
     email: string;

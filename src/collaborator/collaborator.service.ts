@@ -8,6 +8,7 @@ import CollaboratorCreated from './events/CollaboratorCreated';
 import CollaboratorUpdated from './events/CollaboratorUpdated';
 import { PermissionService } from 'src/permission/permission.service';
 import * as defaultPermissions from './model/default-permissions.json';
+import { CollaboratorType } from './model/collaborator-type.enum';
 
 @Injectable()
 export class CollaboratorService {
@@ -68,7 +69,7 @@ export class CollaboratorService {
     return collaboratorUpdated;
   }
 
-  public async updateCollaborator(user: string, id: string, moduleId: string, phone: string, active: boolean, alias: string, servicesId: string[]): Promise<Collaborator> {
+  public async updateCollaborator(user: string, id: string, moduleId: string, phone: string, active: boolean, alias: string, servicesId: string[], type: CollaboratorType): Promise<Collaborator> {
     let collaborator = await this.getCollaboratorById(id);
     if (moduleId) {
       collaborator.moduleId = moduleId;
@@ -85,6 +86,9 @@ export class CollaboratorService {
     if (servicesId) {
       collaborator.servicesId = servicesId;
     }
+    if (type) {
+      collaborator.type = type;
+    }
     return await this.update(user, collaborator);
   }
 
@@ -95,13 +99,14 @@ export class CollaboratorService {
     return await this.update(user, collaborator);
   }
 
-  public async createCollaborator(user: string, name: string, commerceId: string, email: string, phone: string, moduleId: string, bot: boolean = false, alias: string, servicesId: string[]): Promise<Collaborator> {
+  public async createCollaborator(user: string, name: string, commerceId: string, email: string, type: CollaboratorType, phone: string, moduleId: string, bot: boolean = false, alias: string, servicesId: string[]): Promise<Collaborator> {
     try {
       let collaborator = new Collaborator();
       collaborator.name = name;
       collaborator.commerceId = commerceId;
       collaborator.administratorId = '';
       collaborator.bot = bot;
+      collaborator.type = type || CollaboratorType.STANDARD;
       if (collaborator.bot === true) {
         const collaboratorBot = await this.getCollaboratorBot(commerceId);
         if (collaboratorBot) {
