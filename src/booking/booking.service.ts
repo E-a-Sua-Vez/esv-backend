@@ -365,7 +365,7 @@ ${link}
       booking.cancelledAt = new Date();
       booking.cancelled = true;
       booking = await this.update(user, booking);
-      this.waitlistService.notifyWaitListFormCancelledBooking(booking);
+      await this.waitlistService.notifyWaitListFormCancelledBooking(booking);
     } catch (error) {
       throw new HttpException(`Hubo un problema al cancelar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
