@@ -25,14 +25,15 @@ export class UserController {
     @UseGuards(AuthGuard)
     @Post()
     public async createUser(@Body() body: any): Promise<User> {
-        const {name, phone, email, commerceId, queueId, personalInfo } = body;
+        const { name, phone, email, commerceId, queueId, personalInfo } = body;
         return this.userService.createUser(name, phone, email, commerceId, queueId, personalInfo);
     }
 
     @UseGuards(AuthGuard)
     @Patch('contact/:id')
-    public async contactUser(@UserDecorator() user, @Param() params: any): Promise<User> {
+    public async contactUser(@UserDecorator() user, @Param() params: any, @Body() body: any): Promise<User> {
         const { id } = params;
-        return this.userService.contactUser(user, id);
+        const { contactResult, contactResultComment } = body;
+        return this.userService.contactUser(user, id, contactResult, contactResultComment);
     }
 }

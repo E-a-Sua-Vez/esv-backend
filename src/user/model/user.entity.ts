@@ -1,4 +1,5 @@
 import { Collection } from 'fireorm';
+import { UserContactResult } from './user-contact-result.enum';
 import { UserType } from './user-type.enum';
 
 export class PersonalInfo {
@@ -26,4 +27,6 @@ export class User {
     personalInfo: PersonalInfo;
     contacted?: boolean;
     contactedDate?: Date;
+    contactResult?: UserContactResult;
+    contactResultComment?: string;
 }

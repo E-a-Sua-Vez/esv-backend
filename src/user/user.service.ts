@@ -4,6 +4,7 @@ import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
 import UserCreated from './events/UserCreated';
 import UserUpdated from './events/UserUpdated';
+import { UserContactResult } from './model/user-contact-result.enum';
 
 export class UserService {
   constructor(
@@ -111,11 +112,17 @@ export class UserService {
     return userUpdated;
   }
 
-  public async contactUser(user: string, id: string): Promise<User> {
+  public async contactUser(user: string, id: string, contactResult: UserContactResult, contactResultComment: string): Promise<User> {
     let userById = await this.getUserById(id);
     if (userById && userById.contacted !== true) {
       userById.contacted = true;
       userById.contactedDate = new Date();
+      if (contactResult) {
+        userById.contactResult = contactResult;
+      }
+      if (contactResultComment) {
+        userById.contactResultComment = contactResultComment;
+      }
     }
     return await this.update(user, userById);
   }
