@@ -27,6 +27,8 @@ import { BookingModule } from './booking/booking.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { BlockModule } from './block/block.module';
 import { ServiceModule } from './service/service.module';
+import { ClientModule } from './client/client.module';
+import { ClientContactModule } from './client-contact/client-contact.module';
 
 @Module({
   imports: [
@@ -59,6 +61,8 @@ import { ServiceModule } from './service/service.module';
     WaitlistModule,
     BlockModule,
     ServiceModule,
+    ClientModule,
+    ClientContactModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
