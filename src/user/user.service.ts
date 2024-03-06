@@ -58,8 +58,6 @@ export class UserService {
     user.frequentCustomer = false;
     user.createdAt = new Date();
     const userCreated = await this.userRepository.create(user);
-    const userCreatedEvent = new UserCreated(new Date(), userCreated);
-    publish(userCreatedEvent);
     await this.clientService.saveClient(
       user.name,
       user.phone,
@@ -68,6 +66,8 @@ export class UserService {
       user.idNumber,
       user.personalInfo
     );
+    const userCreatedEvent = new UserCreated(new Date(), userCreated);
+    publish(userCreatedEvent);
     return userCreated;
   }
 
@@ -115,8 +115,6 @@ export class UserService {
 
   public async update(user: string, userById: User): Promise<User> {
     const userUpdated = await this.userRepository.update(userById);
-    const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
-    publish(userUpdatedEvent);
     await this.clientService.saveClient(
       userById.name,
       userById.phone,
@@ -125,6 +123,8 @@ export class UserService {
       userById.idNumber,
       userById.personalInfo
     );
+    const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
+    publish(userUpdatedEvent);
     return userUpdated;
   }
 }
