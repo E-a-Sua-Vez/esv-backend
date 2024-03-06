@@ -282,7 +282,10 @@
             "services.admin.view": true,
             "dashboard.tracing.view": true,
             "dashboard.attentions-management.view": true,
-            "dashboard.reports.attentions-management": true
+            "dashboard.reports.attentions-management": true,
+            "dashboard.clients-management.view": true,
+            "dashboard.reports.clients-management": true,
+            "dashboard.client-contacts-management.view": true
         }
     },
     {

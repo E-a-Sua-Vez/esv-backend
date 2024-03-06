@@ -1,5 +1,6 @@
 export enum ClientContactType {
-    INTERESTED = 'INTERESTED',
-    CONTACT_LATER = 'CONTACT_LATER',
-    REJECTED = 'REJECTED'
+    CALL = 'CALL',
+    MESSAGE = 'MESSAGE',
+    EMAIL = 'EMAIL',
+    VISIT = 'VISIT'
 }

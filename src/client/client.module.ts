@@ -3,6 +3,7 @@ import { FireormModule } from 'nestjs-fireorm';;
 import { Client } from './model/client.entity';
 import { ClientService } from './client.service';
 import { ClientContactModule } from '../client-contact/client-contact.module';
+import { ClientController } from './client.controller';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { ClientContactModule } from '../client-contact/client-contact.module';
   ],
   providers: [ClientService],
   exports: [ClientService],
-  controllers: [],
+  controllers: [ClientController],
 })
 export class ClientModule {}

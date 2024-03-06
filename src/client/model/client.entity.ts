@@ -1,7 +1,7 @@
 import { Collection } from 'fireorm';
-import { ClientContactType } from 'src/client-contact/model/client-contact-type.enum';
 import { ClientType } from './client-type.enum';
 import { ClientContact } from '../../client-contact/model/client-contact.entity';
+import { ClientContactResult } from './client-contact-result.enum';
 
 export class PersonalInfo {
     gender: string;
@@ -24,7 +24,7 @@ export class Client {
     personalInfo: PersonalInfo;
     contacted?: boolean;
     contactedDate?: Date;
-    contactResult?: ClientContactType;
+    contactResult?: ClientContactResult;
     contactResultComment?: string;
     contactResultCollaboratorId?: string;
     counter: number;
