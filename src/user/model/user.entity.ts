@@ -25,8 +25,4 @@ export class User {
     notificationEmailOn: boolean = false;
     updatedAt: Date;
     personalInfo: PersonalInfo;
-    contacted?: boolean;
-    contactedDate?: Date;
-    contactResult?: UserContactResult;
-    contactResultComment?: string;
 }

@@ -28,12 +28,4 @@ export class UserController {
         const { name, phone, email, commerceId, queueId, personalInfo } = body;
         return this.userService.createUser(name, phone, email, commerceId, queueId, personalInfo);
     }
-
-    @UseGuards(AuthGuard)
-    @Patch('contact/:id')
-    public async contactUser(@UserDecorator() user, @Param() params: any, @Body() body: any): Promise<User> {
-        const { id } = params;
-        const { contactResult, contactResultComment } = body;
-        return this.userService.contactUser(user, id, contactResult, contactResultComment);
-    }
 }

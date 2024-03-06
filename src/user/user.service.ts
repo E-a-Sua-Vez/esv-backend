@@ -4,12 +4,14 @@ import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
 import UserCreated from './events/UserCreated';
 import UserUpdated from './events/UserUpdated';
-import { UserContactResult } from './model/user-contact-result.enum';
+import { ClientService } from '../client/client.service';
+import { UserType } from './model/user-type.enum';
 
 export class UserService {
   constructor(
   @InjectRepository(User)
-    private userRepository = getRepository(User)
+    private userRepository = getRepository(User),
+    private clientService: ClientService
   ) {}
 
   public async getUserById(id: string): Promise<User> {
@@ -52,14 +54,20 @@ export class UserService {
     if (personalInfo !== undefined) {
       user.personalInfo = personalInfo;
     }
-    user.type
+    user.type = UserType.STANDARD;
     user.frequentCustomer = false;
     user.createdAt = new Date();
     const userCreated = await this.userRepository.create(user);
-
     const userCreatedEvent = new UserCreated(new Date(), userCreated);
     publish(userCreatedEvent);
-
+    await this.clientService.saveClient(
+      user.name,
+      user.phone,
+      user.email,
+      user.lastName,
+      user.idNumber,
+      user.personalInfo
+    );
     return userCreated;
   }
 
@@ -109,21 +117,14 @@ export class UserService {
     const userUpdated = await this.userRepository.update(userById);
     const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
     publish(userUpdatedEvent);
+    await this.clientService.saveClient(
+      userById.name,
+      userById.phone,
+      userById.email,
+      userById.lastName,
+      userById.idNumber,
+      userById.personalInfo
+    );
     return userUpdated;
-  }
-
-  public async contactUser(user: string, id: string, contactResult: UserContactResult, contactResultComment: string): Promise<User> {
-    let userById = await this.getUserById(id);
-    if (userById && userById.contacted !== true) {
-      userById.contacted = true;
-      userById.contactedDate = new Date();
-      if (contactResult) {
-        userById.contactResult = contactResult;
-      }
-      if (contactResultComment) {
-        userById.contactResultComment = contactResultComment;
-      }
-    }
-    return await this.update(user, userById);
   }
 }
