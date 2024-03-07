@@ -7,6 +7,7 @@ import { ClientContactService } from '../client-contact/client-contact.service';
 import ClientCreated from './events/ClientCreated';
 import ClientUpdated from './events/ClientUpdated';
 import { ClientContactResult } from '../client-contact/model/client-contact-result.enum';
+import { ClientContact } from 'src/client-contact/model/client-contact.entity';
 
 export class ClientService {
   constructor(
@@ -83,10 +84,10 @@ export class ClientService {
     return clientUpdated;
   }
 
-  public async contactClient(user: string, id: string, contactType: ClientContactType, contactResult: ClientContactResult, comment: string, commerceId?: string, collaboratorId?: string): Promise<Client> {
+  public async contactClient(user: string, id: string, contactType: ClientContactType, contactResult: ClientContactResult, comment: string, commerceId?: string, collaboratorId?: string): Promise<ClientContact> {
     let clientById = await this.getClientById(id);
     if (clientById && contactResult) {
-      await this.clientContactService.createClientContact(
+      const result = await this.clientContactService.createClientContact(
         clientById.id,
         contactType,
         contactResult,
@@ -105,7 +106,7 @@ export class ClientService {
       }
       const clientUpdated = await this.update(user, clientById);
       clientUpdated.clientContacts = await this.clientContactService.getClientContactByClientId(id);
-      return clientUpdated;
+      return result;
     }
   }
 }
