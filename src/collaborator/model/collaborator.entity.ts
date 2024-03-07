@@ -7,6 +7,7 @@ export class Collaborator {
     name: string;
     active: boolean;
     commerceId: string;
+    commercesId: string[];
     type: CollaboratorType;
     administratorId: string;
     alias: string;
