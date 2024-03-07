@@ -13,6 +13,8 @@ export class Client {
     id: string;
     frequentCustomer: boolean;
     type: ClientType;
+    commerceId: string;
+    businessId: string;
     idNumber: string;
     name: string;
     lastName: string;

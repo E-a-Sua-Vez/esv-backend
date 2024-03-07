@@ -8,6 +8,7 @@ import ClientCreated from './events/ClientCreated';
 import ClientUpdated from './events/ClientUpdated';
 import { ClientContactResult } from '../client-contact/model/client-contact-result.enum';
 import { ClientContact } from 'src/client-contact/model/client-contact.entity';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class ClientService {
   constructor(
@@ -20,12 +21,17 @@ export class ClientService {
     return await this.clientRepository.findById(id);
   }
 
-  public async getClientByIdNumberOrEmail(idNumber: string, email: string): Promise<Client> {
+  public async getClientByIdNumberOrEmail(businessId: string, idNumber: string, email: string): Promise<Client> {
     let client: Client;
     if (idNumber) {
-      client = await this.clientRepository.whereEqualTo('idNumber', idNumber).findOne();
+      client = await this.clientRepository
+        .whereEqualTo('businessId', businessId)
+        .whereEqualTo('idNumber', idNumber)
+        .findOne();
     } else if (email && !client || !client.id) {
-      client = await this.clientRepository.whereEqualTo('email', email).findOne();
+      client = await this.clientRepository
+        .whereEqualTo('businessId', businessId)
+        .whereEqualTo('email', email).findOne();
     }
     return client;
   }
@@ -34,13 +40,22 @@ export class ClientService {
     return await this.clientRepository.find();
   }
 
-  public async saveClient(name?: string, phone?: string, email?: string, lastName?: string, idNumber?: string, personalInfo?: PersonalInfo): Promise<Client> {
+  public async saveClient(businessId?: string, commerceId?: string, name?: string, phone?: string, email?: string, lastName?: string, idNumber?: string, personalInfo?: PersonalInfo): Promise<Client> {
     let client: Client;
     let newClient = false;
-    client = await this.getClientByIdNumberOrEmail(idNumber, email);
+    if (!businessId) {
+      throw new HttpException(`Debe enviarse el businessId`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    client = await this.getClientByIdNumberOrEmail(businessId, idNumber, email);
     if (!client) {
       client = new Client();
       newClient = true;
+      if (businessId) {
+        client.businessId = businessId;
+      }
+    }
+    if (commerceId) {
+      client.commerceId = commerceId;
     }
     if (name) {
       client.name = name;

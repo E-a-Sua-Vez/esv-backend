@@ -6,12 +6,15 @@ import UserCreated from './events/UserCreated';
 import UserUpdated from './events/UserUpdated';
 import { ClientService } from '../client/client.service';
 import { UserType } from './model/user-type.enum';
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { CommerceService } from '../commerce/commerce.service';
 
 export class UserService {
   constructor(
   @InjectRepository(User)
     private userRepository = getRepository(User),
-    private clientService: ClientService
+    private clientService: ClientService,
+    private commerceService: CommerceService
   ) {}
 
   public async getUserById(id: string): Promise<User> {
@@ -24,6 +27,14 @@ export class UserService {
 
   public async createUser(name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<User> {
     let user = new User();
+    if (!commerceId) {
+      throw new HttpException(`Debe enviarse el commerceId`, HttpStatus.INTERNAL_SERVER_ERROR);
+    } else {
+      user.commerceId = commerceId;
+      const commerce = await this.commerceService.getCommerce(commerceId);
+      const businessId = commerce.businessId;
+      user.businessId = businessId;
+    }
     if (name) {
       user.name = name;
     }
@@ -38,9 +49,6 @@ export class UserService {
     }
     if (email) {
       user.email = email;
-    }
-    if (commerceId) {
-      user.commerceId = commerceId;
     }
     if (queueId) {
       user.queueId = queueId;
@@ -59,6 +67,8 @@ export class UserService {
     user.createdAt = new Date();
     const userCreated = await this.userRepository.create(user);
     await this.clientService.saveClient(
+      user.businessId,
+      user.commerceId,
       user.name,
       user.phone,
       user.email,
@@ -116,6 +126,8 @@ export class UserService {
   public async update(user: string, userById: User): Promise<User> {
     const userUpdated = await this.userRepository.update(userById);
     await this.clientService.saveClient(
+      userById.businessId,
+      userById.commerceId,
       userById.name,
       userById.phone,
       userById.email,

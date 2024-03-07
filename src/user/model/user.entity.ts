@@ -17,6 +17,7 @@ export class User {
     lastName: string;
     email: string;
     phone: string;
+    businessId: string;
     commerceId: string;
     queueId: string;
     country: string;
