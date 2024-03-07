@@ -285,7 +285,8 @@
             "dashboard.reports.attentions-management": true,
             "dashboard.clients-management.view": true,
             "dashboard.reports.clients-management": true,
-            "dashboard.client-contacts-management.view": true
+            "dashboard.client-contacts-management.view": true,
+            "dashboard.reports.client-contacts-management": true
         }
     },
     {
