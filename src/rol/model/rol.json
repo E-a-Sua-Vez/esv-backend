@@ -286,7 +286,11 @@
             "dashboard.clients-management.view": true,
             "dashboard.reports.clients-management": true,
             "dashboard.client-contacts-management.view": true,
-            "dashboard.reports.client-contacts-management": true
+            "dashboard.reports.client-contacts-management": true,
+            "business.main-menu.permissions-admin": true,
+            "permissions.collaborators.view": true,
+            "permissions.collaborators.add": true,
+            "permissions.collaborators.update": true
         }
     },
     {

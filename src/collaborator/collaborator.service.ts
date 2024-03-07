@@ -62,6 +62,29 @@ export class CollaboratorService {
     .find();
   }
 
+  public async getCollaboratorsByCommerceIdAndEmail(commerceId: string, email: string): Promise<Collaborator> {
+    try {
+      const collaborator = await this.collaboratorRepository.whereEqualTo('email', email).findOne();
+      if (collaborator) {
+        let userPermissions = {};
+        if (collaborator.commercesId && collaborator.commercesId.includes(commerceId)) {
+          if (collaborator.permissions) {
+            userPermissions = collaborator.permissions;
+          }
+          const permissions = await this.permissionService.getPermissionsForCollaborator(collaborator.commerceId, userPermissions);
+          if (permissions) {
+            collaborator.permissions = permissions;
+          }
+          return collaborator;
+        } else {
+          throw new HttpException(`Colaborador no existe`, HttpStatus.NOT_FOUND);
+        }
+      }
+    } catch(error) {
+      throw new HttpException(`Colaborador no existe: ${error.message}`, HttpStatus.NOT_FOUND);
+    }
+  }
+
   public async update(user: string, collaborator: Collaborator): Promise<Collaborator> {
     const collaboratorUpdated = await this.collaboratorRepository.update(collaborator);
     const collaboratorUpdatedEvent = new CollaboratorUpdated(new Date(), collaboratorUpdated, { user });

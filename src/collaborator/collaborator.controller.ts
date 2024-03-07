@@ -36,6 +36,13 @@ export class CollaboratorController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/commerceId/:commerceId/email/:email')
+    public async getCollaboratorsByCommerceIdAndEmail(@Param() params: any): Promise<Collaborator> {
+        const { commerceId, email } = params;
+        return this.collaboratorService.getCollaboratorsByCommerceIdAndEmail(commerceId, email);
+    }
+
+    @UseGuards(AuthGuard)
     @Patch('/:id')
     public async updateCollaborator(@User() user, @Param() params: any, @Body() body: any): Promise<Collaborator> {
         const { id } = params;
