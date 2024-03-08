@@ -2,7 +2,7 @@ import { Booking } from './model/booking.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
@@ -405,13 +405,18 @@ ${link}
       for(let i = 0; i < bookings.length; i++) {
         const booking = bookings[i];
         limiter.schedule(async () => {
-          const attention = await this.createAttention(booking)
-          responses.push(attention);
+          try {
+            const attention = await this.createAttention(booking)
+            responses.push(attention);
+          } catch (error) {
+            errors.push(error);
+          }
         });
       }
       await limiter.stop({ dropWaitingJobs: false });
     }
     const response = { toProcess, processed: responses.length, errors: errors.length };
+    Logger.log(`processBooking response: ${response}`);
     return response;
   }
 
@@ -492,6 +497,7 @@ ${link}
       await limiter.stop({ dropWaitingJobs: false });
     }
     const response = { toProcess, processed: responses.length, emails: emails.length, messages: messages.length, errors: errors.length };
+    Logger.log(`confirmNotifyBookings response: ${response}`);
     return response;
   }
 }
