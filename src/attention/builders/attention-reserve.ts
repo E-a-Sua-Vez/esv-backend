@@ -42,9 +42,10 @@ export class AttentionReserveBuilder implements BuilderInterface {
     if (userId !== undefined) {
       attention.userId = userId;
     }
-    const existingAttention = await this.getAttentionByNumberAndDate(attention.number, attention.queueId, new Date());
+    const dateToCreate = new Date();
+    const existingAttention = await this.getAttentionByNumberAndDate(attention.number, attention.queueId, dateToCreate);
     if (existingAttention && existingAttention.length > 0) {
-      throw new HttpException(`Ya existe una atención con este numero para esta fecha`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(`Ya existe una atención con este numero para esta fecha ${attention.number} ${attention.queueId} ${dateToCreate}´`, HttpStatus.BAD_REQUEST);
     }
     if (queue.serviceId !== undefined) {
       attention.serviceId = queue.serviceId;
