@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CommerceService } from 'src/commerce/commerce.service';
-import { Queue } from 'src/queue/model/queue.entity';
 import { QueueService } from 'src/queue/queue.service';
 import { timeConvert } from 'src/shared/utils/date';
 import { Block } from './model/block.entity';
@@ -129,6 +128,17 @@ export class BlockService {
       }
     }
     return blocksByDay;
+  }
+
+  public async getQueueBlockDetailsByDayByCommerceId(commerceId: string): Promise<Record<string, Record<string, Block[]>>> {
+    const result = {};
+    const queues = await this.queueService.getQueueByCommerce(commerceId);
+    for (let i = 0; i < queues.length; i++) {
+      const queue = queues[i];
+      const blocks = await this.getQueueBlockDetailsByDay(queue.id);
+      result[queue.id] = blocks;
+    }
+    return result;
   }
 
 }

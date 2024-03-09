@@ -290,7 +290,8 @@
             "business.main-menu.permissions-admin": true,
             "permissions.collaborators.view": true,
             "permissions.collaborators.add": true,
-            "permissions.collaborators.update": true
+            "permissions.collaborators.update": true,
+            "collaborator.bookings.manage": true
         }
     },
     {
@@ -305,7 +306,8 @@
             "collaborator.main-menu.queue-manage": true,
             "collaborator.main-menu.booking-manage": true,
             "collaborator.main-menu.tracing": true,
-            "dashboard.surveys-management.view": true
+            "dashboard.surveys-management.view": true,
+            "collaborator.bookings.admin": true
         },
         "name": "collaborator",
         "description": "Permisos para el rol COLLABORATOR",

@@ -416,7 +416,7 @@ ${link}
       await limiter.stop({ dropWaitingJobs: false });
     }
     const response = { toProcess, processed: responses.length, errors: errors.length };
-    Logger.log(`processBooking response: ${response}`);
+    Logger.log(`processBooking response: ${JSON.stringify(response)}`);
     return response;
   }
 
@@ -497,7 +497,7 @@ ${link}
       await limiter.stop({ dropWaitingJobs: false });
     }
     const response = { toProcess, processed: responses.length, emails: emails.length, messages: messages.length, errors: errors.length };
-    Logger.log(`confirmNotifyBookings response: ${response}`);
+    Logger.log(`confirmNotifyBookings response: ${JSON.stringify(response)}`);
     return response;
   }
 }
