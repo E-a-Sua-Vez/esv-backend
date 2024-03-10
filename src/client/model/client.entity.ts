@@ -4,8 +4,13 @@ import { ClientContact } from '../../client-contact/model/client-contact.entity'
 import { ClientContactResult } from './client-contact-result.enum';
 
 export class PersonalInfo {
-    gender: string;
-    birthday: Date;
+    birthday: string;
+    addressText: string;
+    addressCode: string;
+    origin: string;
+    code1: string;
+    code2: string;
+    code3: string;
 }
 
 @Collection('client')

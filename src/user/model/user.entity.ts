@@ -1,10 +1,14 @@
 import { Collection } from 'fireorm';
-import { UserContactResult } from './user-contact-result.enum';
 import { UserType } from './user-type.enum';
 
 export class PersonalInfo {
-    gender: string;
-    birthday: Date;
+    birthday: string;
+    addressText: string;
+    addressCode: string;
+    origin: string;
+    code1: string;
+    code2: string;
+    code3: string;
 }
 
 @Collection('user')

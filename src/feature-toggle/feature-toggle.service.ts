@@ -87,6 +87,30 @@ export class FeatureToggleService {
         type: 'USER'
       },
       {
+        name: 'attention-user-birthday',
+        type: 'USER'
+      },
+      {
+        name: 'attention-user-address',
+        type: 'USER'
+      },
+      {
+        name: 'attention-user-origin',
+        type: 'USER'
+      },
+      {
+        name: 'attention-user-code1',
+        type: 'USER'
+      },
+      {
+        name: 'attention-user-code2',
+        type: 'USER'
+      },
+      {
+        name: 'attention-user-code3',
+        type: 'USER'
+      },
+      {
         name: 'attention-user-idNumber',
         type: 'USER'
       },

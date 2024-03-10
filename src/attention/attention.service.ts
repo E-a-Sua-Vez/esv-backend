@@ -21,7 +21,7 @@ import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionChannel } from './model/attention-channel.enum';
 import { AttentionDetailsDto } from './dto/attention-details.dto';
 import { CommerceService } from '../commerce/commerce.service';
-import { User } from '../user/model/user.entity';
+import { PersonalInfo, User } from '../user/model/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 
@@ -261,7 +261,7 @@ export class AttentionService {
     let attentionCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const newUser = userIn ? userIn : new User();
-    const user = await this.userService.createUser(newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber, newUser.notificationOn, newUser.notificationEmailOn);
+    const user = await this.userService.createUser(newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber, newUser.notificationOn, newUser.notificationEmailOn, newUser.personalInfo);
     const userId = user.id;
     const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
     if (type) {
@@ -294,13 +294,13 @@ export class AttentionService {
     return attentionCreated;
   }
 
-  public async saveDataNotification(user: string, attentionId: string, name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean): Promise<Attention> {
+  public async saveDataNotification(user: string, attentionId: string, name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<Attention> {
     const attention = await this.getAttentionById(attentionId);
     let userToNotify = undefined;
     if (attention.userId !== undefined) {
-      userToNotify = await this.userService.updateUser(name, attention.userId, name, phone, email, commerceId, queueId, lastName, idNumber, notificationOn, notificationEmailOn);
+      userToNotify = await this.userService.updateUser(name, attention.userId, name, phone, email, commerceId, queueId, lastName, idNumber, notificationOn, notificationEmailOn, personalInfo);
     } else {
-      userToNotify = await this.userService.createUser(name, phone, email, commerceId, queueId, lastName, idNumber, notificationOn, notificationEmailOn);
+      userToNotify = await this.userService.createUser(name, phone, email, commerceId, queueId, lastName, idNumber, notificationOn, notificationEmailOn, personalInfo);
       attention.userId = userToNotify.id;
     }
     if (phone !== undefined) {
