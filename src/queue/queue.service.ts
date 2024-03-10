@@ -1,7 +1,7 @@
 import { Block, Queue, ServiceInfo } from './model/queue.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import QueueCreated from './events/QueueCreated';
 import QueueUpdated from './events/QueueUpdated';
@@ -17,15 +17,20 @@ export class QueueService {
 
   public async getQueueById(id: string): Promise<Queue> {
     let queue = await this.queueRepository.findById(id);
+    if (!queue) {
+      throw new HttpException(`No se encontro la cola`, HttpStatus.NOT_FOUND);
+    }
     return this.getQueueBlockDetails(queue);
   }
 
   public async getQueues(): Promise<Queue[]> {
     let queues: Queue[] = [];
     const result = await this.queueRepository.find();
-    result.forEach(queue => {
-      queues.push(this.getQueueBlockDetails(queue));
-    })
+    if (result && result.length > 0) {
+      result.forEach(queue => {
+        queues.push(this.getQueueBlockDetails(queue));
+      })
+    }
     return queues;
   }
 
@@ -34,9 +39,11 @@ export class QueueService {
     const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
       .orderByAscending('order')
       .find();
-    result.forEach(queue => {
-      queues.push(this.getQueueBlockDetails(queue));
-    })
+    if (result && result.length > 0) {
+      result.forEach(queue => {
+        queues.push(this.getQueueBlockDetails(queue));
+      })
+    }
     return queues;
   }
 
@@ -46,18 +53,20 @@ export class QueueService {
     const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
       .orderByAscending('order')
       .find();
-    result.forEach(queue => {
-      queues.push(this.getQueueBlockDetails(queue));
-    })
-    if (queues && queues.length > 0) {
-      groupedQueues = queues.reduce((acc, conf) => {
-        const type = conf.type;
-        if (!acc[type]) {
-          acc[type] = [];
-        }
-        acc[type].push(conf);
-        return acc;
-      }, {});
+    if (result && result.length > 0) {
+      result.forEach(queue => {
+        queues.push(this.getQueueBlockDetails(queue));
+      })
+      if (queues && queues.length > 0) {
+        groupedQueues = queues.reduce((acc, conf) => {
+          const type = conf.type;
+          if (!acc[type]) {
+            acc[type] = [];
+          }
+          acc[type].push(conf);
+          return acc;
+        }, {});
+      }
     }
     return groupedQueues;
   }
@@ -69,9 +78,11 @@ export class QueueService {
       .whereEqualTo('active', true)
       .orderByAscending('order')
       .find();
-    result.forEach(queue => {
-      queues.push(this.getQueueBlockDetails(queue));
-    })
+    if (result && result.length > 0) {
+      result.forEach(queue => {
+        queues.push(this.getQueueBlockDetails(queue));
+      })
+    }
     return queues;
   }
 
@@ -97,13 +108,13 @@ export class QueueService {
         queue.blockTime = blockTime;
       }
       return await this.updateQueue(user, queue);
-    }catch(error) {
-      throw `Hubo un problema al modificar la fila: ${error.message}`;
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al modificar la fila: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   public async updateQueue(user: string, queue: Queue): Promise<Queue> {
-    const queueUpdated = await await this.queueRepository.update(queue);
+    const queueUpdated = await this.queueRepository.update(queue);
     const queueUpdatedEvent = new QueueUpdated(new Date(), queueUpdated, { user });
     publish(queueUpdatedEvent);
     return queueUpdated;
@@ -146,8 +157,8 @@ export class QueueService {
         queue.currentAttentionId = '';
         await this.queueRepository.update(queue);
       });
-    } catch(error) {
-      throw `Hubo un problema al reiniciar las filas: ${error.message}`;
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al reiniciar las filas: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return 'Las filas fueron reiniciadas exitosamente';
   }
