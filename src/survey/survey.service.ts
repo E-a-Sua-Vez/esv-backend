@@ -83,7 +83,7 @@ export class SurveyService {
     if (answers && answers.length > 0) {
       for (let i = 0; i < answers.length; i++) {
         const answer = answers[i];
-        if (answer['type'] === QuestionType.OPEN_WRITING) {
+        if (answer['type'] === QuestionType.OPEN_WRITING && (answer['analize'] !== undefined && answer['analize'] === true)) {
           const message = answer['answer'] || undefined;
           try {
             if (message) {

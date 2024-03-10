@@ -7,6 +7,7 @@ export class PersonalInfo {
     birthday: string;
     addressText: string;
     addressCode: string;
+    addressComplement: string;
     origin: string;
     code1: string;
     code2: string;

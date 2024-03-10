@@ -48,8 +48,8 @@ export class QueueController {
     @Patch('/:id')
     public async updateQueue(@User() user, @Param() params: any, @Body() body: Queue): Promise<Queue> {
         const { id } = params;
-        const { limit, estimatedTime, order, active, serviceInfo, blockTime } = body;
-        return this.queueService.updateQueueConfigurations(user, id, limit, estimatedTime, order, active, serviceInfo, blockTime);
+        const { name, limit, estimatedTime, order, active, available, serviceInfo, blockTime } = body;
+        return this.queueService.updateQueueConfigurations(user, id, name, limit, estimatedTime, order, active, available, serviceInfo, blockTime);
     }
 
     @UseGuards(SimpleGuard)

@@ -9,6 +9,7 @@ export class Question {
   options: string[];
   order: number;
   active: boolean;
+  analize?: boolean;
   otherOption?: boolean;
   otherOptionOpen?: boolean;
 }

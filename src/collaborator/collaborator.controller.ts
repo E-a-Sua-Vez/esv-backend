@@ -46,8 +46,8 @@ export class CollaboratorController {
     @Patch('/:id')
     public async updateCollaborator(@User() user, @Param() params: any, @Body() body: any): Promise<Collaborator> {
         const { id } = params;
-        const { type, alias, phone, moduleId, active, servicesId, commercesId } = body;
-        return this.collaboratorService.updateCollaborator(user, id, moduleId, phone, active, alias, servicesId, type, commercesId);
+        const { name, type, alias, phone, moduleId, active, servicesId, commercesId } = body;
+        return this.collaboratorService.updateCollaborator(user, id, name, moduleId, phone, active, alias, servicesId, type, commercesId);
     }
 
     @UseGuards(AuthGuard)

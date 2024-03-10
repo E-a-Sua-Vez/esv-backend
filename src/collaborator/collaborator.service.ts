@@ -92,8 +92,11 @@ export class CollaboratorService {
     return collaboratorUpdated;
   }
 
-  public async updateCollaborator(user: string, id: string, moduleId: string, phone: string, active: boolean, alias: string, servicesId: string[], type: CollaboratorType, commercesId: string[]): Promise<Collaborator> {
+  public async updateCollaborator(user: string, id: string, name: string, moduleId: string, phone: string, active: boolean, alias: string, servicesId: string[], type: CollaboratorType, commercesId: string[]): Promise<Collaborator> {
     let collaborator = await this.getCollaboratorById(id);
+    if (name) {
+      collaborator.name = name;
+    }
     if (moduleId) {
       collaborator.moduleId = moduleId;
     }

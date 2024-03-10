@@ -39,6 +39,7 @@ export class Queue {
     commerceId: string;
     type: QueueType;
     active: boolean;
+    available: boolean;
     createdAt: Date;
     limit: number;
     name: string;

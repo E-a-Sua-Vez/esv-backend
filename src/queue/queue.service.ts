@@ -36,9 +36,7 @@ export class QueueService {
 
   public async getQueueByCommerce(commerceId: string): Promise<Queue[]> {
     let queues: Queue[] = [];
-    const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
-      .orderByAscending('order')
-      .find();
+    const result = await this.getActiveQueuesByCommerce(commerceId);
     if (result && result.length > 0) {
       result.forEach(queue => {
         queues.push(this.getQueueBlockDetails(queue));
@@ -50,9 +48,7 @@ export class QueueService {
   public async getGroupedQueueByCommerce(commerceId: string): Promise<Record<string, Queue[]>> {
     let groupedQueues = {};
     let queues: Queue[] = [];
-    const result = await this.queueRepository.whereEqualTo('commerceId', commerceId)
-      .orderByAscending('order')
-      .find();
+    const result = await this.getActiveQueuesByCommerce(commerceId);
     if (result && result.length > 0) {
       result.forEach(queue => {
         queues.push(this.getQueueBlockDetails(queue));
@@ -76,6 +72,7 @@ export class QueueService {
     const result = await this.queueRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
       .orderByAscending('order')
       .find();
     if (result && result.length > 0) {
@@ -86,9 +83,12 @@ export class QueueService {
     return queues;
   }
 
-  public async updateQueueConfigurations(user, id, limit, estimatedTime, order, active, serviceInfo, blockTime = 60): Promise<Queue> {
+  public async updateQueueConfigurations(user, id, name, limit, estimatedTime, order, active, available, serviceInfo, blockTime = 60): Promise<Queue> {
     try {
       let queue = await this.queueRepository.findById(id);
+      if (name) {
+        queue.name = name;
+      }
       if (limit) {
         queue.limit = limit;
       }
@@ -101,22 +101,30 @@ export class QueueService {
       if (active !== undefined) {
         queue.active = active;
       }
+      if (available !== undefined) {
+        queue.available = available;
+      }
       if (serviceInfo !== undefined) {
         queue.serviceInfo = serviceInfo;
       }
       if (blockTime !== undefined) {
         queue.blockTime = blockTime;
       }
-      return await this.updateQueue(user, queue);
+      return await this.update(user, queue);
     } catch (error) {
       throw new HttpException(`Hubo un problema al modificar la fila: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  public async updateQueue(user: string, queue: Queue): Promise<Queue> {
+  public async update(user: string, queue: Queue): Promise<Queue> {
     const queueUpdated = await this.queueRepository.update(queue);
     const queueUpdatedEvent = new QueueUpdated(new Date(), queueUpdated, { user });
     publish(queueUpdatedEvent);
+    return queueUpdated;
+  }
+
+  public async updateQueue(user: string, queue: Queue): Promise<Queue> {
+    const queueUpdated = await this.queueRepository.update(queue);
     return queueUpdated;
   }
 
@@ -131,6 +139,7 @@ export class QueueService {
     queue.currentAttentionNumber = 0;
     queue.currentAttentionId = '';
     queue.active = true;
+    queue.available = true;
     queue.createdAt = new Date();
     queue.order = order;
     queue.serviceInfo = serviceInfo;
