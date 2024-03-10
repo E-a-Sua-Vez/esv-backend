@@ -4,6 +4,7 @@ import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
 import ModuleCreated from './events/ModuleCreated';
 import ModuleUpdated from './events/ModuleUpdated';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class ModuleService {
   constructor(
@@ -17,7 +18,7 @@ export class ModuleService {
 
   public async getAllModule(): Promise<Module[]> {
     return await this.moduleRepository
-    .whereEqualTo('active', true)
+    .whereEqualTo('available', true)
     .orderByAscending('name')
     .find();
   }
@@ -25,6 +26,7 @@ export class ModuleService {
   public async getModulesByCommerceId(commerceId: string): Promise<Module[]> {
     return await this.moduleRepository
     .whereEqualTo('commerceId', commerceId)
+    .whereEqualTo('available', true)
     .orderByAscending('name')
     .find();
   }
@@ -33,6 +35,7 @@ export class ModuleService {
     return await this.moduleRepository
     .whereEqualTo('commerceId', commerceId)
     .whereEqualTo('active', true)
+    .whereEqualTo('available', true)
     .orderByAscending('name')
     .find();
   }
@@ -42,6 +45,7 @@ export class ModuleService {
     module.commerceId = commerceId;
     module.name = name;
     module.active = true;
+    module.available = true;
     module.createdAt = new Date();
     const moduleCreated = await this.moduleRepository.create(module);
     const moduleCreatedEvent = new ModuleCreated(new Date(), moduleCreated, { user });
@@ -49,7 +53,7 @@ export class ModuleService {
     return moduleCreated;
   }
 
-  public async updateModuleConfigurations(user: string, id: string, name: string, active): Promise<Module> {
+  public async updateModuleConfigurations(user: string, id: string, name: string, active, available): Promise<Module> {
     try {
       let module = await this.moduleRepository.findById(id);
       if (name) {
@@ -58,12 +62,15 @@ export class ModuleService {
       if (active !== undefined) {
         module.active = active;
       }
+      if (available !== undefined) {
+        module.available = available;
+      }
       const moduleUpdated = await this.moduleRepository.update(module);
       const moduleUpdatedEvent = new ModuleUpdated(new Date(), moduleUpdated, { user });
       publish(moduleUpdatedEvent);
       return moduleUpdated;
     } catch (error) {
-      throw `Hubo un problema al modificar el modulo: ${error.message}`;
+      throw new HttpException(`Hubo un problema al modificar el modulo: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

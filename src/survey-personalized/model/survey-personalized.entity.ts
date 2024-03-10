@@ -28,4 +28,5 @@ export class SurveyPersonalized {
   hasMessage: boolean;
   createdAt: Date;
   modifiedAt: Date;
+  available: boolean;
 }

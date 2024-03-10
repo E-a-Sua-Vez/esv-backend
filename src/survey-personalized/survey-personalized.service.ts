@@ -24,7 +24,7 @@ export class SurveyPersonalizedService {
     let surveys: SurveyPersonalized[];
     surveys = await this.surveyPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
-      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
       .find();
     let surveysToReturn = [];
     if (surveys && surveys.length > 0) {
@@ -46,6 +46,7 @@ export class SurveyPersonalizedService {
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
       .find();
     let surveysToReturn = [];
     if (surveys && surveys.length > 0) {
@@ -85,6 +86,7 @@ export class SurveyPersonalizedService {
       survey.queueId = queueId;
     }
     survey.active = true;
+    survey.available = true;
     survey.createdAt = new Date();
     const surveyCreated = await this.surveyPersonalizedRepository.create(survey);
     const surveyCreatedEvent = new SurveyPersonalizedCreated(new Date(), surveyCreated);
@@ -100,7 +102,7 @@ export class SurveyPersonalizedService {
     return surveyPersonalizedUpdated;
   }
 
-  public async updateSurveyPersonalized(user: string, type: SurveyType, id: string, active: boolean, attentionDefault: boolean, hasCSAT: boolean, hasNPS: boolean, hasMessage: boolean, questions?: Question[], queueId?: string): Promise<SurveyPersonalized> {
+  public async updateSurveyPersonalized(user: string, type: SurveyType, id: string, active: boolean, available: boolean, attentionDefault: boolean, hasCSAT: boolean, hasNPS: boolean, hasMessage: boolean, questions?: Question[], queueId?: string): Promise<SurveyPersonalized> {
     try {
       let survey = await this.surveyPersonalizedRepository.findById(id);
       if (type) {
@@ -108,6 +110,9 @@ export class SurveyPersonalizedService {
       }
       if (active !== undefined) {
         survey.active = active;
+      }
+      if (available !== undefined) {
+        survey.available = available;
       }
       if (attentionDefault !== undefined) {
         survey.attentionDefault = attentionDefault;

@@ -47,7 +47,7 @@ export class ModuleController {
     @Patch('/:id')
     public async updateModuleConfigurations(@User() user, @Param() params: any, @Body() body: Module): Promise<Module> {
         const { id } = params;
-        const { name, active } = body;
-        return this.moduleService.updateModuleConfigurations(user, id, name, active);
+        const { name, active, available } = body;
+        return this.moduleService.updateModuleConfigurations(user, id, name, active, available);
     }
 }

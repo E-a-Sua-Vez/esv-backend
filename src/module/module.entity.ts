@@ -7,4 +7,5 @@ export class Module {
     commerceId: string;
     active: boolean;
     createdAt: Date;
+    available: boolean;
 }

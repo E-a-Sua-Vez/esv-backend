@@ -1,7 +1,7 @@
 import { Service, ServiceInfo } from './model/service.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import ServiceCreated from './events/ServiceCreated';
 import ServiceUpdated from './events/ServiceUpdated';
@@ -27,8 +27,10 @@ export class ServiceService {
 
   public async getServiceByCommerce(commerceId: string): Promise<Service[]> {
     let services: Service[] = [];
-    services = await this.serviceRepository.whereEqualTo('commerceId', commerceId)
+    services = await this.serviceRepository
+      .whereEqualTo('commerceId', commerceId)
       .orderByAscending('order')
+      .whereEqualTo('available', true)
       .find();
     return services;
   }
@@ -38,6 +40,7 @@ export class ServiceService {
     services = await this.serviceRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
       .orderByAscending('order')
       .find();
     return services;
@@ -48,13 +51,14 @@ export class ServiceService {
     services = await this.serviceRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
       .whereEqualTo('online', true)
       .orderByAscending('order')
       .find();
     return services;
   }
 
-  public async updateServiceConfigurations(user: string, id: string, name: string, tag: string, order: number, active: boolean, online: boolean, serviceInfo: ServiceInfo): Promise<Service> {
+  public async updateServiceConfigurations(user: string, id: string, name: string, tag: string, order: number, active: boolean, available: boolean, online: boolean, serviceInfo: ServiceInfo): Promise<Service> {
     try {
       let service = await this.serviceRepository.findById(id);
       if (name) {
@@ -69,6 +73,9 @@ export class ServiceService {
       if (active !== undefined) {
         service.active = active;
       }
+      if (available !== undefined) {
+        service.available = available;
+      }
       if (online !== undefined) {
         service.online = online;
       }
@@ -76,8 +83,8 @@ export class ServiceService {
         service.serviceInfo = serviceInfo;
       }
       return await this.updateService(user, service);
-    }catch(error) {
-      throw `Hubo un problema al modificar el servicio: ${error.message}`;
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al modificar el servicio: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -96,6 +103,7 @@ export class ServiceService {
     service.tag = tag;
     service.online = online;
     service.active = true;
+    service.available = true;
     service.createdAt = new Date();
     service.order = order;
     service.serviceInfo = serviceInfo;

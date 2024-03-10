@@ -47,7 +47,7 @@ export class SurveyPersonalizedController {
     @Patch('/:id')
     public async updateSurveyPersonalized(@User() user, @Param() params: any, @Body() body: SurveyPersonalized): Promise<SurveyPersonalized> {
         const { id } = params;
-        const { type, active, attentionDefault, hasCSAT, hasNPS, hasMessage, questions, queueId } = body;
-        return this.surveyPersonalizedService.updateSurveyPersonalized(user, type, id, active, attentionDefault, hasCSAT, hasNPS, hasMessage, questions, queueId);
+        const { type, active, available, attentionDefault, hasCSAT, hasNPS, hasMessage, questions, queueId } = body;
+        return this.surveyPersonalizedService.updateSurveyPersonalized(user, type, id, active, available, attentionDefault, hasCSAT, hasNPS, hasMessage, questions, queueId);
     }
 }

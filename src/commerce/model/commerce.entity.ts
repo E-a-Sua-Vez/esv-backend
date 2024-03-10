@@ -72,4 +72,5 @@ export class Commerce {
     createdAt: Date;
     collaborators: Collaborator[];
     services: Service[];
+    available: boolean;
 }

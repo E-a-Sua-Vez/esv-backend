@@ -36,7 +36,11 @@ export class QueueService {
 
   public async getQueueByCommerce(commerceId: string): Promise<Queue[]> {
     let queues: Queue[] = [];
-    const result = await this.getActiveQueuesByCommerce(commerceId);
+    const result = await this.queueRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('available', true)
+      .orderByAscending('order')
+      .find();
     if (result && result.length > 0) {
       result.forEach(queue => {
         queues.push(this.getQueueBlockDetails(queue));

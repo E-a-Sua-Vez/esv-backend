@@ -31,6 +31,13 @@ export class ServiceController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/commerceId/:commerceId/active')
+    public async getActiveServicesByCommerceId(@Param() params: any): Promise<Service[]> {
+        const { commerceId } = params;
+        return this.serviceService.getActiveServicesByCommerce(commerceId);
+    }
+
+    @UseGuards(AuthGuard)
     @Post('/')
     public async createService(@User() user, @Body() body: Service): Promise<Service> {
         const { commerceId, name, type, tag, online, order, serviceInfo } = body;
@@ -41,7 +48,7 @@ export class ServiceController {
     @Patch('/:id')
     public async updateService(@User() user, @Param() params: any, @Body() body: Service): Promise<Service> {
         const { id } = params;
-        const { name, tag, order, active, online, serviceInfo } = body;
-        return this.serviceService.updateServiceConfigurations(user, id, name, tag, order, active, online, serviceInfo);
+        const { name, tag, order, active, available, online, serviceInfo } = body;
+        return this.serviceService.updateServiceConfigurations(user, id, name, tag, order, active, available, online, serviceInfo);
     }
 }

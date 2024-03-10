@@ -21,4 +21,5 @@ export class Collaborator {
     lastPasswordChanged: Date;
     servicesId: string[];
     permissions: Record<string, boolean|number>;
+    available: boolean;
 }

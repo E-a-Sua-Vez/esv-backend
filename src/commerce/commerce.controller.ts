@@ -62,8 +62,8 @@ export class CommerceController {
     @Patch('/:id')
     public async updateCommerce(@User() user, @Param() params: any, @Body() body: Commerce): Promise<Commerce> {
         const { id } = params;
-        const { tag, logo, phone, url, active, localeInfo, contactInfo, serviceInfo, category } = body;
-        return this.commerceService.updateCommerce(user, id, tag, logo, phone, url, active, localeInfo, contactInfo, serviceInfo, category);
+        const { tag, logo, phone, url, active, available, localeInfo, contactInfo, serviceInfo, category } = body;
+        return this.commerceService.updateCommerce(user, id, tag, logo, phone, url, active, available, localeInfo, contactInfo, serviceInfo, category);
     }
 
     @UseGuards(SimpleGuard)

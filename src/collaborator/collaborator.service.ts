@@ -58,6 +58,7 @@ export class CollaboratorService {
   public async getCollaboratorsByCommerceId(commerceId: string): Promise<Collaborator[]> {
     return await this.collaboratorRepository
     .whereEqualTo('commerceId', commerceId)
+    .whereEqualTo('available', true)
     .orderByAscending('name')
     .find();
   }
@@ -92,7 +93,7 @@ export class CollaboratorService {
     return collaboratorUpdated;
   }
 
-  public async updateCollaborator(user: string, id: string, name: string, moduleId: string, phone: string, active: boolean, alias: string, servicesId: string[], type: CollaboratorType, commercesId: string[]): Promise<Collaborator> {
+  public async updateCollaborator(user: string, id: string, name: string, moduleId: string, phone: string, active: boolean, available: boolean, alias: string, servicesId: string[], type: CollaboratorType, commercesId: string[]): Promise<Collaborator> {
     let collaborator = await this.getCollaboratorById(id);
     if (name) {
       collaborator.name = name;
@@ -105,6 +106,9 @@ export class CollaboratorService {
     }
     if (active !== undefined) {
       collaborator.active = active;
+    }
+    if (available !== undefined) {
+      collaborator.available = available;
     }
     if (alias) {
       collaborator.alias = alias;
@@ -154,6 +158,7 @@ export class CollaboratorService {
         collaborator.moduleId = moduleId;
       }
       collaborator.active = true;
+      collaborator.available = true;
       collaborator.alias = alias || name;
       if (defaultPermissions) {
         collaborator.permissions = defaultPermissions;

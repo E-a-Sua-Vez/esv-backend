@@ -16,8 +16,6 @@ import { NotificationTemplate } from '../notification/model/notification-templat
 import { FeatureToggleName } from 'src/feature-toggle/model/feature-toggle.enum';
 import { FeatureToggle } from 'src/feature-toggle/model/feature-toggle.entity';
 import CommerceCreated from './events/CommerceCreated';
-import { CollaboratorService } from '../collaborator/collaborator.service';
-import { ServiceService } from '../service/service.service';
 
 @Injectable()
 export class CommerceService {
@@ -72,6 +70,7 @@ export class CommerceService {
     let commercesToReturn = [];
     const commerces = await this.commerceRepository
       .whereEqualTo('businessId', businessId)
+      .whereEqualTo('available', true)
       .orderByAscending('tag')
       .find();
     if (commerces.length > 0) {
@@ -88,6 +87,7 @@ export class CommerceService {
     const commerces = await this.commerceRepository
       .whereEqualTo('businessId', businessId)
       .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
       .orderByAscending('tag')
       .find();
     return commerces;
@@ -102,6 +102,7 @@ export class CommerceService {
     commerce.email = email;
     commerce.logo = logo;
     commerce.active = true;
+    commerce.available = true;
     commerce.phone = phone;
     commerce.category = category;
     commerce.createdAt = new Date();
@@ -131,7 +132,7 @@ export class CommerceService {
     return commerceUpdated;
   }
 
-  public async updateCommerce(user: string, id: string, tag: string, logo: string, phone: string, url: string, active: boolean, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, category: Category): Promise<Commerce> {
+  public async updateCommerce(user: string, id: string, tag: string, logo: string, phone: string, url: string, active: boolean, available: boolean, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, category: Category): Promise<Commerce> {
     let commerce = await this.getCommerce(id);
     if (tag) {
       commerce.tag = tag;
@@ -150,6 +151,9 @@ export class CommerceService {
     }
     if (active !== undefined) {
       commerce.active = active;
+    }
+    if (available !== undefined) {
+      commerce.available = available;
     }
     if (localeInfo !== undefined) {
       commerce.localeInfo = localeInfo;

@@ -25,4 +25,5 @@ export class Service {
     createdAt: Date;
     order: number;
     serviceInfo: ServiceInfo;
+    available: boolean;
 }
