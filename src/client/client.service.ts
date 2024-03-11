@@ -57,6 +57,9 @@ export class ClientService {
     if (commerceId) {
       client.commerceId = commerceId;
     }
+    if (idNumber) {
+      client.idNumber = idNumber;
+    }
     if (name) {
       client.name = name;
     }
