@@ -88,4 +88,10 @@ export class BookingController {
         const { queueId, dateFrom, dateTo } = params;
         return this.bookingService.getPendingBookingsBetweenDates(queueId, dateFrom, dateTo);
     }
+
+    @UseGuards(SimpleGuard)
+    @Patch('/pending/cancel/all')
+    public async cancelBookings(): Promise<any> {
+        return this.bookingService.cancelBookings();
+    }
 }

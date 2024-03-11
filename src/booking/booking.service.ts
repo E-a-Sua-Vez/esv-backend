@@ -141,6 +141,15 @@ export class BookingService {
       .find();
   }
 
+  public async getPendingBookingsBeforeDate(dateTo: Date): Promise<Booking[]> {
+    const endDate = new Date(dateTo).toISOString().slice(0,10);
+    const dateToValue = new Date(endDate);
+    return await this.bookingRepository
+      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereLessThan('dateFormatted', dateToValue)
+      .find();
+  }
+
   featureToggleIsActive(featureToggle: FeatureToggle[], name: string): boolean {
     const feature = featureToggle.find(elem => elem.name === name);
     if (feature) {
@@ -527,5 +536,41 @@ ${link}
     const response = { toProcess, processed: responses.length, emails: emails.length, messages: messages.length, errors: errors.length };
     Logger.log(`confirmNotifyBookings response: ${JSON.stringify(response)}`);
     return response;
+  }
+
+  public async cancelBookings(): Promise<any> {
+    const limiter = new Bottleneck({
+      minTime: 1000,
+      maxConcurrent: 10
+    });
+    const responses = [];
+    const errors = [];
+    let toProcess = 0;
+    try {
+      const bookings = await this.getPendingBookingsBeforeDate(new Date());
+      toProcess = bookings.length;
+      if (bookings && bookings.length > 0) {
+        for(let i = 0; i < bookings.length; i++) {
+          let booking = bookings[i];
+          limiter.schedule(async () => {
+            try {
+              booking.status = BookingStatus.RESERVE_CANCELLED;
+              booking.cancelledAt = new Date();
+              booking.cancelled = true;
+              await this.update('ett', booking);
+            } catch (error) {
+              errors.push(error);
+            }
+            responses.push(booking);
+          });
+        }
+        await limiter.stop({ dropWaitingJobs: false });
+      }
+      const response = { toProcess, processed: responses.length, errors: errors.length };
+      Logger.log(`cancelBookings response: ${JSON.stringify(response)}`);
+      return response;
+    } catch (error) {
+      throw new HttpException(`Hubo un poblema al cancelar las reservas: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
