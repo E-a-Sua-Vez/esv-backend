@@ -25,6 +25,7 @@ import { WaitlistService } from '../waitlist/waitlist.service';
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
 import { Block } from '../waitlist/model/waitlist.entity';
+import { AttentionType } from 'src/attention/model/attention-type.enum';
 
 @Injectable()
 export class BookingService {
@@ -44,7 +45,7 @@ export class BookingService {
     return await this.bookingRepository.findById(id);
   }
 
-  public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User, block?: Block): Promise<Booking> {
+  public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const dateFormatted = new Date(date);
@@ -64,9 +65,9 @@ export class BookingService {
       }
       const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(queueId, date, bookingNumber);
       if (alreadyBooked.length > 0) {
-        throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}, booking: ${JSON.stringify(alreadyBooked)}`, HttpStatus.INTERNAL_SERVER_ERROR);
       } else {
-        bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block);
+        bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block, status);
         if (user.email !== undefined) {
           await this.bookingEmail(bookingCreated);
         }
@@ -345,8 +346,8 @@ ${link}
         bookingDetailsDto.beforeYou = booked.length || 0;
       }
       return bookingDetailsDto;
-    } catch(error) {
-      throw `Hubo un problema al obtener detalles de la reserva: ${error.message}`;
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al obtener detalles de la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -417,6 +418,33 @@ ${link}
     }
     const response = { toProcess, processed: responses.length, errors: errors.length };
     Logger.log(`processBooking response: ${JSON.stringify(response)}`);
+    return response;
+  }
+
+  public async processPastBooking(bookingId: string, collaboratorId: string, commerceLanguage: string): Promise<any> {
+    const response = { booking: {}, attention: {}, processBooking: {}, attend: {}, finish: {} };
+    try {
+      const booking = await this.getBookingById(bookingId);
+      response.booking = booking;
+      if (booking && booking.id) {
+        const { queueId, channel, user, block, date } = booking;
+        const dateOfAttention = new Date(date);
+        const attention = await this.attentionService.createAttention(queueId, collaboratorId, channel, user, AttentionType.STANDARD, block, dateOfAttention);
+        response.attention = attention;
+        if (attention && attention.id) {
+          const { number } = attention;
+          const processBooking = await this.processBooking('ett', booking, attention.id);
+          response.processBooking = processBooking;
+          const attend = await this.attentionService.attend('ETT-MIGRATION', number, queueId, collaboratorId, commerceLanguage);
+          const finish = await this.attentionService.finishAttention('ett', attention.id, 'MIGRATION');
+          response.finish = finish;
+          response.attend = attend;
+        }
+      }
+    } catch (error) {
+      Logger.error(`processBooking error: ${error.message}`);
+    }
+    Logger.log(`processPastBooking response: ${JSON.stringify(response)}`);
     return response;
   }
 

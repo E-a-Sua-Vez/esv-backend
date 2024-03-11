@@ -18,14 +18,14 @@ export class AttentionReserveBuilder implements BuilderInterface {
     private queueService: QueueService,
   ){}
 
-  async create(queue: Queue, collaboratorId?: string, type?: AttentionType, channel?: string, userId?: string, block?: Block): Promise<Attention> {
+  async create(queue: Queue, collaboratorId?: string, type?: AttentionType, channel?: string, userId?: string, block?: Block, date?: Date): Promise<Attention> {
     if (!block) {
       throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
     }
     let attention = new Attention();
     attention.status = AttentionStatus.PENDING;
     attention.type = type || AttentionType.STANDARD;
-    attention.createdAt = new Date();
+    attention.createdAt = date || new Date();
     attention.queueId = queue.id;
     attention.commerceId = queue.commerceId;
     if (block && block.number) {
@@ -42,7 +42,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
     if (userId !== undefined) {
       attention.userId = userId;
     }
-    const dateToCreate = new Date();
+    const dateToCreate = date || new Date();
     const existingAttention = await this.getAttentionByNumberAndDate(attention.number, attention.queueId, dateToCreate);
     if (existingAttention && existingAttention.length > 0) {
       throw new HttpException(`Ya existe una atención con este numero para esta fecha ${attention.number} ${attention.queueId} ${dateToCreate}´`, HttpStatus.BAD_REQUEST);
@@ -77,6 +77,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
         AttentionStatus.REACTIVATED
       ])
       .whereGreaterOrEqualThan('createdAt', dateValue)
+      .whereLessOrEqualThan('createdAt', dateValue)
       .orderByDescending('createdAt')
       .find();
   }

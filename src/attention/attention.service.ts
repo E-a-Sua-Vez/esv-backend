@@ -256,42 +256,46 @@ export class AttentionService {
       channel: string = AttentionChannel.QR,
       userIn?: User,
       type?: AttentionType,
-      block?: Block
+      block?: Block,
+      date?: Date
     ): Promise<Attention> {
-    let attentionCreated;
-    let queue = await this.queueService.getQueueById(queueId);
-    const newUser = userIn ? userIn : new User();
-    const user = await this.userService.createUser(newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber, newUser.notificationOn, newUser.notificationEmailOn, newUser.personalInfo);
-    const userId = user.id;
-    const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
-    if (type) {
-      if (type === AttentionType.NODEVICE) {
-        if (block && block.number) {
-          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block);
+
+      try {
+        let attentionCreated;
+        let queue = await this.queueService.getQueueById(queueId);
+        const newUser = userIn ? userIn : new User();
+        const user = await this.userService.createUser(newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber, newUser.notificationOn, newUser.notificationEmailOn, newUser.personalInfo);
+        const userId = user.id;
+        const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
+        if (type && type === AttentionType.NODEVICE) {
+          if (block && block.number) {
+            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date);
+          } else {
+            attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date);
+          }
+        } else if (onlySurvey) {
+          if (onlySurvey.active) {
+            const collaboratorBot = await this.collaboratorService.getCollaboratorBot(queue.commerceId);
+            if (!collaboratorBot || collaboratorBot === undefined) {
+              throw new HttpException(`Colaborador Bot no existe, debe crearse`, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            const attentionBuild = await this.attentionSurveyBuilder.create(queue, collaboratorBot.id, channel, userId, date);
+            attentionCreated = await this.finishAttention(attentionBuild.userId, attentionBuild.id, '');
+          } else {
+            attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date);
+          }
+        } else if (block && block.number) {
+          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date);
         } else {
-          attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId);
+          attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
         }
-      }
-    } else if (onlySurvey) {
-      if (onlySurvey.active) {
-        const collaboratorBot = await this.collaboratorService.getCollaboratorBot(queue.commerceId);
-        if (!collaboratorBot || collaboratorBot === undefined) {
-          throw new HttpException(`Colaborador Bot no existe, debe crearse`, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (user.email !== undefined) {
+          await this.attentionEmail(attentionCreated.id);
         }
-        const attentionBuild = await this.attentionSurveyBuilder.create(queue, collaboratorBot.id, channel, userId);
-        attentionCreated = await this.finishAttention(attentionBuild.userId, attentionBuild.id, '');
-      } else {
-        attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
+        return attentionCreated;
+      } catch (error) {
+        throw new HttpException(`Hubo un problema al crear la atención: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
       }
-    } else if (block && block.number) {
-      attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block);
-    } else {
-       attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
-    }
-    if (user.email !== undefined) {
-      await this.attentionEmail(attentionCreated.id);
-    }
-    return attentionCreated;
   }
 
   public async saveDataNotification(user: string, attentionId: string, name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<Attention> {
@@ -324,7 +328,7 @@ export class AttentionService {
     return attentionUpdated;
   }
 
-  public async attend(user: string, number: number, queueId: string, collaboratorId: string, commerceLanguage: string) {
+  public async attend(user: string, number: number, queueId: string, collaboratorId: string, commerceLanguage: string, notify?: boolean) {
     let attention = (await this.getAvailableAttentionByNumber(number, queueId))[0];
     if (attention) {
       let queue = await this.queueService.getQueueById(attention.queueId);
@@ -351,8 +355,8 @@ export class AttentionService {
           attention = await this.finishCancelledAttention(user, attention.id);
         }
         return attention;
-      } catch(error) {
-        throw new HttpException(`Hubo un problema al procesar la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
+      } catch (error) {
+        throw new HttpException(`Hubo un problema al procesar la atención: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
@@ -360,7 +364,7 @@ export class AttentionService {
   public async skip(user: string, number: number, queueId: string, collaboratorId: string) {
     const attention = (await this.getAttentionByNumber(number, AttentionStatus.PROCESSING, queueId))[0];
     if (!attention) {
-      throw new HttpException(`Atencion que se quiere saltar no existe o ya fue saltada antes`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Atencion que se quiere saltar no existe o ya fue saltada antes: ${attention.id}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
     let queue = await this.queueService.getQueueById(attention.queueId);
@@ -376,7 +380,7 @@ export class AttentionService {
       await this.queueService.updateQueue(user, queue);
       await this.update(user, attention);
     } else {
-      throw new HttpException(`Hubo un problema, esta atención no puede ser saltada`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Hubo un problema, esta atención no puede ser saltada: ${attention.id}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return attention;
   }
@@ -391,8 +395,8 @@ export class AttentionService {
       attention.reactivatedAt = new Date();
       const result = await this.update(user, attention);
       return result;
-    } catch(error) {
-      throw new HttpException(`Hubo un problema esta atención no está saltada`, HttpStatus.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      throw new HttpException(`Hubo un problema esta atención no está saltada: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -665,10 +669,10 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
         attention.status = AttentionStatus.CANCELLED;
         await this.update('ett', attention);
       });
-    }catch(error){
-      throw `Hubo un problema al reiniciar las filas: ${error.message}`;
+      return 'Las atenciones pendientes fueron canceladas exitosamente';
+    } catch (error) {
+      throw new HttpException(`Hubo un poblema al cancelar las atenciones: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return 'Las atenciones pendientes fueron canceladas exitosamente';
   }
 
 }

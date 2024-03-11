@@ -17,9 +17,9 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     private bookingRepository = getRepository(Booking)
   ){}
 
-  async create(number: number, date: string, queue: Queue, channel?: string, user?: User, block?: Block): Promise<Booking> {
+  async create(number: number, date: string, queue: Queue, channel?: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
     let booking = new Booking();
-    booking.status = BookingStatus.PENDING;
+    booking.status = status || BookingStatus.PENDING;
     booking.type = BookingType.STANDARD;
     booking.createdAt = new Date();
     booking.queueId = queue.id;

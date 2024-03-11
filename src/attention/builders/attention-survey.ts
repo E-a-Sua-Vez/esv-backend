@@ -18,16 +18,16 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     private queueService: QueueService,
   ){}
 
-  async create(queue: Queue, collaboratorId?: string, channel?: string, userId?: string): Promise<Attention> {
+  async create(queue: Queue, collaboratorId?: string, channel?: string, userId?: string, date?: Date): Promise<Attention> {
     const currentNumber = queue.currentNumber;
     let attention = new Attention();
     attention.status = AttentionStatus.PROCESSING;
     attention.type = AttentionType.SURVEY_ONLY;
-    attention.createdAt = new Date();
+    attention.createdAt = date || new Date();
     attention.queueId = queue.id;
     attention.commerceId = queue.commerceId;
     attention.number = currentNumber + 1;
-    attention.endAt = new Date();
+    attention.endAt = date || new Date();
     attention.channel = channel;
     if (queue.collaboratorId !== undefined) {
       attention.collaboratorId = queue.collaboratorId;

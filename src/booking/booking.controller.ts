@@ -22,8 +22,8 @@ export class BookingController {
     @UseGuards(AuthGuard)
     @Post()
     public async createBooking(@Body() body: any): Promise<Booking> {
-        const { queueId, channel, user, date, block } = body;
-        return this.bookingService.createBooking(queueId, channel, date, user, block);
+        const { queueId, channel, user, date, block, status } = body;
+        return this.bookingService.createBooking(queueId, channel, date, user, block, status);
     }
 
     @UseGuards(AuthGuard)
@@ -73,6 +73,13 @@ export class BookingController {
     public async confirmNotifyBookings(@Body() body: any): Promise<any> {
         const { daysBefore } = body;
         return this.bookingService.confirmNotifyBookings(daysBefore);
+    }
+
+    @UseGuards(SimpleGuard)
+    @Post('/process/past-bookings/:id/:collaboratorId/:commerceLanguage')
+    public async processPastBooking(@Param() params: any): Promise<any> {
+        const { id, collaboratorId, commerceLanguage } = params;
+        return this.bookingService.processPastBooking(id, collaboratorId, commerceLanguage);
     }
 
     @UseGuards(AuthGuard)
