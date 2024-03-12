@@ -45,7 +45,7 @@ export class FeatureToggleService {
     return result;
   }
   public getFeatureToggleOptions(): FeatureToggleOption[] {
-    return [
+    const options = [
       {
         name: 'whatsapp-notify-now',
         type: 'WHATSAPP',
@@ -186,7 +186,8 @@ export class FeatureToggleService {
         name: 'attention-queue-typegrouped',
         type: 'PRODUCT'
       }
-    ]
+    ];
+    return options.sort((a, b) => a.type < b.type ? -1 : 1);
   }
   public async createFeatureToggle(user: string, name: string, commerceId: string, type: string): Promise<FeatureToggle> {
     const existingFeature = await this.getFeatureToggleByNameAndCommerceId(commerceId, name);
