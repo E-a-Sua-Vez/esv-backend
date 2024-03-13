@@ -42,9 +42,17 @@ export class BookingController {
 
     @UseGuards(AuthGuard)
     @Patch('/cancel/:id')
-    public async cancelBooking(@User() user, @Param() params: any, @Body() body: any): Promise<Booking> {
+    public async cancelBooking(@User() user, @Param() params: any): Promise<Booking> {
         const { id } = params;
         return this.bookingService.cancelBooking(user, id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/confirm/:id')
+    public async confirmBooking(@User() user, @Param() params: any, @Body() body: any): Promise<Booking> {
+        const { id } = params;
+        const { confirmationData } = body;
+        return this.bookingService.confirmBooking(user, id, confirmationData);
     }
 
     @UseGuards(SimpleGuard)

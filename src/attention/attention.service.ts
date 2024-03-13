@@ -400,14 +400,14 @@ export class AttentionService {
     }
   }
 
-  public async finishAttention(user: string, attentionId: string, comment: string): Promise<Attention> {
+  public async finishAttention(user: string, attentionId: string, comment: string, date?: Date): Promise<Attention> {
     let attention = await this.getAttentionById(attentionId);
     if (attention.status === AttentionStatus.PROCESSING || attention.status === AttentionStatus.REACTIVATED) {
       attention.status = AttentionStatus.TERMINATED;
       if (comment) {
         attention.comment = comment;
       }
-      attention.endAt = new Date();
+      attention.endAt = date || new Date();
       if(!attention.reactivated) {
         const diff = attention.endAt.getTime() - attention.createdAt.getTime();
         attention.duration = diff/(1000*60);

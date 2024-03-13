@@ -185,6 +185,14 @@ export class FeatureToggleService {
       {
         name: 'attention-queue-typegrouped',
         type: 'PRODUCT'
+      },
+      {
+        name: 'booking-confirm',
+        type: 'PRODUCT'
+      },
+      {
+        name: 'booking-confirm-payment',
+        type: 'PRODUCT'
       }
     ];
     return options.sort((a, b) => a.type < b.type ? -1 : 1);

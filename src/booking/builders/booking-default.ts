@@ -9,6 +9,9 @@ import { Queue } from '../../queue/model/queue.entity';
 import BookingCreated from '../events/BookingCreated';
 import { publish } from 'ett-events-lib';
 import { User } from 'src/user/model/user.entity';
+import { Commerce } from 'src/commerce/model/commerce.entity';
+import { FeatureToggle } from 'src/feature-toggle/model/feature-toggle.entity';
+
 
 @Injectable()
 export class BookingDefaultBuilder implements BookingBuilderInterface {
@@ -17,9 +20,24 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     private bookingRepository = getRepository(Booking)
   ){}
 
-  async create(number: number, date: string, queue: Queue, channel?: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
+  featureToggleIsActive(featureToggle: FeatureToggle[], name: string): boolean {
+    const feature = featureToggle.find(elem => elem.name === name);
+    if (feature) {
+      return feature.active;
+    }
+    return false;
+  }
+
+  async create(number: number, date: string, commerce: Commerce, queue: Queue, channel?: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
     let booking = new Booking();
-    booking.status = status || BookingStatus.PENDING;
+    booking.status = BookingStatus.CONFIRMED;
+    if (status) {
+      booking.status = status
+    } else {
+      if (this.featureToggleIsActive(commerce.features, 'booking-confirm')){
+        booking.status = BookingStatus.PENDING;
+      }
+    }
     booking.type = BookingType.STANDARD;
     booking.createdAt = new Date();
     booking.queueId = queue.id;

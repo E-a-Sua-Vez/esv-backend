@@ -1,4 +1,4 @@
-import { Booking } from './model/booking.entity';
+import { Booking, BookingConfirmation } from './model/booking.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
@@ -17,15 +17,15 @@ import { NotificationTemplate } from 'src/notification/model/notification-templa
 import { BookingDefaultBuilder } from './builders/booking-default';
 import { BookingDetailsDto } from './dto/booking-details.dto';
 import { BookingStatus } from './model/booking-status.enum';
-import BookingUpdated from './events/BookingUpdated';
 import { AttentionService } from 'src/attention/attention.service';
-import Bottleneck from "bottleneck";
 import { Attention } from 'src/attention/model/attention.entity';
 import { WaitlistService } from '../waitlist/waitlist.service';
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
 import { Block } from '../waitlist/model/waitlist.entity';
 import { AttentionType } from 'src/attention/model/attention-type.enum';
+import Bottleneck from "bottleneck";
+import BookingUpdated from './events/BookingUpdated';
 
 @Injectable()
 export class BookingService {
@@ -48,6 +48,7 @@ export class BookingService {
   public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
+    const commerce = await this.commerceService.getCommerceById(queue.commerceId);
     const dateFormatted = new Date(date);
     const newDate = new Date(dateFormatted.setDate(dateFormatted.getDate()));
     const newDateFormatted = newDate.toISOString().slice(0,10);
@@ -67,7 +68,7 @@ export class BookingService {
       if (alreadyBooked.length > 0) {
         throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}, booking: ${JSON.stringify(alreadyBooked)}`, HttpStatus.INTERNAL_SERVER_ERROR);
       } else {
-        bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, queue, channel, user, block, status);
+        bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block, status);
         if (user.email !== undefined) {
           await this.bookingEmail(bookingCreated);
         }
@@ -97,7 +98,7 @@ export class BookingService {
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
-      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .find();
   }
 
@@ -106,7 +107,7 @@ export class BookingService {
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
       .whereEqualTo('number', number)
-      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .find();
   }
 
@@ -119,11 +120,20 @@ export class BookingService {
       .find();
   }
 
+  public async getConfirmedBookingsByDate(date: string, limit: number = 100): Promise<Booking[]> {
+    return await this.bookingRepository
+      .whereEqualTo('date', date)
+      .whereIn('status', [BookingStatus.CONFIRMED])
+      .orderByAscending('number')
+      .limit(limit)
+      .find();
+  }
+
   public async getBookingsBeforeYouByDate(number: number, queueId: string, date: string): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
-      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .whereLessThan('number', number)
       .find();
   }
@@ -135,7 +145,7 @@ export class BookingService {
     const dateToValue = new Date(endDate);
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
-      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .whereGreaterOrEqualThan('dateFormatted', dateFromValue)
       .whereLessOrEqualThan('dateFormatted', dateToValue)
       .find();
@@ -145,7 +155,7 @@ export class BookingService {
     const endDate = new Date(dateTo).toISOString().slice(0,10);
     const dateToValue = new Date(endDate);
     return await this.bookingRepository
-      .whereEqualTo('status', BookingStatus.PENDING)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .whereLessThan('dateFormatted', dateToValue)
       .find();
   }
@@ -382,6 +392,32 @@ ${link}
     return booking;
   }
 
+  public async confirmBooking(user: string, id: string, confirmationData: BookingConfirmation): Promise<Booking> {
+    try {
+      let booking = await this.getBookingById(id);
+      if (booking && booking.id) {
+        const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+        const featureToggle = bookingCommerce.features;
+        if (this.featureToggleIsActive(featureToggle, 'booking-confirm')){
+          booking.status = BookingStatus.CONFIRMED;
+          booking.confirmedAt = new Date();
+          booking.confirmed = true;
+          if (this.featureToggleIsActive(featureToggle, 'booking-confirm-payment')){
+            if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate || !confirmationData.paymentAmount) {
+              throw new HttpException(`Datos insuficientes para confirmar el pago de la reserva`, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            confirmationData.user = user ? user : 'ett';
+            booking.confirmationData = confirmationData;
+          }
+          booking = await this.update(user, booking);
+        }
+        return booking;
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al confirmar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   private async processBooking(user: string, booking: Booking, attentionId: string): Promise<Booking> {
     let bookingToUpdate = booking;
     bookingToUpdate.processed = true;
@@ -403,7 +439,7 @@ ${link}
     if (!date) {
       throw new HttpException(`Error procesando Reservas: Fecha inválida`, HttpStatus.BAD_REQUEST);
     }
-    const bookings = await this.getPendingBookingsByDate(date, 25);
+    let bookings = await this.getConfirmedBookingsByDate(date, 25);
     const limiter = new Bottleneck({
       minTime: 1000,
       maxConcurrent: 10
@@ -445,7 +481,7 @@ ${link}
           const processBooking = await this.processBooking('ett', booking, attention.id);
           response.processBooking = processBooking;
           const attend = await this.attentionService.attend('ETT-MIGRATION', number, queueId, collaboratorId, commerceLanguage);
-          const finish = await this.attentionService.finishAttention('ett', attention.id, 'MIGRATION');
+          const finish = await this.attentionService.finishAttention('ett', attention.id, 'MIGRATION', dateOfAttention);
           response.finish = finish;
           response.attend = attend;
         }
@@ -490,7 +526,7 @@ ${link}
   public async confirmNotifyBookings(daysBefore: number = 1): Promise<any> {
     const date = new Date(new Date(new Date().setDate(new Date().getDate() + daysBefore))).toISOString().slice(0, 10);
     let bookings = [];
-    const pendingBookings = await this.getPendingBookingsByDate(date, 25);
+    const pendingBookings = await this.getConfirmedBookingsByDate(date, 25);
     if (!pendingBookings || pendingBookings.length === 0) {
       throw new HttpException(`Sin Reservas para confirmar`, HttpStatus.OK);
     }
