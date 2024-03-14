@@ -193,6 +193,10 @@ export class FeatureToggleService {
       {
         name: 'booking-confirm-payment',
         type: 'PRODUCT'
+      },
+      {
+        name: 'attention-confirm-payment',
+        type: 'PRODUCT'
       }
     ];
     return options.sort((a, b) => a.type < b.type ? -1 : 1);

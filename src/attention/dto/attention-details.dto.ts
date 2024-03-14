@@ -4,6 +4,7 @@ import { Queue } from '../../queue/model/queue.entity';
 import { Collaborator } from '../../collaborator/model/collaborator.entity';
 import { Module } from '../../module/module.entity';
 import { Block } from '../model/attention.entity';
+import { PaymentConfirmation } from '../../payment/model/payment-confirmation';
 
 export class AttentionDetailsDto {
   id: string;
@@ -35,4 +36,7 @@ export class AttentionDetailsDto {
   notificationOn: boolean;
   notificationEmailOn: boolean;
   block: Block;
+  paid: boolean;
+  paidAt: Date;
+  paymentConfirmationData: PaymentConfirmation
 }

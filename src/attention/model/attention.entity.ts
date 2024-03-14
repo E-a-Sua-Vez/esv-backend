@@ -1,4 +1,5 @@
 import { Collection } from 'fireorm';
+import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { User } from 'src/user/model/user.entity';
 import { AttentionStatus } from './attention-status.enum';
 
@@ -36,5 +37,9 @@ export class Attention {
     rateDuration: number;
     cancelled: boolean;
     cancelledAt: Date;
+    paidAt: Date;
+    paid: boolean;
+    paymentConfirmationData?: PaymentConfirmation;
+    bookingId: string;
     block?: Block;
 }

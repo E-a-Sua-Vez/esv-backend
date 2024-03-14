@@ -24,6 +24,7 @@ import { CommerceService } from '../commerce/commerce.service';
 import { PersonalInfo, User } from '../user/model/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
+import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 
 @Injectable()
 export class AttentionService {
@@ -71,6 +72,9 @@ export class AttentionService {
       attentionDetailsDto.assistingCollaboratorId = attention.assistingCollaboratorId;
       attentionDetailsDto.channel = attention.channel;
       attentionDetailsDto.block = attention.block;
+      attentionDetailsDto.paid = attention.paid;
+      attentionDetailsDto.paidAt = attention.paidAt;
+      attentionDetailsDto.paymentConfirmationData = attention.paymentConfirmationData;
       if (attention.queueId) {
           attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
           attentionDetailsDto.commerce = await this.commerceService.getCommerceById(attentionDetailsDto.queue.commerceId);
@@ -116,6 +120,9 @@ export class AttentionService {
       attentionDetailsDto.notificationOn = attention.notificationOn;
       attentionDetailsDto.notificationEmailOn = attention.notificationEmailOn;
       attentionDetailsDto.block = attention.block;
+      attentionDetailsDto.paid = attention.paid;
+      attentionDetailsDto.paidAt = attention.paidAt;
+      attentionDetailsDto.paymentConfirmationData = attention.paymentConfirmationData;
       if (attention.userId !== undefined) {
           attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -257,7 +264,9 @@ export class AttentionService {
       userIn?: User,
       type?: AttentionType,
       block?: Block,
-      date?: Date
+      date?: Date,
+      paymentConfirmationData?: PaymentConfirmation,
+      bookingId?: string
     ): Promise<Attention> {
 
       try {
@@ -269,7 +278,7 @@ export class AttentionService {
         const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
         if (type && type === AttentionType.NODEVICE) {
           if (block && block.number) {
-            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date);
+            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date, paymentConfirmationData, bookingId);
           } else {
             attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date);
           }
@@ -285,7 +294,7 @@ export class AttentionService {
             attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date);
           }
         } else if (block && block.number) {
-          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date);
+          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date, paymentConfirmationData, bookingId);
         } else {
           attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
         }
@@ -672,6 +681,29 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
       return 'Las atenciones pendientes fueron canceladas exitosamente';
     } catch (error) {
       throw new HttpException(`Hubo un poblema al cancelar las atenciones: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  public async attentionPaymentConfirm(user: string, id: string, paymentConfirmationData: PaymentConfirmation): Promise<Attention> {
+    try {
+      let attention = await this.getAttentionById(id);
+      if (attention && attention.id) {
+        const attentionCommerce = await this.commerceService.getCommerceById(attention.commerceId);
+        const featureToggle = attentionCommerce.features;
+        if (this.featureToggleIsActive(featureToggle, 'attention-confirm-payment')){
+          attention.paidAt = new Date();
+          attention.paid = true;
+          if (paymentConfirmationData === undefined || paymentConfirmationData.paid === false || !paymentConfirmationData.paymentDate || !paymentConfirmationData.paymentAmount) {
+            throw new HttpException(`Datos insuficientes para confirmar el pago de la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+          paymentConfirmationData.user = user ? user : 'ett';
+          attention.paymentConfirmationData = paymentConfirmationData;
+        }
+        attention = await this.update(user, attention);
+        return attention;
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al pagar la atención: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

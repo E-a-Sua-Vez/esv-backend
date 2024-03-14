@@ -1,4 +1,4 @@
-import { Booking, BookingConfirmation } from './model/booking.entity';
+import { Booking } from './model/booking.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
@@ -26,6 +26,7 @@ import { Block } from '../waitlist/model/waitlist.entity';
 import { AttentionType } from 'src/attention/model/attention-type.enum';
 import Bottleneck from "bottleneck";
 import BookingUpdated from './events/BookingUpdated';
+import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 
 @Injectable()
 export class BookingService {
@@ -392,7 +393,7 @@ ${link}
     return booking;
   }
 
-  public async confirmBooking(user: string, id: string, confirmationData: BookingConfirmation): Promise<Booking> {
+  public async confirmBooking(user: string, id: string, confirmationData: PaymentConfirmation): Promise<Booking> {
     try {
       let booking = await this.getBookingById(id);
       if (booking && booking.id) {
@@ -429,8 +430,8 @@ ${link}
   }
 
   private async createAttention(booking: Booking): Promise<Attention> {
-    const { queueId, channel, user, block } = booking;
-    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block);
+    const { id, queueId, channel, user, block, confirmationData } = booking;
+    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id);
     await this.processBooking('ett', booking, attention.id);
     return attention;
   }

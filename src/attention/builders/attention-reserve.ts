@@ -9,6 +9,7 @@ import { QueueService } from '../../queue/queue.service';
 import { Queue } from '../../queue/model/queue.entity';
 import AttentionCreated from '../events/AttentionCreated';
 import { publish } from 'ett-events-lib';
+import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 
 @Injectable()
 export class AttentionReserveBuilder implements BuilderInterface {
@@ -18,7 +19,16 @@ export class AttentionReserveBuilder implements BuilderInterface {
     private queueService: QueueService,
   ){}
 
-  async create(queue: Queue, collaboratorId?: string, type?: AttentionType, channel?: string, userId?: string, block?: Block, date?: Date): Promise<Attention> {
+  async create(
+    queue: Queue,
+    collaboratorId?: string,
+    type?: AttentionType,
+    channel?: string,
+    userId?: string,
+    block?: Block,
+    date?: Date,
+    paymentConfirmationData?: PaymentConfirmation,
+    bookingId?: string): Promise<Attention> {
     if (!block) {
       throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
     }
@@ -49,6 +59,16 @@ export class AttentionReserveBuilder implements BuilderInterface {
     }
     if (queue.serviceId !== undefined) {
       attention.serviceId = queue.serviceId;
+    }
+    if (paymentConfirmationData !== undefined) {
+      if (paymentConfirmationData.paid && paymentConfirmationData.paid === true) {
+        attention.paymentConfirmationData = paymentConfirmationData;
+        attention.paid = paymentConfirmationData.paid;
+        attention.paidAt = paymentConfirmationData.paymentDate;
+      }
+    }
+    if (bookingId != undefined) {
+      attention.bookingId = bookingId;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attentionCreated.number;

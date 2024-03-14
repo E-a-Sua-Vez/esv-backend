@@ -151,4 +151,11 @@ export class AttentionController {
         return this.attentionService.cancelAttention(user, id);
     }
 
+    @UseGuards(AuthGuard)
+    @Patch('/payment-confirm/:id')
+    public async attentionPaymentConfirm(@User() user, @Param() params: any, @Body() body: any): Promise<Attention> {
+        const { id } = params;
+        const { paymentConfirmationData } = body;
+        return this.attentionService.attentionPaymentConfirm(user, id, paymentConfirmationData);
+    }
 }
