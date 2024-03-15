@@ -1,5 +1,6 @@
 export enum Periodicity {
     weekly = 'weekly',
+    biweekly = 'biweekly',
     monthly = 'monthly',
     quarterly = 'quarterly',
     biannual = 'biannual',
@@ -8,6 +9,7 @@ export enum Periodicity {
 
 export const periodicityDayValues = {
     weekly: 7,
+    biweekly: 15,
     monthly: 30,
     quarterly: 90,
     biannual: 180,
