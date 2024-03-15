@@ -36,8 +36,8 @@ export class PlanController {
     @UseGuards(AuthGuard)
     @Post('/')
     public async createPlan(@User() user, @Body() body: Plan): Promise<Plan> {
-        const { name, country, description, price, periodicity, order, online, onlinePrice, saving, onlineSaving } = body;
-        return this.planService.createPlan(user, name, country, description, price, periodicity, order, online, onlinePrice, saving, onlineSaving);
+        const { name, country, description, price, periodicity, order, online, onlinePrice, saving, onlineSaving, productType } = body;
+        return this.planService.createPlan(user, name, country, description, price, periodicity, order, online, onlinePrice, saving, onlineSaving, productType);
     }
 
     @UseGuards(AuthGuard)

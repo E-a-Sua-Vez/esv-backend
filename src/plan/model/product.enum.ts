@@ -1,0 +1,5 @@
+export enum ProductType {
+    ALL_IN_ONE = 'ALL_IN_ONE',
+    ONLY_SURVEYS = 'ONLY_SURVEYS',
+    QUEUES_BOOKING = 'QUEUES_BOOKING'
+}

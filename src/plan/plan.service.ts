@@ -6,6 +6,8 @@ import PlanUpdated from './events/PlanUpdated';
 import PlanCreated from './events/PlanCreated';
 import { Periodicity } from './model/periodicity.enum';
 import * as plans from './model/plan.json';
+import * as permissions from './model/plan-permissions.json';
+import { ProductType } from './model/product.enum';
 
 export class PlanService {
   constructor(
@@ -84,7 +86,7 @@ export class PlanService {
     return plansCreated;
   }
 
-  public async createPlan(user: string, name: string, country: string, description: string, price: number, periodicity: Periodicity, order: number, online, onlinePrice: number, saving: number, onlineSaving: number): Promise<Plan> {
+  public async createPlan(user: string, name: string, country: string, description: string, price: number, periodicity: Periodicity, order: number, online, onlinePrice: number, saving: number, onlineSaving: number, productType: ProductType): Promise<Plan> {
     let plan = new Plan();
     plan.name = name;
     plan.country = country;
@@ -99,6 +101,10 @@ export class PlanService {
     plan.onlinePrice = onlinePrice;
     plan.saving = saving;
     plan.onlineSaving = onlineSaving;
+    plan.productType = productType || ProductType.ALL_IN_ONE;
+    if (plan.productType) {
+      plan.permissions = permissions[plan.productType];
+    }
     const planCreated = await this.planRepository.create(plan);
     const planCreatedEvent = new PlanCreated(new Date(), planCreated, { user });
     publish(planCreatedEvent);

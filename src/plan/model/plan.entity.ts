@@ -1,5 +1,6 @@
 import { Collection } from 'fireorm';
 import { Periodicity } from './periodicity.enum';
+import { ProductType } from './product.enum';
 
 @Collection('plan')
 export class Plan {
@@ -19,4 +20,5 @@ export class Plan {
     createdAt: Date;
     modifiedAt: Date;
     permissions: Record<string, boolean|number>;
+    productType: ProductType
 }
