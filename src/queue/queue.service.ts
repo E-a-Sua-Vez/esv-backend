@@ -7,12 +7,14 @@ import QueueCreated from './events/QueueCreated';
 import QueueUpdated from './events/QueueUpdated';
 import { timeConvert } from 'src/shared/utils/date';
 import { QueueType } from './model/queue-type.enum';
+import { ServiceService } from '../service/service.service';
 
 @Injectable()
 export class QueueService {
   constructor(
   @InjectRepository(Queue)
-    private queueRepository = getRepository(Queue)
+    private queueRepository = getRepository(Queue),
+    private serviceService: ServiceService
   ) {}
 
   public async getQueueById(id: string): Promise<Queue> {
@@ -54,9 +56,13 @@ export class QueueService {
     let queues: Queue[] = [];
     const result = await this.getActiveQueuesByCommerce(commerceId);
     if (result && result.length > 0) {
-      result.forEach(queue => {
+      for (let i = 0; i < result.length; i++) {
+        const queue = result[i];
+        if (queue.type === QueueType.SERVICE) {
+          queue.services = await this.serviceService.getServicesById([queue.serviceId])
+        }
         queues.push(this.getQueueBlockDetails(queue));
-      })
+      }
       if (queues && queues.length > 0) {
         groupedQueues = queues.reduce((acc, conf) => {
           const type = conf.type;
@@ -80,9 +86,15 @@ export class QueueService {
       .orderByAscending('order')
       .find();
     if (result && result.length > 0) {
-      result.forEach(queue => {
+      for (let i = 0; i < result.length; i++) {
+        const queue = result[i];
+        if (queue.type === QueueType.SERVICE) {
+          if (queue.serviceId) {
+            queue.services = await this.serviceService.getServicesById([queue.serviceId]);
+          }
+        }
         queues.push(this.getQueueBlockDetails(queue));
-      })
+      }
     }
     return queues;
   }

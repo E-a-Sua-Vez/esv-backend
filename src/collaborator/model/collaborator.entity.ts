@@ -1,4 +1,5 @@
 import { Collection } from 'fireorm';
+import { Service } from 'src/service/model/service.entity';
 import { CollaboratorType } from './collaborator-type.enum';
 
 @Collection('collaborator')
@@ -22,4 +23,5 @@ export class Collaborator {
     servicesId: string[];
     permissions: Record<string, boolean|number>;
     available: boolean;
+    services: Service[]
 }

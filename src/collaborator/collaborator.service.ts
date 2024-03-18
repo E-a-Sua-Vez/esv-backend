@@ -9,6 +9,7 @@ import CollaboratorUpdated from './events/CollaboratorUpdated';
 import { PermissionService } from 'src/permission/permission.service';
 import * as defaultPermissions from './model/default-permissions.json';
 import { CollaboratorType } from './model/collaborator-type.enum';
+import { ServiceService } from '../service/service.service';
 
 @Injectable()
 export class CollaboratorService {
@@ -16,7 +17,8 @@ export class CollaboratorService {
     @InjectRepository(Collaborator)
     private collaboratorRepository = getRepository(Collaborator),
     private administratorService: AdministratorService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private serviceService: ServiceService
   ) {}
 
   public async getCollaboratorById(id: string): Promise<Collaborator> {
@@ -56,11 +58,20 @@ export class CollaboratorService {
   }
 
   public async getCollaboratorsByCommerceId(commerceId: string): Promise<Collaborator[]> {
-    return await this.collaboratorRepository
+    let collaborators = [];
+    const result = await this.collaboratorRepository
     .whereEqualTo('commerceId', commerceId)
     .whereEqualTo('available', true)
     .orderByAscending('name')
     .find();
+    for (let i = 0; i < result.length; i++) {
+      const collaborator = result[i];
+      if (collaborator.servicesId && collaborator.servicesId.length > 0) {
+        collaborator.services = await this.serviceService.getServicesById(collaborator.servicesId);
+      }
+      collaborators.push(collaborator);
+    }
+    return collaborators;
   }
 
   public async getCollaboratorsByCommerceIdAndEmail(commerceId: string, email: string): Promise<Collaborator> {

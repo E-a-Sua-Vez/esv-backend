@@ -35,6 +35,15 @@ export class ServiceService {
     return services;
   }
 
+  public async getServicesById(servicesId: string[]): Promise<Service[]> {
+    let services: Service[] = [];
+    services = await this.serviceRepository
+      .whereIn('id', servicesId)
+      .whereEqualTo('available', true)
+      .find();
+    return services;
+  }
+
   public async getActiveServicesByCommerce(commerceId: string): Promise<Service[]> {
     let services: Service[] = [];
     services = await this.serviceRepository

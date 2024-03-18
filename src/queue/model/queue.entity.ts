@@ -52,4 +52,5 @@ export class Queue {
     serviceInfo: ServiceInfo;
     collaborator: Collaborator;
     service: Service;
+    services: Service[];
 }

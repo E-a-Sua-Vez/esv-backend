@@ -303,7 +303,7 @@
     "dashboard.attention-collaborators.view": false,
     "dashboard.booking-number.view": false,
     "dashboard.tracing.view": true,
-    "dashboard.attentions-management.view": true,
+    "dashboard.attentions-management.view": false,
     "dashboard.reports.attentions-management": false,
     "dashboard.clients-management.view": true,
     "dashboard.reports.clients-management": true,
