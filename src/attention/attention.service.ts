@@ -25,6 +25,7 @@ import { PersonalInfo, User } from '../user/model/user.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
+import { QueueType } from 'src/queue/model/queue-type.enum';
 
 @Injectable()
 export class AttentionService {
@@ -75,6 +76,9 @@ export class AttentionService {
       attentionDetailsDto.paid = attention.paid;
       attentionDetailsDto.paidAt = attention.paidAt;
       attentionDetailsDto.paymentConfirmationData = attention.paymentConfirmationData;
+      attentionDetailsDto.serviceId = attention.serviceId;
+      attentionDetailsDto.servicesId = attention.servicesId;
+      attentionDetailsDto.servicesDetails = attention.servicesDetails;
       if (attention.queueId) {
           attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
           attentionDetailsDto.commerce = await this.commerceService.getCommerceById(attentionDetailsDto.queue.commerceId);
@@ -123,6 +127,9 @@ export class AttentionService {
       attentionDetailsDto.paid = attention.paid;
       attentionDetailsDto.paidAt = attention.paidAt;
       attentionDetailsDto.paymentConfirmationData = attention.paymentConfirmationData;
+      attentionDetailsDto.serviceId = attention.serviceId;
+      attentionDetailsDto.servicesId = attention.servicesId;
+      attentionDetailsDto.servicesDetails = attention.servicesDetails;
       if (attention.userId !== undefined) {
           attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -257,6 +264,13 @@ export class AttentionService {
     .find();
   }
 
+  public async getPendingCommerceAttentions(commerceId: string): Promise<Attention[]> {
+    return await this.attentionRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereIn('status', [AttentionStatus.PENDING])
+      .find();
+  }
+
   public async createAttention(
       queueId: string,
       collaboratorId?: string,
@@ -266,9 +280,10 @@ export class AttentionService {
       block?: Block,
       date?: Date,
       paymentConfirmationData?: PaymentConfirmation,
-      bookingId?: string
+      bookingId?: string,
+      servicesId?: string[],
+      servicesDetails?: object[]
     ): Promise<Attention> {
-
       try {
         let attentionCreated;
         let queue = await this.queueService.getQueueById(queueId);
@@ -278,9 +293,9 @@ export class AttentionService {
         const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
         if (type && type === AttentionType.NODEVICE) {
           if (block && block.number) {
-            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date, paymentConfirmationData, bookingId);
+            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails);
           } else {
-            attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date);
+            attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails);
           }
         } else if (onlySurvey) {
           if (onlySurvey.active) {
@@ -288,15 +303,15 @@ export class AttentionService {
             if (!collaboratorBot || collaboratorBot === undefined) {
               throw new HttpException(`Colaborador Bot no existe, debe crearse`, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-            const attentionBuild = await this.attentionSurveyBuilder.create(queue, collaboratorBot.id, channel, userId, date);
+            const attentionBuild = await this.attentionSurveyBuilder.create(queue, collaboratorBot.id, channel, userId, date, servicesId, servicesDetails);
             attentionCreated = await this.finishAttention(attentionBuild.userId, attentionBuild.id, '');
           } else {
-            attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date);
+            attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails);
           }
         } else if (block && block.number) {
-          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date, paymentConfirmationData, bookingId);
+          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails);
         } else {
-          attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId);
+          attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails);
         }
         if (user.email !== undefined) {
           await this.attentionEmail(attentionCreated.id);
@@ -705,6 +720,34 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
     } catch (error) {
       throw new HttpException(`Hubo un problema al pagar la atención: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  public async transferAttentionToQueue(user: string, id: string, queueId: string): Promise<Attention> {
+    let attention = undefined;
+    try {
+      attention = await this.getAttentionById(id);
+      const queueToTransfer = await this.queueService.getQueueById(queueId);
+      if (attention && attention.id) {
+        if (queueToTransfer && queueToTransfer.id) {
+          if (queueToTransfer.type === QueueType.COLLABORATOR) {
+            attention.transfered = true;
+            attention.transferedAt = new Date();
+            attention.transferedOrigin = attention.queueId;
+            attention.queueId = queueId;
+            attention = await this.update(user, attention);
+          } else {
+            throw new HttpException(`Atención ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`, HttpStatus.NOT_FOUND);
+          }
+        } else {
+          throw new HttpException(`Cola no existe: ${queueId}`, HttpStatus.NOT_FOUND);
+        }
+      } else {
+        throw new HttpException(`Atención no existe: ${id}`, HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al cancelar la atención: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return attention;
   }
 
 }

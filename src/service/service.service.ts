@@ -40,6 +40,7 @@ export class ServiceService {
     services = await this.serviceRepository
       .whereIn('id', servicesId)
       .whereEqualTo('available', true)
+      .orderByAscending('order')
       .find();
     return services;
   }

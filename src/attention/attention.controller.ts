@@ -79,8 +79,8 @@ export class AttentionController {
     @UseGuards(AuthGuard)
     @Post()
     public async createAttention(@Body() body: any): Promise<Attention> {
-        const { queueId, collaboratorId, channel, user, type, block } = body;
-        return this.attentionService.createAttention(queueId, collaboratorId, channel, user, type, block);
+        const { queueId, collaboratorId, channel, user, type, block, servicesId, servicesDetails } = body;
+        return this.attentionService.createAttention(queueId, collaboratorId, channel, user, type, block, undefined, undefined, undefined, servicesId, servicesDetails);
     }
 
     @UseGuards(AuthGuard)
@@ -157,5 +157,19 @@ export class AttentionController {
         const { id } = params;
         const { paymentConfirmationData } = body;
         return this.attentionService.attentionPaymentConfirm(user, id, paymentConfirmationData);
+    }
+
+    @Patch('/transfer/:id')
+    public async transferAttentionToQueue(@User() user, @Param() params: any, @Body() body: any): Promise<Attention> {
+        const { id } = params;
+        const { queueId } = body;
+        return this.attentionService.transferAttentionToQueue(user, id, queueId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/pending/commerce/:commerceId')
+    public async getPendingCommerceBookings(@Param() params: any): Promise<any> {
+        const { commerceId } = params;
+        return this.attentionService.getPendingCommerceAttentions(commerceId);
     }
 }

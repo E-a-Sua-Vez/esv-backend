@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommerceService } from 'src/commerce/commerce.service';
+import { Commerce } from 'src/commerce/model/commerce.entity';
+import { Queue } from 'src/queue/model/queue.entity';
 import { QueueService } from 'src/queue/queue.service';
 import { timeConvert } from 'src/shared/utils/date';
 import { Block } from './model/block.entity';
@@ -91,17 +93,27 @@ export class BlockService {
   }
 
   public async getQueueBlockDetailsByDay(queueId: string): Promise<Record<string, Block[]>> {
+    let blocksByDay;
+    const queue = await this.queueService.getQueueById(queueId);
+    if (queue) {
+      const commerce = await this.commerceService.getCommerceById(queue.commerceId);
+      if (commerce) {
+        blocksByDay = await this.getCommerceQueueBlockDetailsByDay(commerce, queue);
+      }
+    }
+    return blocksByDay;
+  }
+
+  public async getCommerceQueueBlockDetailsByDay(commerce: Commerce, queue: Queue): Promise<Record<string, Block[]>> {
     let hourBlocks: Block[] = [];
     let blocksByDay = {};
     let serviceInfo;
     let blockTime;
-    const queue = await this.queueService.getQueueById(queueId);
     if (queue.blockTime) {
       blockTime = queue.blockTime;
     }
     if (queue.serviceInfo &&
       queue.serviceInfo.sameCommeceHours === true) {
-      const commerce = await this.commerceService.getCommerceById(queue.commerceId);
       if (commerce.serviceInfo) {
         serviceInfo = commerce.serviceInfo;
       }
@@ -132,11 +144,14 @@ export class BlockService {
 
   public async getQueueBlockDetailsByDayByCommerceId(commerceId: string): Promise<Record<string, Record<string, Block[]>>> {
     const result = {};
-    const queues = await this.queueService.getQueueByCommerce(commerceId);
-    for (let i = 0; i < queues.length; i++) {
-      const queue = queues[i];
-      const blocks = await this.getQueueBlockDetailsByDay(queue.id);
-      result[queue.id] = blocks;
+    const commerce = await this.commerceService.getCommerceById(commerceId);
+    const queues = commerce.queues;
+    if (queues && queues.length > 0) {
+      for (let i = 0; i < queues.length; i++) {
+        const queue = queues[i];
+        const blocks = await this.getCommerceQueueBlockDetailsByDay(commerce, queue);
+        result[queue.id] = blocks;
+      }
     }
     return result;
   }

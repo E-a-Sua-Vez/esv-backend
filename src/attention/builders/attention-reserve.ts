@@ -10,6 +10,7 @@ import { Queue } from '../../queue/model/queue.entity';
 import AttentionCreated from '../events/AttentionCreated';
 import { publish } from 'ett-events-lib';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
+import { QueueType } from 'src/queue/model/queue-type.enum';
 
 @Injectable()
 export class AttentionReserveBuilder implements BuilderInterface {
@@ -28,7 +29,10 @@ export class AttentionReserveBuilder implements BuilderInterface {
     block?: Block,
     date?: Date,
     paymentConfirmationData?: PaymentConfirmation,
-    bookingId?: string): Promise<Attention> {
+    bookingId?: string,
+    servicesId?: string[],
+    servicesDetails?: object[]
+  ): Promise<Attention> {
     if (!block) {
       throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
     }
@@ -38,6 +42,13 @@ export class AttentionReserveBuilder implements BuilderInterface {
     attention.createdAt = date || new Date();
     attention.queueId = queue.id;
     attention.commerceId = queue.commerceId;
+    const currentNumber = queue.currentNumber;
+    let attentionNumber;
+    if (block && Object.keys(block).length > 0 && queue.type !== QueueType.SELECT_SERVICE) {
+      attentionNumber = block.number;
+    } else {
+      attention.number = currentNumber + 1;
+    }
     if (block && block.number) {
       attention.number = block.number;
       attention.block = block;
@@ -59,6 +70,12 @@ export class AttentionReserveBuilder implements BuilderInterface {
     }
     if (queue.serviceId !== undefined) {
       attention.serviceId = queue.serviceId;
+    }
+    if (servicesId) {
+      attention.servicesId = servicesId;
+    }
+    if (servicesDetails) {
+      attention.servicesDetails = servicesDetails;
     }
     if (paymentConfirmationData !== undefined) {
       if (paymentConfirmationData.paid && paymentConfirmationData.paid === true) {

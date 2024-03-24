@@ -7,6 +7,8 @@ export class Block {
     number: number;
     hourFrom: string;
     hourTo: string;
+    blocks?: Block[];
+    blockNumbers?: number[];
 }
 
 @Collection('attention')
@@ -15,6 +17,7 @@ export class Attention {
     commerceId: string;
     collaboratorId: string;
     serviceId: string;
+    servicesId: string[];
     createdAt: Date;
     endAt: Date;
     number: number;
@@ -37,9 +40,13 @@ export class Attention {
     rateDuration: number;
     cancelled: boolean;
     cancelledAt: Date;
+    transfered: boolean;
+    transferedAt: Date;
+    transferedOrigin: string;
     paidAt: Date;
     paid: boolean;
     paymentConfirmationData?: PaymentConfirmation;
     bookingId: string;
     block?: Block;
+    servicesDetails: object[]
 }

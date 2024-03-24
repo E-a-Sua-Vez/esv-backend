@@ -23,5 +23,5 @@ export class Collaborator {
     servicesId: string[];
     permissions: Record<string, boolean|number>;
     available: boolean;
-    services: Service[]
+    services?: Service[]
 }

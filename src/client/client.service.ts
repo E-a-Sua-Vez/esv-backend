@@ -28,7 +28,7 @@ export class ClientService {
         .whereEqualTo('businessId', businessId)
         .whereEqualTo('idNumber', idNumber)
         .findOne();
-    } else if (email && !client || !client.id) {
+    } else if (email && !client) {
       client = await this.clientRepository
         .whereEqualTo('businessId', businessId)
         .whereEqualTo('email', email).findOne();

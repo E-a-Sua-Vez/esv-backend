@@ -31,19 +31,37 @@ export class CommerceService {
 
   public async getCommerceById(id: string): Promise<Commerce> {
     let commerce = await this.commerceRepository.findById(id);
+    const [
+      queues,
+      surveys,
+      features
+    ] = await Promise.all([
+      this.queueService.getActiveQueuesByCommerce(id),
+      this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id),
+      this.featureToggleService.getFeatureToggleByCommerceId(id)
+    ]);
     let commerceAux = commerce;
-    commerceAux.queues = await this.queueService.getActiveQueuesByCommerce(id);
-    commerceAux.surveys = await this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id);
-    commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
+    commerceAux.queues = queues;
+    commerceAux.surveys = surveys;
+    commerceAux.features = features;
     return commerceAux;
   }
 
   public async getCommerceDetails(id: string): Promise<Commerce> {
     let commerce = await this.commerceRepository.findById(id);
+    const [
+      queues,
+      surveys,
+      features
+    ] = await Promise.all([
+      this.queueService.getActiveQueuesByCommerce(id),
+      this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id),
+      this.featureToggleService.getFeatureToggleByCommerceId(id)
+    ]);
     let commerceAux = commerce;
-    commerceAux.queues = await this.queueService.getActiveQueuesByCommerce(id);
-    commerceAux.surveys = await this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id);
-    commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(id);
+    commerceAux.queues = queues;
+    commerceAux.surveys = surveys;
+    commerceAux.features = features;
     return commerceAux;
   }
 
@@ -60,8 +78,15 @@ export class CommerceService {
     let commerces = await this.commerceRepository.whereEqualTo('keyName', keyName).find();
     if (commerces.length > 0) {
       let commerceAux = commerces[0];
-      commerceAux.queues = await this.queueService.getActiveQueuesByCommerce(commerceAux.id);
-      commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
+      const [
+        queues,
+        features
+      ] = await Promise.all([
+        this.queueService.getActiveOnlineQueuesByCommerce(commerceAux.id),
+        this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id)
+      ]);
+      commerceAux.queues = queues;
+      commerceAux.features = features;
       return commerceAux;
     }
   }

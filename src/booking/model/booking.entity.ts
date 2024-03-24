@@ -6,6 +6,8 @@ export class Block {
     number: number;
     hourFrom: string;
     hourTo: string;
+    blocks?: Block[];
+    blockNumbers?: number[];
 }
 
 @Collection('booking')
@@ -27,12 +29,17 @@ export class Booking {
     cancelledAt: Date;
     cancelled: boolean;
     attentionId: string;
+    transfered: boolean;
+    transferedAt: Date;
+    transferedOrigin: string;
     user: User;
     block?: Block;
     confirmedAt: Date;
+    servicesId: string[];
     confirmed: boolean;
     confirmationData?: PaymentConfirmation;
     confirmNotified: boolean = false;
     confirmNotifiedEmail: boolean = false;
     confirmNotifiedWhatsapp: boolean = false;
+    servicesDetails: object[]
 }

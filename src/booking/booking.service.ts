@@ -27,6 +27,8 @@ import { AttentionType } from 'src/attention/model/attention-type.enum';
 import Bottleneck from "bottleneck";
 import BookingUpdated from './events/BookingUpdated';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
+import { QueueType } from 'src/queue/model/queue-type.enum';
+import { BookingAvailabilityDto } from './dto/booking-availability.dto';
 
 @Injectable()
 export class BookingService {
@@ -46,7 +48,16 @@ export class BookingService {
     return await this.bookingRepository.findById(id);
   }
 
-  public async createBooking(queueId: string, channel: string = BookingChannel.QR, date: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
+  public async createBooking(
+      queueId: string,
+      channel: string = BookingChannel.QR,
+      date: string,
+      user?: User,
+      block?: Block,
+      status?: BookingStatus,
+      servicesId?: string[],
+      servicesDetails?: object[]
+    ): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const commerce = await this.commerceService.getCommerceById(queue.commerceId);
@@ -58,24 +69,23 @@ export class BookingService {
       throw new HttpException(`Limite de la fila ${queue.id} - ${queue.name} (${queue.limit}) alcanzado para la fecha ${newDateFormatted}`, HttpStatus.INTERNAL_SERVER_ERROR);
     } else {
       let bookingNumber;
-      if (block && Object.keys(block).length > 0) {
+      if (block && Object.keys(block).length > 0 && queue.type !== QueueType.SELECT_SERVICE) {
         bookingNumber = block.number;
+        const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(queueId, date, bookingNumber);
+        if (alreadyBooked.length > 0) {
+          throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}, booking: ${JSON.stringify(alreadyBooked)}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
       } else {
         const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);
         const amountOfBookings = dateBookings.length || 0;
         bookingNumber = amountOfBookings + 1;
       }
-      const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(queueId, date, bookingNumber);
-      if (alreadyBooked.length > 0) {
-        throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}, booking: ${JSON.stringify(alreadyBooked)}`, HttpStatus.INTERNAL_SERVER_ERROR);
-      } else {
-        bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block, status);
-        if (user.email !== undefined) {
-          await this.bookingEmail(bookingCreated);
-        }
-        if (user.phone !== undefined) {
-          await this.bookingWhatsapp(bookingCreated);
-        }
+      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block, status, servicesId, servicesDetails);
+      if (user.email !== undefined) {
+        await this.bookingEmail(bookingCreated);
+      }
+      if (user.phone !== undefined) {
+        await this.bookingWhatsapp(bookingCreated);
       }
     }
     return bookingCreated;
@@ -139,17 +149,66 @@ export class BookingService {
       .find();
   }
 
-  public async getPendingBookingsBetweenDates(queueId: string, dateFrom: Date, dateTo: Date): Promise<Booking[]> {
+  public async getPendingBookingsBetweenDates(queueId: string, dateFrom: Date, dateTo: Date): Promise<BookingAvailabilityDto[]> {
     const startDate = new Date(dateFrom).toISOString().slice(0,10);
     const endDate = new Date(dateTo).toISOString().slice(0,10);
     const dateFromValue = new Date(startDate);
     const dateToValue = new Date(endDate);
-    return await this.bookingRepository
+    let bookings: BookingAvailabilityDto[] = [];
+    const results = await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .whereGreaterOrEqualThan('dateFormatted', dateFromValue)
       .whereLessOrEqualThan('dateFormatted', dateToValue)
       .find();
+    if (results && results.length > 0) {
+      results.forEach(result => {
+        const booking = new BookingAvailabilityDto();
+        booking.id = result.id;
+        booking.commerceId = result.commerceId;
+        booking.queueId = result.queueId;
+        booking.number = result.number;
+        booking.date = result.date;
+        booking.status = result.status;
+        bookings.push(booking);
+      })
+    }
+    return bookings;
+  }
+
+  public async getPendingCommerceBookingsByDate(commerceId: string, date: string): Promise<Booking[]> {
+    return await this.bookingRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
+      .whereEqualTo('date', date)
+      .find();
+  }
+
+  public async getPendingCommerceBookingsBetweenDates(commerceId: string, dateFrom: Date, dateTo: Date): Promise<BookingAvailabilityDto[]> {
+    const startDate = new Date(dateFrom).toISOString().slice(0,10);
+    const endDate = new Date(dateTo).toISOString().slice(0,10);
+    const dateFromValue = new Date(startDate);
+    const dateToValue = new Date(endDate);
+    let bookings: BookingAvailabilityDto[] = [];
+    const results = await this.bookingRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
+      .whereGreaterOrEqualThan('dateFormatted', dateFromValue)
+      .whereLessOrEqualThan('dateFormatted', dateToValue)
+      .find();
+    if (results && results.length > 0) {
+      results.forEach(result => {
+        const booking = new BookingAvailabilityDto();
+        booking.id = result.id;
+        booking.commerceId = result.commerceId;
+        booking.queueId = result.queueId;
+        booking.number = result.number;
+        booking.date = result.date;
+        booking.status = result.status;
+        bookings.push(booking);
+      })
+    }
+    return bookings;
   }
 
   public async getPendingBookingsBeforeDate(dateTo: Date): Promise<Booking[]> {
@@ -430,8 +489,8 @@ ${link}
   }
 
   private async createAttention(booking: Booking): Promise<Attention> {
-    const { id, queueId, channel, user, block, confirmationData } = booking;
-    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id);
+    const { id, queueId, channel, user, block, confirmationData, servicesId, servicesDetails } = booking;
+    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id, servicesId, servicesDetails);
     await this.processBooking('ett', booking, attention.id);
     return attention;
   }
@@ -609,5 +668,33 @@ ${link}
     } catch (error) {
       throw new HttpException(`Hubo un poblema al cancelar las reservas: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  public async transferBookingToQueue(user: string, id: string, queueId: string): Promise<Booking> {
+    let booking = undefined;
+    try {
+      booking = await this.getBookingById(id);
+      const queueToTransfer = await this.queueService.getQueueById(queueId);
+      if (booking && booking.id) {
+        if (queueToTransfer && queueToTransfer.id) {
+          if (queueToTransfer.type === QueueType.COLLABORATOR) {
+            booking.transfered = true;
+            booking.transferedAt = new Date();
+            booking.transferedOrigin = booking.queueId;
+            booking.queueId = queueId;
+            booking = await this.update(user, booking);
+          } else {
+            throw new HttpException(`Reserva ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`, HttpStatus.NOT_FOUND);
+          }
+        } else {
+          throw new HttpException(`Cola no existe: ${queueId}`, HttpStatus.NOT_FOUND);
+        }
+      } else {
+        throw new HttpException(`Reserva no existe: ${id}`, HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al cancelar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return booking;
   }
 }

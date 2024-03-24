@@ -40,16 +40,16 @@ export class QueueController {
     @UseGuards(AuthGuard)
     @Post('/')
     public async createQueue(@User() user, @Body() body: Queue): Promise<Queue> {
-        const { commerceId, type, name, tag, limit, estimatedTime, order, serviceInfo, blockTime, collaboratorId, serviceId } = body;
-        return this.queueService.createQueue(user, commerceId, type, name, tag, limit, estimatedTime, order, serviceInfo, blockTime, collaboratorId, serviceId);
+        const { commerceId, type, name, tag, limit, estimatedTime, order, serviceInfo, blockTime, collaboratorId, serviceId, servicesId } = body;
+        return this.queueService.createQueue(user, commerceId, type, name, tag, limit, estimatedTime, order, serviceInfo, blockTime, collaboratorId, serviceId, servicesId);
     }
 
     @UseGuards(AuthGuard)
     @Patch('/:id')
     public async updateQueue(@User() user, @Param() params: any, @Body() body: Queue): Promise<Queue> {
         const { id } = params;
-        const { name, limit, estimatedTime, order, active, available, serviceInfo, blockTime } = body;
-        return this.queueService.updateQueueConfigurations(user, id, name, limit, estimatedTime, order, active, available, serviceInfo, blockTime);
+        const { name, limit, estimatedTime, order, active, available, online, serviceInfo, blockTime, servicesId } = body;
+        return this.queueService.updateQueueConfigurations(user, id, name, limit, estimatedTime, order, active, available, online, serviceInfo, blockTime, servicesId);
     }
 
     @UseGuards(SimpleGuard)

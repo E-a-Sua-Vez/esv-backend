@@ -40,6 +40,7 @@ export class Queue {
     type: QueueType;
     active: boolean;
     available: boolean;
+    online: boolean;
     createdAt: Date;
     limit: number;
     name: string;
@@ -49,8 +50,9 @@ export class Queue {
     blockTime: number;
     collaboratorId?: string;
     serviceId?: string;
-    serviceInfo: ServiceInfo;
-    collaborator: Collaborator;
-    service: Service;
-    services: Service[];
+    serviceInfo?: ServiceInfo;
+    collaborator?: Collaborator;
+    service?: Service;
+    servicesId?: string[];
+    services?: Service[];
 }

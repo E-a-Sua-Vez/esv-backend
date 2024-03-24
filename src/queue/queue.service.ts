@@ -54,12 +54,12 @@ export class QueueService {
   public async getGroupedQueueByCommerce(commerceId: string): Promise<Record<string, Queue[]>> {
     let groupedQueues = {};
     let queues: Queue[] = [];
-    const result = await this.getActiveQueuesByCommerce(commerceId);
+    const result = await this.getActiveOnlineQueuesByCommerce(commerceId);
     if (result && result.length > 0) {
       for (let i = 0; i < result.length; i++) {
         const queue = result[i];
-        if (queue.type === QueueType.SERVICE) {
-          queue.services = await this.serviceService.getServicesById([queue.serviceId])
+        if ([QueueType.SERVICE, QueueType.MULTI_SERVICE].includes(queue.type)) {
+          queue.services = await this.serviceService.getServicesById(queue.servicesId || [queue.serviceId])
         }
         queues.push(this.getQueueBlockDetails(queue));
       }
@@ -99,7 +99,30 @@ export class QueueService {
     return queues;
   }
 
-  public async updateQueueConfigurations(user, id, name, limit, estimatedTime, order, active, available, serviceInfo, blockTime = 60): Promise<Queue> {
+  public async getActiveOnlineQueuesByCommerce(commerceId: string): Promise<Queue[]> {
+    let queues: Queue[] = [];
+    const result = await this.queueRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .whereEqualTo('online', true)
+      .orderByAscending('order')
+      .find();
+    if (result && result.length > 0) {
+      for (let i = 0; i < result.length; i++) {
+        const queue = result[i];
+        if (queue.type === QueueType.SERVICE) {
+          if (queue.serviceId) {
+            queue.services = await this.serviceService.getServicesById([queue.serviceId]);
+          }
+        }
+        queues.push(this.getQueueBlockDetails(queue));
+      }
+    }
+    return queues;
+  }
+
+  public async updateQueueConfigurations(user, id, name, limit, estimatedTime, order, active, available, online, serviceInfo, blockTime = 60, servicesId): Promise<Queue> {
     try {
       let queue = await this.queueRepository.findById(id);
       if (name) {
@@ -120,11 +143,17 @@ export class QueueService {
       if (available !== undefined) {
         queue.available = available;
       }
+      if (online !== undefined) {
+        queue.online = online;
+      }
       if (serviceInfo !== undefined) {
         queue.serviceInfo = serviceInfo;
       }
       if (blockTime !== undefined) {
         queue.blockTime = blockTime;
+      }
+      if (servicesId !== undefined) {
+        queue.servicesId = servicesId;
       }
       return await this.update(user, queue);
     } catch (error) {
@@ -144,7 +173,7 @@ export class QueueService {
     return queueUpdated;
   }
 
-  public async createQueue(user: string, commerceId: string, type: QueueType, name: string, tag: string, limit: number, estimatedTime: number, order: number, serviceInfo: ServiceInfo, blockTime: number = 60, collaboratorId: string, serviceId: string): Promise<Queue> {
+  public async createQueue(user: string, commerceId: string, type: QueueType, name: string, tag: string, limit: number, estimatedTime: number, order: number, serviceInfo: ServiceInfo, blockTime: number = 60, collaboratorId: string, serviceId: string, servicesId: string[]): Promise<Queue> {
     let queue = new Queue();
     queue.commerceId = commerceId;
     queue.type = type || QueueType.STANDARD;
@@ -156,6 +185,7 @@ export class QueueService {
     queue.currentAttentionId = '';
     queue.active = true;
     queue.available = true;
+    queue.online = true;
     queue.createdAt = new Date();
     queue.order = order;
     queue.serviceInfo = serviceInfo;
@@ -166,7 +196,13 @@ export class QueueService {
     if (serviceId) {
       queue.serviceId = serviceId;
     }
-    queue.tag = tag;
+    if (servicesId) {
+      queue.servicesId = servicesId;
+    }
+    queue.tag = name;
+    if (tag) {
+      queue.tag = tag;
+    }
     const queueCreated = await this.queueRepository.create(queue);
     const queueCreatedEvent = new QueueCreated(new Date(), queueCreated, { user });
     publish(queueCreatedEvent);

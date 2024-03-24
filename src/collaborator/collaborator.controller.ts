@@ -17,6 +17,13 @@ export class CollaboratorController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/details/:id')
+    public async getCollaboratorDetailsById(@Param() params: any): Promise<Collaborator> {
+        const { id } = params;
+        return this.collaboratorService.getCollaboratorDetailsById(id);
+    }
+
+    @UseGuards(AuthGuard)
     @Get('/')
     public async getCollaborators(): Promise<Collaborator[]> {
         return this.collaboratorService.getCollaborators();

@@ -28,7 +28,18 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     return false;
   }
 
-  async create(number: number, date: string, commerce: Commerce, queue: Queue, channel?: string, user?: User, block?: Block, status?: BookingStatus): Promise<Booking> {
+  async create(
+    number: number,
+    date: string,
+    commerce: Commerce,
+    queue: Queue,
+    channel?: string,
+    user?: User,
+    block?: Block,
+    status?: BookingStatus,
+    servicesId?: string[],
+    servicesDetails?: object[]
+  ): Promise<Booking> {
     let booking = new Booking();
     booking.status = BookingStatus.CONFIRMED;
     if (status) {
@@ -52,6 +63,12 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     }
     if (block !== undefined) {
       booking.block = block;
+    }
+    if (servicesId !== undefined) {
+      booking.servicesId = servicesId;
+    }
+    if (servicesDetails !== undefined) {
+      booking.servicesDetails = servicesDetails;
     }
     let bookingCreated = await this.bookingRepository.create(booking);
     const bookingCreatedEvent = new BookingCreated(new Date(), bookingCreated);

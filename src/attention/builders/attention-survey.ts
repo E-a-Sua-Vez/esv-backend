@@ -18,7 +18,15 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     private queueService: QueueService,
   ){}
 
-  async create(queue: Queue, collaboratorId?: string, channel?: string, userId?: string, date?: Date): Promise<Attention> {
+  async create(
+    queue: Queue,
+    collaboratorId?: string,
+    channel?: string,
+    userId?: string,
+    date?: Date,
+    servicesId?: string[],
+    servicesDetails?: object[]
+  ): Promise<Attention> {
     const currentNumber = queue.currentNumber;
     let attention = new Attention();
     attention.status = AttentionStatus.PROCESSING;
@@ -40,6 +48,12 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     }
     if (queue.serviceId !== undefined) {
       attention.serviceId = queue.serviceId;
+    }
+    if (servicesId) {
+      attention.servicesId = servicesId;
+    }
+    if (servicesDetails) {
+      attention.servicesDetails = servicesDetails;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attention.number;

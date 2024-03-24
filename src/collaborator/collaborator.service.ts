@@ -26,6 +26,14 @@ export class CollaboratorService {
     return collaborator;
   }
 
+  public async getCollaboratorDetailsById(id: string): Promise<Collaborator> {
+    const collaborator = await this.collaboratorRepository.findById(id);
+    if (collaborator && collaborator.servicesId && collaborator.servicesId.length > 0) {
+      collaborator.services = await this.serviceService.getServicesById(collaborator.servicesId);
+    }
+    return collaborator;
+  }
+
   public async getCollaborators(): Promise<Collaborator[]> {
     const collaborators = await this.collaboratorRepository.find();
     return collaborators;

@@ -38,5 +38,7 @@ export class AttentionDetailsDto {
   block: Block;
   paid: boolean;
   paidAt: Date;
-  paymentConfirmationData: PaymentConfirmation
+  paymentConfirmationData: PaymentConfirmation;
+  servicesId: string[];
+  servicesDetails: object[];
 }

@@ -197,6 +197,18 @@ export class FeatureToggleService {
       {
         name: 'attention-confirm-payment',
         type: 'PRODUCT'
+      },
+      {
+        name: 'attention-service-select',
+        type: 'PRODUCT'
+      },
+      {
+        name: 'attention-today-desactivated',
+        type: 'PRODUCT'
+      },
+      {
+        name: 'booking-transfer-queue',
+        type: 'PRODUCT'
       }
     ];
     return options.sort((a, b) => a.type < b.type ? -1 : 1);
