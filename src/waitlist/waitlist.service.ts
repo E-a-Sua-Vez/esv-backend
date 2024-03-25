@@ -46,7 +46,14 @@ export class WaitlistService {
     if (clientId !== undefined) {
       const client = await this.clientService.getClientById(clientId);
       if (client && client.id) {
-        user = { ...user, email: client.email || undefined, phone: client.phone || undefined };
+        user = { ...user,
+          email: client.email || user.email,
+          phone: client.phone || user.phone,
+          name: client.name || user.name,
+          lastName: client.lastName || user.lastName,
+          personalInfo: client.personalInfo || user.personalInfo,
+          idNumber: client.idNumber || user.idNumber
+        };
         if (client.email) {
           email = client.email;
         }

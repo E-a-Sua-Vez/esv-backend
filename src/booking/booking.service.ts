@@ -88,7 +88,14 @@ export class BookingService {
       if (clientId !== undefined) {
         const client = await this.clientService.getClientById(clientId);
         if (client && client.id) {
-          user = { ...user, email: client.email || user.email, phone: client.phone || user.phone };
+          user = { ...user,
+            email: client.email || user.email,
+            phone: client.phone || user.phone,
+            name: client.name || user.name,
+            lastName: client.lastName || user.lastName,
+            personalInfo: client.personalInfo || user.personalInfo,
+            idNumber: client.idNumber || user.idNumber
+          };
           if (client.email) {
             email = client.email;
           }
@@ -206,6 +213,7 @@ export class BookingService {
         booking.number = result.number;
         booking.date = result.date;
         booking.status = result.status;
+        booking.user = result.user;
         bookings.push(booking);
       })
     }
@@ -241,6 +249,7 @@ export class BookingService {
         booking.number = result.number;
         booking.date = result.date;
         booking.status = result.status;
+        booking.user = result.user;
         bookings.push(booking);
       })
     }

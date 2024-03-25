@@ -300,7 +300,8 @@
             "permissions.collaborators.update": true,
             "collaborator.bookings.manage": true,
             "reports.admin.clients": true,
-            "reports.admin.client-contacts": true
+            "reports.admin.client-contacts": true,
+            "dashboard.attention-origin-avg.view": true
         }
     },
     {
