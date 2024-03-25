@@ -79,8 +79,8 @@ export class AttentionController {
     @UseGuards(AuthGuard)
     @Post()
     public async createAttention(@Body() body: any): Promise<Attention> {
-        const { queueId, collaboratorId, channel, user, type, block, servicesId, servicesDetails } = body;
-        return this.attentionService.createAttention(queueId, collaboratorId, channel, user, type, block, undefined, undefined, undefined, servicesId, servicesDetails);
+        const { queueId, collaboratorId, channel, user, type, block, servicesId, servicesDetails, clientId } = body;
+        return this.attentionService.createAttention(queueId, collaboratorId, channel, user, type, block, undefined, undefined, undefined, servicesId, servicesDetails, clientId);
     }
 
     @UseGuards(AuthGuard)
