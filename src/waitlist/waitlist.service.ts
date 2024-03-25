@@ -2,7 +2,7 @@ import { Block, Waitlist } from './model/waitlist.entity';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
@@ -19,6 +19,7 @@ import { WaitlistDetailsDto } from './dto/waitlist-details.dto';
 import { WaitlistStatus } from './model/waitlist-status.enum';
 import WaitlistUpdated from './events/WaitlistUpdated';
 import { Booking } from 'src/booking/model/booking.entity';
+import { ClientService } from '../client/client.service';
 
 @Injectable()
 export class WaitlistService {
@@ -30,16 +31,44 @@ export class WaitlistService {
     private featureToggleService: FeatureToggleService,
     private commerceService: CommerceService,
     private waitlistDefaultBuilder: WaitlistDefaultBuilder,
+    private clientService: ClientService
   ) { }
 
   public async getWaitlistById(id: string): Promise<Waitlist> {
     return await this.waitlistRepository.findById(id);
   }
 
-  public async createWaitlist(queueId: string, channel: string = WaitlistChannel.QR, date: string, user?: User): Promise<Waitlist> {
+  public async createWaitlist(queueId: string, channel: string = WaitlistChannel.QR, date: string, user?: User, clientId?: string): Promise<Waitlist> {
     let waitlistCreated;
     let queue = await this.queueService.getQueueById(queueId);
-    waitlistCreated = await this.waitlistDefaultBuilder.create(date, queue, channel, user);
+    let email = undefined;
+    let phone = undefined;
+    if (clientId !== undefined) {
+      const client = await this.clientService.getClientById(clientId);
+      if (client && client.id) {
+        user = { ...user, email: client.email || undefined, phone: client.phone || undefined };
+        if (client.email) {
+          email = client.email;
+        }
+        if (client.phone) {
+          phone = client.phone;
+        }
+        await this.clientService.saveClient(
+          clientId,
+          user.businessId,
+          user.commerceId,
+          user.name,
+          user.phone,
+          user.email,
+          user.lastName,
+          user.idNumber,
+          user.personalInfo
+        );
+      } else {
+        throw new HttpException(`Error creando lista de espera: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+    waitlistCreated = await this.waitlistDefaultBuilder.create(date, queue, channel, user, clientId);
     return waitlistCreated;
   }
 

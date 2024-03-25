@@ -12,6 +12,7 @@ import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
 import { CommerceModule } from '../commerce/commerce.module';
 import { WaitlistDefaultBuilder } from './builders/waitlist-default';
 import { AttentionModule } from 'src/attention/attention.module';
+import { ClientModule } from '../client/client.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { AttentionModule } from 'src/attention/attention.module';
     forwardRef(() => UserModule),
     forwardRef(() => ModuleModule),
     forwardRef(() => FeatureToggleModule),
-    forwardRef(() => AttentionModule)
+    forwardRef(() => AttentionModule),
+    forwardRef(() => ClientModule)
   ],
   providers: [
     WaitlistService,

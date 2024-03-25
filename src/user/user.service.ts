@@ -25,30 +25,56 @@ export class UserService {
     return await this.userRepository.find();
   }
 
-  public async createUser(name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<User> {
+  public async createUser(name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo, clientId?: string): Promise<User> {
     let user = new User();
+    let client;
     if (!commerceId) {
-      throw new HttpException(`Debe enviarse el commerceId`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Error creando User: Debe enviarse el commerceId`, HttpStatus.INTERNAL_SERVER_ERROR);
     } else {
       user.commerceId = commerceId;
       const commerce = await this.commerceService.getCommerce(commerceId);
       const businessId = commerce.businessId;
       user.businessId = businessId;
     }
+    if (clientId) {
+      client = await this.clientService.getClientById(clientId);
+      if (!client || !client.id) {
+        throw new HttpException(`Error creando User: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      } else {
+        if (client.name) {
+          user.name = client.name;
+        }
+        if (client.lastName) {
+          user.lastName = client.lastName;
+        }
+        if (client.idNumber) {
+          user.idNumber = client.idNumber;
+        }
+        if (client.phone) {
+          user.phone = client.phone;
+        }
+        if (client.email) {
+          user.email = client.email;
+        }
+        if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
+          user.personalInfo = { ...user.personalInfo || {}, ...personalInfo };
+        }
+      }
+    }
     if (name) {
       user.name = name;
     }
     if (lastName) {
-      user.lastName = lastName;
+      user.lastName = lastName || client.name;
     }
     if (idNumber) {
-      user.idNumber = idNumber;
+      user.idNumber = idNumber || client.name;
     }
     if (phone) {
-      user.phone = phone;
+      user.phone = phone || client.name;
     }
     if (email) {
-      user.email = email;
+      user.email = email || client.name;
     }
     if (queueId) {
       user.queueId = queueId;
@@ -59,14 +85,15 @@ export class UserService {
     if (notificationEmailOn !== undefined) {
       user.notificationEmailOn = notificationEmailOn;
     }
-    if (personalInfo !== undefined) {
-      user.personalInfo = personalInfo;
+    if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
+      user.personalInfo = { ...user.personalInfo || {}, ...personalInfo };
     }
     user.type = UserType.STANDARD;
     user.frequentCustomer = false;
     user.createdAt = new Date();
     const userCreated = await this.userRepository.create(user);
     await this.clientService.saveClient(
+      clientId,
       user.businessId,
       user.commerceId,
       user.name,
@@ -111,8 +138,8 @@ export class UserService {
       if (notificationEmailOn !== undefined) {
         userById.notificationEmailOn = notificationEmailOn;
       }
-      if (personalInfo !== undefined) {
-        userById.personalInfo = personalInfo;
+      if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
+        userById.personalInfo = { ...userById.personalInfo || {}, ...personalInfo };
       }
       const userUpdated = await this.userRepository.update(userById);
       const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
@@ -126,6 +153,7 @@ export class UserService {
   public async update(user: string, userById: User): Promise<User> {
     const userUpdated = await this.userRepository.update(userById);
     await this.clientService.saveClient(
+      undefined,
       userById.businessId,
       userById.commerceId,
       userById.name,

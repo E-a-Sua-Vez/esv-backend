@@ -13,6 +13,7 @@ import { CommerceModule } from '../commerce/commerce.module';
 import { BookingDefaultBuilder } from './builders/booking-default';
 import { AttentionModule } from 'src/attention/attention.module';
 import { WaitlistModule } from '../waitlist/waitlist.module';
+import { ClientModule } from '../client/client.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { WaitlistModule } from '../waitlist/waitlist.module';
     forwardRef(() => ModuleModule),
     forwardRef(() => FeatureToggleModule),
     forwardRef(() => AttentionModule),
-    forwardRef(() => WaitlistModule)
+    forwardRef(() => WaitlistModule),
+    forwardRef(() => ClientModule)
   ],
   providers: [
     BookingService,

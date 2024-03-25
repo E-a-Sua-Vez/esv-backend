@@ -20,8 +20,8 @@ export class WaitlistController {
     @UseGuards(AuthGuard)
     @Post()
     public async createWaitlist(@Body() body: any): Promise<Waitlist> {
-        const { queueId, channel, user, date } = body;
-        return this.bookingService.createWaitlist(queueId, channel, date, user);
+        const { queueId, channel, user, date, clientId } = body;
+        return this.bookingService.createWaitlist(queueId, channel, date, user, clientId);
     }
 
     @UseGuards(AuthGuard)

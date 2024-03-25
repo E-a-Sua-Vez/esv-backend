@@ -29,6 +29,7 @@ import BookingUpdated from './events/BookingUpdated';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 import { BookingAvailabilityDto } from './dto/booking-availability.dto';
+import { ClientService } from '../client/client.service';
 
 @Injectable()
 export class BookingService {
@@ -41,7 +42,8 @@ export class BookingService {
     private commerceService: CommerceService,
     private bookingDefaultBuilder: BookingDefaultBuilder,
     private attentionService: AttentionService,
-    private waitlistService: WaitlistService
+    private waitlistService: WaitlistService,
+    private clientService: ClientService
   ) { }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -56,7 +58,8 @@ export class BookingService {
       block?: Block,
       status?: BookingStatus,
       servicesId?: string[],
-      servicesDetails?: object[]
+      servicesDetails?: object[],
+      clientId?: string
     ): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
@@ -80,11 +83,44 @@ export class BookingService {
         const amountOfBookings = dateBookings.length || 0;
         bookingNumber = amountOfBookings + 1;
       }
-      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block, status, servicesId, servicesDetails);
+      let email = undefined;
+      let phone = undefined;
+      if (clientId !== undefined) {
+        const client = await this.clientService.getClientById(clientId);
+        if (client && client.id) {
+          user = { ...user, email: client.email || user.email, phone: client.phone || user.phone };
+          if (client.email) {
+            email = client.email;
+          }
+          if (client.phone) {
+            phone = client.phone;
+          }
+          await this.clientService.saveClient(
+            clientId,
+            user.businessId,
+            user.commerceId,
+            user.name,
+            user.phone,
+            user.email,
+            user.lastName,
+            user.idNumber,
+            user.personalInfo
+          );
+        } else {
+          throw new HttpException(`Error creando reserva: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+      }
+      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block, status, servicesId, servicesDetails, clientId);
       if (user.email !== undefined) {
-        await this.bookingEmail(bookingCreated);
+        email = user.email;
       }
       if (user.phone !== undefined) {
+        phone = user.phone;
+      }
+      if (email !== undefined) {
+        await this.bookingEmail(bookingCreated);
+      }
+      if (phone !== undefined) {
         await this.bookingWhatsapp(bookingCreated);
       }
     }
@@ -489,8 +525,8 @@ ${link}
   }
 
   private async createAttention(booking: Booking): Promise<Attention> {
-    const { id, queueId, channel, user, block, confirmationData, servicesId, servicesDetails } = booking;
-    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id, servicesId, servicesDetails);
+    const { id, queueId, channel, user, block, confirmationData, servicesId, servicesDetails, clientId } = booking;
+    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id, servicesId, servicesDetails, clientId);
     await this.processBooking('ett', booking, attention.id);
     return attention;
   }

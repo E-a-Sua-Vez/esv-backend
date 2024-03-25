@@ -17,7 +17,7 @@ export class WaitlistDefaultBuilder implements WaitlistBuilderInterface {
     private bookingRepository = getRepository(Waitlist)
   ){}
 
-  async create(date: string, queue: Queue, channel?: string, user?: User): Promise<Waitlist> {
+  async create(date: string, queue: Queue, channel?: string, user?: User, clientId?: string): Promise<Waitlist> {
     let waitlist = new Waitlist();
     waitlist.status = WaitlistStatus.PENDING;
     waitlist.type = WaitlistType.STANDARD;
@@ -28,6 +28,9 @@ export class WaitlistDefaultBuilder implements WaitlistBuilderInterface {
     waitlist.channel = channel;
     if (user !== undefined) {
       waitlist.user = user;
+    }
+    if (clientId !== undefined) {
+      waitlist.clientId = clientId;
     }
     let bookingCreated = await this.bookingRepository.create(waitlist);
     const bookingCreatedEvent = new WaitlistCreated(new Date(), bookingCreated);

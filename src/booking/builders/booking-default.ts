@@ -38,7 +38,8 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     block?: Block,
     status?: BookingStatus,
     servicesId?: string[],
-    servicesDetails?: object[]
+    servicesDetails?: object[],
+    clientId?: string
   ): Promise<Booking> {
     let booking = new Booking();
     booking.status = BookingStatus.CONFIRMED;
@@ -58,6 +59,9 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     booking.commerceId = queue.commerceId;
     booking.number = number
     booking.channel = channel;
+    if (clientId !== undefined) {
+      booking.clientId = clientId;
+    }
     if (user !== undefined) {
       booking.user = user;
     }

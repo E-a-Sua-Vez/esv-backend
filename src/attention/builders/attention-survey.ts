@@ -25,7 +25,8 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     userId?: string,
     date?: Date,
     servicesId?: string[],
-    servicesDetails?: object[]
+    servicesDetails?: object[],
+    clientId?: string
   ): Promise<Attention> {
     const currentNumber = queue.currentNumber;
     let attention = new Attention();
@@ -54,6 +55,9 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     }
     if (servicesDetails) {
       attention.servicesDetails = servicesDetails;
+    }
+    if (clientId) {
+      attention.clientId = clientId;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attention.number;

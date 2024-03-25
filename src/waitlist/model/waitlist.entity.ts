@@ -25,4 +25,5 @@ export class Waitlist {
     cancelled: boolean;
     bookingId: string;
     user: User;
+    clientId: string;
 }

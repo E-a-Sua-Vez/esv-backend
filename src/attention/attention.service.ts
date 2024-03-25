@@ -282,20 +282,21 @@ export class AttentionService {
       paymentConfirmationData?: PaymentConfirmation,
       bookingId?: string,
       servicesId?: string[],
-      servicesDetails?: object[]
+      servicesDetails?: object[],
+      clientId?: string
     ): Promise<Attention> {
       try {
         let attentionCreated;
         let queue = await this.queueService.getQueueById(queueId);
         const newUser = userIn ? userIn : new User();
-        const user = await this.userService.createUser(newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber, newUser.notificationOn, newUser.notificationEmailOn, newUser.personalInfo);
+        const user = await this.userService.createUser(newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber, newUser.notificationOn, newUser.notificationEmailOn, newUser.personalInfo, clientId);
         const userId = user.id;
         const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
         if (type && type === AttentionType.NODEVICE) {
           if (block && block.number) {
-            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails);
+            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails, clientId);
           } else {
-            attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails);
+            attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails, clientId);
           }
         } else if (onlySurvey) {
           if (onlySurvey.active) {
@@ -303,15 +304,15 @@ export class AttentionService {
             if (!collaboratorBot || collaboratorBot === undefined) {
               throw new HttpException(`Colaborador Bot no existe, debe crearse`, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-            const attentionBuild = await this.attentionSurveyBuilder.create(queue, collaboratorBot.id, channel, userId, date, servicesId, servicesDetails);
+            const attentionBuild = await this.attentionSurveyBuilder.create(queue, collaboratorBot.id, channel, userId, date, servicesId, servicesDetails, clientId);
             attentionCreated = await this.finishAttention(attentionBuild.userId, attentionBuild.id, '');
           } else {
-            attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails);
+            attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails, clientId);
           }
         } else if (block && block.number) {
-          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails);
+          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails, clientId);
         } else {
-          attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails);
+          attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails, clientId);
         }
         if (user.email !== undefined) {
           await this.attentionEmail(attentionCreated.id);

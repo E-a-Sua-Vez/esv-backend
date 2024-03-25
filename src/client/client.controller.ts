@@ -4,6 +4,7 @@ import { Client } from './model/client.entity';
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from '../auth/user.decorator';
 import { ClientContact } from 'src/client-contact/model/client-contact.entity';
+import { ClientSearchDto } from './dto/client-search.dto';
 
 @Controller('client')
 export class ClientController {
@@ -15,6 +16,13 @@ export class ClientController {
     public async getClientById(@Param() params: any): Promise<Client> {
         const { id } = params;
         return this.clientService.getClientById(id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('search/commerceId/:commerceId/idNumber/:idNumber')
+    public async searchClient(@Param() params: any): Promise<ClientSearchDto> {
+        const { commerceId, idNumber } = params;
+        return this.clientService.searchClient(commerceId, idNumber);
     }
 
     @UseGuards(AuthGuard)

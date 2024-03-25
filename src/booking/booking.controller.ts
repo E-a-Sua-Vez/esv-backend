@@ -23,8 +23,8 @@ export class BookingController {
     @UseGuards(AuthGuard)
     @Post()
     public async createBooking(@Body() body: any): Promise<Booking> {
-        const { queueId, channel, user, date, block, status, servicesId, servicesDetails } = body;
-        return this.bookingService.createBooking(queueId, channel, date, user, block, status, servicesId, servicesDetails);
+        const { queueId, channel, user, date, block, status, servicesId, servicesDetails, clientId } = body;
+        return this.bookingService.createBooking(queueId, channel, date, user, block, status, servicesId, servicesDetails, clientId );
     }
 
     @UseGuards(AuthGuard)

@@ -4,7 +4,6 @@ import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from 'src/queue/queue.service';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
-import CommerceUpdated from './events/CommerceUpdated';
 import { Country } from 'src/shared/model/country.enum';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { Category } from './model/category.enum';
@@ -15,6 +14,7 @@ import { NotificationType } from 'src/notification/model/notification-type.enum'
 import { NotificationTemplate } from '../notification/model/notification-template.enum';
 import { FeatureToggleName } from 'src/feature-toggle/model/feature-toggle.enum';
 import { FeatureToggle } from 'src/feature-toggle/model/feature-toggle.entity';
+import CommerceUpdated from './events/CommerceUpdated';
 import CommerceCreated from './events/CommerceCreated';
 
 @Injectable()

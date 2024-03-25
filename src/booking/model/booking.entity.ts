@@ -13,6 +13,7 @@ export class Block {
 @Collection('booking')
 export class Booking {
     id: string;
+    clientId: string;
     commerceId: string;
     queueId: string;
     number: number;

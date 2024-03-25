@@ -31,7 +31,8 @@ export class AttentionReserveBuilder implements BuilderInterface {
     paymentConfirmationData?: PaymentConfirmation,
     bookingId?: string,
     servicesId?: string[],
-    servicesDetails?: object[]
+    servicesDetails?: object[],
+    clientId?: string
   ): Promise<Attention> {
     if (!block) {
       throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
@@ -86,6 +87,9 @@ export class AttentionReserveBuilder implements BuilderInterface {
     }
     if (bookingId != undefined) {
       attention.bookingId = bookingId;
+    }
+    if (clientId) {
+      attention.clientId = clientId;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
     queue.currentNumber = attentionCreated.number;

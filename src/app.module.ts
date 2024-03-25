@@ -34,9 +34,11 @@ import { ClientContactModule } from './client-contact/client-contact.module';
   imports: [
     FireormModule.forRoot({
       firestoreSettings: {
-        projectId: process.env.PROJECT_ID
+        projectId: process.env.PROJECT_ID,
+        ignoreUndefinedProperties: true
       },
       fireormSettings: { validateModels: true },
+
     }),
     BusinessModule,
     CommerceModule,
