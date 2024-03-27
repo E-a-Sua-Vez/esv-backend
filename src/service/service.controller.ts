@@ -38,6 +38,13 @@ export class ServiceController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/list/:ids')
+    public async getServicesById(@Param() params: any): Promise<Service[]> {
+        const { ids } = params;
+        return this.serviceService.getServicesById(ids.split(','));
+    }
+
+    @UseGuards(AuthGuard)
     @Post('/')
     public async createService(@User() user, @Body() body: Service): Promise<Service> {
         const { commerceId, name, type, tag, online, order, serviceInfo } = body;

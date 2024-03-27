@@ -118,10 +118,26 @@ export class BookingController {
         return this.bookingService.cancelBookings();
     }
 
+    @UseGuards(AuthGuard)
     @Patch('/transfer/:id')
     public async transferBookingToQueue(@User() user, @Param() params: any, @Body() body: any): Promise<Booking> {
         const { id } = params;
         const { queueId } = body;
         return this.bookingService.transferBookingToQueue(user, id, queueId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/commerceId/:commerceId/clientId/:clientId/idNumber/:idNumber')
+    public async getBookingsByClient(@Param() params: any): Promise<Booking[]> {
+        const { commerceId, clientId, idNumber } = params;
+        return this.bookingService.getPendingBookingsByClient(commerceId, idNumber, clientId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/edit/:id')
+    public async editBookingDateAndBlock(@User() user, @Param() params: any, @Body() body: any): Promise<Booking> {
+        const { id } = params;
+        const { date, block } = body;
+        return this.bookingService.editBookingDateAndBlock(user, id, date, block);
     }
 }

@@ -51,6 +51,7 @@
     "collaborator.bookings.cancel": true,
     "collaborator.bookings.confirm": true,
     "collaborator.bookings.transfer": true,
+    "collaborator.bookings.edit": true,
     "collaborator.attention.skip": true,
     "collaborator.attention.finish": true,
     "collaborator.attention.payment-confirm": true,
@@ -251,6 +252,7 @@
     "collaborator.bookings.cancel": false,
     "collaborator.bookings.confirm": false,
     "collaborator.bookings.transfer": false,
+    "collaborator.bookings.edit": false,
     "collaborator.waitlists.book": false,
 
     "collaborators.admin.update": true,
@@ -447,6 +449,7 @@
     "collaborator.bookings.cancel": true,
     "collaborator.bookings.confirm": true,
     "collaborator.bookings.transfer": true,
+    "collaborator.bookings.edit": true,
     "collaborator.attention.skip": true,
     "collaborator.attention.finish": true,
     "collaborator.attention.payment-confirm": true,

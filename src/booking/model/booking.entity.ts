@@ -33,6 +33,14 @@ export class Booking {
     transfered: boolean;
     transferedAt: Date;
     transferedOrigin: string;
+    transferedCount: number;
+    transferedBy: string;
+    edited: boolean;
+    editedAt: Date;
+    editedDateOrigin: string;
+    editedBlockOrigin: Block;
+    editedCount: number;
+    editedBy: string;
     user: User;
     block?: Block;
     confirmedAt: Date;

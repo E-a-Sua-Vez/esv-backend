@@ -214,6 +214,10 @@ export class FeatureToggleService {
         name: 'attention-user-search',
         type: 'USER'
       },
+      {
+        name: 'booking-edit',
+        type: 'PRODUCT'
+      }
     ];
     return options.sort((a, b) => a.type < b.type ? -1 : 1);
   }

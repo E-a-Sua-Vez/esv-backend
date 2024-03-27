@@ -192,6 +192,33 @@ export class BookingService {
       .find();
   }
 
+  public async getPendingBookingsByClient(commerceId: string, idNumber: string, clientId: string): Promise<Booking[]> {
+    let results: Booking[] = [];
+    if (clientId) {
+      results = await this.bookingRepository
+        .whereEqualTo('commerceId', commerceId)
+        .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
+        .whereEqualTo('clientId', clientId)
+        .find();
+      if (results.length === 0 && idNumber) {
+        const bookings = await this.bookingRepository
+          .whereEqualTo('commerceId', commerceId)
+          .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
+          .find();
+        if (bookings && bookings.length > 0) {
+          bookings.forEach(booking => {
+            if (booking.user) {
+              if (booking.user.idNumber === idNumber) {
+                results.push(booking);
+              }
+            }
+          })
+        }
+      }
+      return results;
+    }
+  }
+
   public async getPendingBookingsBetweenDates(queueId: string, dateFrom: Date, dateTo: Date): Promise<BookingAvailabilityDto[]> {
     const startDate = new Date(dateFrom).toISOString().slice(0,10);
     const endDate = new Date(dateTo).toISOString().slice(0,10);
@@ -727,6 +754,8 @@ ${link}
             booking.transferedAt = new Date();
             booking.transferedOrigin = booking.queueId;
             booking.queueId = queueId;
+            booking.transferedCount = booking.transferedCount ? booking.transferedCount + 1 : 1;
+            booking.transferedBy = user;
             booking = await this.update(user, booking);
           } else {
             throw new HttpException(`Reserva ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`, HttpStatus.NOT_FOUND);
@@ -738,7 +767,35 @@ ${link}
         throw new HttpException(`Reserva no existe: ${id}`, HttpStatus.NOT_FOUND);
       }
     } catch (error) {
-      throw new HttpException(`Hubo un problema al cancelar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Hubo un problema al transferir la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return booking;
+  }
+
+  public async editBookingDateAndBlock(user: string, id: string, date: string, block: Block): Promise<Booking> {
+    let booking = undefined;
+    try {
+      booking = await this.getBookingById(id);
+      if (booking && booking.id) {
+        if (date && block) {
+          booking.edited = true;
+          booking.editedAt = new Date();
+          booking.editedDateOrigin = booking.date;
+          booking.editedBlockOrigin = booking.block;
+          booking.date = date;
+          booking.dateFormatted = new Date(date);
+          booking.block = block;
+          booking.editedCount = booking.editedCount ? booking.editedCount + 1 : 1;
+          booking.editedBy = user;
+          booking = await this.update(user, booking);
+        } else {
+          throw new HttpException(`Datos para editar no son correctos: Date: ${date}, Block: ${JSON.stringify(block)}`, HttpStatus.BAD_REQUEST);
+        }
+      } else {
+        throw new HttpException(`Reserva no existe: ${id}`, HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al editar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return booking;
   }

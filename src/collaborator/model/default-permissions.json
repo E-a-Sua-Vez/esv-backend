@@ -12,6 +12,7 @@
   "collaborator.bookings.admin": true,
   "collaborator.bookings.cancel": true,
   "collaborator.bookings.confirm": true,
+  "collaborator.bookings.edit": true,
   "dashboard.indicators.view": false,
   "dashboard.surveys-consolidated-nps-evolution.view": false,
   "dashboard.surveys-consolidated-csat-evolution.view": false,

@@ -301,7 +301,8 @@
             "collaborator.bookings.manage": true,
             "reports.admin.clients": true,
             "reports.admin.client-contacts": true,
-            "dashboard.attention-origin-avg.view": true
+            "dashboard.attention-origin-avg.view": true,
+            "collaborator.bookings.edit": false
         }
     },
     {

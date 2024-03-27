@@ -3,6 +3,8 @@ import { PaymentType } from './payment-type.enum';
 
 export class PaymentConfirmation {
   bankEntity: string;
+  procedureNumber: number;
+  proceduresTotalNumber: number;
   transactionId: string;
   paymentType: PaymentType;
   paymentMethod: PaymentMethod;
