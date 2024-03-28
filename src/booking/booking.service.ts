@@ -30,6 +30,7 @@ import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 import { BookingAvailabilityDto } from './dto/booking-availability.dto';
 import { ClientService } from '../client/client.service';
+import { getDateDDMMYYYY } from 'src/shared/utils/date';
 
 @Injectable()
 export class BookingService {
@@ -394,11 +395,12 @@ export class BookingService {
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
         if(user && user.notificationOn) {
+          const bookingDate = getDateDDMMYYYY(booking.date);
           type = NotificationType.BOOKING;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
           ?
-`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Deve vir no dia *${booking.date}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
+`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
 
 Lémbre-se, seu número de reserva é: *${booking.number}*. Mais detalhes neste link:
 
@@ -406,7 +408,7 @@ ${link}
 
 Obrigado!`
           :
-`Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${booking.date}* ${booking.block && booking.block.hourFrom ? ` a las ${booking.block.hourFrom}.` : `.`}
+`Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` a las ${booking.block.hourFrom}.` : `.`}
 
 Recuerda, tu número de reserva es: *${booking.number}*. Más detalles en este link:
 
@@ -436,11 +438,12 @@ ${link}
       if (booking !== undefined && booking.type === BookingType.STANDARD) {
         const user = booking.user;
         if(user && user.notificationOn) {
+          const bookingDate = getDateDDMMYYYY(booking.date);
           type = NotificationType.BOOKING_CONFIRM;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
           message = bookingCommerce.localeInfo.language === 'pt'
           ?
-`Olá, lembre-se da sua reserva em *${bookingCommerce.name}*! Deve vir no dia *${booking.date}* ${booking.block && booking.block.hourFrom ? `as ${booking.block.hourFrom}.` : `.`}
+`Olá, lembre-se da sua reserva em *${bookingCommerce.name}*! Deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? `as ${booking.block.hourFrom}.` : `.`}
 
 Poderá comparecer? Se sua resposta for *NÃO* por favor cancele sua reserva neste link:
 
@@ -448,7 +451,7 @@ ${link}
 
 Obrigado!`
           :
-`Hola, recuerda tu reserva en *${bookingCommerce.name}*. Debes venir el dia *${booking.date}* ${booking.block && booking.block.hourFrom ? `a las ${booking.block.hourFrom}.` : `.`}
+`Hola, recuerda tu reserva en *${bookingCommerce.name}*. Debes venir el dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? `a las ${booking.block.hourFrom}.` : `.`}
 
 Podrás venir? Si tu respues es *NO* por favor cancela tu reserva en este link:
 
