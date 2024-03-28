@@ -123,6 +123,7 @@
     "dashboard.attention-rating-avg.view": true,
     "dashboard.attention-no-device.view": true,
     "dashboard.attention-origin-avg.view": true,
+    "dashboard.attention-client-contact.view": true,
 
     "executive.admin.view": true,
     "executive.admin.download": true,
@@ -323,6 +324,7 @@
     "dashboard.attention-rating-avg.view": true,
     "dashboard.attention-no-device.view": false,
     "dashboard.attention-origin-avg.view": true,
+    "dashboard.attention-client-contact.view": true,
 
     "executive.admin.view": true,
     "executive.admin.download": true,
@@ -521,6 +523,7 @@
     "dashboard.attention-rating-avg.view": false,
     "dashboard.attention-no-device.view": true,
     "dashboard.attention-origin-avg.view": true,
+    "dashboard.attention-client-contact.view": true,
 
     "executive.admin.view": true,
     "executive.admin.download": true,

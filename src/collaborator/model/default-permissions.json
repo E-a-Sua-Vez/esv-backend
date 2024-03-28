@@ -55,5 +55,6 @@
   "dashboard.survey-flow.view": false,
   "dashboard.attention-rating-avg.view": false,
   "dashboard.attention-no-device.view": false,
-  "dashboard.attention-origin-avg.view": false
+  "dashboard.attention-origin-avg.view": false,
+  "dashboard.attention-client-contact.view": false
 }
