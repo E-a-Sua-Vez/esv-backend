@@ -542,6 +542,10 @@ ${link}
             booking.confirmationData = confirmationData;
           }
           booking = await this.update(user, booking);
+          const today = new Date().toISOString().slice(0,10);
+          if (booking.date === today) {
+            await this.createAttention(user, booking);
+          }
         }
         return booking;
       }
@@ -560,10 +564,10 @@ ${link}
     return bookingUpdated;
   }
 
-  private async createAttention(booking: Booking): Promise<Attention> {
+  private async createAttention(userIn: string, booking: Booking): Promise<Attention> {
     const { id, queueId, channel, user, block, confirmationData, servicesId, servicesDetails, clientId } = booking;
     const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id, servicesId, servicesDetails, clientId);
-    await this.processBooking('ett', booking, attention.id);
+    await this.processBooking(userIn, booking, attention.id);
     return attention;
   }
 
@@ -584,7 +588,7 @@ ${link}
         const booking = bookings[i];
         limiter.schedule(async () => {
           try {
-            const attention = await this.createAttention(booking)
+            const attention = await this.createAttention('ett', booking)
             responses.push(attention);
           } catch (error) {
             errors.push(error);
