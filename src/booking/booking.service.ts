@@ -790,7 +790,8 @@ ${link}
           booking.editedDateOrigin = booking.date;
           booking.editedBlockOrigin = booking.block;
           booking.date = date;
-          booking.dateFormatted = new Date(date);
+          const [year, month, day] = date.split('-');
+          booking.dateFormatted = new Date(+year, +month-1, +day);
           booking.block = block;
           booking.editedCount = booking.editedCount ? booking.editedCount + 1 : 1;
           booking.editedBy = user;
