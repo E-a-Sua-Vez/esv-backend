@@ -65,9 +65,9 @@ export class BookingService {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const commerce = await this.commerceService.getCommerceById(queue.commerceId);
-    const dateFormatted = new Date(date);
-    const newDate = new Date(dateFormatted.setDate(dateFormatted.getDate()));
-    const newDateFormatted = newDate.toISOString().slice(0,10);
+    const [year, month, day] = date.split('-');
+    const dateFormatted = new Date(+year, +month-1, +day);
+    const newDateFormatted = dateFormatted.toISOString().slice(0,10);
     const booked = await this.getPendingBookingsByQueueAndDate(queueId, newDateFormatted);
     if (booked.length >= queue.limit) {
       throw new HttpException(`Limite de la fila ${queue.id} - ${queue.name} (${queue.limit}) alcanzado para la fecha ${newDateFormatted}`, HttpStatus.INTERNAL_SERVER_ERROR);
