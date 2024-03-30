@@ -605,6 +605,27 @@ ${link}
     return response;
   }
 
+  public async processBookingById(user: string, id: string): Promise<any> {
+    if (!id) {
+      throw new HttpException(`Error procesando Reserva: Id inválido`, HttpStatus.BAD_REQUEST);
+    }
+    let booking = await this.getBookingById(id);
+    const toProcess = 1;
+    const responses = [];
+    const errors = [];
+    if (booking && booking.id) {
+      try {
+        const attention = await this.createAttention(user, booking)
+        responses.push(attention);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    const response = { toProcess, processed: responses.length, errors: errors.length };
+    Logger.log(`processBooking response: ${JSON.stringify(response)}`);
+    return response;
+  }
+
   public async processPastBooking(bookingId: string, collaboratorId: string, commerceLanguage: string): Promise<any> {
     const response = { booking: {}, attention: {}, processBooking: {}, attend: {}, finish: {} };
     try {

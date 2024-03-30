@@ -64,6 +64,13 @@ export class BookingController {
     }
 
     @UseGuards(SimpleGuard)
+    @Patch('/process/booking/:id')
+    public async processBooking(@User() user, @Param() params: any): Promise<Booking> {
+        const { id } = params;
+        return this.bookingService.processBookingById(user, id);
+    }
+
+    @UseGuards(SimpleGuard)
     @Patch('/process/date/:date')
     public async processDateBookings(@Param() params: any): Promise<Booking> {
         const { date } = params;
