@@ -303,7 +303,8 @@
             "reports.admin.client-contacts": true,
             "dashboard.attention-origin-avg.view": true,
             "collaborator.bookings.edit": false,
-            "dashboard.attention-client-contact.view": true
+            "dashboard.attention-client-contact.view": true,
+            "dashboard.attention-days-since-clients.view": true
         }
     },
     {

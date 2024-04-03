@@ -1,0 +1,174 @@
+[
+  {
+    "name": "whatsapp-notify-now",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "whatsapp-notify-five",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "whatsapp-notify-one",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "only-survey",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "get-number-remote",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "close-commerce-by-service-hours",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-user-name",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-lastName",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-phone",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-email",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-birthday",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-address",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-origin",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-code1",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-code2",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-code3",
+    "type": "USER"
+  },
+  {
+    "name": "attention-user-idNumber",
+    "type": "USER"
+  },
+  {
+    "name": "email-notify-now",
+    "type": "EMAIL"
+  },
+  {
+    "name": "email-attention",
+    "type": "EMAIL"
+  },
+  {
+    "name": "email-csat",
+    "type": "EMAIL"
+  },
+  {
+    "name": "whatsapp-csat",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "email-monthly-commerce-statistics",
+    "type": "EMAIL"
+  },
+  {
+    "name": "email-booking",
+    "type": "EMAIL"
+  },
+  {
+    "name": "whatsapp-booking",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "booking-active",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "booking-block-active",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "booking-block-walkin",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-user-not-required",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "booking-waitlist-active",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "email-waitlist",
+    "type": "EMAIL"
+  },
+  {
+    "name": "whatsapp-waitlist",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "booking-whatsapp-confirm",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "booking-email-confirm",
+    "type": "EMAIL"
+  },
+  {
+    "name": "attention-voice-command",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-queue-typegrouped",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "booking-confirm",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "booking-confirm-payment",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-confirm-payment",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-service-select",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-today-desactivated",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "booking-transfer-queue",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-user-search",
+    "type": "USER"
+  },
+  {
+    "name": "booking-edit",
+    "type": "PRODUCT"
+  }
+]
