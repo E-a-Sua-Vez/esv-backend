@@ -545,7 +545,9 @@ ${link}
             booking.confirmationData = confirmationData;
           }
           booking = await this.update(user, booking);
-          const today = new Date().toISOString().slice(0,10);
+          const timezone = bookingCommerce.localeInfo.timezone || 'America/Sao_Paulo';
+          const todayTimezone = new Date().toLocaleString('en-US', { timeZone: timezone }).slice(0,10);
+          const today = new Date(todayTimezone).toISOString().slice(0,10);
           if (booking.date === today) {
             await this.createAttention(user, booking);
           }
