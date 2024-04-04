@@ -41,9 +41,15 @@ export class CommerceService {
       this.featureToggleService.getFeatureToggleByCommerceId(id)
     ]);
     let commerceAux = commerce;
-    commerceAux.queues = queues;
-    commerceAux.surveys = surveys;
-    commerceAux.features = features;
+    if (queues && queues.length > 0) {
+      commerceAux.queues = queues;
+    }
+    if (surveys && surveys.length > 0) {
+      commerceAux.surveys = surveys;
+    }
+    if (features && features.length > 0) {
+      commerceAux.features = features;
+    }
     return commerceAux;
   }
 
