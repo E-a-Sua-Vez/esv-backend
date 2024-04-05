@@ -83,6 +83,8 @@ export class AttentionReserveBuilder implements BuilderInterface {
         attention.paymentConfirmationData = paymentConfirmationData;
         attention.paid = paymentConfirmationData.paid;
         attention.paidAt = paymentConfirmationData.paymentDate;
+        attention.confirmed = true;
+        attention.confirmedAt = new Date();
       }
     }
     if (bookingId != undefined) {

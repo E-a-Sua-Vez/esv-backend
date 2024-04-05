@@ -325,8 +325,9 @@
     "dashboard.attention-rating-avg.view": true,
     "dashboard.attention-no-device.view": false,
     "dashboard.attention-origin-avg.view": true,
-    "dashboard.attention-client-contact.view": true,
-    "dashboard.attention-days-since-clients.view": true,
+    "dashboard.attention-client-contact.view": false,
+    "dashboard.attention-days-since-clients.view": false,
+    "dashboard.collection-details.view": false,
 
     "executive.admin.view": true,
     "executive.admin.download": true,
@@ -527,6 +528,7 @@
     "dashboard.attention-origin-avg.view": true,
     "dashboard.attention-client-contact.view": true,
     "dashboard.attention-days-since-clients.view": true,
+    "dashboard.collection-details.view": true,
 
     "executive.admin.view": true,
     "executive.admin.download": true,

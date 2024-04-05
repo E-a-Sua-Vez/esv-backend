@@ -714,6 +714,9 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
           }
           paymentConfirmationData.user = user ? user : 'ett';
           attention.paymentConfirmationData = paymentConfirmationData;
+          attention.confirmed = true;
+          attention.confirmedAt = new Date();
+          attention.confirmedBy = user;
         }
         attention = await this.update(user, attention);
         return attention;
@@ -735,6 +738,7 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
             attention.transferedAt = new Date();
             attention.transferedOrigin = attention.queueId;
             attention.queueId = queueId;
+            attention.transferedBy = user;
             attention = await this.update(user, attention);
           } else {
             throw new HttpException(`Atención ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`, HttpStatus.NOT_FOUND);

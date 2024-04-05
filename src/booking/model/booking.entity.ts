@@ -47,6 +47,7 @@ export class Booking {
     servicesId: string[];
     confirmed: boolean;
     confirmationData?: PaymentConfirmation;
+    confirmedBy: string;
     confirmNotified: boolean = false;
     confirmNotifiedEmail: boolean = false;
     confirmNotifiedWhatsapp: boolean = false;

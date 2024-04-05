@@ -57,5 +57,6 @@
   "dashboard.attention-no-device.view": false,
   "dashboard.attention-origin-avg.view": false,
   "dashboard.attention-client-contact.view": false,
-  "dashboard.attention-days-since-clients.view": false
+  "dashboard.attention-days-since-clients.view": false,
+  "dashboard.collection-details.view": false
 }

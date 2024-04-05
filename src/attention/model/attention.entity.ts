@@ -44,9 +44,13 @@ export class Attention {
     transfered: boolean;
     transferedAt: Date;
     transferedOrigin: string;
+    transferedBy: string;
     paidAt: Date;
     paid: boolean;
     paymentConfirmationData?: PaymentConfirmation;
+    confirmed: boolean;
+    confirmedAt: Date;
+    confirmedBy: string;
     bookingId: string;
     block?: Block;
     servicesDetails: object[]

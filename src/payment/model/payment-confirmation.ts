@@ -16,6 +16,7 @@ export class PaymentConfirmation {
   paymentDate: Date;
   paymentCommission: number;
   paymentComment: string;
+  paymentFiscalNote: string;
   promotionalCode: string;
   user: string;
 }

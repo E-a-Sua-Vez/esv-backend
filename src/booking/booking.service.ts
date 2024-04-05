@@ -543,6 +543,7 @@ ${link}
             }
             confirmationData.user = user ? user : 'ett';
             booking.confirmationData = confirmationData;
+            booking.confirmedBy = user;
           }
           booking = await this.update(user, booking);
           const timezone = bookingCommerce.localeInfo.timezone || 'America/Sao_Paulo';
