@@ -363,7 +363,7 @@ export class AttentionService {
           attention.collaboratorId = collaborator.id;
           attention.moduleId = collaborator.moduleId;
           attention.status = AttentionStatus.PROCESSING;
-
+          attention.processedAt = new Date();
           queue.currentAttentionNumber = queue.currentAttentionNumber + 1;
           const currentAttention = (await this.getAvailableAttentionByNumber(queue.currentAttentionNumber, queue.id))[0];
           if(currentAttention) {
@@ -433,8 +433,12 @@ export class AttentionService {
         attention.comment = comment;
       }
       attention.endAt = date || new Date();
-      if(!attention.reactivated) {
-        const diff = attention.endAt.getTime() - attention.createdAt.getTime();
+      if (!attention.reactivated) {
+        let dateAt = attention.createdAt;
+        if (attention.processedAt !== undefined) {
+          dateAt = attention.processedAt;
+        }
+        const diff = attention.endAt.getTime() - dateAt.getTime();
         attention.duration = diff/(1000*60);
       }
       await this.csatEmail(attention.id);

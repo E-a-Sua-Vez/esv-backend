@@ -50,6 +50,7 @@ export class Attention {
     paymentConfirmationData?: PaymentConfirmation;
     confirmed: boolean;
     confirmedAt: Date;
+    processedAt: Date;
     confirmedBy: string;
     bookingId: string;
     block?: Block;
