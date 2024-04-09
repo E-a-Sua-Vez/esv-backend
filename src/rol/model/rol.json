@@ -305,7 +305,14 @@
             "collaborator.bookings.edit": false,
             "dashboard.attention-client-contact.view": true,
             "dashboard.attention-days-since-clients.view": true,
-            "dashboard.collection-details.view": true
+            "dashboard.collection-details.view": true,
+            "products.admin.limit": 10,
+            "products.admin.read": true,
+            "products.admin.edit": true,
+            "products.admin.add": true,
+            "products.admin.update": true,
+            "products.admin.view": true,
+            "products.admin.unavailable": true
         }
     },
     {

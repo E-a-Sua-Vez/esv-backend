@@ -29,6 +29,7 @@ import { BlockModule } from './block/block.module';
 import { ServiceModule } from './service/service.module';
 import { ClientModule } from './client/client.module';
 import { ClientContactModule } from './client-contact/client-contact.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { ClientContactModule } from './client-contact/client-contact.module';
     ServiceModule,
     ClientModule,
     ClientContactModule,
+    ProductModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

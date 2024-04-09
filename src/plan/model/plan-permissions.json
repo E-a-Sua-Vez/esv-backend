@@ -28,6 +28,7 @@
     "business.main-menu.reports": true,
     "business.main-menu.service-admin": true,
     "business.main-menu.tracing": true,
+    "business.main-menu.product-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -197,7 +198,15 @@
     "surveys.admin.update": true,
     "surveys.admin.limit": 5,
 
-    "user.notification.add": true
+    "user.notification.add": true,
+
+    "products.admin.limit": 10,
+    "products.admin.read": true,
+    "products.admin.edit": true,
+    "products.admin.add": true,
+    "products.admin.update": true,
+    "products.admin.view": true,
+    "products.admin.unavailable": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -228,6 +237,7 @@
     "business.main-menu.reports": true,
     "business.main-menu.service-admin": true,
     "business.main-menu.tracing": true,
+    "business.main-menu.product-admin": false,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -400,7 +410,15 @@
     "surveys.admin.update": true,
     "surveys.admin.limit": 5,
 
-    "user.notification.add": true
+    "user.notification.add": true,
+
+    "products.admin.limit": 10,
+    "products.admin.read": false,
+    "products.admin.edit": false,
+    "products.admin.add": false,
+    "products.admin.update": false,
+    "products.admin.view": false,
+    "products.admin.unavailable": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -431,6 +449,7 @@
     "business.main-menu.reports": true,
     "business.main-menu.service-admin": true,
     "business.main-menu.tracing": true,
+    "business.main-menu.product-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -601,6 +620,14 @@
     "surveys.admin.update": false,
     "surveys.admin.limit": 5,
 
-    "user.notification.add": true
+    "user.notification.add": true,
+
+    "products.admin.limit": 10,
+    "products.admin.read": true,
+    "products.admin.edit": true,
+    "products.admin.add": true,
+    "products.admin.update": true,
+    "products.admin.view": true,
+    "products.admin.unavailable": true
   }
 }
