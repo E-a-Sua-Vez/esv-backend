@@ -1,5 +1,5 @@
-import { Product, ProductInfo } from './model/product.entity';
-import { getRepository} from 'fireorm';
+import { Product, ProductConsumption, ProductInfo, ProductReplacement } from './model/product.entity';
+import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
@@ -7,12 +7,18 @@ import ProductCreated from './events/ProductCreated';
 import ProductUpdated from './events/ProductUpdated';
 import { ProductType } from './model/product-type.enum';
 import { MeasureType } from './model/measure-type.enum';
+import ProductReplaced from './events/ProductReplaced';
+import ProductConsumed from './events/ProductConsumed';
 
 @Injectable()
 export class ProductService {
   constructor(
-  @InjectRepository(Product)
-    private productRepository = getRepository(Product)
+    @InjectRepository(Product)
+    private productRepository = getRepository(Product),
+    @InjectRepository(ProductReplacement)
+    private productReplacementRepository = getRepository(ProductReplacement),
+    @InjectRepository(ProductConsumption)
+    private productConsumptionRepository = getRepository(ProductConsumption)
   ) {}
 
   public async getProductById(id: string): Promise<Product> {
@@ -70,22 +76,9 @@ export class ProductService {
   }
 
   public async updateProductConfigurations(
-    user: string,
-    id: string,
-    name: string,
-    tag: string,
-    order: number,
-    active: boolean,
-    available: boolean,
-    online: boolean,
-    code: string,
-    measureType: MeasureType,
-    actualLevel: number,
-    minimumLevel: number,
-    maximumLevel: number,
-    optimumLevel: number,
-    replacementLevel: number,
-    productInfo: ProductInfo
+    user: string, id: string, name: string, tag: string, order: number, active: boolean,
+    available: boolean, online: boolean, code: string, measureType: MeasureType, actualLevel: number,
+    minimumLevel: number, maximumLevel: number, optimumLevel: number, replacementLevel: number, productInfo: ProductInfo
   ): Promise<Product> {
     try {
       let product = await this.productRepository.findById(id);
@@ -145,21 +138,9 @@ export class ProductService {
   }
 
   public async createProduct(
-    user: string,
-    commerceId: string,
-    name: string,
-    type: ProductType,
-    tag: string,
-    online: boolean,
-    order: number,
-    code: string,
-    measureType: MeasureType,
-    actualLevel: number,
-    minimumLevel: number,
-    maximumLevel: number,
-    optimumLevel: number,
-    replacementLevel: number,
-    productInfo: ProductInfo
+    user: string, commerceId: string, name: string, type: ProductType, tag: string,
+    online: boolean, order: number, code: string, measureType: MeasureType, actualLevel: number,
+    minimumLevel: number, maximumLevel: number, optimumLevel: number, replacementLevel: number, productInfo: ProductInfo
   ): Promise<Product> {
     let product = new Product();
     product.commerceId = commerceId;
@@ -183,5 +164,74 @@ export class ProductService {
     const productCreatedEvent = new ProductCreated(new Date(), productCreated, { user });
     publish(productCreatedEvent);
     return productCreated;
+  }
+
+  public async createProductReplacement(
+    user: string, productId: string, replacedBy: string, price: number, currency: string,
+    replacementAmount: number, replacementDate: Date, replacementExpirationDate: Date, nextReplacementDate: Date
+  ): Promise<ProductReplacement> {
+    try {
+      let product = await this.productRepository.findById(productId);
+      if (product && product.id) {
+        let productReplacement = new ProductReplacement();
+        productReplacement.productId = productId;
+        productReplacement.commerceId = product.commerceId;
+        productReplacement.price = price;
+        productReplacement.currency = currency;
+        productReplacement.replacedBy = replacedBy;
+        productReplacement.replacementAmount = replacementAmount;
+        productReplacement.replacementDate = replacementDate;
+        productReplacement.replacementExpirationDate = replacementExpirationDate;
+        productReplacement.nextReplacementDate = nextReplacementDate;
+        productReplacement.createdAt = new Date();
+        const productReplacementCreated = await this.productReplacementRepository.create(productReplacement);
+        const productReplacedEvent = new ProductReplaced(new Date(), productReplacementCreated, { user });
+        publish(productReplacedEvent);
+        if (product.productInfo) {
+          product.productInfo.lastReplacementAmount = replacementAmount;
+          product.productInfo.lastReplacementBy = replacedBy;
+          product.productInfo.lastReplacementId = productReplacement.id;
+          product.productInfo.lastReplacementDate = replacementDate;
+          product.productInfo.lastReplacementExpirationDate = replacementExpirationDate;
+          product.productInfo.nextReplacementDate = nextReplacementDate;
+        }
+        await this.updateProduct(user, product);
+        return productReplacementCreated;
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al reponer el producto: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  public async createProductConsumption(
+    user: string, productId: string, consumedBy: string, comsumptionAttentionId: string,
+    consumptionAmount: number, consumptionDate: Date
+  ): Promise<ProductConsumption> {
+    try {
+      let product = await this.productRepository.findById(productId);
+      if (product && product.id) {
+        let productConsumption = new ProductConsumption();
+        productConsumption.productId = productId;
+        productConsumption.commerceId = product.commerceId;
+        productConsumption.consumptionAmount = consumptionAmount;
+        productConsumption.comsumptionAttentionId = comsumptionAttentionId;
+        productConsumption.consumedBy = consumedBy;
+        productConsumption.consumptionDate = consumptionDate;
+        productConsumption.createdAt = new Date();
+        const productConsumptionCreated = await this.productConsumptionRepository.create(productConsumption);
+        const productConsumedEvent = new ProductConsumed(new Date(), productConsumptionCreated, { user });
+        publish(productConsumedEvent);
+        if (product.productInfo) {
+          product.productInfo.lastComsumptionId = productConsumption.id;
+          product.productInfo.lastComsumptionBy = consumedBy;
+          product.productInfo.lastComsumptionAmount = consumptionAmount;
+          product.productInfo.lastComsumptionDate = consumptionDate;
+        }
+        await this.updateProduct(user, product);
+        return productConsumptionCreated;
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al consumir el producto: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
