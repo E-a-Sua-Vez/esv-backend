@@ -72,7 +72,14 @@ export class ProductController {
     @UseGuards(AuthGuard)
     @Post('/consumption')
     public async createProductConsumption(@User() user, @Body() body: ProductConsumption): Promise<ProductConsumption> {
-        const { productId, consumedBy, comsumptionAttentionId, consumptionAmount, consumptionDate } = body;
-        return this.productService.createProductConsumption(user, productId, consumedBy, comsumptionAttentionId, consumptionAmount, consumptionDate);
+        const { productId, consumedBy, comsumptionAttentionId, consumptionAmount, consumptionDate, productReplacementId } = body;
+        return this.productService.createProductConsumption(user, productId, consumedBy, comsumptionAttentionId, consumptionAmount, consumptionDate, productReplacementId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/replacement/available/:productId')
+    public async getActiveReplacementsByProduct(@Param() params: any): Promise<ProductReplacement[]> {
+        const { productId } = params;
+        return this.productService.getActiveReplacementsByProduct(productId);
     }
 }

@@ -54,7 +54,10 @@ export class ProductReplacement {
     replacementActualLevel: number;
     replacementDate: Date;
     replacementExpirationDate: Date;
+    replacementExpirationDateFormatted: Date;
     nextReplacementDate: Date;
+    active: boolean;
+    available: boolean;
     createdAt: Date;
 }
 
@@ -65,6 +68,7 @@ export class ProductConsumption {
     productCode: string;
     commerceId: string;
     comsumptionAttentionId: string;
+    productReplacementId: string;
     consumedBy: string;
     consumptionAmount: number;
     consumptionDate: Date;

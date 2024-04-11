@@ -184,7 +184,11 @@ export class ProductService {
         productReplacement.replacementActualLevel = replacementAmount;
         productReplacement.replacementDate = replacementDate;
         productReplacement.replacementExpirationDate = replacementExpirationDate;
+        const [year, month, day] = replacementExpirationDate.toISOString().slice(0,10).split('-');
+        productReplacement.replacementExpirationDateFormatted = new Date(+year, +month-1, +day);
         productReplacement.nextReplacementDate = nextReplacementDate;
+        productReplacement.active = true;
+        productReplacement.available = true;
         productReplacement.createdAt = new Date();
         const productReplacementCreated = await this.productReplacementRepository.create(productReplacement);
         const productReplacedEvent = new ProductReplaced(new Date(), productReplacementCreated, { user });
@@ -208,33 +212,88 @@ export class ProductService {
 
   public async createProductConsumption(
     user: string, productId: string, consumedBy: string, comsumptionAttentionId: string,
-    consumptionAmount: number, consumptionDate: Date
+    consumptionAmount: number, consumptionDate: Date, productReplacementId: string
   ): Promise<ProductConsumption> {
     try {
       let product = await this.productRepository.findById(productId);
       if (product && product.id) {
-        let productConsumption = new ProductConsumption();
-        productConsumption.productId = productId;
-        productConsumption.commerceId = product.commerceId;
-        productConsumption.consumptionAmount = consumptionAmount;
-        productConsumption.comsumptionAttentionId = comsumptionAttentionId;
-        productConsumption.consumedBy = consumedBy;
-        productConsumption.consumptionDate = consumptionDate;
-        productConsumption.createdAt = new Date();
-        const productConsumptionCreated = await this.productConsumptionRepository.create(productConsumption);
-        const productConsumedEvent = new ProductConsumed(new Date(), productConsumptionCreated, { user });
-        publish(productConsumedEvent);
-        if (product.productInfo) {
-          product.productInfo.lastComsumptionId = productConsumption.id;
-          product.productInfo.lastComsumptionBy = consumedBy;
-          product.productInfo.lastComsumptionAmount = consumptionAmount;
-          product.productInfo.lastComsumptionDate = consumptionDate;
+        if (consumptionAmount && consumptionAmount > 0 && consumptionAmount <= product.actualLevel) {
+          let productConsumption = new ProductConsumption();
+          productConsumption.productId = productId;
+          productConsumption.commerceId = product.commerceId;
+          productConsumption.consumptionAmount = consumptionAmount;
+          productConsumption.comsumptionAttentionId = comsumptionAttentionId;
+          productConsumption.consumedBy = consumedBy;
+          productConsumption.consumptionDate = consumptionDate;
+          productConsumption.productReplacementId = productReplacementId;
+          productConsumption.createdAt = new Date();
+          const productConsumptionCreated = await this.productConsumptionRepository.create(productConsumption);
+          const productConsumedEvent = new ProductConsumed(new Date(), productConsumptionCreated, { user });
+          publish(productConsumedEvent);
+          await this.updateProductReplacement(user, productReplacementId, consumptionAmount);
+          if (product.productInfo) {
+            product.productInfo.lastComsumptionId = productConsumption.id;
+            product.productInfo.lastComsumptionBy = consumedBy;
+            product.productInfo.lastComsumptionAmount = consumptionAmount;
+            product.productInfo.lastComsumptionDate = consumptionDate;
+          }
+          const replacements = await this.getActiveReplacementsByProduct(productId);
+          const actualLevel = replacements.reduce((acc, value) => acc + value.replacementActualLevel, 0);
+          product.actualLevel = actualLevel;
+          await this.updateProduct(user, product);
+          return productConsumptionCreated;
+        } else {
+          throw new HttpException(`Hubo un problema al consumir el producto: No hay suficiente producto`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        await this.updateProduct(user, product);
-        return productConsumptionCreated;
+      } else {
+        throw new HttpException(`Hubo un problema al consumir el producto: No existe el producto`, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     } catch (error) {
       throw new HttpException(`Hubo un problema al consumir el producto: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  public async getActiveReplacementsByProduct(productId: string): Promise<ProductReplacement[]> {
+    let products: ProductReplacement[] = [];
+    products = await this.productReplacementRepository
+      .whereEqualTo('productId', productId)
+      .whereGreaterThan('replacementActualLevel', 0)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('replacementExpirationDateFormatted')
+      .find();
+    return products;
+  }
+
+  public async getConsumptionsByProductReplacement(productReplacementId: string): Promise<ProductConsumption[]> {
+    let products: ProductConsumption[] = [];
+    products = await this.productConsumptionRepository
+      .whereEqualTo('productReplacementId', productReplacementId)
+      .find();
+    return products;
+  }
+
+  public async updateProducReplacement(user: string, product: ProductReplacement): Promise<ProductReplacement> {
+    const productUpdated = await this.productReplacementRepository.update(product);
+    const productUpdatedEvent = new ProductReplaced(new Date(), productUpdated, { user });
+    publish(productUpdatedEvent);
+    return productUpdated;
+  }
+
+  public async updateProductReplacement(user: string, id: string, amount: number): Promise<ProductReplacement> {
+    try {
+      let productReplacement = await this.productReplacementRepository.findById(id);
+      if (productReplacement && productReplacement.id) {
+        const consumptions = await this.getConsumptionsByProductReplacement(id);
+        const consumed = consumptions.reduce((acc, value) => acc + value.consumptionAmount, 0);
+        const available = productReplacement.replacementAmount - consumed;
+        if (amount && amount > 0 && available >= 0) {
+          productReplacement.replacementActualLevel = available;
+          return await this.updateProducReplacement(user, productReplacement);
+        }
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al modificar el producto: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
