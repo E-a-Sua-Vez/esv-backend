@@ -29,6 +29,7 @@
     "business.main-menu.service-admin": true,
     "business.main-menu.tracing": true,
     "business.main-menu.product-admin": true,
+    "business.main-menu.product-stock": false,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -46,6 +47,7 @@
     "collaborator.main-menu.dashboard": true,
     "collaborator.main-menu.queue-manage": true,
     "collaborator.main-menu.booking-manage": true,
+    "collaborator.main-menu.product-stock": true,
     "collaborator.bookings.admin": true,
     "collaborator.waitlists.book": true,
     "collaborator.bookings.manage": true,
@@ -206,7 +208,18 @@
     "products.admin.add": true,
     "products.admin.update": true,
     "products.admin.view": true,
-    "products.admin.unavailable": true
+    "products.admin.unavailable": true,
+
+    "products-stock.attentions.view": true,
+    "products-stock.products.view": true,
+    "products-stock.products.add-replacement": true,
+    "products-stock.attentions.add-replacement": true,
+    "products-stock.products.add-consumption": true,
+    "products-stock.attentions.add-consumption": true,
+    "products-stock.products.view-consumption": true,
+    "products-stock.products.view-replacement": true,
+    "products-stock.reports.details": true,
+    "products-stock.reports.replacement-details": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -238,6 +251,7 @@
     "business.main-menu.service-admin": true,
     "business.main-menu.tracing": true,
     "business.main-menu.product-admin": false,
+    "business.main-menu.product-stock": false,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -259,6 +273,7 @@
     "collaborator.main-menu.queue-manage": false,
     "collaborator.main-menu.booking-manage": false,
     "collaborator.main-menu.tracing": true,
+    "collaborator.main-menu.product-stock": true,
     "collaborator.bookings.admin": false,
     "collaborator.bookings.manage": false,
     "collaborator.bookings.cancel": false,
@@ -418,7 +433,18 @@
     "products.admin.add": false,
     "products.admin.update": false,
     "products.admin.view": false,
-    "products.admin.unavailable": false
+    "products.admin.unavailable": false,
+
+    "products-stock.attentions.view": false,
+    "products-stock.products.view": false,
+    "products-stock.products.add-replacement": false,
+    "products-stock.attentions.add-replacement": false,
+    "products-stock.products.add-consumption": false,
+    "products-stock.attentions.add-consumption": false,
+    "products-stock.products.view-consumption": false,
+    "products-stock.products.view-replacement": false,
+    "products-stock.reports.details": false,
+    "products-stock.reports.replacement-details": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -450,6 +476,7 @@
     "business.main-menu.service-admin": true,
     "business.main-menu.tracing": true,
     "business.main-menu.product-admin": true,
+    "business.main-menu.product-stock": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -467,6 +494,7 @@
     "collaborator.main-menu.dashboard": true,
     "collaborator.main-menu.queue-manage": true,
     "collaborator.main-menu.booking-manage": true,
+    "collaborator.main-menu.product-stock": true,
     "collaborator.bookings.admin": true,
     "collaborator.waitlists.book": true,
     "collaborator.bookings.manage": true,
@@ -628,6 +656,17 @@
     "products.admin.add": true,
     "products.admin.update": true,
     "products.admin.view": true,
-    "products.admin.unavailable": true
+    "products.admin.unavailable": true,
+
+    "products-stock.attentions.view": true,
+    "products-stock.products.view": true,
+    "products-stock.products.add-replacement": true,
+    "products-stock.attentions.add-replacement": true,
+    "products-stock.products.add-consumption": true,
+    "products-stock.attentions.add-consumption": true,
+    "products-stock.products.view-consumption": true,
+    "products-stock.products.view-replacement": true,
+    "products-stock.reports.details": true,
+    "products-stock.reports.replacement-details": true
   }
 }

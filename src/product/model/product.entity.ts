@@ -46,10 +46,12 @@ export class ProductReplacement {
     productId: string;
     productCode: string;
     commerceId: string;
+    code: string;
     price: number;
     currency: string;
     replacedBy: string;
     replacementAmount: number;
+    replacementActualLevel: number;
     replacementDate: Date;
     replacementExpirationDate: Date;
     nextReplacementDate: Date;

@@ -131,7 +131,7 @@ export class ProductService {
   }
 
   public async updateProduct(user: string, product: Product): Promise<Product> {
-    const productUpdated = await await this.productRepository.update(product);
+    const productUpdated = await this.productRepository.update(product);
     const productUpdatedEvent = new ProductUpdated(new Date(), productUpdated, { user });
     publish(productUpdatedEvent);
     return productUpdated;
@@ -168,7 +168,7 @@ export class ProductService {
 
   public async createProductReplacement(
     user: string, productId: string, replacedBy: string, price: number, currency: string,
-    replacementAmount: number, replacementDate: Date, replacementExpirationDate: Date, nextReplacementDate: Date
+    replacementAmount: number, replacementDate: Date, replacementExpirationDate: Date, nextReplacementDate: Date, code: string
   ): Promise<ProductReplacement> {
     try {
       let product = await this.productRepository.findById(productId);
@@ -177,9 +177,11 @@ export class ProductService {
         productReplacement.productId = productId;
         productReplacement.commerceId = product.commerceId;
         productReplacement.price = price;
+        productReplacement.code = code;
         productReplacement.currency = currency;
         productReplacement.replacedBy = replacedBy;
         productReplacement.replacementAmount = replacementAmount;
+        productReplacement.replacementActualLevel = replacementAmount;
         productReplacement.replacementDate = replacementDate;
         productReplacement.replacementExpirationDate = replacementExpirationDate;
         productReplacement.nextReplacementDate = nextReplacementDate;
@@ -187,6 +189,7 @@ export class ProductService {
         const productReplacementCreated = await this.productReplacementRepository.create(productReplacement);
         const productReplacedEvent = new ProductReplaced(new Date(), productReplacementCreated, { user });
         publish(productReplacedEvent);
+        product.actualLevel = product.actualLevel + replacementAmount;
         if (product.productInfo) {
           product.productInfo.lastReplacementAmount = replacementAmount;
           product.productInfo.lastReplacementBy = replacedBy;

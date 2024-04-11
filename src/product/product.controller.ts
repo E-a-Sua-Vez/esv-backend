@@ -65,8 +65,8 @@ export class ProductController {
     @UseGuards(AuthGuard)
     @Post('/replacement')
     public async createProductReplacement(@User() user, @Body() body: ProductReplacement): Promise<ProductReplacement> {
-        const { productId, replacedBy, price, currency, replacementAmount, replacementDate, replacementExpirationDate, nextReplacementDate } = body;
-        return this.productService.createProductReplacement(user, productId, replacedBy, price, currency, replacementAmount, replacementDate, replacementExpirationDate, nextReplacementDate);
+        const { productId, replacedBy, price, currency, replacementAmount, replacementDate, replacementExpirationDate, nextReplacementDate, code } = body;
+        return this.productService.createProductReplacement(user, productId, replacedBy, price, currency, replacementAmount, replacementDate, replacementExpirationDate, nextReplacementDate, code);
     }
 
     @UseGuards(AuthGuard)

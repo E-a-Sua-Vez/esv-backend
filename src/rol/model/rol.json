@@ -312,7 +312,19 @@
             "products.admin.add": true,
             "products.admin.update": true,
             "products.admin.view": true,
-            "products.admin.unavailable": true
+            "products.admin.unavailable": true,
+            "products-stock.attentions.view": true,
+            "products-stock.products.view": true,
+            "products-stock.products.add-replacement": true,
+            "products-stock.attentions.add-replacement": true,
+            "products-stock.products.add-consumption": true,
+            "products-stock.attentions.add-consumption": true,
+            "collaborator.main-menu.product-stock": true,
+            "business.main-menu.product-stock": true,
+            "products-stock.products.view-consumption": true,
+            "products-stock.products.view-replacement": true,
+            "products-stock.reports.details": true,
+            "products-stock.reports.replacement-details": true
         }
     },
     {
