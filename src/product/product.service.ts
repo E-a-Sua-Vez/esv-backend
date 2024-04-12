@@ -184,7 +184,7 @@ export class ProductService {
         productReplacement.replacementActualLevel = replacementAmount;
         productReplacement.replacementDate = replacementDate;
         productReplacement.replacementExpirationDate = replacementExpirationDate;
-        const [year, month, day] = replacementExpirationDate.toISOString().slice(0,10).split('-');
+        const [year, month, day] = new Date(replacementExpirationDate).toISOString().slice(0,10).split('-');
         productReplacement.replacementExpirationDateFormatted = new Date(+year, +month-1, +day);
         productReplacement.nextReplacementDate = nextReplacementDate;
         productReplacement.active = true;
