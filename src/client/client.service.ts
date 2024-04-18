@@ -99,6 +99,8 @@ export class ClientService {
                 response.neededToInclude = neededToInclude;
               }
             }
+          } else {
+            throw new HttpException(`Cliente no encontrado`, HttpStatus.NOT_FOUND);
           }
         } else {
           throw new HttpException(`No puede realizar esta acción`, HttpStatus.INTERNAL_SERVER_ERROR);

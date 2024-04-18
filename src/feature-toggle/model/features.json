@@ -170,5 +170,13 @@
   {
     "name": "booking-edit",
     "type": "PRODUCT"
+  },
+  {
+    "name": "attention-stock-register",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "user-whatsapp-contact",
+    "type": "PRODUCT"
   }
 ]

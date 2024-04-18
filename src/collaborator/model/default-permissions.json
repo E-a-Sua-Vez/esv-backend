@@ -24,6 +24,8 @@
   "products-stock.products.view-replacement": true,
   "products-stock.reports.details": true,
   "products-stock.reports.replacement-details": true,
+  "products-stock.products.view-attention": true,
+  "products-stock.reports.consumption-details": true,
   "dashboard.indicators.view": false,
   "dashboard.surveys-consolidated-nps-evolution.view": false,
   "dashboard.surveys-consolidated-csat-evolution.view": false,

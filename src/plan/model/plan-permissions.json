@@ -219,7 +219,9 @@
     "products-stock.products.view-consumption": true,
     "products-stock.products.view-replacement": true,
     "products-stock.reports.details": true,
-    "products-stock.reports.replacement-details": true
+    "products-stock.reports.replacement-details": true,
+    "products-stock.products.view-attention": true,
+    "products-stock.reports.consumption-details": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -444,7 +446,9 @@
     "products-stock.products.view-consumption": false,
     "products-stock.products.view-replacement": false,
     "products-stock.reports.details": false,
-    "products-stock.reports.replacement-details": false
+    "products-stock.reports.replacement-details": false,
+    "products-stock.products.view-attention": false,
+    "products-stock.reports.consumption-details": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -667,6 +671,8 @@
     "products-stock.products.view-consumption": true,
     "products-stock.products.view-replacement": true,
     "products-stock.reports.details": true,
-    "products-stock.reports.replacement-details": true
+    "products-stock.reports.replacement-details": true,
+    "products-stock.products.view-attention": true,
+    "products-stock.reports.consumption-details": true
   }
 }
