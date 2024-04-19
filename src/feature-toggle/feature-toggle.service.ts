@@ -10,7 +10,7 @@ import * as features from './model/features.json';
 
 export class FeatureToggleService {
   constructor(
-  @InjectRepository(FeatureToggle)
+    @InjectRepository(FeatureToggle)
     private featureToggleRepository = getRepository(FeatureToggle)
   ) {}
 

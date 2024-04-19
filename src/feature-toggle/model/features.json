@@ -178,5 +178,9 @@
   {
     "name": "user-whatsapp-contact",
     "type": "PRODUCT"
+  },
+  {
+    "name": "user-service-conditions",
+    "type": "PRODUCT"
   }
 ]

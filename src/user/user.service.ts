@@ -25,7 +25,10 @@ export class UserService {
     return await this.userRepository.find();
   }
 
-  public async createUser(name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo, clientId?: string): Promise<User> {
+  public async createUser (
+    name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string,
+    idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo,
+    clientId?: string, acceptTermsAndConditions?: boolean): Promise<User> {
     let user = new User();
     let client;
     if (!commerceId) {
@@ -87,6 +90,9 @@ export class UserService {
     }
     if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
       user.personalInfo = { ...user.personalInfo || {}, ...personalInfo };
+    }
+    if (acceptTermsAndConditions !== undefined) {
+      user.acceptTermsAndConditions = acceptTermsAndConditions;
     }
     user.type = UserType.STANDARD;
     user.frequentCustomer = false;

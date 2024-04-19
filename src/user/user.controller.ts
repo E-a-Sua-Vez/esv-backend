@@ -24,7 +24,7 @@ export class UserController {
     @UseGuards(AuthGuard)
     @Post()
     public async createUser(@Body() body: any): Promise<User> {
-        const { name, phone, email, commerceId, queueId, personalInfo } = body;
-        return this.userService.createUser(name, phone, email, commerceId, queueId, personalInfo);
+        const { name, phone, email, commerceId, queueId, personalInfo, acceptTermsAndConditions } = body;
+        return this.userService.createUser(name, phone, email, commerceId, queueId, personalInfo, undefined, acceptTermsAndConditions);
     }
 }

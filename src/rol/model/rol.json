@@ -326,7 +326,14 @@
             "products-stock.reports.details": true,
             "products-stock.reports.replacement-details": true,
             "products-stock.products.view-attention": true,
-            "products-stock.reports.consumption-details": true
+            "products-stock.reports.consumption-details": true,
+            "reports.admin.booking-payments": true,
+            "reports.admin.attention-payments": true,
+            "reports.admin.attention-products": true,
+            "document-commerce.admin.view": true,
+            "document-commerce.admin.add": true,
+            "document-commerce.admin.edit": true,
+            "business.main-menu.documents": true
         }
     },
     {

@@ -29,6 +29,7 @@ export class User {
     createdAt: Date;
     notificationOn: boolean = false;
     notificationEmailOn: boolean = false;
+    acceptTermsAndConditions: boolean = false;
     updatedAt: Date;
     personalInfo: PersonalInfo;
 }

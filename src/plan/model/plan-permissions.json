@@ -30,6 +30,7 @@
     "business.main-menu.tracing": true,
     "business.main-menu.product-admin": true,
     "business.main-menu.product-stock": false,
+    "business.main-menu.documents": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -177,6 +178,9 @@
     "reports.admin.waitlist": true,
     "reports.admin.clients": true,
     "reports.admin.client-contacts": true,
+    "reports.admin.booking-payments": true,
+    "reports.admin.attention-payments": true,
+    "reports.admin.attention-products": true,
 
     "roles.admin.view": false,
     "roles.admin.read": false,
@@ -221,7 +225,11 @@
     "products-stock.reports.details": true,
     "products-stock.reports.replacement-details": true,
     "products-stock.products.view-attention": true,
-    "products-stock.reports.consumption-details": true
+    "products-stock.reports.consumption-details": true,
+
+    "document-commerce.admin.view": true,
+    "document-commerce.admin.add": true,
+    "document-commerce.admin.edit": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -404,6 +412,9 @@
     "reports.admin.waitlist": false,
     "reports.admin.clients": true,
     "reports.admin.client-contacts": true,
+    "reports.admin.booking-payments": true,
+    "reports.admin.attention-payments": true,
+    "reports.admin.attention-products": true,
 
     "roles.admin.view": false,
     "roles.admin.read": false,
@@ -448,7 +459,11 @@
     "products-stock.reports.details": false,
     "products-stock.reports.replacement-details": false,
     "products-stock.products.view-attention": false,
-    "products-stock.reports.consumption-details": false
+    "products-stock.reports.consumption-details": false,
+
+    "document-commerce.admin.view": false,
+    "document-commerce.admin.add": false,
+    "document-commerce.admin.edit": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -629,6 +644,9 @@
     "reports.admin.waitlist": true,
     "reports.admin.clients": true,
     "reports.admin.client-contacts": true,
+    "reports.admin.booking-payments": true,
+    "reports.admin.attention-payments": true,
+    "reports.admin.attention-products": true,
 
     "roles.admin.view": false,
     "roles.admin.read": false,
@@ -673,6 +691,10 @@
     "products-stock.reports.details": true,
     "products-stock.reports.replacement-details": true,
     "products-stock.products.view-attention": true,
-    "products-stock.reports.consumption-details": true
+    "products-stock.reports.consumption-details": true,
+
+    "document-commerce.admin.view": true,
+    "document-commerce.admin.add": true,
+    "document-commerce.admin.edit": true
   }
 }
