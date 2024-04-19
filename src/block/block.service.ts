@@ -41,7 +41,7 @@ export class BlockService {
     let breakHourTo = serviceInfo.breakHourTo;
     let isBreak = serviceInfo.break;
 
-    if (blockTime && attentionHourFrom && attentionHourTo) {
+    if (blockTime && attentionHourFrom >= 0 && attentionHourTo >= 0) {
       if (isBreak === false) {
         const minsFrom = attentionHourFrom * 60;
         const minsTo = attentionHourTo * 60;
@@ -141,6 +141,7 @@ export class BlockService {
     }
     return blocksByDay;
   }
+
 
   public async getQueueBlockDetailsByDayByCommerceId(commerceId: string): Promise<Record<string, Record<string, Block[]>>> {
     const result = {};

@@ -1,3 +1,4 @@
 export enum ServiceType {
-    STANDARD = 'STANDARD'
+    STANDARD = 'STANDARD',
+    SELECTABLE = 'SELECTABLE'
 }
