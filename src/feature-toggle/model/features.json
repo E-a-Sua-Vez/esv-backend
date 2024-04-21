@@ -164,6 +164,10 @@
     "type": "PRODUCT"
   },
   {
+    "name": "attention-transfer-queue",
+    "type": "PRODUCT"
+  },
+  {
     "name": "attention-user-search",
     "type": "USER"
   },
