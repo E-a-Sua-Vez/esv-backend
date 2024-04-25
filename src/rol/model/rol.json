@@ -333,7 +333,23 @@
             "document-commerce.admin.view": true,
             "document-commerce.admin.add": true,
             "document-commerce.admin.edit": true,
-            "business.main-menu.documents": true
+            "business.main-menu.documents": true,
+
+            "business.main-menu.control-admin": true,
+
+            "business.main-menu.financial": true,
+            "business.main-menu.patients": true,
+            "business.main-menu.marketing": true,
+
+            "financial.resume.view": true,
+            "financial.incomes.view": true,
+            "financial.outcomes.view": true,
+            "financial.reports.resume": true,
+            "financial.reports.incomes": true,
+            "financial.reports.outcomes": true,
+
+            "financial.incomes.add": true,
+            "financial.outcomes.add": true
         }
     },
     {

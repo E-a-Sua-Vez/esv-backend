@@ -75,9 +75,13 @@ export class BookingService {
       let bookingNumber;
       if (block && Object.keys(block).length > 0 && queue.type !== QueueType.SELECT_SERVICE) {
         bookingNumber = block.number;
+        let blockLimit = 0;
         const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(queueId, date, bookingNumber);
-        if (alreadyBooked.length > 0) {
-          throw new HttpException(`Ya fue realizada una reserva en este bloque: ${bookingNumber}, booking: ${JSON.stringify(alreadyBooked)}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (queue.serviceInfo.blockLimit && queue.serviceInfo.blockLimit > 0) {
+          blockLimit = queue.serviceInfo.blockLimit;
+        }
+        if (alreadyBooked.length > blockLimit) {
+          throw new HttpException(`Ya se alcanzó el límite de reservas en este bloque: ${bookingNumber}, bookings: ${alreadyBooked.length}, limite: ${blockLimit}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
       } else {
         const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);

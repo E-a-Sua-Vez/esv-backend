@@ -18,6 +18,7 @@ export class ServiceInfo {
     breakHourFrom: number;
     breakHourTo: number;
     blocks: Block[];
+    blockLimit: number;
     personalized: boolean;
     walkin: boolean;
     personalizedHours: Record<number, PersonalizedHour>;
