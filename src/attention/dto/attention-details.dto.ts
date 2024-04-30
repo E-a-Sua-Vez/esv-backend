@@ -41,4 +41,5 @@ export class AttentionDetailsDto {
   paymentConfirmationData: PaymentConfirmation;
   servicesId: string[];
   servicesDetails: object[];
+  clientId: string;
 }

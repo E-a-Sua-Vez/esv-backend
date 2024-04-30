@@ -51,5 +51,8 @@ export class Booking {
     confirmNotified: boolean = false;
     confirmNotifiedEmail: boolean = false;
     confirmNotifiedWhatsapp: boolean = false;
-    servicesDetails: object[]
+    servicesDetails: object[];
+    packageId?: string;
+    packageProcedureNumber?: number;
+    packageProceduresTotalNumber?: number;
 }

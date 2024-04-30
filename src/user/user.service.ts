@@ -98,7 +98,7 @@ export class UserService {
     user.frequentCustomer = false;
     user.createdAt = new Date();
     const userCreated = await this.userRepository.create(user);
-    await this.clientService.saveClient(
+    const clientSaved = await this.clientService.saveClient(
       clientId,
       user.businessId,
       user.commerceId,
@@ -111,6 +111,7 @@ export class UserService {
     );
     const userCreatedEvent = new UserCreated(new Date(), userCreated);
     publish(userCreatedEvent);
+    userCreated.clientId = clientSaved.id;
     return userCreated;
   }
 

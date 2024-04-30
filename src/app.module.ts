@@ -31,6 +31,10 @@ import { ClientModule } from './client/client.module';
 import { ClientContactModule } from './client-contact/client-contact.module';
 import { ProductModule } from './product/product.module';
 import { DocumentsModule } from './documents/documents.module';
+import { IncomeModule } from './income/income.module';
+import { OutcomeTypeModule } from './outcome-type/outcome-type.module';
+import { PackageModule } from './package/package.module';
+import { OutcomeModule } from './outcome/outcome.module';
 
 @Module({
   imports: [
@@ -69,6 +73,10 @@ import { DocumentsModule } from './documents/documents.module';
     ClientContactModule,
     ProductModule,
     DocumentsModule,
+    IncomeModule,
+    OutcomeTypeModule,
+    PackageModule,
+    OutcomeModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

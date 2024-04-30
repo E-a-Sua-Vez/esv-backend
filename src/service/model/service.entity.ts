@@ -11,6 +11,7 @@ export class ServiceInfo {
     longDescription: string;
     blockTime: number;
     estimatedTime: number;
+    procedures: number;
 }
 
 @Collection('service')

@@ -9,6 +9,10 @@ import { QueueService } from '../../queue/queue.service';
 import { Queue } from '../../queue/model/queue.entity';
 import AttentionCreated from '../events/AttentionCreated';
 import { publish } from 'ett-events-lib';
+import { ServiceService } from 'src/service/service.service';
+import { PackageService } from 'src/package/package.service';
+import { PackageType } from 'src/package/model/package-type.enum';
+import { PackageStatus } from 'src/package/model/package-status.enum';
 
 @Injectable()
 export class AttentionDefaultBuilder implements BuilderInterface {
@@ -16,6 +20,8 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     @InjectRepository(Attention)
     private attentionRepository = getRepository(Attention),
     private queueService: QueueService,
+    private serviceService: ServiceService,
+    private packageService: PackageService
   ){}
 
   async create(
@@ -59,13 +65,27 @@ export class AttentionDefaultBuilder implements BuilderInterface {
       attention.clientId = clientId;
     }
     let attentionCreated = await this.attentionRepository.create(attention);
+    if (attentionCreated.servicesId && attentionCreated.servicesId.length === 1) {
+      const service = await this.serviceService.getServiceById(attentionCreated.servicesId[0]);
+      if (service && service.id && service.serviceInfo && service.serviceInfo.procedures && service.serviceInfo.procedures > 1) {
+        if (attentionCreated.clientId) {
+          const packs = await this.packageService.getPackageByCommerceIdAndClientServices(attentionCreated.commerceId, attentionCreated.clientId, attentionCreated.servicesId[0]);
+          if (packs && packs.length === 0) {
+            const packageName = service.tag.toLocaleUpperCase();
+            const packCreated = await this.packageService.createPackage('ett', attentionCreated.commerceId, attentionCreated.clientId, undefined, attentionCreated.id,
+            service.serviceInfo.procedures, packageName, attentionCreated.servicesId, [], [attentionCreated.id], PackageType.STANDARD, PackageStatus.REQUESTED);
+            attention.packageId = packCreated.id;
+            await this.attentionRepository.update(attention);
+          }
+        }
+      }
+    }
     queue.currentNumber = attention.number;
     if (queue.currentNumber === 1) {
       queue.currentAttentionId = attentionCreated.id;
       queue.currentAttentionNumber = attention.number;
     }
     await this.queueService.updateQueue('', queue);
-
     const attentionCreatedEvent = new AttentionCreated(new Date(), attentionCreated);
     publish(attentionCreatedEvent);
 

@@ -14,6 +14,9 @@ import { BookingDefaultBuilder } from './builders/booking-default';
 import { AttentionModule } from 'src/attention/attention.module';
 import { WaitlistModule } from '../waitlist/waitlist.module';
 import { ClientModule } from '../client/client.module';
+import { IncomeModule } from '../income/income.module';
+import { PackageModule } from '../package/package.module';
+import { ServiceModule } from 'src/service/service.module';
 
 @Module({
   imports: [
@@ -27,7 +30,12 @@ import { ClientModule } from '../client/client.module';
     forwardRef(() => FeatureToggleModule),
     forwardRef(() => AttentionModule),
     forwardRef(() => WaitlistModule),
-    forwardRef(() => ClientModule)
+    forwardRef(() => ClientModule),
+    forwardRef(() => IncomeModule),
+    forwardRef(() => PackageModule),
+    forwardRef(() => UserModule),
+    forwardRef(() => ServiceModule),
+    forwardRef(() => PackageModule)
   ],
   providers: [
     BookingService,

@@ -14,6 +14,9 @@ import { AttentionSurveyBuilder } from './builders/attention-survey';
 import { CommerceModule } from '../commerce/commerce.module';
 import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
+import { ServiceModule } from 'src/service/service.module';
+import { PackageModule } from 'src/package/package.module';
+import { IncomeModule } from '../income/income.module';
 
 @Module({
   imports: [
@@ -24,7 +27,10 @@ import { AttentionReserveBuilder } from './builders/attention-reserve';
     forwardRef(() => NotificationModule),
     forwardRef(() => UserModule),
     forwardRef(() => ModuleModule),
-    forwardRef(() => FeatureToggleModule)
+    forwardRef(() => FeatureToggleModule),
+    forwardRef(() => ServiceModule),
+    forwardRef(() => PackageModule),
+    forwardRef(() => IncomeModule)
   ],
   providers: [
     AttentionService,

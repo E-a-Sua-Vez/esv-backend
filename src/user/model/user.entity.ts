@@ -32,4 +32,5 @@ export class User {
     acceptTermsAndConditions: boolean = false;
     updatedAt: Date;
     personalInfo: PersonalInfo;
+    clientId?: string;
 }

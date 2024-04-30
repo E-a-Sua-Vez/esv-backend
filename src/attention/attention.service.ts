@@ -26,6 +26,12 @@ import { NotificationTemplate } from 'src/notification/model/notification-templa
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { QueueType } from 'src/queue/model/queue-type.enum';
+import { PackageService } from 'src/package/package.service';
+import { PackageType } from 'src/package/model/package-type.enum';
+import { PackageStatus } from 'src/package/model/package-status.enum';
+import { IncomeService } from 'src/income/income.service';
+import { IncomeStatus } from 'src/income/model/income-status.enum';
+import { IncomeType } from 'src/income/model/income-type.enum';
 
 @Injectable()
 export class AttentionService {
@@ -42,7 +48,9 @@ export class AttentionService {
     private attentionSurveyBuilder: AttentionSurveyBuilder,
     private attentionNoDeviceBuilder: AttentionNoDeviceBuilder,
     private attentionReserveBuilder: AttentionReserveBuilder,
-    private commerceService: CommerceService
+    private commerceService: CommerceService,
+    private packageService: PackageService,
+    private incomeService: IncomeService,
   ) { }
 
   public async getAttentionById(id: string): Promise<Attention> {
@@ -79,6 +87,7 @@ export class AttentionService {
       attentionDetailsDto.serviceId = attention.serviceId;
       attentionDetailsDto.servicesId = attention.servicesId;
       attentionDetailsDto.servicesDetails = attention.servicesDetails;
+      attentionDetailsDto.clientId = attention.clientId;
       if (attention.queueId) {
           attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
           attentionDetailsDto.commerce = await this.commerceService.getCommerceById(attentionDetailsDto.queue.commerceId);
@@ -130,6 +139,7 @@ export class AttentionService {
       attentionDetailsDto.serviceId = attention.serviceId;
       attentionDetailsDto.servicesId = attention.servicesId;
       attentionDetailsDto.servicesDetails = attention.servicesDetails;
+      attentionDetailsDto.clientId = attention.clientId;
       if (attention.userId !== undefined) {
           attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -293,6 +303,7 @@ export class AttentionService {
           newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber,
           newUser.notificationOn, newUser.notificationEmailOn, newUser.personalInfo, clientId, newUser.acceptTermsAndConditions
         );
+        clientId = clientId ? clientId : user.clientId;
         const userId = user.id;
         const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
         if (type && type === AttentionType.NODEVICE) {
@@ -337,6 +348,7 @@ export class AttentionService {
         notificationOn, notificationEmailOn, personalInfo
       );
       attention.userId = userToNotify.id;
+      attention.clientId = attention.clientId || userToNotify.clientId;
     }
     if (phone !== undefined) {
       attention.notificationOn = true;
@@ -677,6 +689,46 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
     return notified;
   }
 
+  public async attentionCancelWhatsapp(attentionId: string): Promise<Attention[]> {
+    const attention = await this.getAttentionDetails(attentionId);
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(attention.commerceId, FeatureToggleName.WHATSAPP);
+    let toNotify = [];
+    if(this.featureToggleIsActive(featureToggle, 'attention-whatsapp-cancel')){
+      toNotify.push(attention.number);
+    }
+    const notified = [];
+    const commerceLanguage = attention.commerce.localeInfo.language;
+    toNotify.forEach(async count => {
+      if (attention !== undefined && (attention.type === AttentionType.STANDARD || attention.type === AttentionType.SURVEY_ONLY)) {
+        if (attention.user) {
+          if (attention.user.phone) {
+            const link = `${process.env.BACKEND_URL}/interno/comercio/${attention.commerce.keyName}`;
+            const message = commerceLanguage === 'pt'
+            ?
+            `Olá, seu atendimento em *${attention.commerce.name}* foi cancelada.
+
+Para obter um atendimento novo, acesse neste link:
+
+${link}
+
+Obrigado!`
+            :
+            `Hola, tu atención en *${attention.commerce.name}* fue cancelada.
+
+Para reservar de nuevo, ingrese en este link:
+
+${link}
+
+¡Muchas gracias!`;
+            await this.notificationService.createWhatsappNotification(attention.user.phone, attention.user.id, message, NotificationType.ENCUESTA, attention.id, attention.commerceId, attention.queueId);
+            notified.push(attention);
+          }
+        }
+      }
+    });
+    return notified;
+  }
+
   public async setNoDevice(user: string, id: string, assistingCollaboratorId: string, name?: string, commerceId?: string, queueId?: string): Promise<Attention> {
     const attention = await this.getAttentionById(id);
     attention.type = AttentionType.NODEVICE;
@@ -688,11 +740,24 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
 
   public async cancelAttention(user: string, attentionId: string): Promise<Attention> {
     let attention = await this.getAttentionById(attentionId);
-    if (attention.status === AttentionStatus.PENDING) {
-      attention.status = AttentionStatus.USER_CANCELLED;
-      attention.cancelled = true;
-      attention.cancelledAt = new Date();
-      attention = await this.update(user, attention);
+    if (attention && attention.id) {
+      if (attention.status === AttentionStatus.PENDING) {
+        attention.status = AttentionStatus.USER_CANCELLED;
+        attention.cancelled = true;
+        attention.cancelledAt = new Date();
+        let attentionCancelled = await this.update(user, attention);
+        await this.attentionCancelWhatsapp(attentionCancelled.id);
+        const packs = await this.packageService.getPackageByCommerceIdAndClientId(attentionCancelled.commerceId, attentionCancelled.clientId);
+        if (packs && packs.length > 0) {
+          for(let i = 0; i < packs.length; i++) {
+            const pack = packs[i];
+            await this.packageService.removeProcedureToPackage(user, pack.id, attentionCancelled.bookingId, attentionCancelled.id);
+          }
+        }
+        attention = attentionCancelled;
+      }
+    } else {
+      throw new HttpException(`Attention no existe`, HttpStatus.NOT_FOUND);
     }
     return attention;
   }
@@ -710,23 +775,76 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
     }
   }
 
-  public async attentionPaymentConfirm(user: string, id: string, paymentConfirmationData: PaymentConfirmation): Promise<Attention> {
+  public async attentionPaymentConfirm(user: string, id: string, confirmationData: PaymentConfirmation): Promise<Attention> {
     try {
       let attention = await this.getAttentionById(id);
       if (attention && attention.id) {
         const attentionCommerce = await this.commerceService.getCommerceById(attention.commerceId);
         const featureToggle = attentionCommerce.features;
+        // GESTION DE PAQUETE
+        let pack;
+        if (confirmationData !== undefined) {
+          if (confirmationData.packageId) {
+            pack = await this.packageService.addProcedureToPackage(user, confirmationData.packageId, [], [id]);
+          } else if (confirmationData.procedureNumber === 1 && confirmationData.proceduresTotalNumber > 1) {
+            let packageName;
+            if (attention.servicesDetails && attention.servicesDetails.length > 0) {
+              const names = attention.servicesDetails.map(service => service['tag']);
+              if (names && names.length > 0) {
+                packageName = names.join('/').toLocaleUpperCase();
+              }
+            }
+            pack = await this.packageService.createPackage(user, attention.commerceId, attention.clientId, undefined, id,
+              confirmationData.proceduresTotalNumber, packageName, attention.servicesId, [], [id], PackageType.STANDARD, PackageStatus.CONFIRMED);
+          }
+        }
+        if (pack && pack.id){
+          attention.packageId = pack.id;
+        }
         if (this.featureToggleIsActive(featureToggle, 'attention-confirm-payment')){
+          const packageId = pack && pack.id ? pack.id : undefined;
           attention.paidAt = new Date();
           attention.paid = true;
-          if (paymentConfirmationData === undefined || paymentConfirmationData.paid === false || !paymentConfirmationData.paymentDate || !paymentConfirmationData.paymentAmount) {
+          if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate) {
             throw new HttpException(`Datos insuficientes para confirmar el pago de la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
           }
-          paymentConfirmationData.user = user ? user : 'ett';
-          attention.paymentConfirmationData = paymentConfirmationData;
+          confirmationData.user = user ? user : 'ett';
+          attention.paymentConfirmationData = confirmationData;
           attention.confirmed = true;
           attention.confirmedAt = new Date();
           attention.confirmedBy = user;
+          // GESTION DE ENTRADA EN CAJA
+          if (confirmationData !== undefined) {
+            let income;
+            if (confirmationData.pendingPaymentId) {
+              income = await this.incomeService.payPendingIncome(user, confirmationData.pendingPaymentId, confirmationData.paymentAmount,
+                confirmationData.paymentMethod, confirmationData.paymentCommission, confirmationData.paymentComment, confirmationData.paymentFiscalNote,
+                confirmationData.promotionalCode, confirmationData.transactionId, confirmationData.bankEntity);
+            } else {
+              if (confirmationData.installments && confirmationData.installments > 1) {
+                income = await this.incomeService.createIncomes(
+                  user, attention.commerceId, IncomeStatus.CONFIRMED, attention.bookingId, attention.id, attention.clientId, packageId,
+                  confirmationData.paymentAmount, confirmationData.totalAmount, confirmationData.installments, confirmationData.paymentMethod,
+                  confirmationData.paymentCommission, confirmationData.paymentComment, confirmationData.paymentFiscalNote, confirmationData.promotionalCode,
+                  confirmationData.transactionId, confirmationData.bankEntity, confirmationData.confirmInstallments, { user }
+                );
+              } else {
+                if (!packageId || (!pack.paid || pack.paid === false)) {
+                  income = await this.incomeService.createIncome(
+                    user, attention.commerceId, IncomeType.UNIQUE, IncomeStatus.CONFIRMED, attention.bookingId, attention.id, attention.clientId, packageId,
+                    confirmationData.paymentAmount, confirmationData.totalAmount, confirmationData.installments, confirmationData.paymentMethod,
+                    confirmationData.paymentCommission, confirmationData.paymentComment, confirmationData.paymentFiscalNote, confirmationData.promotionalCode,
+                    confirmationData.transactionId, confirmationData.bankEntity, { user }
+                  );
+                }
+              }
+            }
+            if (income && income.id) {
+              if (packageId) {
+                await this.packageService.payPackage(user, packageId, [income.id]);
+              }
+            }
+          }
         }
         attention = await this.update(user, attention);
         return attention;

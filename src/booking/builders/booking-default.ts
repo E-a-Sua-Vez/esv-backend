@@ -11,13 +11,18 @@ import { publish } from 'ett-events-lib';
 import { User } from 'src/user/model/user.entity';
 import { Commerce } from 'src/commerce/model/commerce.entity';
 import { FeatureToggle } from 'src/feature-toggle/model/feature-toggle.entity';
-
+import { ServiceService } from 'src/service/service.service';
+import { PackageService } from '../../package/package.service';
+import { PackageType } from 'src/package/model/package-type.enum';
+import { PackageStatus } from 'src/package/model/package-status.enum';
 
 @Injectable()
 export class BookingDefaultBuilder implements BookingBuilderInterface {
   constructor(
     @InjectRepository(Booking)
-    private bookingRepository = getRepository(Booking)
+    private bookingRepository = getRepository(Booking),
+    private serviceService: ServiceService,
+    private packageService: PackageService
   ){}
 
   featureToggleIsActive(featureToggle: FeatureToggle[], name: string): boolean {
@@ -75,6 +80,21 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
       booking.servicesDetails = servicesDetails;
     }
     let bookingCreated = await this.bookingRepository.create(booking);
+    if (bookingCreated.servicesId && bookingCreated.servicesId.length === 1) {
+      const service = await this.serviceService.getServiceById(bookingCreated.servicesId[0]);
+      if (service && service.id && service.serviceInfo && service.serviceInfo.procedures && service.serviceInfo.procedures > 1) {
+        if (bookingCreated.clientId) {
+          const packs = await this.packageService.getPackageByCommerceIdAndClientServices(bookingCreated.commerceId, bookingCreated.clientId, bookingCreated.servicesId[0]);
+          if (packs && packs.length === 0) {
+            const packageName = service.tag.toLocaleUpperCase();
+            const packCreated = await this.packageService.createPackage('ett', bookingCreated.commerceId, bookingCreated.clientId, bookingCreated.id, undefined,
+            service.serviceInfo.procedures, packageName, bookingCreated.servicesId, [bookingCreated.id], [], PackageType.STANDARD, PackageStatus.REQUESTED);
+            booking.packageId = packCreated.id;
+            await this.bookingRepository.update(booking);
+          }
+        }
+      }
+    }
     const bookingCreatedEvent = new BookingCreated(new Date(), bookingCreated);
     publish(bookingCreatedEvent);
     return bookingCreated;

@@ -31,6 +31,11 @@
     "business.main-menu.product-admin": true,
     "business.main-menu.product-stock": false,
     "business.main-menu.documents": true,
+    "business.main-menu.control-admin": true,
+    "business.main-menu.financial": true,
+    "business.main-menu.patients": true,
+    "business.main-menu.marketing": true,
+    "business.main-menu.outcome-types-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -181,6 +186,8 @@
     "reports.admin.booking-payments": true,
     "reports.admin.attention-payments": true,
     "reports.admin.attention-products": true,
+    "reports.admin.incomes": true,
+    "reports.admin.outcomes": true,
 
     "roles.admin.view": false,
     "roles.admin.read": false,
@@ -229,7 +236,25 @@
 
     "document-commerce.admin.view": true,
     "document-commerce.admin.add": true,
-    "document-commerce.admin.edit": true
+    "document-commerce.admin.edit": true,
+
+    "financial.resume.view": true,
+    "financial.incomes.view": true,
+    "financial.outcomes.view": true,
+    "financial.reports.resume": true,
+    "financial.reports.incomes": true,
+    "financial.reports.outcomes": true,
+    "financial.incomes.add": true,
+    "financial.outcomes.add": true,
+    "financial.incomes.confirm": true,
+
+    "outcome-types.admin.view": true,
+    "outcome-types.admin.limit": 5,
+    "outcome-types.admin.unavailable": true,
+    "outcome-types.admin.update": true,
+    "outcome-types.admin.edit": true,
+    "outcome-types.admin.read": true,
+    "outcome-types.admin.add": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -262,6 +287,7 @@
     "business.main-menu.tracing": true,
     "business.main-menu.product-admin": false,
     "business.main-menu.product-stock": false,
+    "business.main-menu.outcome-types-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -415,6 +441,8 @@
     "reports.admin.booking-payments": true,
     "reports.admin.attention-payments": true,
     "reports.admin.attention-products": true,
+    "reports.admin.incomes": false,
+    "reports.admin.outcomes": false,
 
     "roles.admin.view": false,
     "roles.admin.read": false,
@@ -463,7 +491,25 @@
 
     "document-commerce.admin.view": false,
     "document-commerce.admin.add": false,
-    "document-commerce.admin.edit": false
+    "document-commerce.admin.edit": false,
+
+    "financial.resume.view": false,
+    "financial.incomes.view": false,
+    "financial.outcomes.view": false,
+    "financial.reports.resume": false,
+    "financial.reports.incomes": false,
+    "financial.reports.outcomes": false,
+    "financial.incomes.add": false,
+    "financial.outcomes.add": false,
+    "financial.incomes.confirm": false,
+
+    "outcome-types.admin.view": false,
+    "outcome-types.admin.limit": 5,
+    "outcome-types.admin.unavailable": false,
+    "outcome-types.admin.update": false,
+    "outcome-types.admin.edit": false,
+    "outcome-types.admin.read": false,
+    "outcome-types.admin.add": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -496,6 +542,7 @@
     "business.main-menu.tracing": true,
     "business.main-menu.product-admin": true,
     "business.main-menu.product-stock": true,
+    "business.main-menu.outcome-types-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -647,6 +694,8 @@
     "reports.admin.booking-payments": true,
     "reports.admin.attention-payments": true,
     "reports.admin.attention-products": true,
+    "reports.admin.incomes": true,
+    "reports.admin.outcomes": true,
 
     "roles.admin.view": false,
     "roles.admin.read": false,
@@ -695,6 +744,24 @@
 
     "document-commerce.admin.view": true,
     "document-commerce.admin.add": true,
-    "document-commerce.admin.edit": true
+    "document-commerce.admin.edit": true,
+
+    "financial.resume.view": true,
+    "financial.incomes.view": true,
+    "financial.outcomes.view": true,
+    "financial.reports.resume": true,
+    "financial.reports.incomes": true,
+    "financial.reports.outcomes": true,
+    "financial.incomes.add": true,
+    "financial.outcomes.add": true,
+    "financial.incomes.confirm": true,
+
+    "outcome-types.admin.view": true,
+    "outcome-types.admin.limit": 5,
+    "outcome-types.admin.unavailable": true,
+    "outcome-types.admin.update": true,
+    "outcome-types.admin.edit": true,
+    "outcome-types.admin.read": true,
+    "outcome-types.admin.add": true
   }
 }

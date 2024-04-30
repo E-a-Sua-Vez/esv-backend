@@ -31,6 +31,13 @@ import { QueueType } from 'src/queue/model/queue-type.enum';
 import { BookingAvailabilityDto } from './dto/booking-availability.dto';
 import { ClientService } from '../client/client.service';
 import { getDateDDMMYYYY } from 'src/shared/utils/date';
+import { IncomeService } from '../income/income.service';
+import { IncomeStatus } from 'src/income/model/income-status.enum';
+import { PackageService } from '../package/package.service';
+import { PackageStatus } from 'src/package/model/package-status.enum';
+import { PackageType } from '../package/model/package-type.enum';
+import { IncomeType } from 'src/income/model/income-type.enum';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class BookingService {
@@ -44,7 +51,10 @@ export class BookingService {
     private bookingDefaultBuilder: BookingDefaultBuilder,
     private attentionService: AttentionService,
     private waitlistService: WaitlistService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private incomeService: IncomeService,
+    private packageService: PackageService,
+    private userService: UserService
   ) { }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -90,8 +100,9 @@ export class BookingService {
       }
       let email = undefined;
       let phone = undefined;
+      let client;
       if (clientId !== undefined) {
-        const client = await this.clientService.getClientById(clientId);
+        client = await this.clientService.getClientById(clientId);
         if (client && client.id) {
           user = { ...user,
             email: client.email || user.email,
@@ -121,8 +132,17 @@ export class BookingService {
         } else {
           throw new HttpException(`Error creando reserva: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+      } else {
+        const userCreated = await this.userService.createUser(
+          user.name, user.phone, user.email, queue.commerceId, queue.id, user.lastName, user.idNumber,
+          user.notificationOn, user.notificationEmailOn, user.personalInfo, client.id, user.acceptTermsAndConditions
+        );
+        if (userCreated && userCreated.id) {
+          user = {...user, ...userCreated };
+          clientId = userCreated.clientId;
+        }
       }
-      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block, status, servicesId, servicesDetails, clientId);
+      bookingCreated = await this.bookingDefaultBuilder.create(bookingNumber, date, commerce, queue, channel, user, block,status, servicesId, servicesDetails, clientId);
       if (user.email !== undefined) {
         email = user.email;
       }
@@ -182,7 +202,7 @@ export class BookingService {
   public async getConfirmedBookingsByDate(date: string, limit: number = 100): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('date', date)
-      .whereIn('status', [BookingStatus.CONFIRMED])
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
       .orderByAscending('number')
       .limit(limit)
       .find();
@@ -471,6 +491,48 @@ ${link}
     return notified;
   }
 
+  public async bookingCancelWhatsapp(booking: Booking): Promise<Booking[]> {
+    const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+    const featureToggle = bookingCommerce.features;
+    let toNotify = [];
+    if(this.featureToggleIsActive(featureToggle, 'booking-whatsapp-cancel')){
+      toNotify.push(booking);
+    }
+    const notified = [];
+    let message = '';
+    let type;
+    if (toNotify.length === 1) {
+      if (booking !== undefined && booking.type === BookingType.STANDARD) {
+        const user = booking.user;
+        if(user && user.notificationOn) {
+          const bookingDate = getDateDDMMYYYY(booking.date);
+          type = NotificationType.BOOKING_CONFIRM;
+          const link = `${process.env.BACKEND_URL}/interno/comercio/${bookingCommerce.keyName}`;
+          message = bookingCommerce.localeInfo.language === 'pt'
+          ?
+`Olá, sua reserva em *${bookingCommerce.name}* para o dia *${bookingDate}* foi cancelada.
+
+Para reservar de novo, acesse neste link:
+
+${link}
+
+Obrigado!`
+          :
+`Hola, tu reserva en *${bookingCommerce.name}* del dia *${bookingDate}* fue cancelada.
+
+Para reservar de nuevo, ingrese en este link:
+
+${link}
+
+¡Muchas gracias!`;
+          await this.notificationService.createWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
+          notified.push(booking);
+        }
+      }
+    };
+    return notified;
+  }
+
   public async getBookingDetails(id: string): Promise<BookingDetailsDto> {
     try {
       const booking = await this.getBookingById(id);
@@ -520,11 +582,24 @@ ${link}
     let booking = undefined;
     try {
       booking = await this.getBookingById(id);
-      booking.status = BookingStatus.RESERVE_CANCELLED;
-      booking.cancelledAt = new Date();
-      booking.cancelled = true;
-      booking = await this.update(user, booking);
-      await this.waitlistService.notifyWaitListFormCancelledBooking(booking);
+      if (booking && booking.id) {
+        booking.status = BookingStatus.RESERVE_CANCELLED;
+        booking.cancelledAt = new Date();
+        booking.cancelled = true;
+        let bookingCancelled = await this.update(user, booking);
+        await this.waitlistService.notifyWaitListFormCancelledBooking(bookingCancelled);
+        await this.bookingCancelWhatsapp(bookingCancelled);
+        const packs = await this.packageService.getPackageByCommerceIdAndClientId(bookingCancelled.commerceId, bookingCancelled.clientId);
+        if (packs && packs.length > 0) {
+          for(let i = 0; i < packs.length; i++) {
+            const pack = packs[i];
+            await this.packageService.removeProcedureToPackage(user, pack.id, bookingCancelled.id, bookingCancelled.attentionId);
+          }
+        }
+        booking = bookingCancelled;
+      } else {
+        throw new HttpException(`Booking no existe`, HttpStatus.NOT_FOUND);
+      }
     } catch (error) {
       throw new HttpException(`Hubo un problema al cancelar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -541,13 +616,70 @@ ${link}
           booking.status = BookingStatus.CONFIRMED;
           booking.confirmedAt = new Date();
           booking.confirmed = true;
-          if (this.featureToggleIsActive(featureToggle, 'booking-confirm-payment')){
-            if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate || !confirmationData.paymentAmount) {
-              throw new HttpException(`Datos insuficientes para confirmar el pago de la reserva`, HttpStatus.INTERNAL_SERVER_ERROR);
+          // GESTION DE PAQUETE
+          let pack;
+          if (confirmationData !== undefined) {
+            if (confirmationData.packageId) {
+              pack = await this.packageService.addProcedureToPackage(user, confirmationData.packageId, [id], []);
+            } else if (confirmationData.procedureNumber === 1 && confirmationData.proceduresTotalNumber > 1) {
+              let packageName;
+              if (booking.servicesDetails && booking.servicesDetails.length > 0) {
+                const names = booking.servicesDetails.map(service => service['tag']);
+                if (names && names.length > 0) {
+                  packageName = names.join('/').toLocaleUpperCase();
+                }
+              }
+              pack = await this.packageService.createPackage(user, booking.commerceId, booking.clientId, id, undefined,
+                confirmationData.proceduresTotalNumber, packageName, booking.servicesId, [id], [], PackageType.STANDARD, PackageStatus.CONFIRMED);
             }
-            confirmationData.user = user ? user : 'ett';
-            booking.confirmationData = confirmationData;
-            booking.confirmedBy = user;
+          }
+          if (pack && pack.id){
+            booking.packageId = pack.id;
+            booking.packageProceduresTotalNumber = pack.proceduresAmount;
+            booking.packageProcedureNumber = confirmationData.procedureNumber;
+          }
+          if (this.featureToggleIsActive(featureToggle, 'booking-confirm-payment')){
+            const packageId = pack && pack.id ? pack.id : undefined;
+            if (!confirmationData.skipPayment) {
+              if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate) {
+                throw new HttpException(`Datos insuficientes para confirmar el pago de la reserva`, HttpStatus.INTERNAL_SERVER_ERROR);
+              }
+              confirmationData.user = user ? user : 'ett';
+              booking.confirmationData = confirmationData;
+              booking.confirmedBy = user;
+              // GESTION DE ENTRADA EN CAJA
+              if (confirmationData !== undefined) {
+                let income;
+                if (confirmationData.pendingPaymentId) {
+                  income = await this.incomeService.payPendingIncome(user, confirmationData.pendingPaymentId, confirmationData.paymentAmount,
+                    confirmationData.paymentMethod, confirmationData.paymentCommission, confirmationData.paymentComment, confirmationData.paymentFiscalNote,
+                    confirmationData.promotionalCode, confirmationData.transactionId, confirmationData.bankEntity);
+                } else {
+                  if (confirmationData.installments && confirmationData.installments > 1) {
+                    income = await this.incomeService.createIncomes(
+                      user, booking.commerceId, IncomeStatus.CONFIRMED, booking.id, undefined, booking.clientId, packageId,
+                      confirmationData.paymentAmount, confirmationData.totalAmount, confirmationData.installments, confirmationData.paymentMethod,
+                      confirmationData.paymentCommission, confirmationData.paymentComment, confirmationData.paymentFiscalNote, confirmationData.promotionalCode,
+                      confirmationData.transactionId, confirmationData.bankEntity, confirmationData.confirmInstallments, { user }
+                    );
+                  } else {
+                    if (!packageId || (!pack.paid || pack.paid === false)) {
+                      income = await this.incomeService.createIncome(
+                        user, booking.commerceId, IncomeType.UNIQUE, IncomeStatus.CONFIRMED, booking.id, undefined, booking.clientId, packageId,
+                        confirmationData.paymentAmount, confirmationData.totalAmount, confirmationData.installments, confirmationData.paymentMethod,
+                        confirmationData.paymentCommission, confirmationData.paymentComment, confirmationData.paymentFiscalNote, confirmationData.promotionalCode,
+                        confirmationData.transactionId, confirmationData.bankEntity, { user }
+                      );
+                    }
+                  }
+                }
+                if (income && income.id) {
+                  if (packageId) {
+                    await this.packageService.payPackage(user, packageId, [income.id]);
+                  }
+                }
+              }
+            }
           }
           booking = await this.update(user, booking);
           const timezone = bookingCommerce.localeInfo.timezone || 'America/Sao_Paulo';

@@ -336,7 +336,6 @@
             "business.main-menu.documents": true,
 
             "business.main-menu.control-admin": true,
-
             "business.main-menu.financial": true,
             "business.main-menu.patients": true,
             "business.main-menu.marketing": true,
@@ -347,9 +346,20 @@
             "financial.reports.resume": true,
             "financial.reports.incomes": true,
             "financial.reports.outcomes": true,
-
             "financial.incomes.add": true,
-            "financial.outcomes.add": true
+            "financial.outcomes.add": true,
+            "financial.incomes.confirm": true,
+
+            "business.main-menu.outcome-types-admin": true,
+            "outcome-types.admin.view": true,
+            "outcome-types.admin.limit": 5,
+            "outcome-types.admin.unavailable": true,
+            "outcome-types.admin.update": true,
+            "outcome-types.admin.edit": true,
+            "outcome-types.admin.read": true,
+            "outcome-types.admin.add": true,
+            "reports.admin.incomes": true,
+            "reports.admin.outcomes": true
         }
     },
     {

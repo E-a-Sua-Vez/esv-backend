@@ -54,5 +54,8 @@ export class Attention {
     confirmedBy: string;
     bookingId: string;
     block?: Block;
-    servicesDetails: object[]
+    servicesDetails: object[];
+    packageId?: string;
+    packageProcedureNumber?: number;
+    packageProceduresTotalNumber?: number;
 }

@@ -18,5 +18,11 @@ export class PaymentConfirmation {
   paymentComment: string;
   paymentFiscalNote: string;
   promotionalCode: string;
+  paymentDiscountAmount: number;
+  paymentDiscountPercentage: number;
   user: string;
+  packageId: string;
+  pendingPaymentId: string;
+  skipPayment: boolean;
+  confirmInstallments: boolean;
 }

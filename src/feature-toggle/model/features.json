@@ -128,6 +128,14 @@
     "type": "WHATSAPP"
   },
   {
+    "name": "booking-whatsapp-cancel",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "attention-whatsapp-cancel",
+    "type": "WHATSAPP"
+  },
+  {
     "name": "booking-email-confirm",
     "type": "EMAIL"
   },
