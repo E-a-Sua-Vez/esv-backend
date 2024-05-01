@@ -194,6 +194,8 @@ export class PatientHistoryService {
       if (available !== undefined) {
         patientHistory.available = available;
       }
+      patientHistory.modifiedAt = new Date();
+      patientHistory.modifiedBy = user;
       const patientHistoryUpdated = await this.patientHistoryRepository.update(patientHistory);
       const patientHistoryUpdatedEvent = new PatientHistoryUpdated(new Date(), patientHistoryUpdated, { user });
       publish(patientHistoryUpdatedEvent);
