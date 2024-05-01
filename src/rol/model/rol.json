@@ -359,7 +359,17 @@
             "outcome-types.admin.read": true,
             "outcome-types.admin.add": true,
             "reports.admin.incomes": true,
-            "reports.admin.outcomes": true
+            "reports.admin.outcomes": true,
+
+            "patient.history.view": true,
+            "patient.history.update": true,
+            "patient.history.edit": true,
+            "patient.history.read": true,
+            "patient.history.add": true,
+            "patient.history.download": true,
+
+            "collaborator.attention.products": true,
+            "collaborator.attention.patient-history": true
         }
     },
     {

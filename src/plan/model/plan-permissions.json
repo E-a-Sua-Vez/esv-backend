@@ -64,6 +64,8 @@
     "collaborator.attention.skip": true,
     "collaborator.attention.finish": true,
     "collaborator.attention.payment-confirm": true,
+    "collaborator.attention.patient-history": true,
+    "collaborator.attention.products": true,
 
     "collaborators.admin.update": true,
     "collaborators.admin.read": true,
@@ -254,7 +256,14 @@
     "outcome-types.admin.update": true,
     "outcome-types.admin.edit": true,
     "outcome-types.admin.read": true,
-    "outcome-types.admin.add": true
+    "outcome-types.admin.add": true,
+
+    "patient.history.view": true,
+    "patient.history.update": true,
+    "patient.history.edit": true,
+    "patient.history.read": true,
+    "patient.history.add": true,
+    "patient.history.download": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -304,6 +313,8 @@
     "collaborator.attention.finish": false,
     "collaborator.attention.payment-confirm": false,
     "collaborator.attention.transfer": false,
+    "collaborator.attention.patient-history": false,
+    "collaborator.attention.products": false,
     "collaborator.module.update": false,
     "collaborator.main-menu.dashboard": true,
     "collaborator.main-menu.queue-manage": false,
@@ -509,7 +520,14 @@
     "outcome-types.admin.update": false,
     "outcome-types.admin.edit": false,
     "outcome-types.admin.read": false,
-    "outcome-types.admin.add": false
+    "outcome-types.admin.add": false,
+
+    "patient.history.view": false,
+    "patient.history.update": false,
+    "patient.history.edit": false,
+    "patient.history.read": false,
+    "patient.history.add": false,
+    "patient.history.download": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -571,6 +589,8 @@
     "collaborator.attention.skip": true,
     "collaborator.attention.finish": true,
     "collaborator.attention.payment-confirm": true,
+    "collaborator.attention.patient-history": true,
+    "collaborator.attention.products": true,
 
     "collaborators.admin.update": true,
     "collaborators.admin.read": true,
@@ -762,6 +782,13 @@
     "outcome-types.admin.update": true,
     "outcome-types.admin.edit": true,
     "outcome-types.admin.read": true,
-    "outcome-types.admin.add": true
+    "outcome-types.admin.add": true,
+
+    "patient.history.view": true,
+    "patient.history.update": true,
+    "patient.history.edit": true,
+    "patient.history.read": true,
+    "patient.history.add": true,
+    "patient.history.download": true
   }
 }

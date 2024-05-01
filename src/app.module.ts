@@ -35,6 +35,7 @@ import { IncomeModule } from './income/income.module';
 import { OutcomeTypeModule } from './outcome-type/outcome-type.module';
 import { PackageModule } from './package/package.module';
 import { OutcomeModule } from './outcome/outcome.module';
+import { PatientHistoryModule } from './patient-history/patient-history.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { OutcomeModule } from './outcome/outcome.module';
     OutcomeTypeModule,
     PackageModule,
     OutcomeModule,
+    PatientHistoryModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
