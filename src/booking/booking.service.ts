@@ -133,9 +133,10 @@ export class BookingService {
           throw new HttpException(`Error creando reserva: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
       } else {
+        const clientForUserId = client ? client.id : undefined;
         const userCreated = await this.userService.createUser(
           user.name, user.phone, user.email, queue.commerceId, queue.id, user.lastName, user.idNumber,
-          user.notificationOn, user.notificationEmailOn, user.personalInfo, client.id, user.acceptTermsAndConditions
+          user.notificationOn, user.notificationEmailOn, user.personalInfo, clientForUserId, user.acceptTermsAndConditions
         );
         if (userCreated && userCreated.id) {
           user = {...user, ...userCreated };

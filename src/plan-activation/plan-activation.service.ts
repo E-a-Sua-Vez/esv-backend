@@ -171,9 +171,9 @@ export class PlanActivationService {
       if (planActivation.active === false && planActivation.validated === true) {
         throw new HttpException(`Activacion de Plan ya esta inactivo`, HttpStatus.BAD_REQUEST);
       }
-      if (new Date() < planActivation.endDate) {
+      /*if (new Date() < planActivation.endDate) {
         throw new HttpException(`Plan no puede ser desativado antes de la fecha de vencimiento`, HttpStatus.BAD_REQUEST);
-      }
+      }*/
       planActivation.active = false;
       planActivation.desactivatedAt = new Date();
       planActivation.permissions = await this.planService.desactivatedPermissionsForPlan(planActivation.planId);
