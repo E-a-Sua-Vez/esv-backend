@@ -81,7 +81,7 @@ export class OutcomeService {
   public async createOutcome(user: string, commerceId: string, type: string, status: OutcomeStatus, bookingId: string, attentionId: string,
     clientId: string, packageId: string, amount: number, totalAmount: number, installments: number, paymentMethod: PaymentMethod,
     commission: number, comment: string, fiscalNote: string, promotionalCode: string, transactionId: string, bankEntity: string, outcomeInfo: OutcomeInfo,
-    paymentType: string, paymentAmount: string, quantity: string, title: string, productId: string, productName: string, beneficiary: string, date: Date,
+    paymentType: string, paymentAmount: string, quantity: string, title: string, productId: string, productName: string, beneficiary: string, companyBeneficiaryId: string, date: Date,
     code: string, expireDate: Date): Promise<Outcome> {
     let outcome = new Outcome();
     outcome.commerceId = commerceId;
@@ -114,6 +114,7 @@ export class OutcomeService {
     outcome.productId = productId;
     outcome.productName = productName;
     outcome.beneficiary = beneficiary;
+    outcome.companyBeneficiaryId = companyBeneficiaryId;
     outcome.date = date;
     outcome.code = code;
     outcome.expireDate = expireDate;

@@ -1,7 +1,7 @@
-export enum OutcomeTypeType {
+export enum CompanyType {
     STANDARD = 'STANDARD',
     SUPPLIER = 'SUPPLIER',
     BENEFICIARY = 'BENEFICIARY',
     COLLABORATOR = 'COLLABORATOR',
-    SERVICE = 'SERVICE',
+    SERVICE = 'SERVICE'
 }

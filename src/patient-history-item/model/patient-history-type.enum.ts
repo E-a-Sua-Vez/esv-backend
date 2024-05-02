@@ -1,0 +1,4 @@
+export enum PatientHistoryItemType {
+    STANDARD = 'STANDARD',
+    PSYCHOBIOLOGICAL_HABIT = 'PSYCHOBIOLOGICAL_HABIT'
+}

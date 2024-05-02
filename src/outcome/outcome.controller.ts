@@ -47,9 +47,9 @@ export class OutcomeController {
     @Post('/')
     public async createOutcome(@User() user, @Body() body: Outcome): Promise<Outcome> {
         const { commerceId, bookingId, attentionId, clientId, type, amount, totalAmount, installments, paymentMethod, outcomeInfo, status, packageId,
-            commission, comment, fiscalNote, promotionalCode, transactionId, bankEntity, paymentType, paymentAmount, quantity, title, productId, productName, beneficiary, date, code, expireDate } = body;
+            commission, comment, fiscalNote, promotionalCode, transactionId, bankEntity, paymentType, paymentAmount, quantity, title, productId, productName, beneficiary, companyBeneficiaryId, date, code, expireDate } = body;
         return this.outcomeService.createOutcome(user, commerceId, type, status, bookingId, attentionId, clientId, packageId, amount, totalAmount, installments,
-            paymentMethod, commission, comment, fiscalNote, promotionalCode, transactionId, bankEntity, outcomeInfo, paymentType, paymentAmount, quantity, title, productId, productName, beneficiary, date, code, expireDate);
+            paymentMethod, commission, comment, fiscalNote, promotionalCode, transactionId, bankEntity, outcomeInfo, paymentType, paymentAmount, quantity, title, productId, productName, beneficiary, companyBeneficiaryId, date, code, expireDate);
     }
 
     @UseGuards(AuthGuard)

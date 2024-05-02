@@ -36,6 +36,7 @@ import { OutcomeTypeModule } from './outcome-type/outcome-type.module';
 import { PackageModule } from './package/package.module';
 import { OutcomeModule } from './outcome/outcome.module';
 import { PatientHistoryModule } from './patient-history/patient-history.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { PatientHistoryModule } from './patient-history/patient-history.module';
     PackageModule,
     OutcomeModule,
     PatientHistoryModule,
+    CompanyModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

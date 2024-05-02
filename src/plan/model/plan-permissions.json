@@ -798,6 +798,16 @@
     "patient.history.edit": true,
     "patient.history.read": true,
     "patient.history.add": true,
-    "patient.history.download": true
+    "patient.history.download": true,
+
+    "companies.admin.view": true,
+    "companies.admin.limit": 10,
+    "companies.admin.unavailable": true,
+    "companies.admin.update": true,
+    "companies.admin.edit": true,
+    "companies.admin.read": true,
+    "companies.admin.add": true
+
+
   }
 }

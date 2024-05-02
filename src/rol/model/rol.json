@@ -371,7 +371,16 @@
             "collaborator.attention.products": true,
             "collaborator.attention.patient-history": true,
             "business.main-menu.booking-manage": true,
-            "business.bookings.manage": true
+            "business.bookings.manage": true,
+
+            "companies.admin.view": true,
+            "companies.admin.limit": 10,
+            "companies.admin.unavailable": true,
+            "companies.admin.update": true,
+            "companies.admin.edit": true,
+            "companies.admin.read": true,
+            "companies.admin.add": true,
+            "business.main-menu.company-manage": true
         }
     },
     {
