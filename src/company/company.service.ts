@@ -106,7 +106,7 @@ export class CompanyService {
       }
       return await this.updateCompany(user, company);
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el servicio: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Hubo un problema al modificar el company: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

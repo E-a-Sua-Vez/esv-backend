@@ -3,7 +3,7 @@ import { PatientHistoryItemType } from './patient-history-type.enum';
 
 export class ItemCharacteristics {
     actual: boolean;
-    frecuency: boolean;
+    frequency: boolean;
     ageFrom: boolean;
     ageTo: boolean;
     comment: boolean;
@@ -14,9 +14,12 @@ export class PatientHistoryItem {
     id: string;
     name: string;
     type: PatientHistoryItemType;
+    tag: string;
+    order: number;
     characteristics: ItemCharacteristics;
     commerceId: string;
     createdAt: Date;
+    online: boolean;
     active: boolean;
     available: boolean;
 }

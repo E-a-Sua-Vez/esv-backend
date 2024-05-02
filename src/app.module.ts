@@ -37,6 +37,7 @@ import { PackageModule } from './package/package.module';
 import { OutcomeModule } from './outcome/outcome.module';
 import { PatientHistoryModule } from './patient-history/patient-history.module';
 import { CompanyModule } from './company/company.module';
+import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
 
 @Module({
   imports: [
@@ -46,7 +47,6 @@ import { CompanyModule } from './company/company.module';
         ignoreUndefinedProperties: true
       },
       fireormSettings: { validateModels: true },
-
     }),
     BusinessModule,
     CommerceModule,
@@ -81,6 +81,7 @@ import { CompanyModule } from './company/company.module';
     OutcomeModule,
     PatientHistoryModule,
     CompanyModule,
+    PatientHistoryItemModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

@@ -1,4 +1,4 @@
-import { PatientHistoryItem } from './model/patient-history-item.entity';
+import { ItemCharacteristics, PatientHistoryItem } from './model/patient-history-item.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
@@ -9,23 +9,23 @@ import { PatientHistoryItemType } from './model/patient-history-type.enum';
 
 export class PatientHistoryItemService {
   constructor(
-  @InjectRepository(PatientHistoryItem)
-    private moduleRepository = getRepository(PatientHistoryItem)
+    @InjectRepository(PatientHistoryItem)
+    private patientHistoryItemRepository = getRepository(PatientHistoryItem)
   ) {}
 
   public async getPatientHistoryItemById(id: string): Promise<PatientHistoryItem> {
-    return await this.moduleRepository.findById(id);
+    return await this.patientHistoryItemRepository.findById(id);
   }
 
   public async getAllPatientHistoryItem(): Promise<PatientHistoryItem[]> {
-    return await this.moduleRepository
+    return await this.patientHistoryItemRepository
     .whereEqualTo('available', true)
     .orderByAscending('name')
     .find();
   }
 
   public async getPatientHistoryItemsByCommerceId(commerceId: string): Promise<PatientHistoryItem[]> {
-    return await this.moduleRepository
+    return await this.patientHistoryItemRepository
     .whereEqualTo('commerceId', commerceId)
     .whereEqualTo('available', true)
     .orderByAscending('name')
@@ -33,7 +33,7 @@ export class PatientHistoryItemService {
   }
 
   public async getActivePatientHistoryItemsByCommerceId(commerceId: string): Promise<PatientHistoryItem[]> {
-    return await this.moduleRepository
+    return await this.patientHistoryItemRepository
     .whereEqualTo('commerceId', commerceId)
     .whereEqualTo('active', true)
     .whereEqualTo('available', true)
@@ -42,7 +42,7 @@ export class PatientHistoryItemService {
   }
 
   public async getActivePatientHistoryItemsByCommerceIdAndType(commerceId: string, type: PatientHistoryItemType): Promise<PatientHistoryItem[]> {
-    return await this.moduleRepository
+    return await this.patientHistoryItemRepository
     .whereEqualTo('commerceId', commerceId)
     .whereEqualTo('type', type)
     .whereEqualTo('active', true)
@@ -51,37 +51,65 @@ export class PatientHistoryItemService {
     .find();
   }
 
-  public async createPatientHistoryItem(user: string, commerceId: string, name: string): Promise<PatientHistoryItem> {
-    let module = new PatientHistoryItem();
-    module.commerceId = commerceId;
-    module.name = name;
-    module.active = true;
-    module.available = true;
-    module.createdAt = new Date();
-    const moduleCreated = await this.moduleRepository.create(module);
-    const moduleCreatedEvent = new PatientHistoryItemCreated(new Date(), moduleCreated, { user });
-    publish(moduleCreatedEvent);
-    return moduleCreated;
+  name: string;
+    type: PatientHistoryItemType;
+    characteristics: ItemCharacteristics;
+    commerceId: string;
+    createdAt: Date;
+    active: boolean;
+    available: boolean;
+
+  public async createPatientHistoryItem(user: string, commerceId: string, name: string, tag: string, order: number, type: PatientHistoryItemType, characteristics: ItemCharacteristics): Promise<PatientHistoryItem> {
+    let item = new PatientHistoryItem();
+    item.commerceId = commerceId;
+    item.name = name;
+    item.type = type;
+    item.tag = tag;
+    item.order = order;
+    item.characteristics = characteristics;
+    item.active = true;
+    item.online = true;
+    item.available = true;
+    item.createdAt = new Date();
+    const itemCreated = await this.patientHistoryItemRepository.create(item);
+    const itemCreatedEvent = new PatientHistoryItemCreated(new Date(), itemCreated, { user });
+    publish(itemCreatedEvent);
+    return itemCreated;
   }
 
-  public async updatePatientHistoryItemConfigurations(user: string, id: string, name: string, active, available): Promise<PatientHistoryItem> {
+  public async updatePatientHistoryItemConfigurations(user: string, id: string, name: string, tag: string, order: number, type: PatientHistoryItemType, characteristics: ItemCharacteristics, active: boolean, available: boolean, online: boolean): Promise<PatientHistoryItem> {
     try {
-      let module = await this.moduleRepository.findById(id);
+      let item = await this.patientHistoryItemRepository.findById(id);
       if (name) {
-        module.name = name;
+        item.name = name;
+      }
+      if (type !== undefined) {
+        item.type = type;
+      }
+      if (tag !== undefined) {
+        item.tag = tag;
+      }
+      if (order !== undefined) {
+        item.order = order;
+      }
+      if (characteristics !== undefined) {
+        item.characteristics = characteristics;
       }
       if (active !== undefined) {
-        module.active = active;
+        item.active = active;
       }
       if (available !== undefined) {
-        module.available = available;
+        item.available = available;
       }
-      const moduleUpdated = await this.moduleRepository.update(module);
-      const moduleUpdatedEvent = new PatientHistoryItemUpdated(new Date(), moduleUpdated, { user });
-      publish(moduleUpdatedEvent);
-      return moduleUpdated;
+      if (online !== undefined) {
+        item.online = online;
+      }
+      const itemUpdated = await this.patientHistoryItemRepository.update(item);
+      const itemUpdatedEvent = new PatientHistoryItemUpdated(new Date(), itemUpdated, { user });
+      publish(itemUpdatedEvent);
+      return itemUpdated;
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el modulo: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Hubo un problema al modificar el patient history item: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

@@ -12,4 +12,4 @@ import { PatientHistoryItemService } from './patient-history-item.service';
   exports: [PatientHistoryItemService],
   controllers: [PatientHistoryItemController],
 })
-export class PatientHistoryItemPatientHistoryItem {}
+export class PatientHistoryItemModule {}

@@ -50,11 +50,25 @@ export class FamilyBackground {
     createdBy: string;
 }
 
+export class ItemCharacteristics {
+    id: string;
+    name: string;
+    active: boolean;
+    actual: boolean;
+    frequency: string;
+    ageFrom: number;
+    ageTo: number;
+    comment: string;
+}
+
 export class PsychobiologicalHabits {
     habits: string;
+    habitsDetails: Record<string, ItemCharacteristics>;
     attentionId: string;
     createdAt: Date;
     createdBy: string;
+    modifiedAt: Date;
+    modifiedBy: string;
 }
 
 export class PhysicalExam {
@@ -102,7 +116,7 @@ export class PatientHistory {
     currentIllness: CurrentIllness[];
     personalBackground: PersonalBackground[];
     familyBackground: FamilyBackground[];
-    psychobiologicalHabits : PsychobiologicalHabits[];
+    psychobiologicalHabits : PsychobiologicalHabits;
     functionalExam: FunctionalExam[];
     physicalExam: PhysicalExam[];
     diagnostic: Diagnostic[];
