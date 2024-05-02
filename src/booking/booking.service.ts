@@ -423,21 +423,46 @@ export class BookingService {
           const bookingDate = getDateDDMMYYYY(booking.date);
           type = NotificationType.BOOKING;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
+          let linkWs = undefined;
+          if (bookingCommerce && bookingCommerce.contactInfo && bookingCommerce.contactInfo.whatsapp) {
+            linkWs = `https://wa.me/${bookingCommerce.contactInfo.whatsapp}`
+          }
           message = bookingCommerce.localeInfo.language === 'pt'
           ?
-`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
+`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Você deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
 
-Lémbre-se, seu número de reserva é: *${booking.number}*. Mais detalhes neste link:
+Lémbre-se, seu número de reserva é: *${booking.number}*.
+
+Para detalhes e cancelamentos, acesse o link:
 
 ${link}
+${
+  linkWs !== undefined ? `
 
+Duvidas? Contate-nos:
+
+${linkWs}
+
+` : ``
+}
 Obrigado!`
           :
 `Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` a las ${booking.block.hourFrom}.` : `.`}
 
-Recuerda, tu número de reserva es: *${booking.number}*. Más detalles en este link:
+Recuerda, tu número de reserva es: *${booking.number}*.
+
+Para detalles o cancelar, ingresa en este link:
 
 ${link}
+${
+  linkWs !== undefined ? `
+
+¿Dudas? Contactanos:
+
+${linkWs}
+
+` : ``
+}
 
 ¡Muchas gracias!
 `;

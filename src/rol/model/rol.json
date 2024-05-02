@@ -369,7 +369,9 @@
             "patient.history.download": true,
 
             "collaborator.attention.products": true,
-            "collaborator.attention.patient-history": true
+            "collaborator.attention.patient-history": true,
+            "business.main-menu.booking-manage": true,
+            "business.bookings.manage": true
         }
     },
     {

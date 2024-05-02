@@ -13,6 +13,9 @@
     "administrators.admin.update": false,
     "administrators.admin.view": false,
 
+    "business.bookings.manage": true,
+
+    "business.main-menu.booking-manage": true,
     "business.main-menu.modules-admin": true,
     "business.main-menu.collaborators-admin": true,
     "business.main-menu.queues-admin": true,
@@ -279,6 +282,9 @@
     "administrators.admin.update": false,
     "administrators.admin.view": false,
 
+    "business.bookings.manage": false,
+
+    "business.main-menu.booking-manage": false,
     "business.main-menu.modules-admin": true,
     "business.main-menu.collaborators-admin": true,
     "business.main-menu.queues-admin": true,
@@ -543,6 +549,9 @@
     "administrators.admin.update": false,
     "administrators.admin.view": false,
 
+    "business.bookings.manage": true,
+
+    "business.main-menu.booking-manage": true,
     "business.main-menu.modules-admin": true,
     "business.main-menu.collaborators-admin": true,
     "business.main-menu.queues-admin": true,
