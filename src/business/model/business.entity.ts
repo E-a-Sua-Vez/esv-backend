@@ -44,6 +44,14 @@ class PersonalizedHour {
     attentionHourTo: number;
 }
 
+export class WhatsappConnection {
+    idConnection?: string;
+    whatsapp?: string;
+    lastConection?: Date;
+    connected?: boolean;
+    createdAt?: Date;
+}
+
 @Collection('business')
 export class Business {
     id: string;
@@ -57,6 +65,7 @@ export class Business {
     localeInfo: LocaleInfo;
     contactInfo: ContactInfo;
     serviceInfo: ServiceInfo;
+    whatsappConnection: WhatsappConnection;
     email: string;
     logo: string;
     phone: string;

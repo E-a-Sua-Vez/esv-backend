@@ -389,7 +389,12 @@
             "patient-history-item.admin.edit": true,
             "patient-history-item.admin.read": true,
             "patient-history-item.admin.add": true,
-            "business.main-menu.patient-history-item-admin": true
+            "business.main-menu.patient-history-item-admin": true,
+
+            "configuration.admin.whatsapps": true,
+            "configuration.admin.features": true,
+            "configuration.admin.whatsapps-connect": true,
+            "configuration.admin.whatsapps-disconnect": true,
         }
     },
     {

@@ -8,7 +8,7 @@ export class TwilioClient implements NotificationClient {
 
   private readonly client = new twilio();
 
-  constructor() {};
+  constructor(){}
 
   public async sendMessage(message: string, phone: string): Promise<any> {
     return this.client.messages
@@ -23,6 +23,18 @@ export class TwilioClient implements NotificationClient {
   }
 
   sendEmail(email: EmailInputDto): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  disconnectService(): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  requestServiceStatus(serviceId: string): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  requestEvent(): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  requestConnection(): Promise<any> {
     throw new Error('Method not implemented.');
   }
 }
