@@ -38,6 +38,7 @@ import { PackageStatus } from 'src/package/model/package-status.enum';
 import { PackageType } from '../package/model/package-type.enum';
 import { IncomeType } from 'src/income/model/income-type.enum';
 import { UserService } from '../user/user.service';
+import * as NOTIFICATIONS from './notifications/notifications.js';
 
 @Injectable()
 export class BookingService {
@@ -427,46 +428,23 @@ export class BookingService {
           if (bookingCommerce && bookingCommerce.contactInfo && bookingCommerce.contactInfo.whatsapp) {
             linkWs = `https://wa.me/${bookingCommerce.contactInfo.whatsapp}`
           }
-          message = bookingCommerce.localeInfo.language === 'pt'
-          ?
-`Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Você deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
-
-Lémbre-se, seu número de reserva é: *${booking.number}*.
-
-Para detalhes e cancelamentos, acesse o link:
-
-${link}
-${
-  linkWs !== undefined ? `
-
-Duvidas? Contate-nos:
-
-${linkWs}
-
-` : ``
-}
-Obrigado!`
-          :
-`Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito. Debes venir el dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` a las ${booking.block.hourFrom}.` : `.`}
-
-Recuerda, tu número de reserva es: *${booking.number}*.
-
-Para detalles o cancelar, ingresa en este link:
-
-${link}
-${
-  linkWs !== undefined ? `
-
-¿Dudas? Contactanos:
-
-${linkWs}
-
-` : ``
-}
-
-¡Muchas gracias!
-`;
-          await this.notificationService.createBookingWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
+          const commerceLanguage = bookingCommerce.localeInfo.language;
+          message = NOTIFICATIONS.getBookingMessage(commerceLanguage, bookingCommerce, booking, bookingDate, link, linkWs);
+          let servicePhoneNumber = undefined;
+          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(booking.commerceId);
+          if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
+            servicePhoneNumber = whatsappConnection.whatsapp;
+          }
+          await this.notificationService.createBookingWhatsappNotification(
+            user.phone,
+            booking.id,
+            message,
+            type,
+            booking.id,
+            booking.commerceId,
+            booking.queueId,
+            servicePhoneNumber
+          );
           notified.push(booking);
         }
       }
@@ -491,25 +469,23 @@ ${linkWs}
           const bookingDate = getDateDDMMYYYY(booking.date);
           type = NotificationType.BOOKING_CONFIRM;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
-          message = bookingCommerce.localeInfo.language === 'pt'
-          ?
-`Olá, lembre-se da sua reserva em *${bookingCommerce.name}*! Deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? `as ${booking.block.hourFrom}.` : `.`}
-
-Poderá comparecer? Se sua resposta for *NÃO* por favor cancele sua reserva neste link:
-
-${link}
-
-Obrigado!`
-          :
-`Hola, recuerda tu reserva en *${bookingCommerce.name}*. Debes venir el dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? `a las ${booking.block.hourFrom}.` : `.`}
-
-Podrás venir? Si tu respues es *NO* por favor cancela tu reserva en este link:
-
-${link}
-
-¡Muchas gracias!
-`;
-          await this.notificationService.createWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
+          const commerceLanguage = bookingCommerce.localeInfo.language;
+          message = NOTIFICATIONS.getBookingConfirmMessage(commerceLanguage, bookingCommerce, booking, bookingDate, link);
+          let servicePhoneNumber = undefined;
+          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(booking.commerceId);
+          if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
+            servicePhoneNumber = whatsappConnection.whatsapp;
+          }
+          await this.notificationService.createWhatsappNotification(
+            user.phone,
+            booking.id,
+            message,
+            type,
+            booking.id,
+            booking.commerceId,
+            booking.queueId,
+            servicePhoneNumber
+          );
           notified.push(booking);
         }
       }
@@ -532,26 +508,25 @@ ${link}
         const user = booking.user;
         if(user && user.notificationOn) {
           const bookingDate = getDateDDMMYYYY(booking.date);
-          type = NotificationType.BOOKING_CONFIRM;
+          type = NotificationType.BOOKING_CANCELLED;
           const link = `${process.env.BACKEND_URL}/interno/comercio/${bookingCommerce.keyName}`;
-          message = bookingCommerce.localeInfo.language === 'pt'
-          ?
-`Olá, sua reserva em *${bookingCommerce.name}* para o dia *${bookingDate}* foi cancelada.
-
-Para reservar de novo, acesse neste link:
-
-${link}
-
-Obrigado!`
-          :
-`Hola, tu reserva en *${bookingCommerce.name}* del dia *${bookingDate}* fue cancelada.
-
-Para reservar de nuevo, ingrese en este link:
-
-${link}
-
-¡Muchas gracias!`;
-          await this.notificationService.createWhatsappNotification(user.phone, booking.id, message, type, booking.id, booking.commerceId, booking.queueId);
+          const commerceLanguage = bookingCommerce.localeInfo.language;
+          message = NOTIFICATIONS.getBookingCancelledMessage(commerceLanguage, bookingCommerce, bookingDate, link);
+          let servicePhoneNumber = undefined;
+          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(booking.commerceId);
+          if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
+            servicePhoneNumber = whatsappConnection.whatsapp;
+          }
+          await this.notificationService.createWhatsappNotification(
+            user.phone,
+            booking.id,
+            message,
+            type,
+            booking.id,
+            booking.commerceId,
+            booking.queueId,
+            servicePhoneNumber
+          );
           notified.push(booking);
         }
       }

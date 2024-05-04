@@ -394,7 +394,7 @@
             "configuration.admin.whatsapps": true,
             "configuration.admin.features": true,
             "configuration.admin.whatsapps-connect": true,
-            "configuration.admin.whatsapps-disconnect": true,
+            "configuration.admin.whatsapps-disconnect": true
         }
     },
     {

@@ -85,6 +85,10 @@
     "configuration.admin.only-survey": true,
     "configuration.admin.whatsapp-notify-now": true,
     "configuration.admin.edit": true,
+    "configuration.admin.whatsapps": true,
+    "configuration.admin.features": true,
+    "configuration.admin.whatsapps-connect": true,
+    "configuration.admin.whatsapps-disconnect": true,
 
     "commerces.admin.update": true,
     "commerces.admin.limit": 10,
@@ -350,6 +354,10 @@
     "configuration.admin.only-survey": true,
     "configuration.admin.whatsapp-notify-now": true,
     "configuration.admin.edit": true,
+    "configuration.admin.whatsapps": true,
+    "configuration.admin.features": true,
+    "configuration.admin.whatsapps-connect": true,
+    "configuration.admin.whatsapps-disconnect": true,
 
     "commerces.admin.update": true,
     "commerces.admin.limit": 10,
@@ -616,6 +624,10 @@
     "configuration.admin.only-survey": false,
     "configuration.admin.whatsapp-notify-now": true,
     "configuration.admin.edit": true,
+    "configuration.admin.whatsapps": true,
+    "configuration.admin.features": true,
+    "configuration.admin.whatsapps-connect": true,
+    "configuration.admin.whatsapps-disconnect": true,
 
     "commerces.admin.update": true,
     "commerces.admin.limit": 10,

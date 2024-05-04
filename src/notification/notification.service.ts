@@ -51,7 +51,8 @@ export class NotificationService {
     type: NotificationType,
     attentionId: string,
     commerceId: string,
-    queueId: string
+    queueId: string,
+    servicePhoneNumber: string
   ){
     let notification = new Notification();
     notification.createdAt = new Date();
@@ -67,7 +68,7 @@ export class NotificationService {
     publish(notificationCreatedEvent);
     let metadata;
     try {
-      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId);
+      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId, servicePhoneNumber);
       if (this.whatsappProvider === NotificationProvider.TWILIO) {
         notificationCreated.twilioId = metadata['sid'];
         notificationCreated.providerId = metadata['sid'];
@@ -137,8 +138,8 @@ export class NotificationService {
     }
   }
 
-  public async whatsappNotify(phone: string, message: string, notificationId: string, commerceId: string): Promise<string> {
-    return this.whatsappNotificationClient.sendMessage(message, phone, notificationId, commerceId);
+  public async whatsappNotify(phone: string, message: string, notificationId: string, commerceId: string, servicePhoneNumber?: string): Promise<string> {
+    return this.whatsappNotificationClient.sendMessage(message, phone, notificationId, servicePhoneNumber);
   }
 
   public async emailNotify(email: string, data: EmailInputDto, template: string): Promise<any> {
@@ -397,7 +398,8 @@ export class NotificationService {
     type: NotificationType,
     bookingId: string,
     commerceId: string,
-    queueId: string
+    queueId: string,
+    servicePhoneNumber: string
   ){
     let notification = new Notification();
     notification.createdAt = new Date();
@@ -413,7 +415,7 @@ export class NotificationService {
     publish(notificationCreatedEvent);
     let metadata;
     try {
-      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId);
+      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId, servicePhoneNumber);
       if (this.whatsappProvider === NotificationProvider.TWILIO) {
         notificationCreated.twilioId = metadata['sid'];
         notificationCreated.providerId = metadata['sid'];

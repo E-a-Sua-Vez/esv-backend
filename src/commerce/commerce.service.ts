@@ -1,4 +1,4 @@
-import { Commerce, ContactInfo, LocaleInfo, ServiceInfo } from './model/commerce.entity';
+import { Commerce, ContactInfo, LocaleInfo, ServiceInfo, WhatsappConnection } from './model/commerce.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from 'src/queue/queue.service';
@@ -98,9 +98,19 @@ export class CommerceService {
   }
 
   public async getCommercesByBusinessId(businessId: string): Promise<Commerce[]> {
+    const commerces = await this.commerceRepository
+      .whereEqualTo('businessId', businessId)
+      .whereEqualTo('available', true)
+      .orderByAscending('tag')
+      .find();
+    return commerces;
+  }
+
+  public async getActiveCommercesByBusinessId(businessId: string): Promise<Commerce[]> {
     let commercesToReturn = [];
     const commerces = await this.commerceRepository
       .whereEqualTo('businessId', businessId)
+      .whereEqualTo('active', true)
       .whereEqualTo('available', true)
       .orderByAscending('tag')
       .find();
@@ -112,16 +122,6 @@ export class CommerceService {
       }
     }
     return commercesToReturn;
-  }
-
-  public async getActiveCommercesByBusinessId(businessId: string): Promise<Commerce[]> {
-    const commerces = await this.commerceRepository
-      .whereEqualTo('businessId', businessId)
-      .whereEqualTo('active', true)
-      .whereEqualTo('available', true)
-      .orderByAscending('tag')
-      .find();
-    return commerces;
   }
 
   public async createCommerce(user: string, name: string, keyName: string, tag: string, businessId: string, country: Country, email: string, logo: string, phone: string, url: string, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, category: Category): Promise<Commerce> {
@@ -198,6 +198,33 @@ export class CommerceService {
     return await this.update(user, commerce);
   }
 
+  public async updateWhatsappConnectionCommerce(user: string, businessId: string, whatsappConnection: WhatsappConnection): Promise<Commerce[]> {
+    let commercesUpdated = [];
+    const commerces = await this.getCommercesByBusinessId(businessId);
+    if (commerces && commerces.length > 0 && whatsappConnection) {
+      for (let i = 0; i < commerces.length; i++) {
+        const commerce = commerces[i];
+        if (commerce && commerce.id) {
+          commerce.whatsappConnection = whatsappConnection;
+          await this.update(user, commerce);
+          commercesUpdated.push(commerce)
+        }
+      }
+    }
+    return commercesUpdated;
+  }
+
+  public async getWhatsappConnectionCommerce(id: string): Promise<WhatsappConnection> {
+    let commerce = await this.getCommerce(id);
+    if (commerce.whatsappConnection &&
+        commerce.whatsappConnection.connected === true &&
+        commerce.whatsappConnection.whatsapp
+      ) {
+      commerce.whatsappConnection = commerce.whatsappConnection;
+      return commerce.whatsappConnection;
+    }
+  }
+
   public async activateCommerce(user: string, commerceId: string): Promise<void> {
     const commerce = await this.getCommerce(commerceId);
     if (!commerceId) {
@@ -258,7 +285,5 @@ export class CommerceService {
         }
       }
     }
-
-
   }
 }

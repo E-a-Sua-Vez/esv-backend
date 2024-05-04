@@ -31,7 +31,7 @@ export class BusinessService {
       businessAux = business;
     }
     if (businessAux) {
-      businessAux.commerces = await this.commerceService.getCommercesByBusinessId(id);
+      businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessId(id);
     }
     return businessAux;
   }
@@ -52,7 +52,7 @@ export class BusinessService {
       businessAux = business[0];
     }
     if (businessAux) {
-      businessAux.commerces = await this.commerceService.getCommercesByBusinessId(businessAux.id);
+      businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessId(businessAux.id);
     }
     return businessAux;
   }
@@ -151,7 +151,7 @@ export class BusinessService {
     if (!business) {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);
     }
-    const commerces = await this.commerceService.getCommercesByBusinessId(businessId);
+    const commerces = await this.commerceService.getActiveCommercesByBusinessId(businessId);
     if (commerces && commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
         let commerce = commerces[i];
@@ -167,7 +167,7 @@ export class BusinessService {
     if (!business) {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);
     }
-    const commerces = await this.commerceService.getCommercesByBusinessId(businessId);
+    const commerces = await this.commerceService.getActiveCommercesByBusinessId(businessId);
     if (commerces && commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
         let commerce = commerces[i];
@@ -199,7 +199,7 @@ export class BusinessService {
   }
 
   public async updateWhatsappConnection(user: string, id: string, idConnection: string, whatsapp: string, connected?: boolean): Promise<Business> {
-    let business = await this.getBusiness(id);
+    let business = await this.businessRepository.findById(id);
     if (business && business.id) {
       if (!business.whatsappConnection) {
         const whatsappConnection = {
@@ -221,7 +221,11 @@ export class BusinessService {
       if (connected !== undefined) {
         business.whatsappConnection.connected = connected;
       }
-      return await this.update(user, business);
+      const businessUpdated = await this.update(user, business);
+      if (businessUpdated.whatsappConnection) {
+        await this.commerceService.updateWhatsappConnectionCommerce(user, business.id, businessUpdated.whatsappConnection);
+      }
+      return businessUpdated;
     }
   }
 

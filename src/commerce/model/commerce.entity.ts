@@ -43,6 +43,14 @@ export class ServiceInfo {
     holidays: Record<string, string[]>;
 }
 
+export class WhatsappConnection {
+    idConnection?: string;
+    whatsapp?: string;
+    lastConection?: Date;
+    connected?: boolean;
+    createdAt?: Date;
+}
+
 class PersonalizedHour {
     attentionHourFrom: number;
     attentionHourTo: number;
@@ -60,6 +68,7 @@ export class Commerce {
     localeInfo: LocaleInfo;
     contactInfo: ContactInfo;
     serviceInfo: ServiceInfo;
+    whatsappConnection: WhatsappConnection;
     email: string;
     logo: string;
     phone: string;

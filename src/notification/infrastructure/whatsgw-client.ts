@@ -16,18 +16,18 @@ export class WhatsGwClient implements NotificationClient {
     private readonly httpService: HttpService
   ) {}
 
-  public async sendMessage(message: string, phone: string, notificationId: string): Promise<any> {
+  public async sendMessage(message: string, phone: string, notificationId: string, servicePhoneNumber?: string): Promise<any> {
     const url = `${this.whatsGwUrl}/Send`;
     const body = {
       apikey: this.whatsGwApiKey,
-      phone_number: this.whatsGwPhoneNumber,
+      phone_number: servicePhoneNumber || this.whatsGwPhoneNumber,
       contact_phone_number: phone,
       message_custom_id: notificationId,
       message_type: 'text',
       message_body: message,
       check_status : 1
     };
-    return (await firstValueFrom(this.httpService.post(url, body))).data;
+    const response = (await firstValueFrom(this.httpService.post(url, body))).data;
   }
 
   public async requestConnection(): Promise<any> {

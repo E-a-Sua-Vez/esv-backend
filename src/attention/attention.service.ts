@@ -32,6 +32,7 @@ import { PackageStatus } from 'src/package/model/package-status.enum';
 import { IncomeService } from 'src/income/income.service';
 import { IncomeStatus } from 'src/income/model/income-status.enum';
 import { IncomeType } from 'src/income/model/income-type.enum';
+import * as NOTIFICATIONS from './notifications/notifications.js';
 
 @Injectable()
 export class AttentionService {
@@ -513,43 +514,39 @@ export class AttentionService {
       let attentionToNotify = (await this.getAttentionByNumber(count, AttentionStatus.PENDING, attention.queueId))[0];
       if (attentionToNotify !== undefined && attentionToNotify.type === AttentionType.STANDARD) {
         const user = await this.userService.getUserById(attentionToNotify.userId);
-        if(user.notificationOn) {
+        if (user.notificationOn) {
           switch(count - attention.number) {
             case 5:
-              message = commerceLanguage === 'pt'
-              ? `😃 Olá, quase É a sua vez! Restam *${5}* pessoas para serem atendidas.
-
-Lémbre-se, seu número de atendimento é: *${attention.number}*.`
-              : `😃 Hola, ya casi Es tu Turno! Faltan *${5}* personas para que seas atendido.
-
-Recuerda, tu número de atención es: *${attention.number}*.`
-              type = NotificationType.FALTANCINCO
+              type = NotificationType.FALTANCINCO;
+              message = NOTIFICATIONS.getFaltanCincoMessage(commerceLanguage, attention);
               break;
             case 1:
-              message = commerceLanguage === 'pt'
-              ? `😃 Olá, quase É a sua vez! Restam *${1}* pessoa para você ser tratado.
-
-Lémbre-se, seu número de atendimento é: *${attention.number}*`
-              : `😃 Hola, ¡ya casi Es tu Turno!. Falta *${1}* persona para que seas atendido.
-
-Recuerda, tu número de atención es: *${attention.number}*`;
               type = NotificationType.FALTAUNO;
+              message = NOTIFICATIONS.getFaltaUnoMessage(commerceLanguage, attention);
               break;
             case 0: {
               const module = await this.moduleService.getModuleById(moduleId);
               const moduleNumber = module.name;
               type = NotificationType.ESTUTURNO;
-              message = commerceLanguage === 'pt'
-              ? `🚨 Olá, agora É a sua Vez! Aproxime-se do módulo *${moduleNumber}*.
-
-Lémbre-se, seu número de atendimento é: *${attention.number}*.`
-              : `🚨 Hola, ahora ¡Es tu Turno! Acércate al módulo *${moduleNumber}*.
-
-Recuerda, tu número de atención es: *${attention.number}*.`;
+              message = NOTIFICATIONS.getEsTuTunoMessage(commerceLanguage, attention, moduleNumber);
               break;
-              }
+            }
           }
-          await this.notificationService.createWhatsappNotification(user.phone, attentionToNotify.userId, message, type, attention.id, attention.commerceId, attention.queueId);
+          let servicePhoneNumber = undefined;
+          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(attentionToNotify.commerceId);
+          if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
+            servicePhoneNumber = whatsappConnection.whatsapp;
+          }
+          await this.notificationService.createWhatsappNotification(
+            user.phone,
+            attentionToNotify.userId,
+            message,
+            type,
+            attention.id,
+            attention.commerceId,
+            attention.queueId,
+            servicePhoneNumber
+          );
           notified.push(attentionToNotify);
         }
       }
@@ -663,24 +660,22 @@ Recuerda, tu número de atención es: *${attention.number}*.`;
         if (attention.user) {
           if (attention.user.phone) {
             const link = `${process.env.BACKEND_URL}/interno/fila/${attention.queueId}/atencion/${attention.id}`;
-            const message = commerceLanguage === 'pt'
-            ?
-            `😃 Obrigado por se atender em *${attention.commerce.name}*!
-
-Como foi o atendimento? Sua opinião e muito importante pra nós. ⭐️ Ingresse aqui e avalie-nos, é menos de um minuto:
-
-${link}
-
-Se você não conseguir acessar o link diretamente, responda a esta mensagem ou adicione-nos aos seus contatos. Volte sempre!`
-            :
-            `😃 ¡Gracias por atenderte en *${attention.commerce.name}*!
-
-¿Cómo estuvo la atención? Tu opinión es muy importante para nosotros. ⭐️ Entra aquí y califícanos, te tomará sólo 15 segundos:
-
-${link}
-
-Si no puedes acceder al link directamente, contesta este mensaje o agreganos a tus contactos. Vuelve pronto!`
-            await this.notificationService.createWhatsappNotification(attention.user.phone, attention.user.id, message, NotificationType.ENCUESTA, attention.id, attention.commerceId, attention.queueId);
+            const message = NOTIFICATIONS.getEncuestaMessage(commerceLanguage, attention, link);
+            let servicePhoneNumber = undefined;
+            let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(attention.commerceId);
+            if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
+              servicePhoneNumber = whatsappConnection.whatsapp;
+            }
+            await this.notificationService.createWhatsappNotification(
+              attention.user.phone,
+              attention.user.id,
+              message,
+              NotificationType.ENCUESTA,
+              attention.id,
+              attention.commerceId,
+              attention.queueId,
+              servicePhoneNumber
+            );
             notified.push(attention);
           }
         }
@@ -703,24 +698,22 @@ Si no puedes acceder al link directamente, contesta este mensaje o agreganos a t
         if (attention.user) {
           if (attention.user.phone) {
             const link = `${process.env.BACKEND_URL}/interno/comercio/${attention.commerce.keyName}`;
-            const message = commerceLanguage === 'pt'
-            ?
-            `Olá, seu atendimento em *${attention.commerce.name}* foi cancelada.
-
-Para obter um atendimento novo, acesse neste link:
-
-${link}
-
-Obrigado!`
-            :
-            `Hola, tu atención en *${attention.commerce.name}* fue cancelada.
-
-Para reservar de nuevo, ingrese en este link:
-
-${link}
-
-¡Muchas gracias!`;
-            await this.notificationService.createWhatsappNotification(attention.user.phone, attention.user.id, message, NotificationType.ENCUESTA, attention.id, attention.commerceId, attention.queueId);
+            const message = NOTIFICATIONS.getAtencionCanceladaMessage(commerceLanguage, attention, link);
+            let servicePhoneNumber = undefined;
+            let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(attention.commerceId);
+            if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
+              servicePhoneNumber = whatsappConnection.whatsapp;
+            }
+            await this.notificationService.createWhatsappNotification(
+              attention.user.phone,
+              attention.user.id,
+              message,
+              NotificationType.ATTENTION_CANCELLED,
+              attention.id,
+              attention.commerceId,
+              attention.queueId,
+              servicePhoneNumber
+            );
             notified.push(attention);
           }
         }
