@@ -10,7 +10,7 @@ export class SimpleGuard implements CanActivate {
     const environment = process.env.NODE_ENV;
     const validateAuth = process.env.VALIDATE_AUTH;
     const simpleTokenAuth = process.env.SIMPLE_TOKEN_AUTH;
-    if (environment === 'prod' && validateAuth === '1') {
+    if (environment !== 'local' && validateAuth === '1') {
       const request = context.switchToHttp().getRequest();
       const token = this.extractTokenFromHeader(request);
       if (!token) {

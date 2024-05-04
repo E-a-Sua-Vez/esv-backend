@@ -21,7 +21,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const environment = process.env.NODE_ENV;
     const validateAuth = process.env.VALIDATE_AUTH;
-    if (environment === 'prod' && validateAuth === '1') {
+    if (environment !== 'local' && validateAuth === '1') {
       const request = context.switchToHttp().getRequest();
       const token = this.extractTokenFromHeader(request);
       if (!token) {

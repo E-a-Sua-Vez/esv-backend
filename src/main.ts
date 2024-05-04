@@ -11,6 +11,29 @@ async function bootstrap(): Promise<void> {
     'local': [
       "http://localhost:5173"
     ],
+    'test': [
+      "https://estuturno.app",
+      "https://www.estuturno.app",
+      "https://www.estuturno.cl",
+      "https://easuavez.com",
+      "https://www.easuavez.com",
+      "https://publico.estuturno.app",
+      "https://publico.easuavez.com",
+      "https://interno.estuturno.cl",
+      "https://interno.estuturno.app",
+      "https://interno.easuavez.com",
+      "https://app.easuavez.com",
+      "https://test.easuavez.com",
+      "https://event.estuturno.app",
+      "https://event.easuavez.com",
+      "https://event-store.easuavez.com",
+      "https://consumer.estuturno.app",
+      "https://consumer.easuavez.com",
+      "https://event-consumer.easuavez.com",
+      "https://query.estuturno.app",
+      "https://query.easuavez.com",
+      "https://query-stack.easuavez.com",
+    ],
     'prod': [
       "https://estuturno.app",
       "https://www.estuturno.app",
@@ -32,7 +55,7 @@ async function bootstrap(): Promise<void> {
       "https://query.estuturno.app",
       "https://query.easuavez.com",
       "https://query-stack.easuavez.com",
-    ]
+    ],
   }
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
