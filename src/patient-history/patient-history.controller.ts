@@ -42,12 +42,12 @@ export class PatientHistoryController {
     public async createPatientHistory(@User() user, @Body() body: PatientHistory): Promise<PatientHistory> {
         const { commerceId, clientId, type, personalData, consultationReason, currentIllness,
             personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, aditionalInfo, lastAttentionId} = body;
+            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId} = body;
         return this.patientHistoryService.createPatientHistory(
             user, commerceId, clientId,
             type, personalData, consultationReason, currentIllness,
             personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, aditionalInfo, lastAttentionId);
+            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId);
     }
 
     @UseGuards(AuthGuard)
@@ -56,9 +56,9 @@ export class PatientHistoryController {
         const { id } = params;
         const { personalData, consultationReason, currentIllness,
             personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, aditionalInfo, active, available, lastAttentionId } = body;
+            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId } = body;
         return this.patientHistoryService.updatePatientHistoryConfigurations(user, id, personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam, physicalExam, diagnostic, medicalOrder, aditionalInfo, active, available, lastAttentionId);
+            personalBackground, familyBackground, psychobiologicalHabits, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId);
     }
 
     @UseGuards(AuthGuard)
@@ -66,10 +66,10 @@ export class PatientHistoryController {
     public async savePatientHistory(@User() user, @Body() body: PatientHistoryUpdateDto): Promise<PatientHistory> {
         const { commerceId, clientId, type, personalData, consultationReason, currentIllness,
             personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, aditionalInfo, lastAttentionId, active, available} = body;
+            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId, active, available} = body;
         return this.patientHistoryService.savePatientHistory(
             user, commerceId, clientId, type, personalData, consultationReason, currentIllness,
             personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, aditionalInfo, active, available, lastAttentionId);
+            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId);
     }
 }

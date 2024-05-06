@@ -1,5 +1,7 @@
 import { Collection } from 'fireorm';
 import { PatientHistoryType } from './patient-history-type.enum';
+import { PatientHistoryControlStatus } from './patient-history-control-status.enum';
+import { PatientHistoryControlReason } from './patient-history-control-reason.enum';
 
 export class PersonalData {
     name: string;
@@ -102,6 +104,16 @@ export class MedicalOrder {
     createdBy: string;
 }
 
+export class Control {
+    controlResult: string;
+    scheduledDate: Date;
+    reason: PatientHistoryControlReason;
+    status: PatientHistoryControlStatus;
+    attentionId: string;
+    createdAt: Date;
+    createdBy: string;
+}
+
 export class AditionalInfo {
     modifiedAt: Date;
     modifiedBy: string;
@@ -124,6 +136,7 @@ export class PatientHistory {
     physicalExam: PhysicalExam[];
     diagnostic: Diagnostic[];
     medicalOrder: MedicalOrder[];
+    control: Control[];
     aditionalInfo: AditionalInfo;
     active: boolean;
     available: boolean;

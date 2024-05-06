@@ -1,4 +1,4 @@
-import { ConsultationReason, CurrentIllness, Diagnostic, FamilyBackground, FunctionalExam, MedicalOrder, PatientHistory, PersonalBackground, PersonalData, PhysicalExam, PsychobiologicalHabits, AditionalInfo } from './model/patient-history.entity';
+import { ConsultationReason, CurrentIllness, Diagnostic, FamilyBackground, FunctionalExam, MedicalOrder, PatientHistory, PersonalBackground, PersonalData, PhysicalExam, PsychobiologicalHabits, AditionalInfo, Control } from './model/patient-history.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
@@ -54,12 +54,12 @@ export class PatientHistoryService {
   public async savePatientHistory(user: string, commerceId: string, clientId: string, type: PatientHistoryType, personalData: PersonalData,
     consultationReason: ConsultationReason, currentIllness: CurrentIllness, personalBackground: PersonalBackground,
     familyBackground: FamilyBackground, psychobiologicalHabits: PsychobiologicalHabits, functionalExam: FunctionalExam,
-    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, aditionalInfo: AditionalInfo, active: boolean, available: boolean, lastAttentionId: string): Promise<PatientHistory> {
+    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, control: Control, aditionalInfo: AditionalInfo, active: boolean, available: boolean, lastAttentionId: string): Promise<PatientHistory> {
     let patientHistory = await this.getPatientHistorysByClientId(commerceId, clientId);
     if (patientHistory && patientHistory.id) {
       patientHistory = await this.updatePatientHistoryConfigurations(user, patientHistory.id, personalData, consultationReason,
         currentIllness, personalBackground, familyBackground, psychobiologicalHabits,
-        functionalExam, physicalExam, diagnostic, medicalOrder, aditionalInfo, active, available, lastAttentionId)
+        functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId)
     } else {
       if (personalData !== undefined) {
         personalData.createdBy = user;
@@ -101,8 +101,12 @@ export class PatientHistoryService {
         medicalOrder.createdBy = user;
         medicalOrder.createdAt = new Date();
       }
+      if (control !== undefined) {
+        control.createdBy = user;
+        control.createdAt = new Date();
+      }
       patientHistory = await this.createPatientHistory(user, commerceId, clientId, type, personalData, [consultationReason], [currentIllness], [personalBackground],
-        [familyBackground], psychobiologicalHabits, [functionalExam], [physicalExam], [diagnostic], [medicalOrder], aditionalInfo, lastAttentionId);
+        [familyBackground], psychobiologicalHabits, [functionalExam], [physicalExam], [diagnostic], [medicalOrder], [control], aditionalInfo, lastAttentionId);
     }
     return patientHistory;
   }
@@ -110,7 +114,8 @@ export class PatientHistoryService {
   public async createPatientHistory(user: string, commerceId: string, clientId: string, type: PatientHistoryType, personalData: PersonalData,
     consultationReason: ConsultationReason[], currentIllness: CurrentIllness[], personalBackground: PersonalBackground[],
     familyBackground: FamilyBackground[], psychobiologicalHabits : PsychobiologicalHabits, functionalExam: FunctionalExam[],
-    physicalExam: PhysicalExam[], diagnostic: Diagnostic[], medicalOrder: MedicalOrder[], aditionalInfo: AditionalInfo, lastAttentionId: string): Promise<PatientHistory> {
+    physicalExam: PhysicalExam[], diagnostic: Diagnostic[], medicalOrder: MedicalOrder[], control: Control[], aditionalInfo: AditionalInfo,
+    lastAttentionId: string): Promise<PatientHistory> {
     let patientHistory = new PatientHistory();
     patientHistory.commerceId = commerceId;
     patientHistory.clientId = clientId;
@@ -125,6 +130,7 @@ export class PatientHistoryService {
     patientHistory.physicalExam = physicalExam;
     patientHistory.diagnostic = diagnostic;
     patientHistory.medicalOrder = medicalOrder;
+    patientHistory.control = control;
     patientHistory.aditionalInfo = aditionalInfo;
     patientHistory.lastAttentionId = lastAttentionId;
     patientHistory.active = true;
@@ -140,7 +146,7 @@ export class PatientHistoryService {
   public async updatePatientHistoryConfigurations(user: string, id: string, personalData: PersonalData,
     consultationReason: ConsultationReason, currentIllness: CurrentIllness, personalBackground: PersonalBackground,
     familyBackground: FamilyBackground, psychobiologicalHabits: PsychobiologicalHabits, functionalExam: FunctionalExam,
-    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, aditionalInfo: AditionalInfo,
+    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, control: Control, aditionalInfo: AditionalInfo,
     active: boolean, available: boolean, lastAttentionId: string): Promise<PatientHistory> {
     try {
       let patientHistory = await this.patientHistoryRepository.findById(id);
@@ -149,7 +155,9 @@ export class PatientHistoryService {
         personalData.modifiedAt = new Date();
         patientHistory.personalData = personalData;
       }
-      if (consultationReason !== undefined) {
+      if (consultationReason !== undefined &&
+        consultationReason.reason !== undefined &&
+        consultationReason.reason.length > 0) {
         if (lastAttentionId !== undefined) {
           consultationReason.attentionId = lastAttentionId;
         }
@@ -168,10 +176,16 @@ export class PatientHistoryService {
         } else {
           consultationReason.createdBy = user;
           consultationReason.createdAt = new Date();
-          patientHistory.consultationReason = [...patientHistory.consultationReason, consultationReason];
+          if (patientHistory.consultationReason) {
+            patientHistory.consultationReason = [...patientHistory.consultationReason, consultationReason];
+          } else {
+            patientHistory.consultationReason = [consultationReason];
+          }
         }
       }
-      if (currentIllness !== undefined) {
+      if (currentIllness !== undefined &&
+        currentIllness.illness !== undefined &&
+        currentIllness.illness.length > 0) {
         if (lastAttentionId !== undefined) {
           currentIllness.attentionId = lastAttentionId;
         }
@@ -190,10 +204,16 @@ export class PatientHistoryService {
         } else {
           currentIllness.createdBy = user;
           currentIllness.createdAt = new Date();
-          patientHistory.currentIllness = [...patientHistory.currentIllness, currentIllness];
+          if (patientHistory.currentIllness) {
+            patientHistory.currentIllness = [...patientHistory.currentIllness, currentIllness];
+          } else {
+            patientHistory.currentIllness = [currentIllness];
+          }
         }
       }
-      if (personalBackground !== undefined) {
+      if (personalBackground !== undefined &&
+        personalBackground.background !== undefined &&
+        personalBackground.background.length > 0) {
         if (lastAttentionId !== undefined) {
           personalBackground.attentionId = lastAttentionId;
         }
@@ -212,10 +232,16 @@ export class PatientHistoryService {
         } else {
           personalBackground.createdBy = user;
           personalBackground.createdAt = new Date();
-          patientHistory.personalBackground = [...patientHistory.personalBackground, personalBackground];
+          if (patientHistory.personalBackground) {
+            patientHistory.personalBackground = [...patientHistory.personalBackground, personalBackground];
+          } else {
+            patientHistory.personalBackground = [personalBackground];
+          }
         }
       }
-      if (familyBackground !== undefined) {
+      if (familyBackground !== undefined &&
+        familyBackground.background !== undefined &&
+        familyBackground.background.length > 0) {
         if (lastAttentionId !== undefined) {
           familyBackground.attentionId = lastAttentionId;
         }
@@ -234,7 +260,11 @@ export class PatientHistoryService {
         } else {
           familyBackground.createdBy = user;
           familyBackground.createdAt = new Date();
-          patientHistory.familyBackground = [...patientHistory.familyBackground, familyBackground];
+          if (patientHistory.familyBackground) {
+            patientHistory.familyBackground = [...patientHistory.familyBackground, familyBackground];
+          } else {
+            patientHistory.familyBackground = [familyBackground];
+          }
         }
       }
       if (psychobiologicalHabits !== undefined) {
@@ -245,7 +275,9 @@ export class PatientHistoryService {
         }
         patientHistory.psychobiologicalHabits = { ...patientHistory.psychobiologicalHabits, ...psychobiologicalHabits };
       }
-      if (functionalExam !== undefined) {
+      if (functionalExam !== undefined &&
+        functionalExam.exam !== undefined &&
+        functionalExam.exam.length > 0) {
         if (lastAttentionId !== undefined) {
           functionalExam.attentionId = lastAttentionId;
         }
@@ -264,10 +296,19 @@ export class PatientHistoryService {
         } else {
           functionalExam.createdBy = user;
           functionalExam.createdAt = new Date();
-          patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+          physicalExam.createdBy = user;
+          physicalExam.createdAt = new Date();
+          if (patientHistory.functionalExam) {
+            patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+          } else {
+            patientHistory.functionalExam = [functionalExam];
+          }
         }
       }
-      if (physicalExam !== undefined) {
+      if (physicalExam !== undefined && (
+        (physicalExam.exam !== undefined && physicalExam.exam.length > 0) ||
+        (physicalExam.examDetails && Object.keys(physicalExam.examDetails).length > 0))
+      ) {
         if (lastAttentionId !== undefined) {
           physicalExam.attentionId = lastAttentionId;
         }
@@ -281,15 +322,21 @@ export class PatientHistoryService {
           } else if (!todayResults || todayResults.length === 0) {
             physicalExam.createdBy = user;
             physicalExam.createdAt = new Date();
-            patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+            patientHistory.physicalExam = [...patientHistory.physicalExam, physicalExam];
           }
         } else {
           physicalExam.createdBy = user;
           physicalExam.createdAt = new Date();
-          patientHistory.physicalExam = [...patientHistory.physicalExam, physicalExam];
+          if (patientHistory.physicalExam) {
+            patientHistory.physicalExam = [...patientHistory.physicalExam, physicalExam];
+          } else {
+            patientHistory.physicalExam = [physicalExam];
+          }
         }
       }
-      if (diagnostic !== undefined) {
+      if (diagnostic !== undefined &&
+        diagnostic.diagnostic !== undefined &&
+        diagnostic.diagnostic.length > 0) {
         if (lastAttentionId !== undefined) {
           diagnostic.attentionId = lastAttentionId;
         }
@@ -308,10 +355,45 @@ export class PatientHistoryService {
         } else {
           diagnostic.createdBy = user;
           diagnostic.createdAt = new Date();
-          patientHistory.diagnostic = [...patientHistory.diagnostic, diagnostic];
+          if (patientHistory.diagnostic) {
+            patientHistory.diagnostic = [...patientHistory.diagnostic, diagnostic];
+          } else {
+            patientHistory.diagnostic = [diagnostic];
+          }
         }
       }
-      if (medicalOrder !== undefined) {
+      if (control !== undefined &&
+        control.scheduledDate !== undefined &&
+        control.status !== undefined &&
+        control.reason !== undefined) {
+        if (lastAttentionId !== undefined) {
+          control.attentionId = lastAttentionId;
+        }
+        if (patientHistory.control && patientHistory.control.length > 0) {
+          const todayResults = patientHistory.control.filter(ctrl => getDateFormatted(new Date(ctrl.scheduledDate)) === getDateFormatted(new Date(control.scheduledDate)));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...control };
+            const resultsAux = patientHistory.control.filter(ctrl => getDateFormatted(new Date(ctrl.scheduledDate)) !== getDateFormatted(new Date(control.scheduledDate)));
+            patientHistory.control = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            control.createdBy = user;
+            control.createdAt = new Date();
+            patientHistory.control = [...patientHistory.control, control];
+          }
+        } else {
+          control.createdBy = user;
+          control.createdAt = new Date();
+          if (patientHistory.control) {
+            patientHistory.control = [...patientHistory.control, control];
+          } else {
+            patientHistory.control = [control];
+          }
+        }
+      }
+      if (medicalOrder !== undefined &&
+        medicalOrder.medicalOrder !== undefined &&
+        medicalOrder.medicalOrder.length > 0) {
         if (lastAttentionId !== undefined) {
           medicalOrder.attentionId = lastAttentionId;
         }
@@ -330,7 +412,11 @@ export class PatientHistoryService {
         } else {
           medicalOrder.createdBy = user;
           medicalOrder.createdAt = new Date();
-          patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
+          if (patientHistory.medicalOrder) {
+            patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
+          } else {
+            patientHistory.medicalOrder = [medicalOrder];
+          }
         }
       }
       if (aditionalInfo !== undefined) {
