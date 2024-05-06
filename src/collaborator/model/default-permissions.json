@@ -14,6 +14,7 @@
   "collaborator.bookings.cancel": true,
   "collaborator.bookings.confirm": true,
   "collaborator.bookings.edit": true,
+
   "products-stock.attentions.view": true,
   "products-stock.products.view": true,
   "products-stock.products.add-replacement": true,

@@ -6,6 +6,7 @@ import PatientHistoryCreated from './events/PatientHistoryCreated';
 import PatientHistoryUpdated from './events/PatientHistoryUpdated';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { PatientHistoryType } from './model/patient-history-type.enum';
+import { getDateFormatted } from 'src/shared/utils/date';
 
 export class PatientHistoryService {
   constructor(
@@ -152,25 +153,89 @@ export class PatientHistoryService {
         if (lastAttentionId !== undefined) {
           consultationReason.attentionId = lastAttentionId;
         }
-        patientHistory.consultationReason = [...patientHistory.consultationReason, consultationReason];
+        if (patientHistory.consultationReason && patientHistory.consultationReason.length > 0) {
+          const todayResults = patientHistory.consultationReason.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...consultationReason };
+            const resultsAux = patientHistory.consultationReason.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.consultationReason = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            consultationReason.createdBy = user;
+            consultationReason.createdAt = new Date();
+            patientHistory.consultationReason = [...patientHistory.consultationReason, consultationReason];
+          }
+        } else {
+          consultationReason.createdBy = user;
+          consultationReason.createdAt = new Date();
+          patientHistory.consultationReason = [...patientHistory.consultationReason, consultationReason];
+        }
       }
       if (currentIllness !== undefined) {
         if (lastAttentionId !== undefined) {
           currentIllness.attentionId = lastAttentionId;
         }
-        patientHistory.currentIllness = [...patientHistory.currentIllness, currentIllness];
+        if (patientHistory.currentIllness && patientHistory.currentIllness.length > 0) {
+          const todayResults = patientHistory.currentIllness.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...currentIllness };
+            const resultsAux = patientHistory.currentIllness.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.currentIllness = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            currentIllness.createdBy = user;
+            currentIllness.createdAt = new Date();
+            patientHistory.currentIllness = [...patientHistory.currentIllness, currentIllness];
+          }
+        } else {
+          currentIllness.createdBy = user;
+          currentIllness.createdAt = new Date();
+          patientHistory.currentIllness = [...patientHistory.currentIllness, currentIllness];
+        }
       }
       if (personalBackground !== undefined) {
         if (lastAttentionId !== undefined) {
           personalBackground.attentionId = lastAttentionId;
         }
-        patientHistory.personalBackground = [...patientHistory.personalBackground, personalBackground];
+        if (patientHistory.personalBackground && patientHistory.personalBackground.length > 0) {
+          const todayResults = patientHistory.personalBackground.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...personalBackground };
+            const resultsAux = patientHistory.personalBackground.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.personalBackground = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            personalBackground.createdBy = user;
+            personalBackground.createdAt = new Date();
+            patientHistory.personalBackground = [...patientHistory.personalBackground, personalBackground];
+          }
+        } else {
+          personalBackground.createdBy = user;
+          personalBackground.createdAt = new Date();
+          patientHistory.personalBackground = [...patientHistory.personalBackground, personalBackground];
+        }
       }
       if (familyBackground !== undefined) {
         if (lastAttentionId !== undefined) {
           familyBackground.attentionId = lastAttentionId;
         }
-        patientHistory.familyBackground = [...patientHistory.familyBackground, familyBackground];
+        if (patientHistory.familyBackground && patientHistory.familyBackground.length > 0) {
+          const todayResults = patientHistory.familyBackground.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...familyBackground };
+            const resultsAux = patientHistory.familyBackground.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.familyBackground = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            familyBackground.createdBy = user;
+            familyBackground.createdAt = new Date();
+            patientHistory.familyBackground = [...patientHistory.familyBackground, familyBackground];
+          }
+        } else {
+          familyBackground.createdBy = user;
+          familyBackground.createdAt = new Date();
+          patientHistory.familyBackground = [...patientHistory.familyBackground, familyBackground];
+        }
       }
       if (psychobiologicalHabits !== undefined) {
         psychobiologicalHabits.modifiedBy = user;
@@ -184,25 +249,89 @@ export class PatientHistoryService {
         if (lastAttentionId !== undefined) {
           functionalExam.attentionId = lastAttentionId;
         }
-        patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+        if (patientHistory.functionalExam && patientHistory.functionalExam.length > 0) {
+          const todayResults = patientHistory.functionalExam.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...functionalExam };
+            const resultsAux = patientHistory.functionalExam.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.functionalExam = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            functionalExam.createdBy = user;
+            functionalExam.createdAt = new Date();
+            patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+          }
+        } else {
+          functionalExam.createdBy = user;
+          functionalExam.createdAt = new Date();
+          patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+        }
       }
       if (physicalExam !== undefined) {
         if (lastAttentionId !== undefined) {
           physicalExam.attentionId = lastAttentionId;
         }
-        patientHistory.physicalExam = [...patientHistory.physicalExam, physicalExam];
+        if (patientHistory.physicalExam && patientHistory.physicalExam.length > 0) {
+          const todayResults = patientHistory.physicalExam.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...physicalExam };
+            const resultsAux = patientHistory.physicalExam.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.physicalExam = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            physicalExam.createdBy = user;
+            physicalExam.createdAt = new Date();
+            patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
+          }
+        } else {
+          physicalExam.createdBy = user;
+          physicalExam.createdAt = new Date();
+          patientHistory.physicalExam = [...patientHistory.physicalExam, physicalExam];
+        }
       }
       if (diagnostic !== undefined) {
         if (lastAttentionId !== undefined) {
           diagnostic.attentionId = lastAttentionId;
         }
-        patientHistory.diagnostic = [...patientHistory.diagnostic, diagnostic];
+        if (patientHistory.diagnostic && patientHistory.diagnostic.length > 0) {
+          const todayResults = patientHistory.diagnostic.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...diagnostic };
+            const resultsAux = patientHistory.diagnostic.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.diagnostic = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            diagnostic.createdBy = user;
+            diagnostic.createdAt = new Date();
+            patientHistory.diagnostic = [...patientHistory.diagnostic, diagnostic];
+          }
+        } else {
+          diagnostic.createdBy = user;
+          diagnostic.createdAt = new Date();
+          patientHistory.diagnostic = [...patientHistory.diagnostic, diagnostic];
+        }
       }
       if (medicalOrder !== undefined) {
         if (lastAttentionId !== undefined) {
           medicalOrder.attentionId = lastAttentionId;
         }
-        patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
+        if (patientHistory.medicalOrder && patientHistory.medicalOrder.length > 0) {
+          const todayResults = patientHistory.medicalOrder.filter(exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date()));
+          if (todayResults && todayResults.length === 1) {
+            const todayResult = todayResults[0];
+            const newResult = { ...todayResult, ...medicalOrder };
+            const resultsAux = patientHistory.medicalOrder.filter(exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date()));
+            patientHistory.medicalOrder = [...resultsAux, newResult];
+          } else if (!todayResults || todayResults.length === 0) {
+            medicalOrder.createdBy = user;
+            medicalOrder.createdAt = new Date();
+            patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
+          }
+        } else {
+          medicalOrder.createdBy = user;
+          medicalOrder.createdAt = new Date();
+          patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
+        }
       }
       if (aditionalInfo !== undefined) {
         aditionalInfo.modifiedBy = user;

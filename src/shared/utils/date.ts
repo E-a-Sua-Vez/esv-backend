@@ -13,3 +13,8 @@ export const getDateDDMMYYYY = (date) => {
   const [year, month, day] = date.split('-');
   return `${day}/${month}/${year}`;
 }
+
+export const getDateFormatted = (date: Date) => {
+  const dateString = date.toISOString().slice(0,10);
+  return dateString;
+}

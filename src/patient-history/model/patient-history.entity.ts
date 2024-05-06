@@ -59,6 +59,8 @@ export class ItemCharacteristics {
     ageFrom: number;
     ageTo: number;
     comment: string;
+    value: number;
+    result: string;
 }
 
 export class PsychobiologicalHabits {
@@ -73,6 +75,7 @@ export class PsychobiologicalHabits {
 
 export class PhysicalExam {
     exam: string;
+    examDetails: Record<string, ItemCharacteristics>;
     attentionId: string;
     createdAt: Date;
     createdBy: string;
