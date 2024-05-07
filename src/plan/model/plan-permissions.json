@@ -270,7 +270,9 @@
     "patient.history.edit": true,
     "patient.history.read": true,
     "patient.history.add": true,
-    "patient.history.download": true
+    "patient.history.download": true,
+    "patient.history.control-edit": true,
+    "patient.history.control-update": true
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -541,7 +543,9 @@
     "patient.history.edit": false,
     "patient.history.read": false,
     "patient.history.add": false,
-    "patient.history.download": false
+    "patient.history.download": false,
+    "patient.history.control-edit": false,
+    "patient.history.control-update": false
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -811,6 +815,8 @@
     "patient.history.read": true,
     "patient.history.add": true,
     "patient.history.download": true,
+    "patient.history.control-edit": true,
+    "patient.history.control-update": true,
 
     "companies.admin.view": true,
     "companies.admin.limit": 10,
@@ -819,7 +825,5 @@
     "companies.admin.edit": true,
     "companies.admin.read": true,
     "companies.admin.add": true
-
-
   }
 }

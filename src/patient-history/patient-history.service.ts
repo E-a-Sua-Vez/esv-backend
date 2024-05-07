@@ -443,4 +443,26 @@ export class PatientHistoryService {
       throw new HttpException(`Hubo un problema al modificar el patientHistory: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  public async updatePatientHistoryControl(user: string, id: string, control: Control[], lastAttentionId: string): Promise<PatientHistory> {
+    try {
+      let patientHistory = await this.patientHistoryRepository.findById(id);
+      if (patientHistory && patientHistory.id) {
+        if (control !== undefined) {
+          patientHistory.control = control;
+        }
+        if (lastAttentionId !== undefined) {
+          patientHistory.lastAttentionId = lastAttentionId;
+        }
+        patientHistory.modifiedAt = new Date();
+        patientHistory.modifiedBy = user;
+        const patientHistoryUpdated = await this.patientHistoryRepository.update(patientHistory);
+        const patientHistoryUpdatedEvent = new PatientHistoryUpdated(new Date(), patientHistoryUpdated, { user });
+        publish(patientHistoryUpdatedEvent);
+        return patientHistoryUpdated;
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al modificar el control patientHistory: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

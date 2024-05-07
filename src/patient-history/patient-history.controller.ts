@@ -62,6 +62,14 @@ export class PatientHistoryController {
     }
 
     @UseGuards(AuthGuard)
+    @Patch('/control/:id')
+    public async updatePatientHistoryControl(@User() user, @Param() params: any, @Body() body: PatientHistory): Promise<PatientHistory> {
+        const { id } = params;
+        const { control, lastAttentionId } = body;
+        return this.patientHistoryService.updatePatientHistoryControl(user, id, control, lastAttentionId);
+    }
+
+    @UseGuards(AuthGuard)
     @Post('/save')
     public async savePatientHistory(@User() user, @Body() body: PatientHistoryUpdateDto): Promise<PatientHistory> {
         const { commerceId, clientId, type, personalData, consultationReason, currentIllness,

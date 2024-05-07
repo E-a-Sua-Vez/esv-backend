@@ -394,7 +394,10 @@
             "configuration.admin.whatsapps": true,
             "configuration.admin.features": true,
             "configuration.admin.whatsapps-connect": true,
-            "configuration.admin.whatsapps-disconnect": true
+            "configuration.admin.whatsapps-disconnect": true,
+
+            "patient.history.control-edit": true,
+            "patient.history.control-update": true
         }
     },
     {
