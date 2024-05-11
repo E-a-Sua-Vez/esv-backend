@@ -339,7 +339,6 @@
             "business.main-menu.financial": true,
             "business.main-menu.patients": true,
             "business.main-menu.marketing": true,
-
             "financial.resume.view": true,
             "financial.incomes.view": true,
             "financial.outcomes.view": true,
@@ -349,7 +348,6 @@
             "financial.incomes.add": true,
             "financial.outcomes.add": true,
             "financial.incomes.confirm": true,
-
             "business.main-menu.outcome-types-admin": true,
             "outcome-types.admin.view": true,
             "outcome-types.admin.limit": 5,
@@ -360,19 +358,16 @@
             "outcome-types.admin.add": true,
             "reports.admin.incomes": true,
             "reports.admin.outcomes": true,
-
             "patient.history.view": true,
             "patient.history.update": true,
             "patient.history.edit": true,
             "patient.history.read": true,
             "patient.history.add": true,
             "patient.history.download": true,
-
             "collaborator.attention.products": true,
             "collaborator.attention.patient-history": true,
             "business.main-menu.booking-manage": true,
             "business.bookings.manage": true,
-
             "companies.admin.view": true,
             "companies.admin.limit": 10,
             "companies.admin.unavailable": true,
@@ -381,7 +376,6 @@
             "companies.admin.read": true,
             "companies.admin.add": true,
             "business.main-menu.company-admin": true,
-
             "patient-history-item.admin.view": true,
             "patient-history-item.admin.limit": 10,
             "patient-history-item.admin.unavailable": true,
@@ -390,14 +384,20 @@
             "patient-history-item.admin.read": true,
             "patient-history-item.admin.add": true,
             "business.main-menu.patient-history-item-admin": true,
-
             "configuration.admin.whatsapps": true,
             "configuration.admin.features": true,
             "configuration.admin.whatsapps-connect": true,
             "configuration.admin.whatsapps-disconnect": true,
-
             "patient.history.control-edit": true,
-            "patient.history.control-update": true
+            "patient.history.control-update": true,
+            "forms.admin.add": true,
+            "forms.admin.read": true,
+            "forms.admin.view": true,
+            "forms.admin.unavailable": true,
+            "forms.admin.edit": true,
+            "forms.admin.update": true,
+            "forms.admin.limit": 5,
+            "business.main-menu.forms-admin": true
         }
     },
     {

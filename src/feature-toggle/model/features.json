@@ -194,5 +194,13 @@
   {
     "name": "user-service-conditions",
     "type": "PRODUCT"
+  },
+  {
+    "name": "attention-first-form",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-pre-form",
+    "type": "PRODUCT"
   }
 ]

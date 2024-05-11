@@ -40,7 +40,6 @@ export class ClientService {
   }
 
   private getActiveFeatureType(commerce: Commerce, type: string): FeatureToggle[] {
-    let active = false;
     let features = [];
     if (commerce !== undefined && commerce.features && commerce.features.length > 0) {
       features = commerce.features.filter(feature => feature.type === type);
@@ -217,6 +216,15 @@ export class ClientService {
       const clientUpdated = await this.update(user, clientById);
       clientUpdated.clientContacts = await this.clientContactService.getClientContactByClientId(id);
       return result;
+    }
+  }
+
+  public async updateFirstAttentionForm(user: string, id: string): Promise<Client> {
+    let clientById = await this.getClientById(id);
+    if (clientById && clientById.id) {
+      clientById.firstAttentionForm = true;
+      clientById.updatedAt = new Date();
+      return await this.update(user, clientById);
     }
   }
 }

@@ -4,8 +4,8 @@ import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { Readable } from 'stream';
 import DocumentCreated from './events/DocumentCreated';
-import { Document, DocumentOption } from './model/document.entity';
-import { DocumentName } from './model/document.enum';
+import { Document, DocumentMetadata, DocumentOption } from './model/document.entity';
+import { DocumentType } from './model/document.enum';
 import * as documents from './model/documents.json';
 import { publish } from 'ett-events-lib';
 import DocumentUpdated from './events/DocumentUpdated';
@@ -56,11 +56,42 @@ export class DocumentsService {
     } else {
       document.name = name;
       document.commerceId = commerceId;
-      document.type = commerceId ? DocumentName.COMMERCE : DocumentName.STANDARD;
+      document.type = commerceId ? DocumentType.COMMERCE : DocumentType.STANDARD;
       document.active = true;
       document.format = format;
       document.option = option;
       document.createdBy = user;
+      document.createdAt = new Date();
+      const documentCreated = await this.documentRepository.create(document);
+      const documentCreatedEvent = new DocumentCreated(new Date(), documentCreated, { user });
+      publish(documentCreatedEvent);
+      return documentCreated;
+    }
+  }
+
+  public async createClientDocument(user: string, name: string, commerceId: string, clientId: string,
+      option: string, format: string, documentMetadata: DocumentMetadata): Promise<Document> {
+    let document = new Document();
+    const existingDocument = await this.getDocumentsByClientAndType(commerceId, clientId, DocumentType.CLIENT, option);
+    if (existingDocument) {
+      document = existingDocument;
+      document.name = name;
+      document.active = true;
+      document.format = format;
+      document.modifiedBy = user;
+      document.documentMetadata = documentMetadata;
+      document.modifiedAt = new Date();
+      return await this.update(user, document);
+    } else {
+      document.name = name;
+      document.commerceId = commerceId;
+      document.clientId = clientId;
+      document.type = DocumentType.CLIENT;
+      document.active = true;
+      document.format = format;
+      document.option = option;
+      document.createdBy = user;
+      document.documentMetadata = documentMetadata;
       document.createdAt = new Date();
       const documentCreated = await this.documentRepository.create(document);
       const documentCreatedEvent = new DocumentCreated(new Date(), documentCreated, { user });
@@ -88,6 +119,16 @@ export class DocumentsService {
   public async getDocumentsByOption(commerceId: string, option: string): Promise<Document> {
     const result = await this.documentRepository
     .whereEqualTo('commerceId', commerceId)
+    .whereEqualTo('option', option)
+    .findOne();
+    return result;
+  }
+
+  public async getDocumentsByClientAndType(commerceId: string, clientId: string, type: DocumentType, option: string): Promise<Document> {
+    const result = await this.documentRepository
+    .whereEqualTo('commerceId', commerceId)
+    .whereEqualTo('clientId', clientId)
+    .whereEqualTo('type', type)
     .whereEqualTo('option', option)
     .findOne();
     return result;
@@ -135,6 +176,32 @@ export class DocumentsService {
       );
     }).then(async () => {
       await this.createDocument(user, name, commerceId, reportType, format);
+    });
+  }
+
+  public async uploadClientDocument(user: string, commerceId: string, clientId: string, reportType: string, filename: string, format: string, files: any, documentMetadata: DocumentMetadata): Promise<any> {
+    const S3 = new AWS.S3();
+    const name = `${filename}.${format.split('/')[1]}`;
+    if (!files || files.length == 0) {
+      throw new HttpException('Archivo no enviado', HttpStatus.NOT_FOUND);
+    }
+    await new Promise((resolve, reject) => {
+      S3.upload(
+        {
+          Bucket: this.getBucketPath(reportType),
+          Body: files[0].buffer,
+          Key: name,
+          ACL: 'private',
+        },
+        (error, result) => {
+          if (error) {
+            return reject(error);
+          }
+          return resolve(result);
+        },
+      );
+    }).then(async () => {
+      await this.createClientDocument(user, name, commerceId, clientId, reportType, format, documentMetadata);
     });
   }
 

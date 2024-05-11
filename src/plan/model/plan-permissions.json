@@ -39,6 +39,7 @@
     "business.main-menu.patients": true,
     "business.main-menu.marketing": true,
     "business.main-menu.outcome-types-admin": true,
+    "business.main-menu.forms-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -272,7 +273,15 @@
     "patient.history.add": true,
     "patient.history.download": true,
     "patient.history.control-edit": true,
-    "patient.history.control-update": true
+    "patient.history.control-update": true,
+
+    "forms.admin.add": true,
+    "forms.admin.read": true,
+    "forms.admin.view": true,
+    "forms.admin.unavailable": true,
+    "forms.admin.edit": true,
+    "forms.admin.update": true,
+    "forms.admin.limit": 5
   },
   "ONLY_SURVEYS": {
     "activations.admin.desactivate": false,
@@ -309,6 +318,7 @@
     "business.main-menu.product-admin": false,
     "business.main-menu.product-stock": false,
     "business.main-menu.outcome-types-admin": true,
+    "business.main-menu.forms-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -545,7 +555,15 @@
     "patient.history.add": false,
     "patient.history.download": false,
     "patient.history.control-edit": false,
-    "patient.history.control-update": false
+    "patient.history.control-update": false,
+
+    "forms.admin.add": false,
+    "forms.admin.read": false,
+    "forms.admin.view": false,
+    "forms.admin.unavailable": false,
+    "forms.admin.edit": false,
+    "forms.admin.update": false,
+    "forms.admin.limit": 5
   },
   "QUEUES_BOOKING": {
     "activations.admin.desactivate": false,
@@ -582,6 +600,7 @@
     "business.main-menu.product-admin": true,
     "business.main-menu.product-stock": true,
     "business.main-menu.outcome-types-admin": true,
+    "business.main-menu.forms-admin": true,
 
     "businesses.admin.add": false,
     "businesses.admin.update": false,
@@ -824,6 +843,14 @@
     "companies.admin.update": true,
     "companies.admin.edit": true,
     "companies.admin.read": true,
-    "companies.admin.add": true
+    "companies.admin.add": true,
+
+    "forms.admin.add": true,
+    "forms.admin.read": true,
+    "forms.admin.view": true,
+    "forms.admin.unavailable": true,
+    "forms.admin.edit": true,
+    "forms.admin.update": true,
+    "forms.admin.limit": 5
   }
 }

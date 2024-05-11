@@ -38,20 +38,6 @@ export class CurrentIllness {
     createdBy: string;
 }
 
-export class PersonalBackground {
-    background: string;
-    attentionId: string;
-    createdAt: Date;
-    createdBy: string;
-}
-
-export class FamilyBackground {
-    background: string;
-    attentionId: string;
-    createdAt: Date;
-    createdBy: string;
-}
-
 export class ItemCharacteristics {
     id: string;
     name: string;
@@ -65,7 +51,7 @@ export class ItemCharacteristics {
     result: string;
 }
 
-export class PsychobiologicalHabits {
+export class PatientAnamnese {
     habits: string;
     habitsDetails: Record<string, ItemCharacteristics>;
     attentionId: string;
@@ -129,9 +115,7 @@ export class PatientHistory {
     personalData: PersonalData;
     consultationReason: ConsultationReason[];
     currentIllness: CurrentIllness[];
-    personalBackground: PersonalBackground[];
-    familyBackground: FamilyBackground[];
-    psychobiologicalHabits : PsychobiologicalHabits;
+    patientAnamnese : PatientAnamnese;
     functionalExam: FunctionalExam[];
     physicalExam: PhysicalExam[];
     diagnostic: Diagnostic[];

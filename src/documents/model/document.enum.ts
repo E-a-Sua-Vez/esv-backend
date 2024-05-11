@@ -1,4 +1,5 @@
-export enum DocumentName {
+export enum DocumentType {
     STANDARD = 'STANDARD',
-    COMMERCE = 'COMMERCE'
+    COMMERCE = 'COMMERCE',
+    CLIENT = 'CLIENT'
 }

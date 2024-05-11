@@ -15,6 +15,6 @@ export const getDateDDMMYYYY = (date) => {
 }
 
 export const getDateFormatted = (date: Date) => {
-  const dateString = date.toISOString().slice(0,10);
+  const dateString = new Date(date).toISOString().slice(0,10);
   return dateString;
 }

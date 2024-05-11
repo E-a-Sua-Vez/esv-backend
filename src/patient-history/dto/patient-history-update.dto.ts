@@ -1,4 +1,4 @@
-import { PersonalData, ConsultationReason, CurrentIllness, PersonalBackground, FamilyBackground, PsychobiologicalHabits, FunctionalExam, PhysicalExam, Diagnostic, MedicalOrder, AditionalInfo, Control } from '../model/patient-history.entity';
+import { PersonalData, ConsultationReason, CurrentIllness, PatientAnamnese, FunctionalExam, PhysicalExam, Diagnostic, MedicalOrder, AditionalInfo, Control } from '../model/patient-history.entity';
 import { PatientHistoryType } from '../model/patient-history-type.enum';
 
 export class PatientHistoryUpdateDto {
@@ -9,9 +9,7 @@ export class PatientHistoryUpdateDto {
   personalData: PersonalData;
   consultationReason: ConsultationReason;
   currentIllness: CurrentIllness;
-  personalBackground: PersonalBackground;
-  familyBackground: FamilyBackground;
-  psychobiologicalHabits : PsychobiologicalHabits;
+  patientAnamnese: PatientAnamnese;
   functionalExam: FunctionalExam;
   physicalExam: PhysicalExam;
   diagnostic: Diagnostic;

@@ -38,6 +38,8 @@ import { OutcomeModule } from './outcome/outcome.module';
 import { PatientHistoryModule } from './patient-history/patient-history.module';
 import { CompanyModule } from './company/company.module';
 import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
+import { FormPersonalizedModule } from './form-personalized/form-personalized.module';
+import { FormModule } from './form/form.module';
 
 @Module({
   imports: [
@@ -82,6 +84,8 @@ import { PatientHistoryItemModule } from './patient-history-item/patient-history
     PatientHistoryModule,
     CompanyModule,
     PatientHistoryItemModule,
+    FormModule,
+    FormPersonalizedModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

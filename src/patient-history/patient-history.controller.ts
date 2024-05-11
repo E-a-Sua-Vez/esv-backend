@@ -41,13 +41,10 @@ export class PatientHistoryController {
     @Post('/')
     public async createPatientHistory(@User() user, @Body() body: PatientHistory): Promise<PatientHistory> {
         const { commerceId, clientId, type, personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId} = body;
+            patientAnamnese, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId} = body;
         return this.patientHistoryService.createPatientHistory(
-            user, commerceId, clientId,
-            type, personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId);
+            user, commerceId, clientId, type, personalData, consultationReason, currentIllness,
+            patientAnamnese, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId);
     }
 
     @UseGuards(AuthGuard)
@@ -55,10 +52,9 @@ export class PatientHistoryController {
     public async updatePatientHistoryConfigurations(@User() user, @Param() params: any, @Body() body: PatientHistoryUpdateDto): Promise<PatientHistory> {
         const { id } = params;
         const { personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
-            physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId } = body;
+            patientAnamnese, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId } = body;
         return this.patientHistoryService.updatePatientHistoryConfigurations(user, id, personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId);
+            patientAnamnese, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId);
     }
 
     @UseGuards(AuthGuard)
@@ -73,11 +69,11 @@ export class PatientHistoryController {
     @Post('/save')
     public async savePatientHistory(@User() user, @Body() body: PatientHistoryUpdateDto): Promise<PatientHistory> {
         const { commerceId, clientId, type, personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
+            patientAnamnese, functionalExam,
             physicalExam, diagnostic, medicalOrder, control, aditionalInfo, lastAttentionId, active, available} = body;
         return this.patientHistoryService.savePatientHistory(
             user, commerceId, clientId, type, personalData, consultationReason, currentIllness,
-            personalBackground, familyBackground, psychobiologicalHabits, functionalExam,
+            patientAnamnese, functionalExam,
             physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId);
     }
 }

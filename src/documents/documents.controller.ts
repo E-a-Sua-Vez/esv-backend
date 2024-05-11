@@ -9,7 +9,7 @@ import { UploadDocumentsInputsDto } from './dto/upload-documents.inputs.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { Document, DocumentOption } from './model/document.entity';
 import { User } from '../auth/user.decorator';
-import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('documents')
 export class DocumentsController {
@@ -45,6 +45,16 @@ export class DocumentsController {
       commerceId, name, format,
     } = body;
     return this.documentsService.uploadDocument(user, commerceId, name, commerceId, format, files);
+  }
+
+  @UseGuards(AuthGuard)
+  @UseInterceptors(AnyFilesInterceptor())
+  @Post('/client')
+  public uploadClientDocument(@User() user, @UploadedFiles() files, @Body() body: UploadDocumentsInputsDto): Promise<any> {
+    const {
+      commerceId, clientId, name, format, reportType, documentMetadata
+    } = body;
+    return this.documentsService.uploadClientDocument(user, commerceId, clientId, reportType, name, format, files, documentMetadata);
   }
 
   @UseGuards(AuthGuard)

@@ -37,4 +37,6 @@ export class Client {
     contactResultCollaboratorId?: string;
     counter: number;
     clientContacts?: ClientContact[];
+    firstAttentionForm?: boolean;
+    conditionsAccepted?: boolean;
 }
