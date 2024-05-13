@@ -1,4 +1,4 @@
-import { PersonalData, ConsultationReason, CurrentIllness, PatientAnamnese, FunctionalExam, PhysicalExam, Diagnostic, MedicalOrder, AditionalInfo, Control } from '../model/patient-history.entity';
+import { PersonalData, ConsultationReason, CurrentIllness, PatientAnamnese, FunctionalExam, PhysicalExam, Diagnostic, MedicalOrder, AditionalInfo, Control, PatientDocument } from '../model/patient-history.entity';
 import { PatientHistoryType } from '../model/patient-history-type.enum';
 
 export class PatientHistoryUpdateDto {
@@ -14,6 +14,7 @@ export class PatientHistoryUpdateDto {
   physicalExam: PhysicalExam;
   diagnostic: Diagnostic;
   medicalOrder: MedicalOrder;
+  patientDocument: PatientDocument;
   control: Control;
   aditionalInfo: AditionalInfo;
   active: boolean;

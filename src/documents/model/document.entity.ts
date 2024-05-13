@@ -8,6 +8,7 @@ export class DocumentOption {
 
 export class DocumentMetadata {
     clientName: string;
+    clientLastName: string;
     clientIdNumber: string;
     clientEmail: string;
 }
@@ -20,9 +21,8 @@ export class Document {
     type: DocumentType;
     commerceId: string;
     clientId: string;
-    clientName: string;
-    clientIdNumber
     active: boolean;
+    available: boolean;
     location: string;
     format: string;
     createdBy: string;

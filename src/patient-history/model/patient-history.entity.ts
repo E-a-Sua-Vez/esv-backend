@@ -2,6 +2,8 @@ import { Collection } from 'fireorm';
 import { PatientHistoryType } from './patient-history-type.enum';
 import { PatientHistoryControlStatus } from './patient-history-control-status.enum';
 import { PatientHistoryControlReason } from './patient-history-control-reason.enum';
+import { Document } from '../../documents/model/document.entity';
+import { PatientHistoryItem } from '../../patient-history-item/model/patient-history-item.entity';
 
 export class PersonalData {
     name: string;
@@ -41,6 +43,7 @@ export class CurrentIllness {
 export class ItemCharacteristics {
     id: string;
     name: string;
+    tag: string;
     active: boolean;
     actual: boolean;
     frequency: string;
@@ -49,6 +52,7 @@ export class ItemCharacteristics {
     comment: string;
     value: number;
     result: string;
+    document: boolean;
 }
 
 export class PatientAnamnese {
@@ -105,6 +109,15 @@ export class AditionalInfo {
     modifiedBy: string;
 }
 
+export class PatientDocument {
+    documents: Document;
+    comment: string;
+    details: PatientHistoryItem;
+    attentionId: string;
+    createdAt: Date;
+    createdBy: string;
+}
+
 @Collection('patient-history')
 export class PatientHistory {
     id: string;
@@ -121,6 +134,7 @@ export class PatientHistory {
     diagnostic: Diagnostic[];
     medicalOrder: MedicalOrder[];
     control: Control[];
+    patientDocument: PatientDocument[];
     aditionalInfo: AditionalInfo;
     active: boolean;
     available: boolean;

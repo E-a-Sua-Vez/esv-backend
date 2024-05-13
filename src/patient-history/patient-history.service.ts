@@ -1,4 +1,4 @@
-import { ConsultationReason, CurrentIllness, Diagnostic, FunctionalExam, MedicalOrder, PatientHistory, PersonalData, PhysicalExam, PatientAnamnese, AditionalInfo, Control } from './model/patient-history.entity';
+import { ConsultationReason, CurrentIllness, Diagnostic, FunctionalExam, MedicalOrder, PatientHistory, PersonalData, PhysicalExam, PatientAnamnese, AditionalInfo, Control, PatientDocument } from './model/patient-history.entity';
 import { getRepository} from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
@@ -53,11 +53,12 @@ export class PatientHistoryService {
 
   public async savePatientHistory(user: string, commerceId: string, clientId: string, type: PatientHistoryType, personalData: PersonalData,
     consultationReason: ConsultationReason, currentIllness: CurrentIllness, patientAnamnese: PatientAnamnese, functionalExam: FunctionalExam,
-    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, control: Control, aditionalInfo: AditionalInfo, active: boolean, available: boolean, lastAttentionId: string): Promise<PatientHistory> {
+    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, control: Control, aditionalInfo: AditionalInfo, active: boolean,
+    available: boolean, lastAttentionId: string, patientDocument: PatientDocument): Promise<PatientHistory> {
     let patientHistory = await this.getPatientHistorysByClientId(commerceId, clientId);
     if (patientHistory && patientHistory.id) {
       patientHistory = await this.updatePatientHistoryConfigurations(user, patientHistory.id, personalData, consultationReason, currentIllness,
-        patientAnamnese, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId)
+        patientAnamnese, functionalExam, physicalExam, diagnostic, medicalOrder, control, aditionalInfo, active, available, lastAttentionId, patientDocument);
     } else {
       if (personalData !== undefined) {
         personalData.createdBy = user;
@@ -91,21 +92,24 @@ export class PatientHistoryService {
         medicalOrder.createdBy = user;
         medicalOrder.createdAt = new Date();
       }
+      if (patientDocument !== undefined) {
+        patientDocument.createdBy = user;
+        patientDocument.createdAt = new Date();
+      }
       if (control !== undefined) {
         control.createdBy = user;
         control.createdAt = new Date();
       }
       patientHistory = await this.createPatientHistory(user, commerceId, clientId, type, personalData, [consultationReason], [currentIllness],
-        patientAnamnese, [functionalExam], [physicalExam], [diagnostic], [medicalOrder], [control], aditionalInfo, lastAttentionId);
+        patientAnamnese, [functionalExam], [physicalExam], [diagnostic], [medicalOrder], [control], aditionalInfo, lastAttentionId, [patientDocument]);
     }
     return patientHistory;
   }
 
   public async createPatientHistory(user: string, commerceId: string, clientId: string, type: PatientHistoryType, personalData: PersonalData,
-    consultationReason: ConsultationReason[], currentIllness: CurrentIllness[],
-    patientAnamnese : PatientAnamnese, functionalExam: FunctionalExam[],
+    consultationReason: ConsultationReason[], currentIllness: CurrentIllness[], patientAnamnese : PatientAnamnese, functionalExam: FunctionalExam[],
     physicalExam: PhysicalExam[], diagnostic: Diagnostic[], medicalOrder: MedicalOrder[], control: Control[], aditionalInfo: AditionalInfo,
-    lastAttentionId: string): Promise<PatientHistory> {
+    lastAttentionId: string, patientDocument: PatientDocument[]): Promise<PatientHistory> {
     let patientHistory = new PatientHistory();
     patientHistory.commerceId = commerceId;
     patientHistory.clientId = clientId;
@@ -121,6 +125,7 @@ export class PatientHistoryService {
     patientHistory.control = control;
     patientHistory.aditionalInfo = aditionalInfo;
     patientHistory.lastAttentionId = lastAttentionId;
+    patientHistory.patientDocument = patientDocument;
     patientHistory.active = true;
     patientHistory.available = true;
     patientHistory.createdAt = new Date();
@@ -132,9 +137,9 @@ export class PatientHistoryService {
   }
 
   public async updatePatientHistoryConfigurations(user: string, id: string, personalData: PersonalData,
-    consultationReason: ConsultationReason, currentIllness: CurrentIllness,
-    patientAnamnese: PatientAnamnese, functionalExam: FunctionalExam, physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, control: Control, aditionalInfo: AditionalInfo,
-    active: boolean, available: boolean, lastAttentionId: string): Promise<PatientHistory> {
+    consultationReason: ConsultationReason, currentIllness: CurrentIllness, patientAnamnese: PatientAnamnese, functionalExam: FunctionalExam,
+    physicalExam: PhysicalExam, diagnostic: Diagnostic, medicalOrder: MedicalOrder, control: Control, aditionalInfo: AditionalInfo,
+    active: boolean, available: boolean, lastAttentionId: string, patientDocument: PatientDocument): Promise<PatientHistory> {
     try {
       let patientHistory = await this.patientHistoryRepository.findById(id);
       if (personalData !== undefined) {
@@ -350,6 +355,18 @@ export class PatientHistoryService {
           }
         }
       }
+      if (patientDocument !== undefined) {
+        if (lastAttentionId !== undefined) {
+          patientDocument.attentionId = lastAttentionId;
+        }
+        patientDocument.createdBy = user;
+        patientDocument.createdAt = new Date();
+        if (patientHistory.patientDocument) {
+          patientHistory.patientDocument = [...patientHistory.patientDocument, patientDocument];
+        } else {
+          patientHistory.patientDocument = [patientDocument];
+        }
+      }
       if (aditionalInfo !== undefined) {
         aditionalInfo.modifiedBy = user;
         aditionalInfo.modifiedAt = new Date();
@@ -375,12 +392,15 @@ export class PatientHistoryService {
     }
   }
 
-  public async updatePatientHistoryControl(user: string, id: string, control: Control[], lastAttentionId: string): Promise<PatientHistory> {
+  public async updatePatientHistoryControl(user: string, id: string, control: Control[], patientDocument: PatientDocument[], lastAttentionId: string): Promise<PatientHistory> {
     try {
       let patientHistory = await this.patientHistoryRepository.findById(id);
       if (patientHistory && patientHistory.id) {
         if (control !== undefined) {
           patientHistory.control = control;
+        }
+        if (patientDocument !== undefined) {
+          patientHistory.patientDocument = patientDocument;
         }
         if (lastAttentionId !== undefined) {
           patientHistory.lastAttentionId = lastAttentionId;

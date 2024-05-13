@@ -397,7 +397,10 @@
             "forms.admin.edit": true,
             "forms.admin.update": true,
             "forms.admin.limit": 5,
-            "business.main-menu.forms-admin": true
+            "business.main-menu.forms-admin": true,
+            "document-client.admin.view": true,
+            "document-client.admin.add": true,
+            "document-client.admin.edit": true
         }
     },
     {
