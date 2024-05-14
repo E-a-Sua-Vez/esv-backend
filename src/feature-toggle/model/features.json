@@ -202,5 +202,9 @@
   {
     "name": "attention-pre-form",
     "type": "PRODUCT"
+  },
+  {
+    "name": "email-bookings-terms-conditions",
+    "type": "EMAIL"
   }
 ]

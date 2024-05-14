@@ -4,6 +4,12 @@ class Destination {
   BccAddresses?: string[];
 }
 
+export class Attachment {
+  content: string;
+  filename: string;
+  encoding: string = 'base64';
+}
+
 export class EmailInputDto {
   FriendlyBase64Name?: string;
   Source: string;
@@ -16,4 +22,14 @@ export class EmailInputDto {
   Template: string;
   TemplateArn?: string;
   TemplateData: string;
+}
+
+export class RawEmailInputDto {
+  from: string;
+  to: string[];
+  cc?: string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  attachments?: Attachment[];
 }

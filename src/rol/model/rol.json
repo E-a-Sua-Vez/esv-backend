@@ -400,7 +400,10 @@
             "business.main-menu.forms-admin": true,
             "document-client.admin.view": true,
             "document-client.admin.add": true,
-            "document-client.admin.edit": true
+            "document-client.admin.edit": true,
+
+            "dashboard.bookings-management.view": true,
+            "dashboard.reports.bookings-management": true
         }
     },
     {

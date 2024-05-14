@@ -5,5 +5,6 @@ export enum NotificationTemplate {
     MONTHLY_COMMERCE_STATISTICS = 'statistics-commerce',
     BOOKING = 'your-reserve',
     WAITLIST = 'your-waitlist',
-    BOOKING_CONFIRM = 'your-reserve-confirm'
+    BOOKING_CONFIRM = 'your-reserve-confirm',
+    BOOKING_COMMERCE_CONDITIONS = 'booking-commerce-conditions'
 }

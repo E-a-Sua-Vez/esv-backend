@@ -1,3 +1,7 @@
+
+import { htmlTemplate as TERMS_AND_CONDITIONS_PT } from '../templates/terms_and_conditions_pt';
+import { htmlTemplate as TERMS_AND_CONDITIONS_ES } from '../templates/terms_and_conditions_es';
+
 export const getBookingMessage = (country, bookingCommerce, booking, bookingDate, link, linkWs) => {
   const BOOKING = {
     pt: `Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso! Você deve vir no dia *${bookingDate}* ${booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`}
@@ -79,4 +83,18 @@ export const getBookingCancelledMessage = (country, bookingCommerce, bookingDate
     ¡Muchas gracias!`
   };
   return BOOKING_CANCELLED[country];
+}
+
+export const getBookingCommerceConditions = (country, bookingCommerce) => {
+  const BOOKING_COMMERCE_CONDITIONS = {
+    pt: {
+      subject: `Termos e Condições de ${bookingCommerce.name}`,
+      html: TERMS_AND_CONDITIONS_PT
+    },
+    es: {
+      subject: `Terminos y Condiciones de ${bookingCommerce.name}`,
+      html: TERMS_AND_CONDITIONS_ES
+    }
+  }
+  return BOOKING_COMMERCE_CONDITIONS[country];
 }

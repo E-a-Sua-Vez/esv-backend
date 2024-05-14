@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NotificationClient } from './notification-client';
-import { EmailInputDto } from '../model/email-input.dto';
+import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
 const twilio = require('twilio');
 
 @Injectable()
@@ -21,8 +21,10 @@ export class TwilioClient implements NotificationClient {
         return message
       });
   }
-
   sendEmail(email: EmailInputDto): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  sendRawEmail(data: RawEmailInputDto): Promise<any> {
     throw new Error('Method not implemented.');
   }
   disconnectService(): Promise<any> {

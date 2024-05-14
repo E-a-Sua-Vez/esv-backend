@@ -299,6 +299,9 @@ export class AttentionService {
       try {
         let attentionCreated;
         let queue = await this.queueService.getQueueById(queueId);
+        if (userIn && (userIn.acceptTermsAndConditions === false || !userIn.acceptTermsAndConditions)) {
+          throw new HttpException(`No ha aceptado los terminos y condiciones`, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         const newUser = userIn ? userIn : new User();
         const user = await this.userService.createUser(
           newUser.name, newUser.phone, newUser.email, queue.commerceId, queue.id, newUser.lastName, newUser.idNumber,

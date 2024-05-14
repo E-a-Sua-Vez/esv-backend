@@ -11,6 +11,7 @@ export class DocumentMetadata {
     clientLastName: string;
     clientIdNumber: string;
     clientEmail: string;
+    optionSelected: object;
 }
 
 @Collection('document')

@@ -9,7 +9,7 @@ import NotificationCreated from './events/NotificationCreated';
 import { NotificationClient } from './infrastructure/notification-client';
 import { clientStrategy } from './infrastructure/notification-client-strategy';
 import { NotificationProvider } from './model/notification-provider';
-import { EmailInputDto } from './model/email-input.dto';
+import { EmailInputDto, RawEmailInputDto } from './model/email-input.dto';
 import NotificationReceived from './events/NotificationReceived';
 import { NotificationThirdPartyDto } from './model/notification-third-party.dto';
 import NotificationUpdated from './events/NotificationUpdated';
@@ -148,6 +148,10 @@ export class NotificationService {
     }
     const body = { ...data, TemplateData: data.TemplateData, Template: template };
     return this.emailNotificationClient.sendEmail(body);
+  }
+
+  public async rawEmailNotify(data: RawEmailInputDto): Promise<any> {
+    return this.emailNotificationClient.sendRawEmail(data);
   }
 
   public async createAttentionEmailNotification(

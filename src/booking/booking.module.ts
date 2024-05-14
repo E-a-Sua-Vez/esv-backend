@@ -17,6 +17,7 @@ import { ClientModule } from '../client/client.module';
 import { IncomeModule } from '../income/income.module';
 import { PackageModule } from '../package/package.module';
 import { ServiceModule } from 'src/service/service.module';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { ServiceModule } from 'src/service/service.module';
     forwardRef(() => PackageModule),
     forwardRef(() => UserModule),
     forwardRef(() => ServiceModule),
-    forwardRef(() => PackageModule)
+    forwardRef(() => PackageModule),
+    forwardRef(() => DocumentsModule)
   ],
   providers: [
     BookingService,

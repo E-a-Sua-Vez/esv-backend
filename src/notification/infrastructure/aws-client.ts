@@ -2,7 +2,8 @@
 import { Injectable } from "@nestjs/common";
 import { NotificationClient } from './notification-client';
 import * as AWS from 'aws-sdk';
-import { EmailInputDto } from '../model/email-input.dto';
+import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
+import { createTransport } from 'nodemailer';
 
 @Injectable()
 export class AwsClient implements NotificationClient {
@@ -18,6 +19,13 @@ export class AwsClient implements NotificationClient {
       delete email.FriendlyBase64Name;
     }
     return await SES.sendTemplatedEmail(email).promise();
+  }
+
+  public async sendRawEmail(email: RawEmailInputDto): Promise<any> {
+    const SES = new AWS.SES({ apiVersion: '2010-12-01' });
+    const transport = createTransport({ SES });
+    const result = await transport.sendMail(email);
+    return result;
   }
 
   private encodeSource(base64Name: string, email: string): string {

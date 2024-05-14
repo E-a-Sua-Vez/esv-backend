@@ -39,6 +39,8 @@ import { PackageType } from '../package/model/package-type.enum';
 import { IncomeType } from 'src/income/model/income-type.enum';
 import { UserService } from '../user/user.service';
 import * as NOTIFICATIONS from './notifications/notifications.js';
+import { DocumentsService } from '../documents/documents.service';
+import { Attachment } from 'src/notification/model/email-input.dto';
 
 @Injectable()
 export class BookingService {
@@ -55,7 +57,8 @@ export class BookingService {
     private clientService: ClientService,
     private incomeService: IncomeService,
     private packageService: PackageService,
-    private userService: UserService
+    private userService: UserService,
+    private documentsService: DocumentsService
   ) { }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -76,6 +79,9 @@ export class BookingService {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const commerce = await this.commerceService.getCommerceById(queue.commerceId);
+    if (user && (user.acceptTermsAndConditions === false || !user.acceptTermsAndConditions)) {
+      throw new HttpException(`No ha aceptado los terminos y condiciones`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     const [year, month, day] = date.split('-');
     const dateFormatted = new Date(+year, +month-1, +day);
     const newDateFormatted = dateFormatted.toISOString().slice(0,10);
@@ -153,6 +159,7 @@ export class BookingService {
       }
       if (email !== undefined) {
         await this.bookingEmail(bookingCreated);
+        await this.bookingCommerceConditionsEmail(bookingCreated);
       }
       if (phone !== undefined) {
         await this.bookingWhatsapp(bookingCreated);
@@ -361,6 +368,62 @@ export class BookingService {
             logo
           );
           notified.push(booking);
+        }
+      }
+    });
+    return notified;
+  }
+
+  public async bookingCommerceConditionsEmail(booking: Booking): Promise<Booking[]> {
+    const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(booking.commerceId, FeatureToggleName.EMAIL);
+    let toNotify = [];
+    if(this.featureToggleIsActive(featureToggle, 'email-bookings-terms-conditions')){
+      toNotify.push(booking);
+    }
+    const notified = [];
+    const commerceLanguage = bookingCommerce.localeInfo.language;
+    toNotify.forEach(async (booking) => {
+      if (booking !== undefined && booking.type === BookingType.STANDARD) {
+        if (booking.user.email) {
+          let documentAttachament: Attachment;
+          const document = await this.documentsService.getDocument(`${bookingCommerce.id}.pdf`, 'terms_of_service');
+          if (document) {
+            const chunks = [];
+            document.on("data", function (chunk) {
+              chunks.push(chunk);
+            });
+            let content;
+            await document.on("end", async () => {
+              content = Buffer.concat(chunks);
+              documentAttachament = {
+                content,
+                filename: `terms_of_service-${bookingCommerce.name}.pdf`,
+                encoding: 'base64'
+              }
+              const from = process.env.EMAIL_SOURCE;
+              const to = [booking.user.email];
+              const emailData = NOTIFICATIONS.getBookingCommerceConditions(commerceLanguage, bookingCommerce);
+              const subject = emailData.subject;
+              const htmlTemplate = emailData.html;
+              const attachments = [documentAttachament];
+              const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
+              const commerce = bookingCommerce.name;
+              const html = htmlTemplate
+                .replaceAll('{{logo}}', logo)
+                .replaceAll('{{commerce}}', commerce);
+              await this.notificationService.rawEmailNotify(
+                {
+                  from,
+                  to,
+                  subject,
+                  html,
+                  attachments
+                }
+              );
+              notified.push(booking);
+            });
+          }
         }
       }
     });

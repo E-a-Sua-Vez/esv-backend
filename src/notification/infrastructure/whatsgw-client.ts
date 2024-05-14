@@ -1,7 +1,7 @@
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { firstValueFrom } from "rxjs";
-import { EmailInputDto } from '../model/email-input.dto';
+import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
 import { NotificationClient } from './notification-client';
 
 @Injectable()
@@ -65,6 +65,9 @@ export class WhatsGwClient implements NotificationClient {
   }
 
   sendEmail(email: EmailInputDto): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  sendRawEmail(data: RawEmailInputDto): Promise<any> {
     throw new Error('Method not implemented.');
   }
 }

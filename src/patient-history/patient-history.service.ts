@@ -130,6 +130,8 @@ export class PatientHistoryService {
     patientHistory.available = true;
     patientHistory.createdAt = new Date();
     patientHistory.createdBy = user;
+    patientHistory.modifiedAt = new Date();
+    patientHistory.modifiedBy = user;
     const patientHistoryCreated = await this.patientHistoryRepository.create(patientHistory);
     const patientHistoryCreatedEvent = new PatientHistoryCreated(new Date(), patientHistoryCreated, { user });
     publish(patientHistoryCreatedEvent);
