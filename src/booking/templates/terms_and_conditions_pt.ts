@@ -284,10 +284,38 @@ export const htmlTemplate = `<!DOCTYPE html>
 																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 14px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0;">
 																	<span class="tinyMce-placeholder">
 																		<p style="font-size: 20px;">Apresentamos-lhe os nossos termos e condições de serviço anexado a este Email.</p><br>
-																		<p style="font-size: 15px;">⚠️ IMPORTANTE: Leia cuidadosamente. Relembramos que ao reservar ou solicitar os nossos serviços declara que leu e aceitou integralmente todas as nossas condições. Se você tiver alguma dúvida, entre em contato conosco. </p>
+																		<p style="font-size: 15px;">⚠️ IMPORTANTE: Leia cuidadosamente e clique no botão "Concordo". Ao concordar, declara que leu e aceitou integralmente todas as nossas condições. Se você tiver alguma dúvida, entre em contato conosco. </p>
 																		<span style="font-size: 15px;"></span>
 																	</span>
 																</h1>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<!--ACCION-->
+					<table class="row row-10" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+						<tbody>
+							<tr>
+								<td>
+									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-radius: 0; color: #000; width: 600px; margin: 0 auto;" width="600">
+										<tbody>
+											<tr>
+												<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
+													<table class="button_block block-1" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+														<tr>
+															<td class="pad" style="padding-bottom:5px;padding-left:5px;padding-right:5px;text-align:center;">
+																<div class="alignment" align="center">
+																	<a href="{{link}}" target="_blank" style="text-decoration:none;display:inline-block;color:#000000;background-color:#00c2cb;border-radius:14px;width:auto;border-top:0px solid transparent;font-weight:700;border-right:0px solid transparent;border-bottom:0px solid transparent;border-left:0px solid transparent;padding-top:10px;padding-bottom:10px;font-family:Arial, Helvetica, sans-serif;font-size:20px;text-align:center;mso-border-alt:none;word-break:keep-all;"><span style="padding-left:60px;padding-right:60px;font-size:20px;display:inline-block;letter-spacing:-1px;">
+																	<span style="word-break: break-word; line-height: 24px;">
+																		Concordo ➡️
+																	</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
 															</td>
 														</tr>
 													</table>

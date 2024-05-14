@@ -58,4 +58,7 @@ export class Attention {
     packageId?: string;
     packageProcedureNumber?: number;
     packageProceduresTotalNumber?: number;
+    termsConditionsToAcceptCode?: string;
+    termsConditionsAcceptedCode?: string;
+    termsConditionsToAcceptedAt?: Date;
 }

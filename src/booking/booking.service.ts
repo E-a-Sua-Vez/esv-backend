@@ -409,8 +409,10 @@ export class BookingService {
               const attachments = [documentAttachament];
               const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
               const commerce = bookingCommerce.name;
+              const link = `${process.env.BACKEND_URL}/interno/acceptterms/booking/${booking.id}/${booking.termsConditionsToAcceptCode}`;
               const html = htmlTemplate
                 .replaceAll('{{logo}}', logo)
+                .replaceAll('{{link}}', link)
                 .replaceAll('{{commerce}}', commerce);
               await this.notificationService.rawEmailNotify(
                 {
@@ -771,8 +773,10 @@ export class BookingService {
   }
 
   private async createAttention(userIn: string, booking: Booking): Promise<Attention> {
-    const { id, queueId, channel, user, block, confirmationData, servicesId, servicesDetails, clientId } = booking;
-    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined, confirmationData, id, servicesId, servicesDetails, clientId);
+    const { id, queueId, channel, user, block, confirmationData, servicesId, servicesDetails, clientId,
+      termsConditionsToAcceptCode, termsConditionsAcceptedCode, termsConditionsToAcceptedAt } = booking;
+    const attention = await this.attentionService.createAttention(queueId, undefined, channel, user, undefined, block, undefined,
+      confirmationData, id, servicesId, servicesDetails, clientId, termsConditionsToAcceptCode, termsConditionsAcceptedCode, termsConditionsToAcceptedAt );
     await this.processBooking(userIn, booking, attention.id);
     return attention;
   }
@@ -1028,6 +1032,27 @@ export class BookingService {
       }
     } catch (error) {
       throw new HttpException(`Hubo un problema al editar la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return booking;
+  }
+
+  public async acceptBookingTermsAndConditions(user: string, id: string, code: string): Promise<Booking> {
+    let booking = undefined;
+    try {
+      booking = await this.getBookingById(id);
+      if (booking && booking.id && !booking.termsConditionsAcceptedCode) {
+        if (code && code.length === 6 && code === booking.termsConditionsToAcceptCode) {
+          booking.termsConditionsAcceptedCode = code;
+          booking.termsConditionsToAcceptedAt = new Date();
+          booking = await this.update(user, booking);
+        } else {
+          throw new HttpException(`Código para aceptar condiciones es incorrecto`, HttpStatus.BAD_REQUEST);
+        }
+      } else {
+        throw new HttpException(`Reserva no existe: ${id}`, HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(`Hubo un problema al aceptar condiciones para la reserva: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return booking;
   }

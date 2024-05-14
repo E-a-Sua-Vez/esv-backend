@@ -38,7 +38,10 @@ export class AttentionReserveBuilder implements BuilderInterface {
     bookingId?: string,
     servicesId?: string[],
     servicesDetails?: object[],
-    clientId?: string
+    clientId?: string,
+    termsConditionsToAcceptCode?: string,
+    termsConditionsAcceptedCode?: string,
+    termsConditionsToAcceptedAt?: Date
   ): Promise<Attention> {
     if (!block) {
       throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
@@ -69,6 +72,15 @@ export class AttentionReserveBuilder implements BuilderInterface {
     attention.channel = channel;
     if (userId !== undefined) {
       attention.userId = userId;
+    }
+    if (termsConditionsToAcceptCode !== undefined) {
+      attention.termsConditionsToAcceptCode = termsConditionsToAcceptCode;
+    }
+    if (termsConditionsAcceptedCode !== undefined) {
+      attention.termsConditionsAcceptedCode = termsConditionsAcceptedCode;
+    }
+    if (termsConditionsToAcceptedAt !== undefined) {
+      attention.termsConditionsToAcceptedAt = termsConditionsToAcceptedAt;
     }
     const dateToCreate = date || new Date();
     const existingAttention = await this.getAttentionByNumberAndDate(attention.number, attention.queueId, dateToCreate);

@@ -294,7 +294,10 @@ export class AttentionService {
       bookingId?: string,
       servicesId?: string[],
       servicesDetails?: object[],
-      clientId?: string
+      clientId?: string,
+      termsConditionsToAcceptCode?: string,
+      termsConditionsAcceptedCode?: string,
+      termsConditionsToAcceptedAt?: Date
     ): Promise<Attention> {
       try {
         let attentionCreated;

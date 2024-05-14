@@ -79,6 +79,9 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     if (servicesDetails !== undefined) {
       booking.servicesDetails = servicesDetails;
     }
+    if (this.featureToggleIsActive(commerce.features, 'email-bookings-terms-conditions')){
+      booking.termsConditionsToAcceptCode = Math.random().toString(36).slice(2, 8);
+    }
     let bookingCreated = await this.bookingRepository.create(booking);
     if (bookingCreated.servicesId && bookingCreated.servicesId.length === 1) {
       const service = await this.serviceService.getServiceById(bookingCreated.servicesId[0]);

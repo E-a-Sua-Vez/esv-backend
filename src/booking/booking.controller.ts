@@ -147,4 +147,11 @@ export class BookingController {
         const { date, block } = body;
         return this.bookingService.editBookingDateAndBlock(user, id, date, block);
     }
+
+    @UseGuards(AuthGuard)
+    @Patch('/accept-terms/:id/:code')
+    public async acceptBookingTermsAndConditions(@User() user, @Param() params: any): Promise<Booking> {
+        const { id, code } = params;
+        return this.bookingService.acceptBookingTermsAndConditions(user, id, code);
+    }
 }

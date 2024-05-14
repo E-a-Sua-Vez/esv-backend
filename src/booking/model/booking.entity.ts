@@ -55,4 +55,7 @@ export class Booking {
     packageId?: string;
     packageProcedureNumber?: number;
     packageProceduresTotalNumber?: number;
+    termsConditionsToAcceptCode?: string;
+    termsConditionsAcceptedCode?: string;
+    termsConditionsToAcceptedAt?: Date;
 }
