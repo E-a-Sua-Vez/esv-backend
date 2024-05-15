@@ -161,11 +161,7 @@ export class NotificationService {
     from: string,
     to: string[],
     subject: string,
-    htmlTemplate: string,
     attachments: Attachment[],
-    logo: string,
-    commerce: string,
-    link: string,
     html: string,
   ){
     let notification = new Notification();

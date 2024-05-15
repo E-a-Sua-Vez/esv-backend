@@ -421,11 +421,7 @@ export class BookingService {
                 from,
                 to,
                 subject,
-                htmlTemplate,
                 attachments,
-                logo,
-                commerce,
-                link,
                 html
               );
               notified.push(booking);
