@@ -206,5 +206,9 @@
   {
     "name": "email-bookings-terms-conditions",
     "type": "EMAIL"
+  },
+  {
+    "name": "attention-user-health-agreement",
+    "type": "USER"
   }
 ]

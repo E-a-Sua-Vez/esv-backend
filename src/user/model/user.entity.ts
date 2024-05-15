@@ -10,6 +10,7 @@ export class PersonalInfo {
     code1: string;
     code2: string;
     code3: string;
+    healthAgreementId: string;
 }
 
 @Collection('user')

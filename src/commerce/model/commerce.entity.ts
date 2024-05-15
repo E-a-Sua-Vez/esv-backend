@@ -41,6 +41,8 @@ export class ServiceInfo {
     personalizedHours: Record<number, PersonalizedHour>;
     holiday: boolean;
     holidays: Record<string, string[]>;
+    specificCalendar: boolean;
+    specificCalendarDays: Record<string, PersonalizedHour>;
 }
 
 export class WhatsappConnection {
