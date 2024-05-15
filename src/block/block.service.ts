@@ -157,4 +157,37 @@ export class BlockService {
     return result;
   }
 
+  public async getQueueBlockDetailsBySpecificDayByCommerceId(commerceId: string, queueId: string): Promise<Record<string, Block[]>> {
+    const result = {};
+    const commerce = await this.commerceService.getCommerceById(commerceId);
+    const queues = commerce.queues.filter(queue => queue.id === queueId);
+    if (queues && queues.length > 0) {
+      const queue = queues[0];
+      let blockTime;
+      let serviceInfo;
+      if (queue && queue.id) {
+        if (queue.blockTime) {
+          blockTime = queue.blockTime;
+        }
+        if (commerce.serviceInfo) {
+          serviceInfo = commerce.serviceInfo;
+        }
+        if (serviceInfo && serviceInfo.specificCalendar === true) {
+          const dates = Object.keys(serviceInfo.specificCalendarDays);
+          if (dates && dates.length > 0) {
+            dates.map(date => {
+              const block = serviceInfo.specificCalendarDays[date];
+              const serviceInfoToBuild = {
+                attentionHourFrom: block.attentionHourFrom,
+                attentionHourTo: block.attentionHourTo,
+                break: false
+              };
+              result[date] = this.buildBlocks(blockTime, serviceInfoToBuild);
+            })
+          }
+        }
+      }
+    }
+    return result;
+  }
 }

@@ -29,4 +29,11 @@ export class BlockController {
         const { commerceId } = params;
         return this.blockService.getQueueBlockDetailsByDayByCommerceId(commerceId);
     }
+
+    @UseGuards(AuthGuard)
+    @Get('/specific-day/commerceId/:commerceId/queueId/:queueId')
+    public async getQueueBlockDetailsBySpecificDayByCommerceId(@Param() params: any): Promise<Record<string, Block[]>> {
+        const { commerceId, queueId } = params;
+        return this.blockService.getQueueBlockDetailsBySpecificDayByCommerceId(commerceId, queueId);
+    }
 }
