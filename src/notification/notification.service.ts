@@ -9,7 +9,7 @@ import NotificationCreated from './events/NotificationCreated';
 import { NotificationClient } from './infrastructure/notification-client';
 import { clientStrategy } from './infrastructure/notification-client-strategy';
 import { NotificationProvider } from './model/notification-provider';
-import { EmailInputDto, RawEmailInputDto } from './model/email-input.dto';
+import { EmailInputDto, RawEmailInputDto, Attachment } from './model/email-input.dto';
 import NotificationReceived from './events/NotificationReceived';
 import { NotificationThirdPartyDto } from './model/notification-third-party.dto';
 import NotificationUpdated from './events/NotificationUpdated';
@@ -152,6 +152,50 @@ export class NotificationService {
 
   public async rawEmailNotify(data: RawEmailInputDto): Promise<any> {
     return this.emailNotificationClient.sendRawEmail(data);
+  }
+
+  public async createBookingRawEmailNotification(
+    type: NotificationType,
+    bookingId: string,
+    commerceId: string,
+    from: string,
+    to: string[],
+    subject: string,
+    htmlTemplate: string,
+    attachments: Attachment[],
+    logo: string,
+    commerce: string,
+    link: string,
+    html: string,
+  ){
+    let notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.EMAIL;
+    notification.type = type;
+    notification.bookingId = bookingId;
+    notification.commerceId = commerceId;
+    let metadata;
+    try {
+      metadata = await this.rawEmailNotify(
+        {
+          from,
+          to,
+          subject,
+          html,
+          attachments
+        }
+      );
+      if (this.emailProvider === NotificationProvider.AWS) {
+        notification.twilioId = 'N/A';
+        notification.providerId = metadata['MessageId'] || 'N/I';
+      }
+      notification.provider = this.emailProvider;
+      const notificationCreated = await this.notificationRepository.create(notification);
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      publish(notificationCreatedEvent);
+    } catch (error) {
+      notification.comment = error.message;
+    }
   }
 
   public async createAttentionEmailNotification(

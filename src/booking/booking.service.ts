@@ -158,11 +158,11 @@ export class BookingService {
         phone = user.phone;
       }
       if (email !== undefined) {
-        await this.bookingEmail(bookingCreated);
-        await this.bookingCommerceConditionsEmail(bookingCreated);
+        this.bookingEmail(bookingCreated);
+        this.bookingCommerceConditionsEmail(bookingCreated);
       }
       if (phone !== undefined) {
-        await this.bookingWhatsapp(bookingCreated);
+        this.bookingWhatsapp(bookingCreated);
       }
     }
     return bookingCreated;
@@ -414,14 +414,19 @@ export class BookingService {
                 .replaceAll('{{logo}}', logo)
                 .replaceAll('{{link}}', link)
                 .replaceAll('{{commerce}}', commerce);
-              await this.notificationService.rawEmailNotify(
-                {
-                  from,
-                  to,
-                  subject,
-                  html,
-                  attachments
-                }
+              await this.notificationService.createBookingRawEmailNotification(
+                NotificationType.BOOKING_COMMERCE_CONDITIONS,
+                booking.id,
+                bookingCommerce.id,
+                from,
+                to,
+                subject,
+                htmlTemplate,
+                attachments,
+                logo,
+                commerce,
+                link,
+                html
               );
               notified.push(booking);
             });
