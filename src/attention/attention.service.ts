@@ -315,7 +315,9 @@ export class AttentionService {
         const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(queue.commerceId, 'only-survey');
         if (type && type === AttentionType.NODEVICE) {
           if (block && block.number) {
-            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails, clientId);
+            attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, type, channel, userId, block,
+              date, paymentConfirmationData, bookingId, servicesId, servicesDetails, clientId, termsConditionsToAcceptCode,
+              termsConditionsAcceptedCode, termsConditionsToAcceptedAt);
           } else {
             attentionCreated = await this.attentionNoDeviceBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails, clientId);
           }
@@ -331,7 +333,9 @@ export class AttentionService {
             attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails, clientId);
           }
         } else if (block && block.number) {
-          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block, date, paymentConfirmationData, bookingId, servicesId, servicesDetails, clientId);
+          attentionCreated = await this.attentionReserveBuilder.create(queue, collaboratorId, AttentionType.STANDARD, channel, userId, block,
+            date, paymentConfirmationData, bookingId, servicesId, servicesDetails, clientId, termsConditionsToAcceptCode,
+            termsConditionsAcceptedCode, termsConditionsToAcceptedAt);
         } else {
           attentionCreated = await this.attentionDefaultBuilder.create(queue, collaboratorId, channel, userId, date, servicesId, servicesDetails, clientId);
         }

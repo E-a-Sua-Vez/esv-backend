@@ -7,6 +7,7 @@ export enum PaymentMethod {
     BOLETO = 'BOLETO',
     PIX = 'PIX',
     OTHER = 'OTHER',
+    HEALTH_AGREEMENT = 'HEALTH_AGREEMENT',
     wireTransfer = 'WIRE_TRANSFER',
     cashDeposit = 'CASH_DESPOSIT',
     freePeriod = 'FREE_PERIOD'

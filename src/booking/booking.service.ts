@@ -275,6 +275,7 @@ export class BookingService {
         booking.date = result.date;
         booking.status = result.status;
         booking.user = result.user;
+        booking.block = result.block;
         bookings.push(booking);
       })
     }
@@ -311,6 +312,7 @@ export class BookingService {
         booking.date = result.date;
         booking.status = result.status;
         booking.user = result.user;
+        booking.block = result.block;
         bookings.push(booking);
       })
     }

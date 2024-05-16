@@ -170,7 +170,11 @@ export class BlockService {
           blockTime = queue.blockTime;
         }
         if (commerce.serviceInfo) {
-          serviceInfo = commerce.serviceInfo;
+          if (queue.serviceInfo && queue.serviceInfo.specificCalendar === true) {
+            serviceInfo = queue.serviceInfo;
+          } else {
+            serviceInfo = commerce.serviceInfo;
+          }
         }
         if (serviceInfo && serviceInfo.specificCalendar === true) {
           const dates = Object.keys(serviceInfo.specificCalendarDays);
