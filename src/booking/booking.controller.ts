@@ -84,11 +84,11 @@ export class BookingController {
         return this.bookingService.createBookingFromWaitlist(id, number);
     }
 
-    @UseGuards(SimpleGuard)
+    //@UseGuards(SimpleGuard)
     @Post('/confirm')
     public async confirmNotifyBookings(@Body() body: any): Promise<any> {
         const { daysBefore } = body;
-        return this.bookingService.confirmNotifyBookings(daysBefore);
+        return this.bookingService.confirmNotifyBookings();
     }
 
     @UseGuards(SimpleGuard)

@@ -403,7 +403,9 @@
             "document-client.admin.edit": true,
 
             "dashboard.bookings-management.view": true,
-            "dashboard.reports.bookings-management": true
+            "dashboard.reports.bookings-management": true,
+            "dashboard.client-data-management.view": true,
+            "client.admin.edit": true
         }
     },
     {

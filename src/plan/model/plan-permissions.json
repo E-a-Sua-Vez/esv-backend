@@ -50,6 +50,7 @@
 
     "client.notify.email": false,
     "client.notify.whatsapp": false,
+    "client.admin.edit": true,
 
     "collaborator.attention.attend": true,
     "collaborator.attention.transfer": true,
@@ -144,6 +145,9 @@
     "dashboard.attention-origin-avg.view": true,
     "dashboard.attention-client-contact.view": true,
     "dashboard.attention-days-since-clients.view": true,
+    "dashboard.bookings-management.view": true,
+    "dashboard.reports.bookings-management": true,
+    "dashboard.client-data-management.view": true,
 
     "executive.admin.view": true,
     "executive.admin.download": true,
@@ -329,6 +333,7 @@
 
     "client.notify.email": false,
     "client.notify.whatsapp": false,
+    "client.admin.edit": false,
 
     "collaborator.attention.attend": false,
     "collaborator.attention.skip": false,
@@ -426,6 +431,9 @@
     "dashboard.attention-client-contact.view": false,
     "dashboard.attention-days-since-clients.view": false,
     "dashboard.collection-details.view": false,
+    "dashboard.bookings-management.view": false,
+    "dashboard.reports.bookings-management": false,
+    "dashboard.client-data-management.view": false,
 
     "executive.admin.view": true,
     "executive.admin.download": true,
@@ -611,6 +619,7 @@
 
     "client.notify.email": false,
     "client.notify.whatsapp": false,
+    "client.admin.edit": true,
 
     "collaborator.attention.attend": true,
     "collaborator.attention.transfer": true,
@@ -706,6 +715,9 @@
     "dashboard.attention-client-contact.view": true,
     "dashboard.attention-days-since-clients.view": true,
     "dashboard.collection-details.view": true,
+    "dashboard.bookings-management.view": true,
+    "dashboard.reports.bookings-management": true,
+    "dashboard.client-data-management.view": true,
 
     "executive.admin.view": true,
     "executive.admin.download": true,

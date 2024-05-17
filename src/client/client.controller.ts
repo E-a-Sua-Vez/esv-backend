@@ -32,4 +32,12 @@ export class ClientController {
         const { result, type, comment, commerceId, collaboratorId } = body;
         return this.clientService.contactClient(user, id, type, result, comment, commerceId, collaboratorId);
     }
+
+    @UseGuards(AuthGuard)
+    @Patch('/:id')
+    public async updateClient(@User() user, @Param() params: any, @Body() body: any): Promise<Client> {
+        const { id } = params;
+        const { businessId, commerceId, name, phone, email, lastName, idNumber, personalInfo } = body;
+        return this.clientService.updateClient(user, id, businessId, commerceId, name, phone, email, lastName, idNumber, personalInfo);
+    }
 }

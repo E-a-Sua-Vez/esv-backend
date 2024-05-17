@@ -43,6 +43,7 @@ export class ServiceInfo {
     holidays: Record<string, string[]>;
     specificCalendar: boolean;
     specificCalendarDays: Record<string, PersonalizedHour>;
+    confirmNotificationDaysBefore: string;
 }
 
 export class WhatsappConnection {

@@ -185,7 +185,6 @@ export class ClientService {
     return client;
   }
 
-
   public async update(user: string, clientById: Client): Promise<Client> {
     const clientUpdated = await this.clientRepository.update(clientById);
     const clientUpdatedEvent = new ClientUpdated(new Date(), clientUpdated, { user });
@@ -226,5 +225,59 @@ export class ClientService {
       clientById.updatedAt = new Date();
       return await this.update(user, clientById);
     }
+  }
+  public async updateClient(user: string, id?: string, businessId?: string, commerceId?: string, name?: string, phone?: string, email?: string, lastName?: string, idNumber?: string, personalInfo?: PersonalInfo): Promise<Client> {
+    let client: Client;
+    let newClient = false;
+    if (id !== undefined) {
+      client = await this.getClientById(id);
+    } else {
+      client = await this.getClientByIdNumberOrEmail(businessId, idNumber, email);
+    }
+    if (!client) {
+      client = new Client();
+      newClient = true;
+      if (businessId) {
+        client.businessId = businessId;
+      }
+    }
+    if (commerceId) {
+      client.commerceId = commerceId;
+    }
+    if (idNumber) {
+      client.idNumber = idNumber;
+    }
+    if (name) {
+      client.name = name;
+    }
+    if (lastName) {
+      client.lastName = lastName;
+    }
+    if (phone) {
+      client.phone = phone;
+    }
+    if (email) {
+      client.email = email;
+    }
+    if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
+      client.personalInfo = { ...client.personalInfo || {}, ...personalInfo };
+    }
+    client.frequentCustomer = false;
+    client.createdAt = new Date();
+    if (newClient) {
+      client.counter = 0;
+      const clientCreated = await this.clientRepository.create(client);
+      client = clientCreated;
+      const clientCreatedEvent = new ClientCreated(new Date(), clientCreated, { user });
+      publish(clientCreatedEvent);
+    } else {
+      client.counter = client.counter + 1;
+      client.frequentCustomer = true;
+      const clientUpdated = await this.update(client.email || client.idNumber, client)
+      client = clientUpdated;
+      const clientUpdatedEvent = new ClientUpdated(new Date(), clientUpdated, { user });
+      publish(clientUpdatedEvent);
+    }
+    return client;
   }
 }

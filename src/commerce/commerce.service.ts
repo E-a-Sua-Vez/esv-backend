@@ -80,6 +80,25 @@ export class CommerceService {
     return commerces;
   }
 
+  public async getCommercesDetails(): Promise<Commerce[]> {
+    let result: Commerce[] = [];
+    let commerces = await this.commerceRepository.find();
+    if (commerces && commerces.length > 0) {
+      for (let i = 0; i < commerces.length; i++) {
+        const commerce = commerces[i]
+        const [
+          features
+        ] = await Promise.all([
+          this.featureToggleService.getFeatureToggleByCommerceId(commerce.id)
+        ]);
+        let commerceAux = commerce;
+        commerceAux.features = features;
+        result.push(commerceAux);
+      }
+    }
+    return result;
+  }
+
   public async getCommerceByKeyName(keyName: string): Promise<Commerce> {
     let commerces = await this.commerceRepository.whereEqualTo('keyName', keyName).find();
     if (commerces.length > 0) {

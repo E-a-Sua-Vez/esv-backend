@@ -41,6 +41,8 @@ import { UserService } from '../user/user.service';
 import * as NOTIFICATIONS from './notifications/notifications.js';
 import { DocumentsService } from '../documents/documents.service';
 import { Attachment } from 'src/notification/model/email-input.dto';
+import { DateModel } from 'src/shared/utils/date.model';
+import { Commerce } from 'src/commerce/model/commerce.entity';
 
 @Injectable()
 export class BookingService {
@@ -212,6 +214,17 @@ export class BookingService {
     return await this.bookingRepository
       .whereEqualTo('date', date)
       .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
+      .orderByAscending('number')
+      .limit(limit)
+      .find();
+  }
+
+  public async getConfirmedBookingsByCommerceIdDates(commerceId: string, dates: string[], limit: number = 100): Promise<Booking[]> {
+    return await this.bookingRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereIn('date', dates)
+      .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
+      .whereNotEqualTo('confirmNotified', true)
       .orderByAscending('number')
       .limit(limit)
       .find();
@@ -435,11 +448,10 @@ export class BookingService {
     return notified;
   }
 
-  public async bookingConfirmEmail(booking: Booking): Promise<Booking[]> {
-    const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+  public async bookingConfirmEmail(bookingCommerce: Commerce, booking: Booking): Promise<Booking[]> {
     const featureToggle = bookingCommerce.features;
     let toNotify = [];
-    if(this.featureToggleIsActive(featureToggle, 'booking-email-confirm')){
+    if (this.featureToggleIsActive(featureToggle, 'booking-email-confirm')){
       toNotify.push(booking);
     }
     const notified = [];
@@ -499,11 +511,17 @@ export class BookingService {
           const commerceLanguage = bookingCommerce.localeInfo.language;
           message = NOTIFICATIONS.getBookingMessage(commerceLanguage, bookingCommerce, booking, bookingDate, link, linkWs);
           let servicePhoneNumber = undefined;
-          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(booking.commerceId);
+          let whatsappConnection;
+          if (bookingCommerce.whatsappConnection &&
+            bookingCommerce.whatsappConnection.connected === true &&
+            bookingCommerce.whatsappConnection.whatsapp
+          ) {
+            whatsappConnection = bookingCommerce.whatsappConnection;
+          }
           if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
             servicePhoneNumber = whatsappConnection.whatsapp;
           }
-          await this.notificationService.createBookingWhatsappNotification(
+          this.notificationService.createBookingWhatsappNotification(
             user.phone,
             booking.id,
             message,
@@ -520,8 +538,7 @@ export class BookingService {
     return notified;
   }
 
-  public async bookingConfirmWhatsapp(booking: Booking): Promise<Booking[]> {
-    const bookingCommerce = await this.commerceService.getCommerceById(booking.commerceId);
+  public async bookingConfirmWhatsapp(bookingCommerce: Commerce, booking: Booking): Promise<Booking[]> {
     const featureToggle = bookingCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'booking-whatsapp-confirm')){
@@ -540,11 +557,17 @@ export class BookingService {
           const commerceLanguage = bookingCommerce.localeInfo.language;
           message = NOTIFICATIONS.getBookingConfirmMessage(commerceLanguage, bookingCommerce, booking, bookingDate, link);
           let servicePhoneNumber = undefined;
-          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(booking.commerceId);
+          let whatsappConnection;
+          if (bookingCommerce.whatsappConnection &&
+            bookingCommerce.whatsappConnection.connected === true &&
+            bookingCommerce.whatsappConnection.whatsapp
+          ) {
+            whatsappConnection = bookingCommerce.whatsappConnection;
+          }
           if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
             servicePhoneNumber = whatsappConnection.whatsapp;
           }
-          await this.notificationService.createWhatsappNotification(
+          this.notificationService.createWhatsappNotification(
             user.phone,
             booking.id,
             message,
@@ -581,7 +604,13 @@ export class BookingService {
           const commerceLanguage = bookingCommerce.localeInfo.language;
           message = NOTIFICATIONS.getBookingCancelledMessage(commerceLanguage, bookingCommerce, bookingDate, link);
           let servicePhoneNumber = undefined;
-          let whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(booking.commerceId);
+          let whatsappConnection;
+          if (bookingCommerce.whatsappConnection &&
+            bookingCommerce.whatsappConnection.connected === true &&
+            bookingCommerce.whatsappConnection.whatsapp
+          ) {
+            whatsappConnection = bookingCommerce.whatsappConnection;
+          }
           if (whatsappConnection && whatsappConnection.connected === true && whatsappConnection.whatsapp) {
             servicePhoneNumber = whatsappConnection.whatsapp;
           }
@@ -893,18 +922,49 @@ export class BookingService {
     return booking;
   }
 
-  public async confirmNotifyBookings(daysBefore: number = 1): Promise<any> {
-    const date = new Date(new Date(new Date().setDate(new Date().getDate() + daysBefore))).toISOString().slice(0, 10);
+  public async confirmNotifyBookings(): Promise<any> {
     let bookings = [];
-    const pendingBookings = await this.getConfirmedBookingsByDate(date, 25);
-    if (!pendingBookings || pendingBookings.length === 0) {
-      throw new HttpException(`Sin Reservas para confirmar`, HttpStatus.OK);
+    const commerces = await this.commerceService.getCommercesDetails();
+    if (commerces && commerces.length > 0) {
+      for (let i = 0; i < commerces.length; i++) {
+        const commerce = commerces[i];
+        if (commerce && commerce.id) {
+          const featureToggle = commerce.features;
+          if (this.featureToggleIsActive(featureToggle, 'booking-email-confirm') ||
+            this.featureToggleIsActive(featureToggle, 'booking-whatsapp-confirm')) {
+            let daysBefore = ['1'];
+            if (commerce.serviceInfo && commerce.serviceInfo.confirmNotificationDaysBefore) {
+              const days = commerce.serviceInfo.confirmNotificationDaysBefore.split(',');
+              if (days && days.length > 0) {
+                daysBefore = days.sort().slice(0,1);
+              }
+            }
+            let dates = [];
+            for (let i = 0; i < daysBefore.length; i++) {
+              const days = daysBefore[i];
+              const date = new DateModel().addDays(+days).toString();
+              if (date !== new DateModel().toString()) {
+                dates.push(date)
+              }
+            }
+            const pendings = await this.getConfirmedBookingsByCommerceIdDates(commerce.id, dates, 10);
+            if (pendings && pendings.length > 0) {
+              bookings = [...bookings, ...pendings];
+            }
+          }
+        }
+      };
     }
-    bookings = pendingBookings.filter(booking => {
-      if (booking.confirmNotified === undefined || booking.confirmNotified === false) {
+    bookings = bookings.filter(booking => {
+      const createdDate = new DateModel(booking.createdAt.toISOString().slice(0,10)).toString();
+      const today = new DateModel().toString();
+      if (createdDate && createdDate !== today) {
         return booking;
       }
     })
+    if (!bookings || bookings.length === 0) {
+      throw new HttpException(`Sin Reservas para confirmar`, HttpStatus.OK);
+    }
     const limiter = new Bottleneck({
       minTime: 1000,
       maxConcurrent: 10
@@ -919,8 +979,13 @@ export class BookingService {
         let booking = bookings[i];
         limiter.schedule(async () => {
           try {
-            const email = await this.bookingConfirmEmail(booking);
-            const message = await this.bookingConfirmWhatsapp(booking);
+            const bookingCommerces = commerces.filter(commerce => commerce.id === booking.commerceId);
+            let bookingCommerce;
+            if (bookingCommerces && bookingCommerces.length > 0) {
+              bookingCommerce = bookingCommerces[0];
+            }
+            const email = await this.bookingConfirmEmail(bookingCommerce, booking);
+            const message = await this.bookingConfirmWhatsapp(bookingCommerce, booking);
             if (email && email[0] && email[0].id) {
               booking.confirmNotifiedEmail = true;
               emails.push(email[0]);
