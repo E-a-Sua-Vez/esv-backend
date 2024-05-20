@@ -74,11 +74,17 @@
   "dashboard.attention-client-contact.view": true,
   "dashboard.attention-days-since-clients.view": true,
   "dashboard.collection-details.view": true,
+  "dashboard.bookings-management.view": true,
+  "dashboard.reports.bookings-management": true,
+  "dashboard.client-data-management.view": true,
 
   "patient.history.view": true,
   "patient.history.update": true,
   "patient.history.edit": true,
   "patient.history.read": true,
   "patient.history.add": true,
-  "patient.history.download": true
+  "patient.history.download": true,
+
+  "client.admin.edit": true,
+  "client.admin.add": true
 }

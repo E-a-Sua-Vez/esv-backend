@@ -51,6 +51,7 @@
     "client.notify.email": false,
     "client.notify.whatsapp": false,
     "client.admin.edit": true,
+    "client.admin.add": true,
 
     "collaborator.attention.attend": true,
     "collaborator.attention.transfer": true,
@@ -334,6 +335,7 @@
     "client.notify.email": false,
     "client.notify.whatsapp": false,
     "client.admin.edit": false,
+    "client.admin.add": false,
 
     "collaborator.attention.attend": false,
     "collaborator.attention.skip": false,
@@ -620,6 +622,7 @@
     "client.notify.email": false,
     "client.notify.whatsapp": false,
     "client.admin.edit": true,
+    "client.admin.add": true,
 
     "collaborator.attention.attend": true,
     "collaborator.attention.transfer": true,
