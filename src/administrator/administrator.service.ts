@@ -104,8 +104,12 @@ export class AdministratorService {
       }
       if (administrator.lastPasswordChanged) {
         let days = Math.abs(new Date().getTime() - administrator.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
-        if (days >= 1) {
+        if (days < 1) {
           throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+        } else {
+          administrator.lastPasswordChanged = new Date();
+          administrator = await this.administratorRepository.update(administrator);
+          return administrator;
         }
       } else {
         administrator.lastPasswordChanged = new Date();
