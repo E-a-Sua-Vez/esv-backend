@@ -26,6 +26,7 @@ export class DocumentsService {
 
   private reportType = {
     terms_of_service: 'terms_of_service',
+    post_attention: 'post_attention',
     patient_documents: 'patient_documents'
   };
 
@@ -179,15 +180,6 @@ export class DocumentsService {
       throw new HttpException('Archivo no enviado', HttpStatus.NOT_FOUND);
     }
     await new Promise((resolve, reject) => {
-      S3.createBucket({
-        Bucket: this.getBucketPath(`${reportType}/${commerceId}`),
-      },
-      (error, result) => {
-        if (error) {
-          return reject(error);
-        }
-        return resolve(result);
-      });
       S3.upload(
         {
           Bucket: this.getBucketPath(reportType),
@@ -206,7 +198,7 @@ export class DocumentsService {
       const result = await this.createDocument(user, name, commerceId, reportType, format);
       return result;
     }).catch((error) => {
-      throw new HttpException(`error subiendo archivo de cliente: ${error.message}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(`error subiendo archivo de comercio: ${error.message}`, HttpStatus.NOT_FOUND);
     });
   }
 

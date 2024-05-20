@@ -17,6 +17,7 @@ import { AttentionReserveBuilder } from './builders/attention-reserve';
 import { ServiceModule } from 'src/service/service.module';
 import { PackageModule } from 'src/package/package.module';
 import { IncomeModule } from '../income/income.module';
+import { DocumentsModule } from 'src/documents/documents.module';
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { IncomeModule } from '../income/income.module';
     forwardRef(() => FeatureToggleModule),
     forwardRef(() => ServiceModule),
     forwardRef(() => PackageModule),
-    forwardRef(() => IncomeModule)
+    forwardRef(() => IncomeModule),
+    forwardRef(() => DocumentsModule)
   ],
   providers: [
     AttentionService,

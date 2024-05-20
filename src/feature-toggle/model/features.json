@@ -210,5 +210,9 @@
   {
     "name": "attention-user-health-agreement",
     "type": "USER"
+  },
+  {
+    "name": "email-post-attention",
+    "type": "EMAIL"
   }
 ]

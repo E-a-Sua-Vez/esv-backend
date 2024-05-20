@@ -194,6 +194,46 @@ export class NotificationService {
     }
   }
 
+  public async createAttentionRawEmailNotification(
+    type: NotificationType,
+    attentionId: string,
+    commerceId: string,
+    from: string,
+    to: string[],
+    subject: string,
+    attachments: Attachment[],
+    html: string,
+  ){
+    let notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.EMAIL;
+    notification.type = type;
+    notification.attentionId = attentionId;
+    notification.commerceId = commerceId;
+    let metadata;
+    try {
+      metadata = await this.rawEmailNotify(
+        {
+          from,
+          to,
+          subject,
+          html,
+          attachments
+        }
+      );
+      if (this.emailProvider === NotificationProvider.AWS) {
+        notification.twilioId = 'N/A';
+        notification.providerId = metadata['MessageId'] || 'N/I';
+      }
+      notification.provider = this.emailProvider;
+      const notificationCreated = await this.notificationRepository.create(notification);
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      publish(notificationCreatedEvent);
+    } catch (error) {
+      notification.comment = error.message;
+    }
+  }
+
   public async createAttentionEmailNotification(
     email: string,
     userId: string,

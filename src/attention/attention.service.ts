@@ -33,6 +33,9 @@ import { IncomeService } from 'src/income/income.service';
 import { IncomeStatus } from 'src/income/model/income-status.enum';
 import { IncomeType } from 'src/income/model/income-type.enum';
 import * as NOTIFICATIONS from './notifications/notifications.js';
+import { DocumentsService } from 'src/documents/documents.service';
+import { Attachment } from 'src/notification/model/email-input.dto';
+import { Commerce } from 'src/commerce/model/commerce.entity';
 
 @Injectable()
 export class AttentionService {
@@ -52,6 +55,7 @@ export class AttentionService {
     private commerceService: CommerceService,
     private packageService: PackageService,
     private incomeService: IncomeService,
+    private documentsService: DocumentsService
   ) { }
 
   public async getAttentionById(id: string): Promise<Attention> {
@@ -470,8 +474,11 @@ export class AttentionService {
         const diff = attention.endAt.getTime() - dateAt.getTime();
         attention.duration = diff/(1000*60);
       }
-      await this.csatEmail(attention.id);
-      await this.csatWhatsapp(attention.id);
+      const attentionCommerce = await this.commerceService.getCommerceDetails(attention.commerceId);
+      const attentionDetails = await this.getAttentionDetails(attentionId);
+      this.csatEmail(attentionDetails, attentionCommerce);
+      this.csatWhatsapp(attentionDetails, attentionCommerce);
+      this.postAttentionEmail(attentionDetails, attentionCommerce);
       return this.update(user, attention);
     }
     return attention;
@@ -631,9 +638,8 @@ export class AttentionService {
     return notified;
   }
 
-  public async csatEmail(attentionId: string): Promise<Attention[]> {
-    const attention = await this.getAttentionDetails(attentionId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(attention.commerceId, FeatureToggleName.EMAIL);
+  public async csatEmail(attention: AttentionDetailsDto, attentionCommerce: Commerce): Promise<Attention[]> {
+    const featureToggle = attentionCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'email-csat')){
       toNotify.push(attention.number);
@@ -656,9 +662,64 @@ export class AttentionService {
     return notified;
   }
 
-  public async csatWhatsapp(attentionId: string): Promise<Attention[]> {
-    const attention = await this.getAttentionDetails(attentionId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(attention.commerceId, FeatureToggleName.WHATSAPP);
+  public async postAttentionEmail(attention: AttentionDetailsDto, attentionCommerce: Commerce): Promise<Attention[]> {
+    const featureToggle = attentionCommerce.features;
+    let toNotify = [];
+    if(this.featureToggleIsActive(featureToggle, 'email-post-attention')){
+      toNotify.push(attention);
+    }
+    const notified = [];
+    const commerceLanguage = attentionCommerce.localeInfo.language;
+    toNotify.forEach(async (attention) => {
+      if (attention !== undefined) {
+        if (attention.user.email) {
+          let documentAttachament: Attachment;
+          const document = await this.documentsService.getDocument(`${attentionCommerce.id}.pdf`, 'post_attention');
+          if (document) {
+            const chunks = [];
+            document.on("data", function (chunk) {
+              chunks.push(chunk);
+            });
+            let content;
+            await document.on("end", async () => {
+              content = Buffer.concat(chunks);
+              documentAttachament = {
+                content,
+                filename: `post_attention-${attentionCommerce.name}.pdf`,
+                encoding: 'base64'
+              }
+              const from = process.env.EMAIL_SOURCE;
+              const to = [attention.user.email];
+              const emailData = NOTIFICATIONS.getPostAttetionCommerce(commerceLanguage, attentionCommerce);
+              const subject = emailData.subject;
+              const htmlTemplate = emailData.html;
+              const attachments = [documentAttachament];
+              const logo = `${process.env.BACKEND_URL}/${attentionCommerce.logo}`;
+              const commerce = attentionCommerce.name;
+              const html = htmlTemplate
+                .replaceAll('{{logo}}', logo)
+                .replaceAll('{{commerce}}', commerce);
+              await this.notificationService.createAttentionRawEmailNotification(
+                NotificationType.POST_ATTENTION,
+                attention.id,
+                attentionCommerce.id,
+                from,
+                to,
+                subject,
+                attachments,
+                html
+              );
+              notified.push(attention);
+            });
+          }
+        }
+      }
+    });
+    return notified;
+  }
+
+  public async csatWhatsapp(attention: AttentionDetailsDto, attentionCommerce: Commerce): Promise<Attention[]> {
+    const featureToggle = attentionCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'whatsapp-csat')){
       toNotify.push(attention.number);

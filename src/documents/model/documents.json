@@ -2,5 +2,9 @@
   {
     "name": "terms_of_service",
     "type": "COMMERCE"
+  },
+  {
+    "name": "post_attention",
+    "type": "COMMERCE"
   }
 ]

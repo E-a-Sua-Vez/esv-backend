@@ -50,9 +50,9 @@ export class DocumentsController {
   @Post()
   public uploadDocument(@User() user, @UploadedFiles() files, @Body() body: UploadDocumentsInputsDto): Promise<any> {
     const {
-      commerceId, name, format,
+      commerceId, name, format, reportType,
     } = body;
-    return this.documentsService.uploadDocument(user, commerceId, name, commerceId, format, files);
+    return this.documentsService.uploadDocument(user, commerceId, reportType, name, format, files);
   }
 
   @UseGuards(AuthGuard)

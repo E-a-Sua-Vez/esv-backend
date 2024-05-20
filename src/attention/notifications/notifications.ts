@@ -1,3 +1,6 @@
+import { htmlTemplate as POST_ATTENTION_PT } from '../templates/post_attention_pt';
+import { htmlTemplate as POST_ATTENTION_ES } from '../templates/post_attention_es';
+
 export const getFaltanCincoMessage = (country, attention) => {
   const FALTANCINCO = {
     pt: `😃 Olá, quase É a sua vez! Restam *${5}* pessoas para serem atendidas.
@@ -72,4 +75,19 @@ export const getAtencionCanceladaMessage = (country, attention, link) => {
     ¡Muchas gracias!`
   }
   return ATTENTION_CANCELLED[country];
+}
+
+
+export const getPostAttetionCommerce = (country, bookingCommerce) => {
+  const POST_ATTENTION = {
+    pt: {
+      subject: `Pos Atendimento de ${bookingCommerce.name}`,
+      html: POST_ATTENTION_PT
+    },
+    es: {
+      subject: `Post Atención ${bookingCommerce.name}`,
+      html: POST_ATTENTION_ES
+    }
+  }
+  return POST_ATTENTION[country];
 }
