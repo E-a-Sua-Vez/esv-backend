@@ -40,6 +40,7 @@ import { CompanyModule } from './company/company.module';
 import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
 import { FormPersonalizedModule } from './form-personalized/form-personalized.module';
 import { FormModule } from './form/form.module';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { FormModule } from './form/form.module';
     PatientHistoryItemModule,
     FormModule,
     FormPersonalizedModule,
+    MessageModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

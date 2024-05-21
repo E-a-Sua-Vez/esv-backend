@@ -9,6 +9,9 @@ import { ProductType } from './model/product-type.enum';
 import { MeasureType } from './model/measure-type.enum';
 import ProductReplaced from './events/ProductReplaced';
 import ProductConsumed from './events/ProductConsumed';
+import { MessageService } from '../message/message.service';
+import { MessageType } from 'src/message/model/type.enum';
+import * as MESSAGES from './messages/messages.js';
 
 @Injectable()
 export class ProductService {
@@ -18,7 +21,8 @@ export class ProductService {
     @InjectRepository(ProductReplacement)
     private productReplacementRepository = getRepository(ProductReplacement),
     @InjectRepository(ProductConsumption)
-    private productConsumptionRepository = getRepository(ProductConsumption)
+    private productConsumptionRepository = getRepository(ProductConsumption),
+    private messageService: MessageService
   ) {}
 
   public async getProductById(id: string): Promise<Product> {
@@ -210,6 +214,13 @@ export class ProductService {
     }
   }
 
+  public async sendMessage(user: string, product: Product, type: MessageType) {
+    if (product.actualLevel <= product.replacementLevel) {
+      const message = MESSAGES.getMessage(type, undefined, product.name);
+      const msg = await this.messageService.sendMessageToAdministrator(user, product.commerceId, MessageType.STOCK_PRODUCT_RECHARGE, message);
+    }
+  }
+
   public async createProductConsumption(
     user: string, productId: string, consumedBy: string, comsumptionAttentionId: string,
     consumptionAmount: number, consumptionDate: Date, productReplacementId: string
@@ -241,6 +252,7 @@ export class ProductService {
           const actualLevel = replacements.reduce((acc, value) => acc + value.replacementActualLevel, 0);
           product.actualLevel = actualLevel;
           await this.updateProduct(user, product);
+          this.sendMessage(user, product, MessageType.STOCK_PRODUCT_RECHARGE);
           return productConsumptionCreated;
         } else {
           throw new HttpException(`Hubo un problema al consumir el producto: No hay suficiente producto`, HttpStatus.INTERNAL_SERVER_ERROR);

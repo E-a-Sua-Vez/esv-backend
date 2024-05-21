@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 import { ProductController } from './product.controller';
 import { Product, ProductReplacement, ProductConsumption } from './model/product.entity';
 import { ProductService } from './product.service';
+import { MessageModule } from '../message/message.module';
 
 @Module({
   imports: [
@@ -10,7 +11,8 @@ import { ProductService } from './product.service';
       Product,
       ProductReplacement,
       ProductConsumption
-    ])
+    ]),
+    forwardRef(() => MessageModule),
   ],
   providers: [ProductService],
   exports: [ProductService],

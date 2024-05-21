@@ -37,6 +37,20 @@ export class AdministratorService {
     return administrator;
   }
 
+  public async getAdministratorsByCommerce(businessId: string, commerceId: string): Promise<Administrator[]> {
+    const administratorsCommerce = await this.administratorRepository
+      .whereEqualTo('businessId', businessId)
+      .whereArrayContains('commercesId', commerceId)
+      .whereEqualTo('active', true)
+      .find();
+    const administratorsBusiness = await this.administratorRepository
+      .whereEqualTo('businessId', businessId)
+      .whereEqualTo('active', true)
+      .find();
+    const administratorsBusinessFiltered = administratorsBusiness.filter(administrator => !administrator.commercesId || administrator.commercesId.length === 0);
+    return [...administratorsBusinessFiltered, ...administratorsCommerce];
+  }
+
   public async getMasterAdministratorByEmail(email: string): Promise<Administrator> {
     const administrators = await this.administratorRepository
       .whereEqualTo('email', email)

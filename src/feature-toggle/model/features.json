@@ -214,5 +214,9 @@
   {
     "name": "email-post-attention",
     "type": "EMAIL"
+  },
+  {
+    "name": "stock-product-recharge",
+    "type": "MESSAGE"
   }
 ]
