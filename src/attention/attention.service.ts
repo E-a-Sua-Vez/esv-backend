@@ -869,7 +869,7 @@ export class AttentionService {
           const packageId = pack && pack.id ? pack.id : undefined;
           attention.paidAt = new Date();
           attention.paid = true;
-          if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate) {
+          if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate || confirmationData.paymentAmount === undefined || confirmationData.paymentAmount < 0) {
             throw new HttpException(`Datos insuficientes para confirmar el pago de la atención`, HttpStatus.INTERNAL_SERVER_ERROR);
           }
           confirmationData.user = user ? user : 'ett';

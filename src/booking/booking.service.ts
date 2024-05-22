@@ -738,8 +738,8 @@ export class BookingService {
           }
           if (this.featureToggleIsActive(featureToggle, 'booking-confirm-payment')){
             const packageId = pack && pack.id ? pack.id : undefined;
-            if (!confirmationData.skipPayment) {
-              if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate) {
+            if (confirmationData.processPaymentNow) {
+              if (confirmationData === undefined || confirmationData.paid === false || !confirmationData.paymentDate || confirmationData.paymentAmount === undefined || confirmationData.paymentAmount < 0) {
                 throw new HttpException(`Datos insuficientes para confirmar el pago de la reserva`, HttpStatus.INTERNAL_SERVER_ERROR);
               }
               confirmationData.user = user ? user : 'ett';
@@ -777,6 +777,9 @@ export class BookingService {
                   }
                 }
               }
+            } else {
+              confirmationData.paid = false;
+              booking.confirmationData = confirmationData;
             }
           }
           booking = await this.update(user, booking);

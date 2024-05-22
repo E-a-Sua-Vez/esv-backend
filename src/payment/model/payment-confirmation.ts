@@ -23,6 +23,6 @@ export class PaymentConfirmation {
   user: string;
   packageId: string;
   pendingPaymentId: string;
-  skipPayment: boolean;
+  processPaymentNow: boolean;
   confirmInstallments: boolean;
 }
