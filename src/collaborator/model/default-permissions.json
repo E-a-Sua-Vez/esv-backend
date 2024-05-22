@@ -8,6 +8,7 @@
   "collaborator.main-menu.queue-manage": true,
   "collaborator.main-menu.booking-manage": true,
   "collaborator.main-menu.product-stock": true,
+  "collaborator.main-menu.tracing": true,
   "collaborator.bookings.manage": true,
   "collaborator.bookings.transfer": true,
   "collaborator.bookings.admin": true,

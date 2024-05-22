@@ -28,7 +28,7 @@ export class RolController {
         return this.rolService.getRolByName(name);
     }
 
-    @UseGuards(AuthGuard)
+    //@UseGuards(AuthGuard)
     @Post('/init')
     public async initRol(@User() user): Promise<Rol[]> {
         return this.rolService.initRol(user);

@@ -125,6 +125,7 @@ export class NotificationService {
         TemplateData: JSON.stringify(templateData)
       };
       metadata = await this.emailNotify(email, data, template);
+      delete metadata.raw;
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
@@ -272,6 +273,7 @@ export class NotificationService {
         TemplateData: JSON.stringify(templateData)
       };
       metadata = await this.emailNotify(email, data, template);
+      delete metadata.raw;
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
@@ -358,6 +360,7 @@ export class NotificationService {
         TemplateData: JSON.stringify(templateData)
       };
       metadata = await this.emailNotify(email, data, template);
+      delete metadata.raw;
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
@@ -411,6 +414,7 @@ export class NotificationService {
         TemplateData: JSON.stringify(templateData)
       };
       metadata = await this.emailNotify(email, data, template);
+      delete metadata.raw;
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
@@ -462,6 +466,7 @@ export class NotificationService {
         TemplateData: JSON.stringify(templateData)
       };
       metadata = await this.emailNotify(email, data, template);
+      delete metadata.raw;
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
