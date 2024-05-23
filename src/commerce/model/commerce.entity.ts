@@ -44,6 +44,7 @@ export class ServiceInfo {
     specificCalendar: boolean;
     specificCalendarDays: Record<string, PersonalizedHour>;
     confirmNotificationDaysBefore: string;
+    surveyPostAttentionDaysAfter: string;
 }
 
 export class WhatsappConnection {

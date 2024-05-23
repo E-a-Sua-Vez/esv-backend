@@ -61,4 +61,6 @@ export class Attention {
     termsConditionsToAcceptCode?: string;
     termsConditionsAcceptedCode?: string;
     termsConditionsToAcceptedAt?: Date;
+    surveyPostAttentionDateScheduled?: string;
+    notificationSurveySent: boolean = false;
 }

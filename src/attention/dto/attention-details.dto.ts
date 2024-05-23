@@ -42,4 +42,5 @@ export class AttentionDetailsDto {
   servicesId: string[];
   servicesDetails: object[];
   clientId: string;
+  surveyPostAttentionDateScheduled: string;
 }

@@ -4,7 +4,7 @@ import { InjectRepository } from 'nestjs-fireorm';
 import { QueueService } from '../queue/queue.service';
 import { CollaboratorService } from '../collaborator/collaborator.service';
 import { AttentionStatus } from './model/attention-status.enum';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from '../notification/notification.service';
 import { UserService } from '../user/user.service';
 import { ModuleService } from '../module/module.service';
@@ -36,6 +36,8 @@ import * as NOTIFICATIONS from './notifications/notifications.js';
 import { DocumentsService } from 'src/documents/documents.service';
 import { Attachment } from 'src/notification/model/email-input.dto';
 import { Commerce } from 'src/commerce/model/commerce.entity';
+import { DateModel } from '../shared/utils/date.model';
+import Bottleneck from "bottleneck";
 
 @Injectable()
 export class AttentionService {
@@ -66,7 +68,6 @@ export class AttentionService {
     try {
       const attention = await this.getAttentionById(id);
       let attentionDetailsDto: AttentionDetailsDto = new AttentionDetailsDto();
-
       attentionDetailsDto.id = attention.id;
       attentionDetailsDto.commerceId = attention.commerceId;
       attentionDetailsDto.collaboratorId = attention.collaboratorId;
@@ -93,6 +94,7 @@ export class AttentionService {
       attentionDetailsDto.servicesId = attention.servicesId;
       attentionDetailsDto.servicesDetails = attention.servicesDetails;
       attentionDetailsDto.clientId = attention.clientId;
+      attentionDetailsDto.surveyPostAttentionDateScheduled = attention.surveyPostAttentionDateScheduled;
       if (attention.queueId) {
           attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
           attentionDetailsDto.commerce = await this.commerceService.getCommerceById(attentionDetailsDto.queue.commerceId);
@@ -145,6 +147,7 @@ export class AttentionService {
       attentionDetailsDto.servicesId = attention.servicesId;
       attentionDetailsDto.servicesDetails = attention.servicesDetails;
       attentionDetailsDto.clientId = attention.clientId;
+      attentionDetailsDto.surveyPostAttentionDateScheduled = attention.surveyPostAttentionDateScheduled;
       if (attention.userId !== undefined) {
           attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -283,6 +286,15 @@ export class AttentionService {
     return await this.attentionRepository
       .whereEqualTo('commerceId', commerceId)
       .whereIn('status', [AttentionStatus.PENDING])
+      .find();
+  }
+
+  public async getPostAttentionScheduledSurveys(date: string, limit: number = 100): Promise<Attention[]> {
+    return await this.attentionRepository
+      .whereEqualTo('surveyPostAttentionDateScheduled', date)
+      .whereIn('status', [AttentionStatus.TERMINATED])
+      .whereEqualTo('notificationSurveySent', false)
+      .limit(limit)
       .find();
   }
 
@@ -476,8 +488,14 @@ export class AttentionService {
       }
       const attentionCommerce = await this.commerceService.getCommerceDetails(attention.commerceId);
       const attentionDetails = await this.getAttentionDetails(attentionId);
-      this.csatEmail(attentionDetails, attentionCommerce);
-      this.csatWhatsapp(attentionDetails, attentionCommerce);
+      if (attentionCommerce.serviceInfo && attentionCommerce.serviceInfo.surveyPostAttentionDaysAfter) {
+        const daysToAdd = attentionCommerce.serviceInfo.surveyPostAttentionDaysAfter || 0;
+        const surveyPostAttentionDateScheduled = new DateModel().addDays(+daysToAdd).toString();
+        attention.surveyPostAttentionDateScheduled = surveyPostAttentionDateScheduled;
+      } else {
+        this.csatEmail(attentionDetails, attentionCommerce);
+        this.csatWhatsapp(attentionDetails, attentionCommerce);
+      }
       this.postAttentionEmail(attentionDetails, attentionCommerce);
       return this.update(user, attention);
     }
@@ -945,6 +963,45 @@ export class AttentionService {
       throw new HttpException(`Hubo un problema al cancelar la atención: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return attention;
+  }
+
+  public async surveyPostAttention(date: string): Promise<any> {
+    const limiter = new Bottleneck({
+      minTime: 1000,
+      maxConcurrent: 10
+    });
+    const responses = [];
+    const errors = [];
+    let toProcess = 0;
+    try {
+      const today = date || new DateModel().toString();
+      const attentions = await this.getPostAttentionScheduledSurveys(today, 25);
+      toProcess = attentions.length;
+      if (attentions && attentions.length > 0) {
+        for(let i = 0; i < attentions.length; i++) {
+          let attention = attentions[i];
+          limiter.schedule(async () => {
+            try {
+              const attentionDetails = await this.getAttentionDetails(attention.id);
+              const commerce = attentionDetails.commerce;
+              this.csatEmail(attentionDetails, commerce);
+              this.csatWhatsapp(attentionDetails, commerce);
+              attention.notificationSurveySent = true;
+              attention = await this.update('ett', attention);
+            } catch (error) {
+              errors.push(error);
+            }
+            responses.push(attention);
+          });
+        }
+        await limiter.stop({ dropWaitingJobs: false });
+      }
+      const response = { toProcess, processed: responses.length, errors: errors.length };
+      Logger.log(`surveyPostAttention response: ${JSON.stringify(response)}`);
+      return response;
+    } catch (error) {
+      throw new HttpException(`Hubo un poblema al enviar las encuestas: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
 }

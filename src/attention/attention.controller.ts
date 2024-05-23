@@ -159,6 +159,7 @@ export class AttentionController {
         return this.attentionService.attentionPaymentConfirm(user, id, paymentConfirmationData);
     }
 
+    @UseGuards(AuthGuard)
     @Patch('/transfer/:id')
     public async transferAttentionToQueue(@User() user, @Param() params: any, @Body() body: any): Promise<Attention> {
         const { id } = params;
@@ -171,5 +172,12 @@ export class AttentionController {
     public async getPendingCommerceBookings(@Param() params: any): Promise<any> {
         const { commerceId } = params;
         return this.attentionService.getPendingCommerceAttentions(commerceId);
+    }
+
+    //@UseGuards(SimpleGuard)
+    @Post('/scheduled-surveys')
+    public async surveyPostAttention( @Body() body: any): Promise<any> {
+        const { date } = body;
+        return this.attentionService.surveyPostAttention(date);
     }
 }
