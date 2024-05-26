@@ -4,6 +4,7 @@ import { Queue } from './model/queue.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { SimpleGuard } from '../auth/simple.guard';
 import { User } from 'src/auth/user.decorator';
+import { QueueDetailsDto } from './dto/queue-details.dto';
 
 @Controller('queue')
 export class QueueController {
@@ -32,7 +33,7 @@ export class QueueController {
 
     @UseGuards(AuthGuard)
     @Get('grouped/commerce/:commerceId')
-    public async getGroupedQueueByCommerce(@Param() params: any): Promise<Record<string, Queue[]>> {
+    public async getGroupedQueueByCommerce(@Param() params: any): Promise<Record<string, QueueDetailsDto[]>> {
         const { commerceId } = params;
         return this.queueService.getGroupedQueueByCommerce(commerceId);
     }

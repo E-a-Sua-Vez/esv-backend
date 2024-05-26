@@ -3,6 +3,7 @@ import { CollaboratorService } from './collaborator.service';
 import { Collaborator } from './model/collaborator.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
+import { CollaboratorDetailsDto } from './dto/collaborator-details.dto';
 
 @Controller('collaborator')
 export class CollaboratorController {
@@ -37,9 +38,16 @@ export class CollaboratorController {
 
     @UseGuards(AuthGuard)
     @Get('/commerceId/:commerceId')
-    public async getCollaboratorsByCommerceId(@Param() params: any): Promise<Collaborator[]> {
+    public async getCollaboratorsByCommerceId(@Param() params: any): Promise<CollaboratorDetailsDto[]> {
         const { commerceId } = params;
         return this.collaboratorService.getCollaboratorsByCommerceId(commerceId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('/details/commerceId/:commerceId')
+    public async getDetailsCollaboratorsByCommerceId(@Param() params: any): Promise<CollaboratorDetailsDto[]> {
+        const { commerceId } = params;
+        return this.collaboratorService.getDetailsCollaboratorsByCommerceId(commerceId);
     }
 
     @UseGuards(AuthGuard)

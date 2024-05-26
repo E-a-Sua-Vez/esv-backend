@@ -4,6 +4,7 @@ import { Commerce } from './model/commerce.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 import { SimpleGuard } from '../auth/simple.guard';
+import { CommerceKeyNameDetailsDto } from './dto/commerce-keyname-details.dto';
 
 @Controller('commerce')
 export class CommerceController {
@@ -19,14 +20,14 @@ export class CommerceController {
 
     @UseGuards(AuthGuard)
     @Get('details/:id')
-    public async getCommerceDetails(@Param() params: any): Promise<Commerce> {
+    public async getCommerceDetails(@Param() params: any): Promise<CommerceKeyNameDetailsDto> {
         const { id } = params;
         return this.commerceService.getCommerceDetails(id);
     }
 
     @UseGuards(AuthGuard)
     @Get('/keyName/:keyName')
-    public async getCommerceByKeyName(@Param() params: any): Promise<Commerce> {
+    public async getCommerceByKeyName(@Param() params: any): Promise<CommerceKeyNameDetailsDto> {
         const { keyName } = params;
         return this.commerceService.getCommerceByKeyName(keyName);
     }

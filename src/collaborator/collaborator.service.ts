@@ -10,6 +10,7 @@ import { PermissionService } from 'src/permission/permission.service';
 import * as defaultPermissions from './model/default-permissions.json';
 import { CollaboratorType } from './model/collaborator-type.enum';
 import { ServiceService } from '../service/service.service';
+import { CollaboratorDetailsDto } from './dto/collaborator-details.dto';
 
 @Injectable()
 export class CollaboratorService {
@@ -65,7 +66,7 @@ export class CollaboratorService {
     return collaborator[0];
   }
 
-  public async getCollaboratorsByCommerceId(commerceId: string): Promise<Collaborator[]> {
+  public async getCollaboratorsByCommerceId(commerceId: string): Promise<CollaboratorDetailsDto[]> {
     let collaborators = [];
     const result = await this.collaboratorRepository
     .whereEqualTo('commerceId', commerceId)
@@ -78,6 +79,36 @@ export class CollaboratorService {
         collaborator.services = await this.serviceService.getServicesById(collaborator.servicesId);
       }
       collaborators.push(collaborator);
+    }
+    return collaborators;
+  }
+
+  public async getDetailsCollaboratorsByCommerceId(commerceId: string): Promise<CollaboratorDetailsDto[]> {
+    let collaborators = [];
+    const result = await this.collaboratorRepository
+    .whereEqualTo('commerceId', commerceId)
+    .whereEqualTo('available', true)
+    .orderByAscending('name')
+    .find();
+    for (let i = 0; i < result.length; i++) {
+      const collaborator = result[i];
+      if (collaborator.servicesId && collaborator.servicesId.length > 0) {
+        collaborator.services = await this.serviceService.getServicesById(collaborator.servicesId);
+      }
+      let collaboratorDetailsDto: CollaboratorDetailsDto = new CollaboratorDetailsDto();
+      collaboratorDetailsDto.id = collaborator.id;
+      collaboratorDetailsDto.name = collaborator.name;
+      collaboratorDetailsDto.active = collaborator.active;
+      collaboratorDetailsDto.commerceId = collaborator.commerceId;
+      collaboratorDetailsDto.commercesId = collaborator.commercesId;
+      collaboratorDetailsDto.type = collaborator.type;
+      collaboratorDetailsDto.alias = collaborator.alias;
+      collaboratorDetailsDto.moduleId = collaborator.moduleId;
+      collaboratorDetailsDto.bot = collaborator.bot;
+      collaboratorDetailsDto.servicesId = collaborator.servicesId;
+      collaboratorDetailsDto.available = collaborator.available;
+      collaboratorDetailsDto.services = collaborator.services;
+      collaborators.push(collaboratorDetailsDto);
     }
     return collaborators;
   }

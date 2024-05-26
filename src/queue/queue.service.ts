@@ -8,6 +8,7 @@ import QueueUpdated from './events/QueueUpdated';
 import { timeConvert } from 'src/shared/utils/date';
 import { QueueType } from './model/queue-type.enum';
 import { ServiceService } from '../service/service.service';
+import { QueueDetailsDto } from './dto/queue-details.dto';
 
 @Injectable()
 export class QueueService {
@@ -51,17 +52,35 @@ export class QueueService {
     return queues;
   }
 
-  public async getGroupedQueueByCommerce(commerceId: string): Promise<Record<string, Queue[]>> {
+  public async getGroupedQueueByCommerce(commerceId: string): Promise<Record<string, QueueDetailsDto[]>> {
     let groupedQueues = {};
-    let queues: Queue[] = [];
+    let queues: QueueDetailsDto[] = [];
     const result = await this.getActiveOnlineQueuesByCommerce(commerceId);
     if (result && result.length > 0) {
       for (let i = 0; i < result.length; i++) {
+        let queueDetailsDto: QueueDetailsDto = new QueueDetailsDto();
         const queue = result[i];
         if ([QueueType.SERVICE, QueueType.MULTI_SERVICE].includes(queue.type)) {
           queue.services = await this.serviceService.getServicesById(queue.servicesId || [queue.serviceId])
         }
-        queues.push(this.getQueueBlockDetails(queue));
+        queueDetailsDto.id = queue.id;
+        queueDetailsDto.commerceId = queue.commerceId;
+        queueDetailsDto.collaboratorId = queue.collaboratorId;
+        queueDetailsDto.type = queue.type;
+        queueDetailsDto.active = queue.active;
+        queueDetailsDto.available = queue.available;
+        queueDetailsDto.online = queue.online;
+        queueDetailsDto.limit = queue.limit;
+        queueDetailsDto.name = queue.name;
+        queueDetailsDto.tag = queue.tag;
+        queueDetailsDto.order = queue.order;
+        queueDetailsDto.estimatedTime = queue.estimatedTime;
+        queueDetailsDto.blockTime = queue.blockTime;
+        queueDetailsDto.serviceId = queue.serviceId;
+        queueDetailsDto.serviceInfo = queue.serviceInfo;
+        queueDetailsDto.servicesId = queue.servicesId;
+        queueDetailsDto.services = queue.services;
+        queues.push(queueDetailsDto);
       }
       if (queues && queues.length > 0) {
         groupedQueues = queues.reduce((acc, conf) => {
@@ -101,24 +120,13 @@ export class QueueService {
 
   public async getActiveOnlineQueuesByCommerce(commerceId: string): Promise<Queue[]> {
     let queues: Queue[] = [];
-    const result = await this.queueRepository
+    queues = await this.queueRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
       .whereEqualTo('online', true)
       .orderByAscending('order')
       .find();
-    if (result && result.length > 0) {
-      for (let i = 0; i < result.length; i++) {
-        const queue = result[i];
-        if (queue.type === QueueType.SERVICE) {
-          if (queue.serviceId) {
-            queue.services = await this.serviceService.getServicesById([queue.serviceId]);
-          }
-        }
-        queues.push(this.getQueueBlockDetails(queue));
-      }
-    }
     return queues;
   }
 

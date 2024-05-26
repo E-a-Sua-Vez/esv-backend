@@ -38,6 +38,8 @@ import { Attachment } from 'src/notification/model/email-input.dto';
 import { Commerce } from 'src/commerce/model/commerce.entity';
 import { DateModel } from '../shared/utils/date.model';
 import Bottleneck from "bottleneck";
+import { CommerceKeyNameDetailsDto } from 'src/commerce/dto/commerce-keyname-details.dto';
+import { FeatureToggleDetailsDto } from '../feature-toggle/dto/feature-toggle-details.dto';
 
 @Injectable()
 export class AttentionService {
@@ -521,7 +523,7 @@ export class AttentionService {
     return attention;
   }
 
-  featureToggleIsActive(featureToggle: FeatureToggle[], name: string): boolean {
+  featureToggleIsActive(featureToggle: FeatureToggleDetailsDto[], name: string): boolean {
     const feature = featureToggle.find(elem => elem.name === name);
     if (feature) {
       return feature.active;
@@ -656,7 +658,7 @@ export class AttentionService {
     return notified;
   }
 
-  public async csatEmail(attention: AttentionDetailsDto, attentionCommerce: Commerce): Promise<Attention[]> {
+  public async csatEmail(attention: AttentionDetailsDto, attentionCommerce: CommerceKeyNameDetailsDto): Promise<Attention[]> {
     const featureToggle = attentionCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'email-csat')){
@@ -680,7 +682,7 @@ export class AttentionService {
     return notified;
   }
 
-  public async postAttentionEmail(attention: AttentionDetailsDto, attentionCommerce: Commerce): Promise<Attention[]> {
+  public async postAttentionEmail(attention: AttentionDetailsDto, attentionCommerce: CommerceKeyNameDetailsDto): Promise<Attention[]> {
     const featureToggle = attentionCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'email-post-attention')){
@@ -736,7 +738,7 @@ export class AttentionService {
     return notified;
   }
 
-  public async csatWhatsapp(attention: AttentionDetailsDto, attentionCommerce: Commerce): Promise<Attention[]> {
+  public async csatWhatsapp(attention: AttentionDetailsDto, attentionCommerce: CommerceKeyNameDetailsDto): Promise<Attention[]> {
     const featureToggle = attentionCommerce.features;
     let toNotify = [];
     if(this.featureToggleIsActive(featureToggle, 'whatsapp-csat')){

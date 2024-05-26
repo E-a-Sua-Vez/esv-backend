@@ -7,6 +7,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import FeatureToggleUpdated from './events/FeatureToggleUpdated';
 import FeatureToggleCreated from './events/FeatureToggleCreated';
 import * as features from './model/features.json';
+import { FeatureToggleDetailsDto } from './dto/feature-toggle-details.dto';
 
 export class FeatureToggleService {
   constructor(
@@ -29,6 +30,23 @@ export class FeatureToggleService {
     .whereEqualTo('commerceId', commerceId)
     .orderByAscending('type')
     .find();
+    return result;
+  }
+  public async getFeatureToggleDetailsByCommerceId(commerceId: string): Promise<FeatureToggleDetailsDto[]> {
+    const result: FeatureToggleDetailsDto[] = [];
+    const features = await this.featureToggleRepository
+    .whereEqualTo('commerceId', commerceId)
+    .orderByAscending('type')
+    .find();
+    if (features && features.length > 0) {
+      features.forEach(feature => {
+        let featureToggleDetailsDto: FeatureToggleDetailsDto = new FeatureToggleDetailsDto();
+        featureToggleDetailsDto.name = feature.name;
+        featureToggleDetailsDto.active = feature.active;
+        featureToggleDetailsDto.type= feature.type;
+        result.push(featureToggleDetailsDto);
+      })
+    }
     return result;
   }
   public async getFeatureToggleByNameAndCommerceId(commerceId: string, name: string): Promise<FeatureToggle> {
