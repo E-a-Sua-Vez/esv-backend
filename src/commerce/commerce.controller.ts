@@ -47,7 +47,7 @@ export class CommerceController {
 
     @UseGuards(AuthGuard)
     @Get('/businessId/:businessId/active')
-    public async getActiveCommercesByBusinessId(@Param() params: any): Promise<Commerce[]> {
+    public async getActiveCommercesByBusinessId(@Param() params: any): Promise<CommerceKeyNameDetailsDto[]> {
         const { businessId } = params;
         return this.commerceService.getActiveCommercesByBusinessId(businessId);
     }

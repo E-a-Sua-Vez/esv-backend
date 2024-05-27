@@ -3,6 +3,7 @@ import { BusinessService } from './business.service';
 import { Business, WhatsappConnection } from './model/business.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
+import { BusinessKeyNameDetailsDto } from './dto/business-keyname-details.dto';
 
 @Controller('business')
 export class BusinessController {
@@ -18,7 +19,7 @@ export class BusinessController {
 
     @UseGuards(AuthGuard)
     @Get('/keyName/:keyName')
-    public async getBusinessByKeyName(@Param() params: any): Promise<Business> {
+    public async getBusinessByKeyName(@Param() params: any): Promise<BusinessKeyNameDetailsDto> {
         const { keyName } = params;
         return this.businessService.getBusinessByKeyName(keyName);
     }

@@ -13,6 +13,7 @@ import { NotificationClient } from 'src/notification/infrastructure/notification
 import BusinessWhatsappConnectionRequested from './events/BusinessWhatsappConnectionRequested';
 import BusinessWhatsappConnectionCreated from './events/BusinessWhatsappConnectionCreated';
 import BusinessWhatsappConnectionDisconnected from './events/BusinessWhatsappConnectionDisconnected';
+import { BusinessKeyNameDetailsDto } from './dto/business-keyname-details.dto';
 
 @Injectable()
 export class BusinessService {
@@ -45,7 +46,8 @@ export class BusinessService {
     return businesses;
   }
 
-  public async getBusinessByKeyName(keyName: string): Promise<Business> {
+  public async getBusinessByKeyName(keyName: string): Promise<BusinessKeyNameDetailsDto> {
+    let businessKeyNameDetailsDto: BusinessKeyNameDetailsDto = new BusinessKeyNameDetailsDto();
     let business = await this.businessRepository.whereEqualTo('keyName', keyName).find();
     let businessAux = undefined;
     if (business && business.length > 0) {
@@ -54,7 +56,15 @@ export class BusinessService {
     if (businessAux) {
       businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessId(businessAux.id);
     }
-    return businessAux;
+    businessKeyNameDetailsDto.id = businessAux.id;
+    businessKeyNameDetailsDto.name = businessAux.name;
+    businessKeyNameDetailsDto.keyName = businessAux.keyName;
+    businessKeyNameDetailsDto.logo = businessAux.logo;
+    businessKeyNameDetailsDto.active = businessAux.active;
+    businessKeyNameDetailsDto.available = businessAux.available;
+    businessKeyNameDetailsDto.category = businessAux.category;
+    businessKeyNameDetailsDto.commerces = businessAux.commerces;
+    return businessKeyNameDetailsDto;
   }
 
   public async createBusiness(user: string, name: string, keyName: string, country: string, email: string, logo: string, phone: string, url: string, category: Category, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, partnerId: string): Promise<Business> {

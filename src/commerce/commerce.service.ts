@@ -143,8 +143,8 @@ export class CommerceService {
     return commerces;
   }
 
-  public async getActiveCommercesByBusinessId(businessId: string): Promise<Commerce[]> {
-    let commercesToReturn = [];
+  public async getActiveCommercesByBusinessId(businessId: string): Promise<CommerceKeyNameDetailsDto[]> {
+    let commercesToReturn: CommerceKeyNameDetailsDto[] = [];
     const commerces = await this.commerceRepository
       .whereEqualTo('businessId', businessId)
       .whereEqualTo('active', true)
@@ -154,8 +154,22 @@ export class CommerceService {
     if (commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
         let commerceAux = commerces[i];
+        let commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
         commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
-        commercesToReturn.push(commerceAux);
+        commerceKeyNameDetailsDto.id = commerceAux.id;
+        commerceKeyNameDetailsDto.name = commerceAux.name;
+        commerceKeyNameDetailsDto.keyName = commerceAux.keyName;
+        commerceKeyNameDetailsDto.tag = commerceAux.tag;
+        commerceKeyNameDetailsDto.email = commerceAux.email;
+        commerceKeyNameDetailsDto.logo = commerceAux.logo;
+        commerceKeyNameDetailsDto.active = commerceAux.active;
+        commerceKeyNameDetailsDto.category = commerceAux.category;
+        commerceKeyNameDetailsDto.available = commerceAux.available;
+        commerceKeyNameDetailsDto.localeInfo = commerceAux.localeInfo;
+        commerceKeyNameDetailsDto.serviceInfo = commerceAux.serviceInfo;
+        commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo ;
+        commerceKeyNameDetailsDto.features = commerceAux.features;
+        commercesToReturn.push(commerceKeyNameDetailsDto);
       }
     }
     return commercesToReturn;

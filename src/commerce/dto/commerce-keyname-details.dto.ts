@@ -12,6 +12,7 @@ export class CommerceKeyNameDetailsDto {
   available: boolean;
   category: string;
   tag: string;
+  email: string;
   localeInfo: LocaleInfo;
   serviceInfo: ServiceInfo;
   contactInfo: ContactInfo;
