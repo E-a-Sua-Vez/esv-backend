@@ -175,6 +175,37 @@ export class CommerceService {
     return commercesToReturn;
   }
 
+  public async getActiveCommercesByBusinessKeyName(businessId: string): Promise<CommerceKeyNameDetailsDto[]> {
+    let commercesToReturn: CommerceKeyNameDetailsDto[] = [];
+    const commerces = await this.commerceRepository
+      .whereEqualTo('businessId', businessId)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('tag')
+      .find();
+    if (commerces.length > 0) {
+      for (let i = 0; i < commerces.length; i++) {
+        let commerceAux = commerces[i];
+        let commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
+        commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
+        commerceKeyNameDetailsDto.id = commerceAux.id;
+        commerceKeyNameDetailsDto.name = commerceAux.name;
+        commerceKeyNameDetailsDto.keyName = commerceAux.keyName;
+        commerceKeyNameDetailsDto.tag = commerceAux.tag;
+        commerceKeyNameDetailsDto.logo = commerceAux.logo;
+        commerceKeyNameDetailsDto.active = commerceAux.active;
+        commerceKeyNameDetailsDto.category = commerceAux.category;
+        commerceKeyNameDetailsDto.available = commerceAux.available;
+        commerceKeyNameDetailsDto.localeInfo = commerceAux.localeInfo;
+        commerceKeyNameDetailsDto.serviceInfo = commerceAux.serviceInfo;
+        commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo ;
+        commerceKeyNameDetailsDto.features = commerceAux.features;
+        commercesToReturn.push(commerceKeyNameDetailsDto);
+      }
+    }
+    return commercesToReturn;
+  }
+
   public async createCommerce(user: string, name: string, keyName: string, tag: string, businessId: string, country: Country, email: string, logo: string, phone: string, url: string, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, category: Category): Promise<Commerce> {
     let commerce = new Commerce();
     commerce.businessId = businessId;

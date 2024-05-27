@@ -54,7 +54,7 @@ export class BusinessService {
       businessAux = business[0];
     }
     if (businessAux) {
-      businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessId(businessAux.id);
+      businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessKeyName(businessAux.id);
     }
     businessKeyNameDetailsDto.id = businessAux.id;
     businessKeyNameDetailsDto.name = businessAux.name;
