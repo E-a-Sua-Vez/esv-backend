@@ -170,6 +170,17 @@ export class BookingService {
     return bookingCreated;
   }
 
+  public async validateBookingBlocks(booking: Booking) {
+    let blocks: Block[] = [];
+    const block = booking.block;
+    if (block.blocks && block.blocks.length > 0) {
+      blocks = block.blocks;
+    } else {
+      blocks.push(block);
+    }
+
+  }
+
   public async getBookingsByDate(date: string): Promise<Booking[]> {
     return await this.bookingRepository
       .whereEqualTo('date', date)
