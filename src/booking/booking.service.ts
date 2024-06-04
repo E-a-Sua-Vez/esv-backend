@@ -22,7 +22,7 @@ import { Attention } from 'src/attention/model/attention.entity';
 import { WaitlistService } from '../waitlist/waitlist.service';
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
-import { Block } from '../waitlist/model/waitlist.entity';
+import { Block } from '../booking/model/booking.entity';
 import { AttentionType } from 'src/attention/model/attention-type.enum';
 import Bottleneck from "bottleneck";
 import BookingUpdated from './events/BookingUpdated';
@@ -43,6 +43,8 @@ import { DocumentsService } from '../documents/documents.service';
 import { Attachment } from 'src/notification/model/email-input.dto';
 import { DateModel } from 'src/shared/utils/date.model';
 import { Commerce } from 'src/commerce/model/commerce.entity';
+import { BookingBlockNumberUsedService } from 'src/booking-block-number-used/booking-block-number-used.service';
+import { Queue } from 'src/queue/model/queue.entity';
 
 @Injectable()
 export class BookingService {
@@ -60,7 +62,8 @@ export class BookingService {
     private incomeService: IncomeService,
     private packageService: PackageService,
     private userService: UserService,
-    private documentsService: DocumentsService
+    private documentsService: DocumentsService,
+    private bookingBlockNumbersUsedService: BookingBlockNumberUsedService
   ) { }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -76,13 +79,18 @@ export class BookingService {
       status?: BookingStatus,
       servicesId?: string[],
       servicesDetails?: object[],
-      clientId?: string
+      clientId?: string,
+      sessionId?: string
     ): Promise<Booking> {
     let bookingCreated;
     let queue = await this.queueService.getQueueById(queueId);
     const commerce = await this.commerceService.getCommerceById(queue.commerceId);
     if (user && (user.acceptTermsAndConditions === false || !user.acceptTermsAndConditions)) {
       throw new HttpException(`No ha aceptado los terminos y condiciones`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    const validateBookingBlocks = await this.validateBookingBlocks(sessionId, queue, date, block);
+    if (validateBookingBlocks === false) {
+      throw new HttpException(`Al menos un bloque horario ya fue reservado`, HttpStatus.CONFLICT);
     }
     const [year, month, day] = date.split('-');
     const dateFormatted = new Date(+year, +month-1, +day);
@@ -170,15 +178,39 @@ export class BookingService {
     return bookingCreated;
   }
 
-  public async validateBookingBlocks(booking: Booking) {
+  public async validateBookingBlocks(sessionId: string, queue: Queue, date: string, block: Block) {
     let blocks: Block[] = [];
-    const block = booking.block;
+    let queueLimit = 1;
+    if (queue && queue.id && queue.serviceInfo && queue.serviceInfo.blockLimit) {
+      queueLimit = queue.serviceInfo.blockLimit || 1;
+    }
     if (block.blocks && block.blocks.length > 0) {
       blocks = block.blocks;
     } else {
       blocks.push(block);
     }
-
+    const takenBlocks = await this.bookingBlockNumbersUsedService.getTakenBookingsBlocksByDate(sessionId, queue.id, date);
+    if (takenBlocks && takenBlocks.length > 0) {
+      const takenHoursFrom = takenBlocks.map(block => block.hourFrom);
+      const requestedHoursFrom = blocks.map(block => block.hourFrom);
+      if (queueLimit === 1) {
+        const includesAll = requestedHoursFrom.every(hour => takenHoursFrom.includes(hour));
+        if (includesAll) {
+          return false;
+        }
+        return true;
+      } else {
+        const checkedHours = requestedHoursFrom.every(hour => {
+          const count = takenHoursFrom.filter(hr => hr === hour).length;
+          if (count < queueLimit) {
+            return true;
+          }
+        })
+        return checkedHours;
+      }
+    } else {
+      return true;
+    }
   }
 
   public async getBookingsByDate(date: string): Promise<Booking[]> {
@@ -696,6 +728,7 @@ export class BookingService {
         booking.cancelledAt = new Date();
         booking.cancelled = true;
         let bookingCancelled = await this.update(user, booking);
+        this.bookingBlockNumbersUsedService.deleteTakenBookingsBlocksByDate(booking.queueId, booking.date, booking.block);
         await this.waitlistService.notifyWaitListFormCancelledBooking(bookingCancelled);
         await this.bookingCancelWhatsapp(bookingCancelled);
         const packs = await this.packageService.getPackageByCommerceIdAndClientId(bookingCancelled.commerceId, bookingCancelled.clientId);

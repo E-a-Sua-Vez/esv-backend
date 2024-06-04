@@ -18,6 +18,7 @@ import { IncomeModule } from '../income/income.module';
 import { PackageModule } from '../package/package.module';
 import { ServiceModule } from 'src/service/service.module';
 import { DocumentsModule } from '../documents/documents.module';
+import { BookingBlockNumberUsedModule } from 'src/booking-block-number-used/booking-block-number-used.module';
 
 @Module({
   imports: [
@@ -37,13 +38,16 @@ import { DocumentsModule } from '../documents/documents.module';
     forwardRef(() => UserModule),
     forwardRef(() => ServiceModule),
     forwardRef(() => PackageModule),
-    forwardRef(() => DocumentsModule)
+    forwardRef(() => DocumentsModule),
+    forwardRef(() => BookingBlockNumberUsedModule)
   ],
   providers: [
     BookingService,
     BookingDefaultBuilder
   ],
-  exports: [BookingService],
+  exports: [
+    BookingService
+  ],
   controllers: [BookingController],
 })
 export class BookingModule {}

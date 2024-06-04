@@ -1,6 +1,6 @@
 import { Collection } from 'fireorm';
 
-@Collection('booking-block-numbers-used')
+@Collection('booking-block-number-used')
 export class BookingBlockNumberUsed {
     id: string;
     sessionId: string;
