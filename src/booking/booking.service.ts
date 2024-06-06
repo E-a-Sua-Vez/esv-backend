@@ -88,8 +88,9 @@ export class BookingService {
     if (user && (user.acceptTermsAndConditions === false || !user.acceptTermsAndConditions)) {
       throw new HttpException(`No ha aceptado los terminos y condiciones`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    const validateBookingBlocks = await this.validateBookingBlocks(sessionId, queue, date, block);
+    const validateBookingBlocks = await this.validateBookingBlocksToCreate(sessionId, queue, date, block);
     if (validateBookingBlocks === false) {
+      await this.bookingBlockNumbersUsedService.deleteTakenBookingsBlocksByDate(sessionId, queueId, date, block);
       throw new HttpException(`Al menos un bloque horario ya fue reservado`, HttpStatus.CONFLICT);
     }
     const [year, month, day] = date.split('-');
@@ -178,7 +179,7 @@ export class BookingService {
     return bookingCreated;
   }
 
-  public async validateBookingBlocks(sessionId: string, queue: Queue, date: string, block: Block) {
+  public async validateBookingBlocksToCreate(sessionId: string, queue: Queue, date: string, block: Block) {
     let blocks: Block[] = [];
     let queueLimit = 1;
     if (queue && queue.id && queue.serviceInfo && queue.serviceInfo.blockLimit) {
@@ -189,7 +190,46 @@ export class BookingService {
     } else {
       blocks.push(block);
     }
-    const takenBlocks = await this.bookingBlockNumbersUsedService.getTakenBookingsBlocksByDate(sessionId, queue.id, date);
+    const takenBlocks = await this.bookingBlockNumbersUsedService.getTakenBookingsBlocksByDate(undefined, queue.id, date);
+    if (takenBlocks && takenBlocks.length > 0) {
+      const takenHoursFrom = takenBlocks.filter(block => block.sessionId !== sessionId).map(block => block.hourFrom);
+      const requestedHoursFrom = blocks.map(block => block.hourFrom);
+      if (queueLimit === 1) {
+        if (takenBlocks.length === 1) {
+          return true;
+        } else {
+          const includesAll = requestedHoursFrom.every(hour => takenHoursFrom.includes(hour));
+          if (includesAll) {
+            return false;
+          }
+        }
+        return true;
+      } else {
+        const checkedHours = requestedHoursFrom.every(hour => {
+          const count = takenHoursFrom.filter(hr => hr === hour).length;
+          if (count < queueLimit) {
+            return true;
+          }
+        })
+        return checkedHours;
+      }
+    } else {
+      return true;
+    }
+  }
+
+  public async validateBookingBlocks(queue: Queue, date: string, block: Block) {
+    let blocks: Block[] = [];
+    let queueLimit = 1;
+    if (queue && queue.id && queue.serviceInfo && queue.serviceInfo.blockLimit) {
+      queueLimit = queue.serviceInfo.blockLimit || 1;
+    }
+    if (block.blocks && block.blocks.length > 0) {
+      blocks = block.blocks;
+    } else {
+      blocks.push(block);
+    }
+    const takenBlocks = await this.bookingBlockNumbersUsedService.getTakenBookingsBlocksByDate(undefined, queue.id, date);
     if (takenBlocks && takenBlocks.length > 0) {
       const takenHoursFrom = takenBlocks.map(block => block.hourFrom);
       const requestedHoursFrom = blocks.map(block => block.hourFrom);
@@ -728,7 +768,7 @@ export class BookingService {
         booking.cancelledAt = new Date();
         booking.cancelled = true;
         let bookingCancelled = await this.update(user, booking);
-        this.bookingBlockNumbersUsedService.deleteTakenBookingsBlocksByDate(booking.queueId, booking.date, booking.block);
+        this.bookingBlockNumbersUsedService.deleteTakenBookingsBlocksByDate(undefined, booking.queueId, booking.date, booking.block);
         await this.waitlistService.notifyWaitListFormCancelledBooking(bookingCancelled);
         await this.bookingCancelWhatsapp(bookingCancelled);
         const packs = await this.packageService.getPackageByCommerceIdAndClientId(bookingCancelled.commerceId, bookingCancelled.clientId);
@@ -1096,20 +1136,22 @@ export class BookingService {
     let booking = undefined;
     try {
       booking = await this.getBookingById(id);
+      const queueIdFrom = booking.queueId;
       const queueToTransfer = await this.queueService.getQueueById(queueId);
       if (booking && booking.id) {
         if (queueToTransfer && queueToTransfer.id) {
-          if (queueToTransfer.type === QueueType.COLLABORATOR) {
-            booking.transfered = true;
-            booking.transferedAt = new Date();
-            booking.transferedOrigin = booking.queueId;
-            booking.queueId = queueId;
-            booking.transferedCount = booking.transferedCount ? booking.transferedCount + 1 : 1;
-            booking.transferedBy = user;
-            booking = await this.update(user, booking);
-          } else {
-            throw new HttpException(`Reserva ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`, HttpStatus.NOT_FOUND);
+          const validateBookingBlocks = await this.validateBookingBlocks(queueToTransfer, booking.date, booking.block);
+          if (validateBookingBlocks === false) {
+            throw new HttpException(`Al menos un bloque horario ya fue reservado`, HttpStatus.CONFLICT);
           }
+          booking.transfered = true;
+          booking.transferedAt = new Date();
+          booking.transferedOrigin = booking.queueId;
+          booking.queueId = queueId;
+          booking.transferedCount = booking.transferedCount ? booking.transferedCount + 1 : 1;
+          booking.transferedBy = user;
+          booking = await this.update(user, booking);
+          this.bookingBlockNumbersUsedService.editQueueTakenBookingsBlocksByDate(queueIdFrom, booking.date, booking.block, booking.queueId);
         } else {
           throw new HttpException(`Cola no existe: ${queueId}`, HttpStatus.NOT_FOUND);
         }
@@ -1128,6 +1170,15 @@ export class BookingService {
       booking = await this.getBookingById(id);
       if (booking && booking.id) {
         if (date && block) {
+          const queue = await this.queueService.getQueueById(booking.queueId);
+          const validateBookingBlocks = await this.validateBookingBlocks(queue, date, block);
+          if (validateBookingBlocks === false) {
+            throw new HttpException(`Al menos un bloque horario ya fue reservado`, HttpStatus.CONFLICT);
+          }
+          const dateFrom = booking.date;
+          const blockFrom = booking.block;
+          const dateTo = date;
+          const blockTo = block;
           booking.edited = true;
           booking.editedAt = new Date();
           booking.editedDateOrigin = booking.date;
@@ -1139,6 +1190,7 @@ export class BookingService {
           booking.editedCount = booking.editedCount ? booking.editedCount + 1 : 1;
           booking.editedBy = user;
           booking = await this.update(user, booking);
+          this.bookingBlockNumbersUsedService.editHourAndDateTakenBookingsBlocksByDate(queue.id, dateFrom, blockFrom, dateTo, blockTo);
         } else {
           throw new HttpException(`Datos para editar no son correctos: Date: ${date}, Block: ${JSON.stringify(block)}`, HttpStatus.BAD_REQUEST);
         }
