@@ -198,12 +198,22 @@ export class BookingService {
         if (takenBlocks.length === 1) {
           return true;
         } else {
-          const includesAll = requestedHoursFrom.every(hour => takenHoursFrom.includes(hour));
-          if (includesAll) {
-            return false;
+          const includesAll = requestedHoursFrom.every(hour => {
+            const count = takenHoursFrom.filter(hr => hr === hour).length;
+            if (count < queueLimit) {
+              return true;
+            }
+          })
+          if (includesAll === false) {
+            if (requestedHoursFrom.length > 1) {
+              const pos = takenBlocks.findIndex(block => block.sessionId === sessionId);
+              if (pos <= (requestedHoursFrom.length - 1)) {
+                return true;
+              }
+            }
           }
+          return includesAll;
         }
-        return true;
       } else {
         const checkedHours = requestedHoursFrom.every(hour => {
           const count = takenHoursFrom.filter(hr => hr === hour).length;
