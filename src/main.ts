@@ -4,7 +4,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { GcpLoggerService } from './shared/logger/gcp-logger.service';
 
 async function bootstrap(): Promise<void> {

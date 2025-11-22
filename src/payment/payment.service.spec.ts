@@ -1,6 +1,5 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
 
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 
@@ -45,6 +44,7 @@ describe('PaymentService', () => {
         {
           provide: PaymentService,
           useFactory: (logger: GcpLoggerService) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const service = new PaymentService(mockRepository as any, logger);
             return service;
           },

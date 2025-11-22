@@ -1,7 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
-import { NotificationClient } from './infrastructure/notification-client';
 import { NotificationChannel } from './model/notification-channel.enum';
 import { NotificationType } from './model/notification-type.enum';
 import { Notification } from './model/notification.entity';
@@ -17,27 +13,18 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 // Mock nestjs-fireorm
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 // Mock notification client strategy
 jest.mock('./infrastructure/notification-client-strategy', () => ({
   clientStrategy: jest.fn(() => 'MOCK_CLIENT'),
 }));
-
-// Mock notification clients - using Partial to avoid type issues
-const mockWhatsappClient = {
-  send: jest.fn(),
-} as Partial<NotificationClient>;
-
-const mockEmailClient = {
-  send: jest.fn(),
-} as Partial<NotificationClient>;
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -56,7 +43,7 @@ describe('NotificationService', () => {
       getNotificationById: jest.fn(),
       getNotifications: jest.fn(),
       update: jest.fn(),
-    } as any;
+    } as Partial<NotificationService> as NotificationService;
 
     (service.getNotificationById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'notification-1') {

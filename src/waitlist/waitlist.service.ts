@@ -47,10 +47,7 @@ export class WaitlistService {
     user?: User,
     clientId?: string
   ): Promise<Waitlist> {
-    const waitlistCreated;
     const queue = await this.queueService.getQueueById(queueId);
-    let email = undefined;
-    let phone = undefined;
     if (clientId !== undefined) {
       const client = await this.clientService.getClientById(clientId);
       if (client && client.id) {
@@ -63,12 +60,6 @@ export class WaitlistService {
           personalInfo: client.personalInfo || user.personalInfo,
           idNumber: client.idNumber || user.idNumber,
         };
-        if (client.email) {
-          email = client.email;
-        }
-        if (client.phone) {
-          phone = client.phone;
-        }
         await this.clientService.saveClient(
           clientId,
           user.businessId,

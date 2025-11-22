@@ -5,7 +5,6 @@ import { Queue } from '../queue/model/queue.entity';
 import { QueueService } from '../queue/queue.service';
 
 import { BlockService } from './block.service';
-import { Block } from './model/block.entity';
 
 describe('BlockService', () => {
   let service: BlockService;

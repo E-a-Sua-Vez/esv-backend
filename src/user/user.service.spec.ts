@@ -1,9 +1,10 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
 
 import { ClientService } from '../client/client.service';
+import { Client } from '../client/model/client.entity';
 import { CommerceService } from '../commerce/commerce.service';
+import { Commerce } from '../commerce/model/commerce.entity';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 
 import { UserType } from './model/user-type.enum';
@@ -11,7 +12,14 @@ import { User } from './model/user.entity';
 import { UserService } from './user.service';
 
 // Mock FireORM repository
-const mockRepository = {
+interface MockRepository {
+  findById: jest.Mock;
+  find: jest.Mock;
+  create: jest.Mock;
+  update: jest.Mock;
+}
+
+const mockRepository: MockRepository = {
   findById: jest.fn(),
   find: jest.fn(),
   create: jest.fn(),
@@ -34,17 +42,17 @@ describe('UserService', () => {
     type: UserType.STANDARD,
   } as User;
 
-  const mockCommerce = {
+  const mockCommerce: Partial<Commerce> = {
     id: 'commerce-1',
     businessId: 'business-1',
   };
 
   beforeEach(async () => {
-    const mockClientService = {
+    const mockClientService: Partial<ClientService> = {
       getClientById: jest.fn(),
       saveClient: jest.fn(),
     };
-    const mockCommerceService = {
+    const mockCommerceService: Partial<CommerceService> = {
       getCommerce: jest.fn(),
     };
 
@@ -53,10 +61,11 @@ describe('UserService', () => {
         {
           provide: UserService,
           useFactory: (logger: GcpLoggerService) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return new UserService(
               mockRepository as any,
-              mockClientService as any,
-              mockCommerceService as any,
+              mockClientService as ClientService,
+              mockCommerceService as CommerceService,
               logger
             );
           },
@@ -92,7 +101,10 @@ describe('UserService', () => {
     commerceService = module.get<CommerceService>(CommerceService);
 
     // Set repository mock
-    (service as any).userRepository = mockRepository;
+    Object.defineProperty(service, 'userRepository', {
+      value: mockRepository,
+      writable: true,
+    });
 
     jest.clearAllMocks();
   });
@@ -150,8 +162,8 @@ describe('UserService', () => {
 
     it('should create user successfully with commerceId', async () => {
       // Arrange
-      jest.spyOn(commerceService, 'getCommerce').mockResolvedValue(mockCommerce as any);
-      jest.spyOn(clientService, 'saveClient').mockResolvedValue({ id: 'client-1' } as any);
+      jest.spyOn(commerceService, 'getCommerce').mockResolvedValue(mockCommerce as Commerce);
+      jest.spyOn(clientService, 'saveClient').mockResolvedValue({ id: 'client-1' } as Client);
       mockRepository.create.mockResolvedValue(mockUser);
 
       // Act
@@ -170,7 +182,7 @@ describe('UserService', () => {
 
     it('should throw error if clientId provided but client does not exist', async () => {
       // Arrange
-      jest.spyOn(commerceService, 'getCommerce').mockResolvedValue(mockCommerce as any);
+      jest.spyOn(commerceService, 'getCommerce').mockResolvedValue(mockCommerce as Commerce);
       jest.spyOn(clientService, 'getClientById').mockResolvedValue(undefined);
 
       // Act & Assert

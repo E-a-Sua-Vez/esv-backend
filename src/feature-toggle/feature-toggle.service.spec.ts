@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { FeatureToggleService } from './feature-toggle.service';
 import { FeatureToggle } from './model/feature-toggle.entity';
 import { FeatureToggleName } from './model/feature-toggle.enum';
@@ -15,11 +12,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('FeatureToggleService', () => {
@@ -39,7 +36,7 @@ describe('FeatureToggleService', () => {
     service = {
       getFeatureToggleById: jest.fn(),
       getFeatureToggleByCommerceId: jest.fn(),
-    } as any;
+    } as Partial<FeatureToggleService> as FeatureToggleService;
 
     (service.getFeatureToggleById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'feature-1') {

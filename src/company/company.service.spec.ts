@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { CompanyService } from './company.service';
 import { Company } from './model/company.entity';
 
@@ -17,11 +14,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('CompanyService', () => {
@@ -43,7 +40,7 @@ describe('CompanyService', () => {
       getCompanies: jest.fn(),
       getCompanyByCommerce: jest.fn(),
       getCompaniesById: jest.fn(),
-    } as any;
+    } as Partial<CompanyService> as CompanyService;
 
     (service.getCompanyById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'company-1') {

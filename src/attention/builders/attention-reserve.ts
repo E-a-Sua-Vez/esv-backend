@@ -57,9 +57,8 @@ export class AttentionReserveBuilder implements BuilderInterface {
     attention.queueId = queue.id;
     attention.commerceId = queue.commerceId;
     const currentNumber = queue.currentNumber;
-    let attentionNumber;
     if (block && Object.keys(block).length > 0 && queue.type !== QueueType.SELECT_SERVICE) {
-      attentionNumber = block.number;
+      // attentionNumber is set from block.number but not used
     } else {
       attention.number = currentNumber + 1;
     }

@@ -1,8 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
-import { ClientService } from '../client/client.service';
-
 import { FormService } from './form.service';
 import { Form } from './model/form.entity';
 import { FormType } from './model/type.enum';
@@ -17,16 +12,15 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('FormService', () => {
   let service: FormService;
-  let clientService: ClientService;
 
   const mockForm: Form = {
     id: 'form-1',
@@ -38,16 +32,12 @@ describe('FormService', () => {
 
   beforeEach(async () => {
     // Mock service directly due to missing @Injectable decorator
-    clientService = {
-      getClientById: jest.fn(),
-    } as any;
-
     service = {
       getFormById: jest.fn(),
       getForms: jest.fn(),
       getFormsByClient: jest.fn(),
       getFormsByClientAndType: jest.fn(),
-    } as any;
+    } as Partial<FormService> as FormService;
 
     (service.getFormById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'form-1') {

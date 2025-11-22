@@ -83,7 +83,7 @@ export class PartnerController {
   @ApiResponse({ status: 200, description: 'Partner updated successfully', type: Partner })
   public async updatePartner(@Param() params: any, @Body() body: any): Promise<Partner> {
     const { id } = params;
-    const { alias, phone, moduleId, active, businessIds } = body;
+    const { alias, phone, active, businessIds } = body;
     return this.partnerService.updatePartner(id, phone, active, alias, businessIds);
   }
 

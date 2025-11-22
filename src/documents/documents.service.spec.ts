@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { DocumentsService } from './documents.service';
 import { Document } from './model/document.entity';
 
@@ -15,11 +12,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 // Mock AWS SDK
@@ -48,7 +45,7 @@ describe('DocumentsService', () => {
       getDocumentById: jest.fn(),
       getDocumentOptions: jest.fn(),
       getBucketPath: jest.fn(),
-    } as any;
+    } as Partial<DocumentsService> as DocumentsService;
 
     (service.getDocumentById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'document-1') {

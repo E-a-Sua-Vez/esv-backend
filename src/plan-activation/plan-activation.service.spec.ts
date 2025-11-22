@@ -1,10 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
-import { BusinessService } from '../business/business.service';
-import { PaymentService } from '../payment/payment.service';
-import { PlanService } from '../plan/plan.service';
-
 import { PlanActivation } from './model/plan-activation.entity';
 import { PlanActivationService } from './plan-activation.service';
 
@@ -19,18 +12,15 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('PlanActivationService', () => {
   let service: PlanActivationService;
-  let businessService: BusinessService;
-  let planService: PlanService;
-  let paymentService: PaymentService;
 
   const mockPlanActivation: PlanActivation = {
     id: 'activation-1',
@@ -42,23 +32,11 @@ describe('PlanActivationService', () => {
 
   beforeEach(async () => {
     // Mock service directly due to missing @Injectable decorator
-    businessService = {
-      getBusinessById: jest.fn(),
-    } as any;
-
-    planService = {
-      getPlanById: jest.fn(),
-    } as any;
-
-    paymentService = {
-      getPaymentById: jest.fn(),
-    } as any;
-
     service = {
       getPlanActivationById: jest.fn(),
       getPlanActivationByBusinessId: jest.fn(),
       getValidatedPlanActivationByBusinessId: jest.fn(),
-    } as any;
+    } as Partial<PlanActivationService> as PlanActivationService;
 
     (service.getPlanActivationById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'activation-1') {

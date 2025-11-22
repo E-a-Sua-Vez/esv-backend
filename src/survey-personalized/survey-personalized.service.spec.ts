@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { SurveyPersonalized } from './model/survey-personalized.entity';
 import { SurveyPersonalizedService } from './survey-personalized.service';
 
@@ -14,11 +11,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('SurveyPersonalizedService', () => {
@@ -41,7 +38,7 @@ describe('SurveyPersonalizedService', () => {
       getSurveysPersonalized: jest.fn(),
       getSurveysPersonalizedByCommerceId: jest.fn(),
       getSurveysPersonalizedByQueueId: jest.fn(),
-    } as any;
+    } as Partial<SurveyPersonalizedService> as SurveyPersonalizedService;
 
     (service.getSurveyPersonalizedById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'survey-personalized-1') {

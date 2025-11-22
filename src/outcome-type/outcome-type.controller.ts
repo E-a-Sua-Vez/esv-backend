@@ -120,7 +120,7 @@ export class OutcomeTypeController {
     @Body() body: OutcomeType
   ): Promise<OutcomeType> {
     const { id } = params;
-    const { type, name, tag, active, available } = body;
+    const { name, tag, active, available } = body;
     return this.outcomeTypeService.updateOutcomeTypeConfigurations(
       user,
       id,

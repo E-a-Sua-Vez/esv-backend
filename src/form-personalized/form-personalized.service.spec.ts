@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { FormPersonalizedService } from './form-personalized.service';
 import { FormPersonalized } from './model/form-personalized.entity';
 
@@ -14,11 +11,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('FormPersonalizedService', () => {
@@ -39,7 +36,7 @@ describe('FormPersonalizedService', () => {
       getFormPersonalizedById: jest.fn(),
       getFormsPersonalized: jest.fn(),
       getFormsPersonalizedByCommerceId: jest.fn(),
-    } as any;
+    } as Partial<FormPersonalizedService> as FormPersonalizedService;
 
     (service.getFormPersonalizedById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'form-personalized-1') {

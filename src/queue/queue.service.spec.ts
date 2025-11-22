@@ -1,6 +1,5 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
 
 import { ServiceService } from '../service/service.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
@@ -21,12 +20,11 @@ const mockRepository = {
 // Mock FireORM Collection decorator
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}), // Mock decorator
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 describe('QueueService', () => {
   let service: QueueService;
-  let serviceService: ServiceService;
 
   const mockQueue: Queue = {
     id: 'queue-1',
@@ -53,6 +51,7 @@ describe('QueueService', () => {
         {
           provide: QueueService,
           useFactory: (logger: GcpLoggerService) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return new QueueService(mockRepository as any, mockServiceService as any, logger);
           },
           inject: [GcpLoggerService],
@@ -79,7 +78,6 @@ describe('QueueService', () => {
     }).compile();
 
     service = module.get<QueueService>(QueueService);
-    serviceService = module.get<ServiceService>(ServiceService);
 
     jest.clearAllMocks();
   });

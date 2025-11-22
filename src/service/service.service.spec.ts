@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { Service } from './model/service.entity';
 import { ServiceService } from './service.service';
 
@@ -17,11 +14,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('ServiceService', () => {
@@ -41,7 +38,7 @@ describe('ServiceService', () => {
       getServiceById: jest.fn(),
       getServices: jest.fn(),
       getServicesById: jest.fn(),
-    } as any;
+    } as Partial<ServiceService> as ServiceService;
 
     (service.getServiceById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'service-1') {

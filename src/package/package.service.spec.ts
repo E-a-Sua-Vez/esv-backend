@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { PackageStatus } from './model/package-status.enum';
 import { PackageType } from './model/package-type.enum';
 import { Package } from './model/package.entity';
@@ -18,11 +15,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('PackageService', () => {
@@ -43,7 +40,7 @@ describe('PackageService', () => {
     service = {
       getPackageById: jest.fn(),
       getPackages: jest.fn(),
-    } as any;
+    } as Partial<PackageService> as PackageService;
 
     (service.getPackageById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'package-1') {

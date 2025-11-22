@@ -2,12 +2,11 @@ import {
   Body,
   Controller,
   Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,

@@ -1,9 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
-import { AdministratorService } from '../administrator/administrator.service';
-import { CommerceService } from '../commerce/commerce.service';
-
 import { MessageService } from './message.service';
 import { Message } from './model/message.entity';
 
@@ -17,17 +11,15 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('MessageService', () => {
   let service: MessageService;
-  let administratorService: AdministratorService;
-  let commerceService: CommerceService;
 
   const mockMessage: Message = {
     id: 'message-1',
@@ -41,20 +33,12 @@ describe('MessageService', () => {
 
   beforeEach(async () => {
     // Mock service directly due to missing @Injectable decorator
-    administratorService = {
-      getAdministratorById: jest.fn(),
-    } as any;
-
-    commerceService = {
-      getCommerceById: jest.fn(),
-    } as any;
-
     service = {
       getMessageById: jest.fn(),
       getMessages: jest.fn(),
       getMessagesByClient: jest.fn(),
       getMessagesByAdministrator: jest.fn(),
-    } as any;
+    } as Partial<MessageService> as MessageService;
 
     (service.getMessageById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'message-1') {

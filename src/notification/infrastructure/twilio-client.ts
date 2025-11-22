@@ -7,7 +7,7 @@ import { NotificationClient } from './notification-client';
 
 @Injectable()
 export class TwilioClient implements NotificationClient {
-  private readonly client = new twilio();
+  private readonly client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
   constructor() {}
 

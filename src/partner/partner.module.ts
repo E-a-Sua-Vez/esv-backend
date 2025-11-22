@@ -1,7 +1,5 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
-import { CommerceModule } from 'src/commerce/commerce.module';
-import { ModuleModule } from 'src/module/module.module';
 
 import { PartnerController } from './partner.controller';
 import { Partner } from './partner.entity';

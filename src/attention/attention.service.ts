@@ -4,7 +4,6 @@ import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { CommerceKeyNameDetailsDto } from 'src/commerce/dto/commerce-keyname-details.dto';
-import { Commerce } from 'src/commerce/model/commerce.entity';
 import { DocumentsService } from 'src/documents/documents.service';
 import { IncomeService } from 'src/income/income.service';
 import { IncomeStatus } from 'src/income/model/income-status.enum';
@@ -21,7 +20,6 @@ import { CollaboratorService } from '../collaborator/collaborator.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { FeatureToggleDetailsDto } from '../feature-toggle/dto/feature-toggle-details.dto';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
-import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
 import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
 import { ModuleService } from '../module/module.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
@@ -607,7 +605,7 @@ export class AttentionService {
     queueId: string,
     collaboratorId: string,
     commerceLanguage: string,
-    notify?: boolean
+    _notify?: boolean
   ) {
     let attention = (await this.getAvailableAttentionByNumber(number, queueId))[0];
     if (attention) {
@@ -824,14 +822,14 @@ export class AttentionService {
     const notified = [];
     let message = '';
     let type;
-    toNotify.forEach(async count => {
+    toNotify.forEach(async _count => {
       const attentionToNotify = (
-        await this.getAttentionByNumber(count, AttentionStatus.PENDING, attention.queueId)
+        await this.getAttentionByNumber(_count, AttentionStatus.PENDING, attention.queueId)
       )[0];
       if (attentionToNotify !== undefined && attentionToNotify.type === AttentionType.STANDARD) {
         const user = await this.userService.getUserById(attentionToNotify.userId);
         if (user.notificationOn) {
-          switch (count - attention.number) {
+          switch (_count - attention.number) {
             case 5:
               type = NotificationType.FALTANCINCO;
               message = NOTIFICATIONS.getFaltanCincoMessage(commerceLanguage, attention);
@@ -887,16 +885,15 @@ export class AttentionService {
       toNotify.push(attention.number);
     }
     const notified = [];
-    let type;
     let moduleNumber = '';
     let colaboratorName = '';
     let templateType = '';
-    toNotify.forEach(async count => {
+    toNotify.forEach(async _count => {
       const attentionToNotify = await this.getAttentionDetails(attentionId);
       if (attentionToNotify !== undefined && attentionToNotify.type === AttentionType.STANDARD) {
         if (attentionToNotify.user.notificationEmailOn) {
           if (attentionToNotify.user && attentionToNotify.user.email) {
-            switch (count - attention.number) {
+            switch (_count - attention.number) {
               case 0: {
                 const module = await this.moduleService.getModuleById(moduleId);
                 const collaborator = await this.collaboratorService.getCollaboratorById(
@@ -904,7 +901,6 @@ export class AttentionService {
                 );
                 moduleNumber = module.name;
                 colaboratorName = collaborator.name;
-                type = NotificationType.ESTUTURNO;
                 templateType = NotificationTemplate.ITSYOURTURN;
                 break;
               }
@@ -949,7 +945,7 @@ export class AttentionService {
     }
     const notified = [];
     const commerceLanguage = attention.commerce.localeInfo.language;
-    toNotify.forEach(async count => {
+    toNotify.forEach(async _count => {
       if (attention !== undefined && attention.type === AttentionType.STANDARD) {
         if (attention.user.email) {
           const template = `${NotificationTemplate.YOURTURN}-${commerceLanguage}`;
@@ -988,7 +984,7 @@ export class AttentionService {
     }
     const notified = [];
     const commerceLanguage = attention.commerce.localeInfo.language;
-    toNotify.forEach(async count => {
+    toNotify.forEach(async _count => {
       if (
         (attention !== undefined && attention.type === AttentionType.STANDARD) ||
         attention.type === AttentionType.SURVEY_ONLY
@@ -1095,7 +1091,7 @@ export class AttentionService {
     }
     const notified = [];
     const commerceLanguage = attention.commerce.localeInfo.language;
-    toNotify.forEach(async count => {
+    toNotify.forEach(async _count => {
       if (
         attention !== undefined &&
         (attention.type === AttentionType.STANDARD || attention.type === AttentionType.SURVEY_ONLY)
@@ -1145,7 +1141,7 @@ export class AttentionService {
     }
     const notified = [];
     const commerceLanguage = attention.commerce.localeInfo.language;
-    toNotify.forEach(async count => {
+    toNotify.forEach(async _count => {
       if (
         attention !== undefined &&
         (attention.type === AttentionType.STANDARD || attention.type === AttentionType.SURVEY_ONLY)

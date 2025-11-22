@@ -9,7 +9,7 @@ import { WaitlistBuilderInterface } from '../../shared/interfaces/waitlist-build
 import WaitlistCreated from '../events/WaitlistCreated';
 import { WaitlistStatus } from '../model/waitlist-status.enum';
 import { WaitlistType } from '../model/waitlist-type.enum';
-import { Block, Waitlist } from '../model/waitlist.entity';
+import { Waitlist } from '../model/waitlist.entity';
 
 @Injectable()
 export class WaitlistDefaultBuilder implements WaitlistBuilderInterface {

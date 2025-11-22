@@ -20,8 +20,6 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 
-import { SimpleGuard } from '../auth/simple.guard';
-
 import { Service } from './model/service.entity';
 import { ServiceService } from './service.service';
 

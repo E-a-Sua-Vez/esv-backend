@@ -270,7 +270,7 @@ export class ProductService {
   public async sendMessage(user: string, product: Product, type: MessageType) {
     if (product.actualLevel <= product.replacementLevel) {
       const message = MESSAGES.getMessage(type, undefined, product.name);
-      const msg = await this.messageService.sendMessageToAdministrator(
+      await this.messageService.sendMessageToAdministrator(
         user,
         product.commerceId,
         MessageType.STOCK_PRODUCT_RECHARGE,

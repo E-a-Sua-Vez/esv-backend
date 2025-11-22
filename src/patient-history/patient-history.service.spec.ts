@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { PatientHistory } from './model/patient-history.entity';
 import { PatientHistoryService } from './patient-history.service';
 
@@ -16,11 +13,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('PatientHistoryService', () => {
@@ -43,7 +40,7 @@ describe('PatientHistoryService', () => {
       getPatientHistorysByCommerceId: jest.fn(),
       getPatientHistorysByClientId: jest.fn(),
       getActivePatientHistorysByCommerceId: jest.fn(),
-    } as any;
+    } as Partial<PatientHistoryService> as PatientHistoryService;
 
     (service.getPatientHistoryById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'patient-history-1') {

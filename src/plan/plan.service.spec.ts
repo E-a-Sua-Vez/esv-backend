@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { Plan } from './model/plan.entity';
 import { PlanService } from './plan.service';
 
@@ -15,11 +12,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('PlanService', () => {
@@ -41,7 +38,7 @@ describe('PlanService', () => {
       getAll: jest.fn(),
       getOnlinePlans: jest.fn(),
       update: jest.fn(),
-    } as any;
+    } as Partial<PlanService> as PlanService;
 
     (service.getPlanById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'plan-1') {

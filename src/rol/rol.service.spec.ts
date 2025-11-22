@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { Rol } from './model/rol.entity';
 import { RolService } from './rol.service';
 
@@ -14,11 +11,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('RolService', () => {
@@ -41,7 +38,7 @@ describe('RolService', () => {
       getRoles: jest.fn(),
       getRolByName: jest.fn(),
       createRol: jest.fn(),
-    } as any;
+    } as Partial<RolService> as RolService;
 
     (service.getRolById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'rol-1') {

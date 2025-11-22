@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { HealthOutputDto } from './dto/health-output.dto';
 import { HealthService } from './health.service';
 
 describe('HealthService', () => {

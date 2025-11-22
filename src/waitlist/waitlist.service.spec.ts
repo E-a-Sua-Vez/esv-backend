@@ -1,15 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
 
 import { ClientService } from '../client/client.service';
-import { CommerceService } from '../commerce/commerce.service';
-import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
-import { NotificationService } from '../notification/notification.service';
+import { Queue } from '../queue/model/queue.entity';
 import { QueueService } from '../queue/queue.service';
 import { User } from '../user/model/user.entity';
 
-import { WaitlistDefaultBuilder } from './builders/waitlist-default';
 import { WaitlistChannel } from './model/waitlist-channel.enum';
 import { WaitlistStatus } from './model/waitlist-status.enum';
 import { Waitlist } from './model/waitlist.entity';
@@ -26,25 +21,24 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 // Mock nestjs-fireorm
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('WaitlistService', () => {
   let service: WaitlistService;
-  let queueService: QueueService;
-  let clientService: ClientService;
-  let waitlistDefaultBuilder: WaitlistDefaultBuilder;
+  let queueService: Partial<QueueService>;
+  let clientService: Partial<ClientService>;
 
-  const mockQueue = {
+  const mockQueue: Partial<Queue> = {
     id: 'queue-1',
     name: 'Test Queue',
     commerceId: 'commerce-1',
-  } as any;
+  };
 
   const mockUser: User = {
     id: 'user-1',
@@ -64,33 +58,22 @@ describe('WaitlistService', () => {
     createdAt: new Date(),
   } as Waitlist;
 
-  const mockClient = {
-    id: 'client-1',
-    name: 'John',
-    email: 'john@example.com',
-    phone: '+56912345678',
-  } as any;
-
   beforeEach(async () => {
     // Mock dependencies
     queueService = {
       getQueueById: jest.fn(),
-    } as any;
+    };
 
     clientService = {
       getClientById: jest.fn(),
       saveClient: jest.fn(),
-    } as any;
-
-    waitlistDefaultBuilder = {
-      create: jest.fn(),
-    } as any;
+    };
 
     // Mock service directly due to complex repository injection
     service = {
       getWaitlistById: jest.fn(),
       createWaitlist: jest.fn(),
-    } as any;
+    } as Partial<WaitlistService> as WaitlistService;
 
     (service.getWaitlistById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'waitlist-1') {
@@ -148,7 +131,7 @@ describe('WaitlistService', () => {
 
     it('should throw error if client does not exist', async () => {
       // Arrange
-      jest.spyOn(queueService, 'getQueueById').mockResolvedValue(mockQueue);
+      jest.spyOn(queueService, 'getQueueById').mockResolvedValue(mockQueue as Queue);
       jest.spyOn(clientService, 'getClientById').mockResolvedValue(undefined);
 
       // Act & Assert

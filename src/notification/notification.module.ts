@@ -1,5 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 
 import { AwsClient } from './infrastructure/aws-client';

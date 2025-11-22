@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { OutcomeStatus } from './model/outcome-status.enum';
 import { Outcome } from './model/outcome.entity';
 import { OutcomeService } from './outcome.service';
@@ -17,11 +14,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('OutcomeService', () => {
@@ -42,7 +39,7 @@ describe('OutcomeService', () => {
       getOutcomes: jest.fn(),
       getOutcomeByCommerce: jest.fn(),
       getPendingOutcomeByPackage: jest.fn(),
-    } as any;
+    } as Partial<OutcomeService> as OutcomeService;
 
     (service.getOutcomeById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'outcome-1') {

@@ -51,17 +51,8 @@ export class PlanService {
     for (let i = 0; i < plansToCreate.length; i++) {
       const planToCreate = plansToCreate[i];
       const plan = new Plan();
-      const {
-        name,
-        description,
-        online,
-        active,
-        currency,
-        price,
-        periodicity,
-        order,
-        permissions,
-      } = planToCreate;
+      const { name, description, online, active, currency, price, order, permissions } =
+        planToCreate;
       plan.name = name;
       plan.description = description;
       (plan.country = ''), (plan.online = online);

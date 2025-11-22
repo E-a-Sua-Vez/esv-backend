@@ -1,6 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepository } from 'fireorm';
-
 import { IncomeService } from './income.service';
 import { IncomeStatus } from './model/income-status.enum';
 import { IncomeType } from './model/income-type.enum';
@@ -18,11 +15,11 @@ const mockRepository = {
 
 jest.mock('fireorm', () => ({
   getRepository: jest.fn(() => mockRepository),
-  Collection: jest.fn(() => () => {}),
+  Collection: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('nestjs-fireorm', () => ({
-  InjectRepository: () => () => {},
+  InjectRepository: () => jest.fn(),
 }));
 
 describe('IncomeService', () => {
@@ -42,7 +39,7 @@ describe('IncomeService', () => {
     service = {
       getIncomeById: jest.fn(),
       getIncomes: jest.fn(),
-    } as any;
+    } as Partial<IncomeService> as IncomeService;
 
     (service.getIncomeById as jest.Mock).mockImplementation(async (id: string) => {
       if (id === 'income-1') {
