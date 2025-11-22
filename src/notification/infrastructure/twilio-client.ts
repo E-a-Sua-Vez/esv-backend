@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import twilio from 'twilio';
 
 import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
 
 import { NotificationClient } from './notification-client';
-
-const twilio = require('twilio');
 
 @Injectable()
 export class TwilioClient implements NotificationClient {

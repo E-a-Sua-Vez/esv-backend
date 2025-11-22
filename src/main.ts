@@ -196,7 +196,9 @@ async function bootstrap(): Promise<void> {
 
   // Generate OpenAPI JSON file for Postman import
   if (process.env.NODE_ENV === 'local' || process.env.GENERATE_SWAGGER_JSON === 'true') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fs = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const path = require('path');
     const outputPath = path.join(process.cwd(), 'docs', 'openapi.json');
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });

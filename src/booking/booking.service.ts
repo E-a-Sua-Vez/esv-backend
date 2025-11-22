@@ -12,55 +12,42 @@ import { IncomeStatus } from 'src/income/model/income-status.enum';
 import { IncomeType } from 'src/income/model/income-type.enum';
 import { Attachment } from 'src/notification/model/email-input.dto';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
+import { PackageStatus } from 'src/package/model/package-status.enum';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
+import { QueueType } from 'src/queue/model/queue-type.enum';
+import { Queue } from 'src/queue/model/queue.entity';
+import { getDateDDMMYYYY } from 'src/shared/utils/date';
+import { DateModel } from 'src/shared/utils/date.model';
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 
 import { Block } from '../booking/model/booking.entity';
+import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
+import { DocumentsService } from '../documents/documents.service';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
+import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
+import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
+import { IncomeService } from '../income/income.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
+import { PackageType } from '../package/model/package-type.enum';
+import { PackageService } from '../package/package.service';
 import { QueueService } from '../queue/queue.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
-import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
-import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
 import { User } from '../user/model/user.entity';
-
-import { WaitlistService } from '../waitlist/waitlist.service';
-import { BookingDefaultBuilder } from './builders/booking-default';
-import { BookingChannel } from './model/booking-channel.enum';
-import { BookingType } from './model/booking-type.enum';
-
-import { BookingDetailsDto } from './dto/booking-details.dto';
-import { BookingStatus } from './model/booking-status.enum';
-
-import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
-
-import BookingUpdated from './events/BookingUpdated';
-
-import { QueueType } from 'src/queue/model/queue-type.enum';
-
-import { BookingAvailabilityDto } from './dto/booking-availability.dto';
-
-import { ClientService } from '../client/client.service';
-
-import { getDateDDMMYYYY } from 'src/shared/utils/date';
-
-import { IncomeService } from '../income/income.service';
-import { PackageService } from '../package/package.service';
-
-import { PackageStatus } from 'src/package/model/package-status.enum';
-
-import { PackageType } from '../package/model/package-type.enum';
 import { UserService } from '../user/user.service';
+import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
+import { WaitlistService } from '../waitlist/waitlist.service';
 
+import { BookingDefaultBuilder } from './builders/booking-default';
+import { BookingAvailabilityDto } from './dto/booking-availability.dto';
+import { BookingDetailsDto } from './dto/booking-details.dto';
+import BookingUpdated from './events/BookingUpdated';
+import { BookingChannel } from './model/booking-channel.enum';
+import { BookingStatus } from './model/booking-status.enum';
+import { BookingType } from './model/booking-type.enum';
 import { Booking } from './model/booking.entity';
 import * as NOTIFICATIONS from './notifications/notifications.js';
-
-import { DocumentsService } from '../documents/documents.service';
-
-import { DateModel } from 'src/shared/utils/date.model';
-import { Queue } from 'src/queue/model/queue.entity';
 
 @Injectable()
 export class BookingService {

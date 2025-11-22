@@ -22,8 +22,7 @@ export class FormPersonalizedService {
   }
 
   public async getFormsPersonalizedByCommerceId(commerceId: string): Promise<FormPersonalized[]> {
-    let forms: FormPersonalized[];
-    forms = await this.formPersonalizedRepository
+    const forms: FormPersonalized[] = await this.formPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('available', true)
       .find();
@@ -45,8 +44,7 @@ export class FormPersonalizedService {
     commerceId: string,
     type: FormType
   ): Promise<FormPersonalized[]> {
-    let forms: FormPersonalized[];
-    forms = await this.formPersonalizedRepository
+    const forms: FormPersonalized[] = await this.formPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('type', type)
       .whereEqualTo('available', true)
@@ -69,8 +67,7 @@ export class FormPersonalizedService {
     commerceId: string,
     queueId: string
   ): Promise<FormPersonalized[]> {
-    let forms: FormPersonalized[];
-    forms = await this.formPersonalizedRepository
+    const forms: FormPersonalized[] = await this.formPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('active', true)

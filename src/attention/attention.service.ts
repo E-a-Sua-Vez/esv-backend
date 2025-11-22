@@ -18,35 +18,31 @@ import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 
 import { CollaboratorService } from '../collaborator/collaborator.service';
+import { CommerceService } from '../commerce/commerce.service';
+import { FeatureToggleDetailsDto } from '../feature-toggle/dto/feature-toggle-details.dto';
+import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
+import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
+import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
 import { ModuleService } from '../module/module.service';
+import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
 import { QueueService } from '../queue/queue.service';
-import { AttentionStatus } from './model/attention-status.enum';
-
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
-import { UserService } from '../user/user.service';
-import { NotificationType } from '../notification/model/notification-type.enum';
-import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
-import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
-import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
-
-import AttentionUpdated from './events/AttentionUpdated';
-import { AttentionType } from './model/attention-type.enum';
-import { AttentionDefaultBuilder } from './builders/attention-default';
-import { AttentionSurveyBuilder } from './builders/attention-survey';
-import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
-import { AttentionChannel } from './model/attention-channel.enum';
-import { AttentionDetailsDto } from './dto/attention-details.dto';
-
-import { CommerceService } from '../commerce/commerce.service';
+import { DateModel } from '../shared/utils/date.model';
 import { PersonalInfo, User } from '../user/model/user.entity';
+import { UserService } from '../user/user.service';
 
+import { AttentionDefaultBuilder } from './builders/attention-default';
+import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
+import { AttentionSurveyBuilder } from './builders/attention-survey';
+import { AttentionDetailsDto } from './dto/attention-details.dto';
+import AttentionUpdated from './events/AttentionUpdated';
+import { AttentionChannel } from './model/attention-channel.enum';
+import { AttentionStatus } from './model/attention-status.enum';
+import { AttentionType } from './model/attention-type.enum';
 import { Attention, Block } from './model/attention.entity';
 import * as NOTIFICATIONS from './notifications/notifications.js';
-
-import { DateModel } from '../shared/utils/date.model';
-import { FeatureToggleDetailsDto } from '../feature-toggle/dto/feature-toggle-details.dto';
 
 @Injectable()
 export class AttentionService {

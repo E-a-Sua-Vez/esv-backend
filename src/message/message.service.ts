@@ -29,8 +29,7 @@ export class MessageService {
   }
 
   public async getMessagesByClient(clientId: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('clientId', clientId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
@@ -40,8 +39,7 @@ export class MessageService {
   }
 
   public async getMessagesByAdministrator(administratorId: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('administratorId', administratorId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
@@ -51,8 +49,7 @@ export class MessageService {
   }
 
   public async getMessagesByCollaborator(collaboratorId: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('collaboratorId', collaboratorId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
@@ -65,8 +62,7 @@ export class MessageService {
     administratorId: string,
     type: string
   ): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('administratorId', administratorId)
       .whereEqualTo('type', type)
       .whereEqualTo('active', true)

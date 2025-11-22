@@ -26,8 +26,7 @@ export class FormService {
   }
 
   public async getFormsByClient(commerceId: string, clientId: string): Promise<Form[]> {
-    let forms: Form[];
-    forms = await this.formRepository
+    const forms: Form[] = await this.formRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('clientId', clientId)
       .find();
@@ -39,8 +38,7 @@ export class FormService {
     clientId: string,
     type: string
   ): Promise<Form[]> {
-    let forms: Form[];
-    forms = await this.formRepository
+    const forms: Form[] = await this.formRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('clientId', clientId)
       .whereEqualTo('type', type)

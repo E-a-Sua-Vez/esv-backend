@@ -47,7 +47,7 @@ export class WaitlistService {
     user?: User,
     clientId?: string
   ): Promise<Waitlist> {
-    let waitlistCreated;
+    const waitlistCreated;
     const queue = await this.queueService.getQueueById(queueId);
     let email = undefined;
     let phone = undefined;
