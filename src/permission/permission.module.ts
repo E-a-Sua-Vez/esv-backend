@@ -1,10 +1,12 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { PermissionService } from './permission.service';
+import { CommerceModule } from 'src/commerce/commerce.module';
 import { RolModule } from 'src/rol/rol.module';
+
 import { BusinessModule } from '../business/business.module';
 import { PlanModule } from '../plan/plan.module';
-import { CommerceModule } from 'src/commerce/commerce.module';
 import { PlanActivationModule } from '../plan-activation/plan-activation.module';
+
+import { PermissionService } from './permission.service';
 
 @Module({
   imports: [
@@ -12,7 +14,7 @@ import { PlanActivationModule } from '../plan-activation/plan-activation.module'
     forwardRef(() => CommerceModule),
     forwardRef(() => PlanModule),
     forwardRef(() => RolModule),
-    forwardRef(() => PlanActivationModule)
+    forwardRef(() => PlanActivationModule),
   ],
   providers: [PermissionService],
   exports: [PermissionService],

@@ -1,5 +1,5 @@
-import { htmlTemplate as POST_ATTENTION_PT } from '../templates/post_attention_pt';
 import { htmlTemplate as POST_ATTENTION_ES } from '../templates/post_attention_es';
+import { htmlTemplate as POST_ATTENTION_PT } from '../templates/post_attention_pt';
 
 export const getFaltanCincoMessage = (country, attention) => {
   const FALTANCINCO = {
@@ -8,10 +8,10 @@ export const getFaltanCincoMessage = (country, attention) => {
     Lémbre-se, seu número de atendimento é: *${attention.number}*.`,
     es: `😃 Hola, ya casi Es tu Turno! Faltan *${5}* personas para que seas atendido.
 
-    Recuerda, tu número de atención es: *${attention.number}*.`
+    Recuerda, tu número de atención es: *${attention.number}*.`,
   };
   return FALTANCINCO[country];
-}
+};
 
 export const getFaltaUnoMessage = (country, attention) => {
   const FALTAUNO = {
@@ -20,10 +20,10 @@ export const getFaltaUnoMessage = (country, attention) => {
     Lémbre-se, seu número de atendimento é: *${attention.number}*`,
     es: `😃 Hola, ¡ya casi Es tu Turno!. Falta *${1}* persona para que seas atendido.
 
-    Recuerda, tu número de atención es: *${attention.number}*`
+    Recuerda, tu número de atención es: *${attention.number}*`,
   };
   return FALTAUNO[country];
-}
+};
 
 export const getEsTuTunoMessage = (country, attention, moduleNumber) => {
   const ESTUTURNO = {
@@ -32,10 +32,10 @@ export const getEsTuTunoMessage = (country, attention, moduleNumber) => {
     Lémbre-se, seu número de atendimento é: *${attention.number}*.`,
     es: `🚨 Hola, ahora ¡Es tu Turno! Acércate al módulo *${moduleNumber}*.
 
-    Recuerda, tu número de atención es: *${attention.number}*.`
-  }
+    Recuerda, tu número de atención es: *${attention.number}*.`,
+  };
   return ESTUTURNO[country];
-}
+};
 
 export const getEncuestaMessage = (country, attention, link) => {
   const ENCUESTA = {
@@ -52,10 +52,10 @@ export const getEncuestaMessage = (country, attention, link) => {
 
     ${link}
 
-    Si no puedes acceder al link directamente, contesta este mensaje o agreganos a tus contactos. Vuelve pronto!`
-  }
+    Si no puedes acceder al link directamente, contesta este mensaje o agreganos a tus contactos. Vuelve pronto!`,
+  };
   return ENCUESTA[country];
-}
+};
 
 export const getAtencionCanceladaMessage = (country, attention, link) => {
   const ATTENTION_CANCELLED = {
@@ -72,22 +72,21 @@ export const getAtencionCanceladaMessage = (country, attention, link) => {
 
     ${link}
 
-    ¡Muchas gracias!`
-  }
+    ¡Muchas gracias!`,
+  };
   return ATTENTION_CANCELLED[country];
-}
-
+};
 
 export const getPostAttetionCommerce = (country, bookingCommerce) => {
   const POST_ATTENTION = {
     pt: {
       subject: `Pos Atendimento de ${bookingCommerce.name}`,
-      html: POST_ATTENTION_PT
+      html: POST_ATTENTION_PT,
     },
     es: {
       subject: `Post Atención ${bookingCommerce.name}`,
-      html: POST_ATTENTION_ES
-    }
-  }
+      html: POST_ATTENTION_ES,
+    },
+  };
   return POST_ATTENTION[country];
-}
+};

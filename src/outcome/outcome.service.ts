@@ -1,13 +1,15 @@
-import { Outcome, OutcomeInfo } from './model/outcome.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
+import { PaymentConfirmation } from '../payment/model/payment-confirmation';
+import { PaymentMethod } from '../payment/model/payment-method.enum';
+
 import OutcomeCreated from './events/OutcomeCreated';
 import OutcomeUpdated from './events/OutcomeUpdated';
-import { PaymentConfirmation } from '../payment/model/payment-confirmation';
 import { OutcomeStatus } from './model/outcome-status.enum';
-import { PaymentMethod } from '../payment/model/payment-method.enum';
+import { Outcome, OutcomeInfo } from './model/outcome.entity';
 
 @Injectable()
 export class OutcomeService {
@@ -17,7 +19,7 @@ export class OutcomeService {
   ) {}
 
   public async getOutcomeById(id: string): Promise<Outcome> {
-    let outcome = await this.outcomeRepository.findById(id);
+    const outcome = await this.outcomeRepository.findById(id);
     return outcome;
   }
 
@@ -29,13 +31,14 @@ export class OutcomeService {
 
   public async getOutcomeByCommerce(commerceId: string): Promise<Outcome[]> {
     let outcomes: Outcome[] = [];
-    outcomes = await this.outcomeRepository
-      .whereEqualTo('commerceId', commerceId)
-      .find();
+    outcomes = await this.outcomeRepository.whereEqualTo('commerceId', commerceId).find();
     return outcomes;
   }
 
-  public async getPendingOutcomeByPackage(commerceId: string, packageId: string): Promise<Outcome[]> {
+  public async getPendingOutcomeByPackage(
+    commerceId: string,
+    packageId: string
+  ): Promise<Outcome[]> {
     let outcomes: Outcome[] = [];
     outcomes = await this.outcomeRepository
       .whereEqualTo('commerceId', commerceId)
@@ -47,15 +50,19 @@ export class OutcomeService {
 
   public async getOutcomesById(outcomesId: string[]): Promise<Outcome[]> {
     let outcomes: Outcome[] = [];
-    outcomes = await this.outcomeRepository
-      .whereIn('id', outcomesId)
-      .find();
+    outcomes = await this.outcomeRepository.whereIn('id', outcomesId).find();
     return outcomes;
   }
 
-  public async updateOutcomeConfigurations(user: string, id: string, outcomeInfo: OutcomeInfo, paymentConfirmation: PaymentConfirmation, status: OutcomeStatus): Promise<Outcome> {
+  public async updateOutcomeConfigurations(
+    user: string,
+    id: string,
+    outcomeInfo: OutcomeInfo,
+    paymentConfirmation: PaymentConfirmation,
+    status: OutcomeStatus
+  ): Promise<Outcome> {
     try {
-      let outcome = await this.outcomeRepository.findById(id);
+      const outcome = await this.outcomeRepository.findById(id);
       if (outcomeInfo !== undefined) {
         outcome.outcomeInfo = outcomeInfo;
       }
@@ -67,7 +74,10 @@ export class OutcomeService {
       }
       return await this.updateOutcome(user, outcome);
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el outcome: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el outcome: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -78,12 +88,39 @@ export class OutcomeService {
     return outcomeUpdated;
   }
 
-  public async createOutcome(user: string, commerceId: string, type: string, status: OutcomeStatus, bookingId: string, attentionId: string,
-    clientId: string, packageId: string, amount: number, totalAmount: number, installments: number, paymentMethod: PaymentMethod,
-    commission: number, comment: string, fiscalNote: string, promotionalCode: string, transactionId: string, bankEntity: string, outcomeInfo: OutcomeInfo,
-    paymentType: string, paymentAmount: string, quantity: string, title: string, productId: string, productName: string, beneficiary: string, companyBeneficiaryId: string, date: Date,
-    code: string, expireDate: Date): Promise<Outcome> {
-    let outcome = new Outcome();
+  public async createOutcome(
+    user: string,
+    commerceId: string,
+    type: string,
+    status: OutcomeStatus,
+    bookingId: string,
+    attentionId: string,
+    clientId: string,
+    packageId: string,
+    amount: number,
+    totalAmount: number,
+    installments: number,
+    paymentMethod: PaymentMethod,
+    commission: number,
+    comment: string,
+    fiscalNote: string,
+    promotionalCode: string,
+    transactionId: string,
+    bankEntity: string,
+    outcomeInfo: OutcomeInfo,
+    paymentType: string,
+    paymentAmount: string,
+    quantity: string,
+    title: string,
+    productId: string,
+    productName: string,
+    beneficiary: string,
+    companyBeneficiaryId: string,
+    date: Date,
+    code: string,
+    expireDate: Date
+  ): Promise<Outcome> {
+    const outcome = new Outcome();
     outcome.commerceId = commerceId;
     outcome.type = type;
     outcome.bookingId = bookingId;
@@ -126,11 +163,9 @@ export class OutcomeService {
     return outcomeCreated;
   }
 
-  public async cancelOutcome(
-    user: string, id: string
-  ): Promise<Outcome> {
+  public async cancelOutcome(user: string, id: string): Promise<Outcome> {
     try {
-      let outcome = await this.outcomeRepository.findById(id);
+      const outcome = await this.outcomeRepository.findById(id);
       if (outcome && outcome.id) {
         if (!outcome.paid) {
           outcome.status = OutcomeStatus.CANCELLED;
@@ -138,13 +173,19 @@ export class OutcomeService {
           outcome.cancelledBy = user;
           return await this.updateOutcome(user, outcome);
         } else {
-          throw new HttpException(`No puede cancelar outcome porque está pagado`, HttpStatus.INTERNAL_SERVER_ERROR);
+          throw new HttpException(
+            `No puede cancelar outcome porque está pagado`,
+            HttpStatus.INTERNAL_SERVER_ERROR
+          );
         }
       } else {
         throw new HttpException(`Outcome no existe`, HttpStatus.NOT_FOUND);
       }
     } catch (error) {
-      throw new HttpException(`Hubo un problema al cancelar el outcome: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al cancelar el outcome: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

@@ -1,3 +1,3 @@
 export enum WaitlistType {
-    STANDARD = 'STANDARD'
+  STANDARD = 'STANDARD',
 }

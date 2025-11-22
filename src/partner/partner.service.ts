@@ -1,10 +1,11 @@
-import { Partner } from './partner.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import PartnerCreated from './events/PartnerCreated';
 import PartnerUpdated from './events/PartnerUpdated';
+import { Partner } from './partner.entity';
 
 @Injectable()
 export class PartnerService {
@@ -36,8 +37,14 @@ export class PartnerService {
     return partnerUpdated;
   }
 
-  public async updatePartner(id: string, phone: string, active: boolean, alias: string, businessIds: string[]): Promise<Partner> {
-    let partner = await this.getPartnerById(id);
+  public async updatePartner(
+    id: string,
+    phone: string,
+    active: boolean,
+    alias: string,
+    businessIds: string[]
+  ): Promise<Partner> {
+    const partner = await this.getPartnerById(id);
     if (phone) {
       partner.phone = phone;
     }
@@ -54,15 +61,21 @@ export class PartnerService {
   }
 
   public async updateToken(id: string, token: string): Promise<Partner> {
-    let partner = await this.getPartnerById(id);
+    const partner = await this.getPartnerById(id);
     partner.token = token;
     partner.lastSignIn = new Date();
     return await this.update(partner);
   }
 
-  public async createPartner(name: string, email: string, phone: string, businessIds: string[], alias: string): Promise<Partner> {
+  public async createPartner(
+    name: string,
+    email: string,
+    phone: string,
+    businessIds: string[],
+    alias: string
+  ): Promise<Partner> {
     try {
-      let partner = new Partner();
+      const partner = new Partner();
       partner.name = name;
       partner.email = email;
       partner.phone = phone;
@@ -73,17 +86,20 @@ export class PartnerService {
       const partnerCreatedEvent = new PartnerCreated(new Date(), partnerCreated);
       publish(partnerCreatedEvent);
       return partnerCreated;
-    } catch(error) {
-      throw new HttpException(`Hubo un problema al crear el partner: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      throw new HttpException(
+        `Hubo un problema al crear el partner: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
   public async changeStatus(id: string, action: boolean): Promise<Partner> {
     try {
-      let partner = await this.partnerRepository.findById(id);
+      const partner = await this.partnerRepository.findById(id);
       partner.active = action;
       return await this.update(partner);
-    } catch(error){
+    } catch (error) {
       throw `Hubo un problema al activar o desactivar el partner: ${error.message}`;
     }
   }
@@ -94,9 +110,14 @@ export class PartnerService {
       if (!partner.firstPasswordChanged) {
         partner.firstPasswordChanged = true;
       }
-      let days = Math.abs(new Date().getTime() - partner.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
+      const days =
+        Math.abs(new Date().getTime() - partner.lastPasswordChanged.getTime()) /
+        (1000 * 60 * 60 * 24);
       if (days < 1) {
-        throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException(
+          'Limite de cambio de password alcanzado',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
       }
       partner.lastPasswordChanged = new Date();
       partner = await this.update(partner);

@@ -1,23 +1,25 @@
+import { Readable } from 'stream';
+
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
+import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-import { Readable } from 'stream';
+
 import DocumentCreated from './events/DocumentCreated';
+import DocumentUpdated from './events/DocumentUpdated';
 import { Document, DocumentMetadata, DocumentOption } from './model/document.entity';
 import { DocumentType } from './model/document.enum';
 import * as documents from './model/documents.json';
-import { publish } from 'ett-events-lib';
-import DocumentUpdated from './events/DocumentUpdated';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     @InjectRepository(Document)
-    private documentRepository = getRepository(Document),
+    private documentRepository = getRepository(Document)
   ) {
     AWS.config.update({
-      apiVersion: "2006-03-01",
+      apiVersion: '2006-03-01',
       region: process.env.AWS_DEFAULT_REGION,
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -27,7 +29,7 @@ export class DocumentsService {
   private reportType = {
     terms_of_service: 'terms_of_service',
     post_attention: 'post_attention',
-    patient_documents: 'patient_documents'
+    patient_documents: 'patient_documents',
   };
 
   public getBucketPath(reportType: string): string {
@@ -37,14 +39,20 @@ export class DocumentsService {
 
   public getDocumentOptions(): DocumentOption[] {
     const options = documents;
-    return options.sort((a, b) => a.type < b.type ? -1 : 1);
+    return options.sort((a, b) => (a.type < b.type ? -1 : 1));
   }
 
   public async getDocumentById(id: string): Promise<Document> {
     return await this.documentRepository.findById(id);
   }
 
-  public async createDocument(user: string, name: string, commerceId: string, option: string, format: string): Promise<Document> {
+  public async createDocument(
+    user: string,
+    name: string,
+    commerceId: string,
+    option: string,
+    format: string
+  ): Promise<Document> {
     let document = new Document();
     const existingDocument = await this.getDocumentsByOption(commerceId, option);
     if (existingDocument) {
@@ -71,28 +79,35 @@ export class DocumentsService {
     }
   }
 
-  public async createClientDocument(user: string, name: string, commerceId: string, clientId: string,
-      option: string, format: string, documentMetadata: DocumentMetadata): Promise<Document> {
-    let document = new Document();
-      document.name = name;
-      document.commerceId = commerceId;
-      document.clientId = clientId;
-      document.type = DocumentType.CLIENT;
-      document.format = format;
-      document.option = option;
-      document.createdBy = user;
-      document.documentMetadata = documentMetadata;
-      document.active = true;
-      document.available = true;
-      document.createdAt = new Date();
-      const documentCreated = await this.documentRepository.create(document);
-      const documentCreatedEvent = new DocumentCreated(new Date(), documentCreated, { user });
-      publish(documentCreatedEvent);
-      return documentCreated;
+  public async createClientDocument(
+    user: string,
+    name: string,
+    commerceId: string,
+    clientId: string,
+    option: string,
+    format: string,
+    documentMetadata: DocumentMetadata
+  ): Promise<Document> {
+    const document = new Document();
+    document.name = name;
+    document.commerceId = commerceId;
+    document.clientId = clientId;
+    document.type = DocumentType.CLIENT;
+    document.format = format;
+    document.option = option;
+    document.createdBy = user;
+    document.documentMetadata = documentMetadata;
+    document.active = true;
+    document.available = true;
+    document.createdAt = new Date();
+    const documentCreated = await this.documentRepository.create(document);
+    const documentCreatedEvent = new DocumentCreated(new Date(), documentCreated, { user });
+    publish(documentCreatedEvent);
+    return documentCreated;
   }
 
   public async activeDocument(user: string, id: string, active: boolean): Promise<Document> {
-    let document = await this.getDocumentById(id);
+    const document = await this.getDocumentById(id);
     if (active !== undefined) {
       document.active = active;
     }
@@ -100,7 +115,7 @@ export class DocumentsService {
   }
 
   public async availableDocument(user: string, id: string, available: boolean): Promise<Document> {
-    let document = await this.getDocumentById(id);
+    const document = await this.getDocumentById(id);
     if (available !== undefined) {
       document.available = available;
     }
@@ -109,50 +124,59 @@ export class DocumentsService {
 
   public async getDocumentsByCommerceId(commerceId: string): Promise<Document[]> {
     const result = await this.documentRepository
-    .whereEqualTo('commerceId', commerceId)
-    .orderByAscending('type')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .orderByAscending('type')
+      .find();
     return result;
   }
 
   public async getDocumentsByOption(commerceId: string, option: string): Promise<Document> {
     const result = await this.documentRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('option', option)
-    .findOne();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('option', option)
+      .findOne();
     return result;
   }
 
-  public async getDocumentsByCommerceIdAndClient(commerceId: string, clientId: string, type: DocumentType): Promise<Document[]> {
+  public async getDocumentsByCommerceIdAndClient(
+    commerceId: string,
+    clientId: string,
+    type: DocumentType
+  ): Promise<Document[]> {
     const result = await this.documentRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('clientId', clientId)
-    .whereEqualTo('type', type)
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('clientId', clientId)
+      .whereEqualTo('type', type)
+      .find();
     return result;
   }
 
-  public async getDocumentsByClientAndType(commerceId: string, clientId: string, type: DocumentType, option: string): Promise<Document> {
+  public async getDocumentsByClientAndType(
+    commerceId: string,
+    clientId: string,
+    type: DocumentType,
+    option: string
+  ): Promise<Document> {
     const result = await this.documentRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('clientId', clientId)
-    .whereEqualTo('type', type)
-    .whereEqualTo('option', option)
-    .findOne();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('clientId', clientId)
+      .whereEqualTo('type', type)
+      .whereEqualTo('option', option)
+      .findOne();
     return result;
   }
 
   public async update(user: string, document: Document): Promise<Document> {
     const documentUpdated = await this.documentRepository.update(document);
-      const documentUpdatedEvent = new DocumentUpdated(new Date(), documentUpdated, { user });
-      publish(documentUpdatedEvent);
+    const documentUpdatedEvent = new DocumentUpdated(new Date(), documentUpdated, { user });
+    publish(documentUpdatedEvent);
     return documentUpdated;
   }
 
   public getDocument(documentKey: string, reportType: string): Readable {
     const S3 = new AWS.S3();
-    let bucketAndPath = this.getBucketPath(reportType);
-    let key = documentKey;
+    const bucketAndPath = this.getBucketPath(reportType);
+    const key = documentKey;
     const getObjectRequest: AWS.S3.GetObjectRequest = { Bucket: bucketAndPath, Key: key };
     try {
       return S3.getObject(getObjectRequest).createReadStream();
@@ -163,8 +187,8 @@ export class DocumentsService {
 
   public getClientDocument(documentKey: string, reportType: string, name: string): Readable {
     const S3 = new AWS.S3();
-    let bucketAndPath = this.getBucketPath(reportType);
-    let key = `${documentKey}/${name}`;
+    const bucketAndPath = this.getBucketPath(reportType);
+    const key = `${documentKey}/${name}`;
     const getObjectRequest: AWS.S3.GetObjectRequest = { Bucket: bucketAndPath, Key: key };
     try {
       return S3.getObject(getObjectRequest).createReadStream();
@@ -173,7 +197,14 @@ export class DocumentsService {
     }
   }
 
-  public async uploadDocument(user: string, commerceId: string, reportType: string, filename: string, format: string, files: any): Promise<any> {
+  public async uploadDocument(
+    user: string,
+    commerceId: string,
+    reportType: string,
+    filename: string,
+    format: string,
+    files: any
+  ): Promise<any> {
     const S3 = new AWS.S3();
     const name = `${filename}.${format.split('/')[1]}`;
     if (!files || files.length == 0) {
@@ -192,17 +223,31 @@ export class DocumentsService {
             reject(error);
           }
           resolve(result);
-        },
+        }
       );
-    }).then(async () => {
-      const result = await this.createDocument(user, name, commerceId, reportType, format);
-      return result;
-    }).catch((error) => {
-      throw new HttpException(`error subiendo archivo de comercio: ${error.message}`, HttpStatus.NOT_FOUND);
-    });
+    })
+      .then(async () => {
+        const result = await this.createDocument(user, name, commerceId, reportType, format);
+        return result;
+      })
+      .catch(error => {
+        throw new HttpException(
+          `error subiendo archivo de comercio: ${error.message}`,
+          HttpStatus.NOT_FOUND
+        );
+      });
   }
 
-  public async uploadClientDocument(user: string, commerceId: string, clientId: string, reportType: string, filename: string, format: string, files: any, documentMetadata: DocumentMetadata): Promise<Document> {
+  public async uploadClientDocument(
+    user: string,
+    commerceId: string,
+    clientId: string,
+    reportType: string,
+    filename: string,
+    format: string,
+    files: any,
+    documentMetadata: DocumentMetadata
+  ): Promise<Document> {
     const S3 = new AWS.S3();
     const name = `${filename}.${format.split('/')[1]}`;
     if (!files || files.length == 0) {
@@ -218,33 +263,49 @@ export class DocumentsService {
           Metadata: {
             clientId: clientId,
             commerceId: commerceId,
-            user: user || ''
-          }
+            user: user || '',
+          },
         },
         (error, result) => {
           if (error) {
             reject(error);
           }
           resolve(result);
-        },
+        }
       );
-    }).catch((error) => {
-      throw new HttpException(`error subiendo archivo de cliente: ${error.message}`, HttpStatus.NOT_FOUND);
+    }).catch(error => {
+      throw new HttpException(
+        `error subiendo archivo de cliente: ${error.message}`,
+        HttpStatus.NOT_FOUND
+      );
     });
-    const result = await this.createClientDocument(user, name, commerceId, clientId, reportType, format, documentMetadata);
+    const result = await this.createClientDocument(
+      user,
+      name,
+      commerceId,
+      clientId,
+      reportType,
+      format,
+      documentMetadata
+    );
     return result;
   }
 
-  public async getDocumentsList(reportType: string, documentKey: string): Promise<AWS.S3.ObjectList> {
+  public async getDocumentsList(
+    reportType: string,
+    documentKey: string
+  ): Promise<AWS.S3.ObjectList> {
     const S3 = new AWS.S3();
     return new Promise((resolve, reject) => {
-      S3.listObjectsV2({ Bucket: this.getBucketPath(reportType), Prefix: documentKey }, (error, result) => {
+      S3.listObjectsV2(
+        { Bucket: this.getBucketPath(reportType), Prefix: documentKey },
+        (error, result) => {
           if (error) {
             return reject(error);
           }
           return resolve(result.Contents);
-        });
-      });
-    }
+        }
+      );
+    });
   }
-
+}

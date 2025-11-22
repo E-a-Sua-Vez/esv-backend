@@ -1,5 +1,6 @@
-import { CollaboratorType } from '../model/collaborator-type.enum';
 import { Service } from 'src/service/model/service.entity';
+
+import { CollaboratorType } from '../model/collaborator-type.enum';
 
 export class CollaboratorDetailsDto {
   id: string;
@@ -13,5 +14,5 @@ export class CollaboratorDetailsDto {
   bot: boolean;
   servicesId: string[];
   available: boolean;
-  services?: Service[]
+  services?: Service[];
 }

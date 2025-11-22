@@ -1,3 +1,3 @@
 export enum ClientType {
-    STANDARD = 'STANDARD'
+  STANDARD = 'STANDARD',
 }

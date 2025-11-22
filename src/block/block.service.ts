@@ -4,6 +4,7 @@ import { Commerce } from 'src/commerce/model/commerce.entity';
 import { Queue } from 'src/queue/model/queue.entity';
 import { QueueService } from 'src/queue/queue.service';
 import { timeConvert } from 'src/shared/utils/date';
+
 import { Block } from './model/block.entity';
 
 @Injectable()
@@ -20,14 +21,12 @@ export class BlockService {
     if (queue.blockTime) {
       blockTime = queue.blockTime;
     }
-    if (queue.serviceInfo &&
-      queue.serviceInfo.sameCommeceHours === true) {
+    if (queue.serviceInfo && queue.serviceInfo.sameCommeceHours === true) {
       const commerce = await this.commerceService.getCommerceById(queue.commerceId);
       if (commerce.serviceInfo) {
         serviceInfo = commerce.serviceInfo;
       }
-    } else if (queue.serviceInfo &&
-      queue.serviceInfo.sameCommeceHours === false) {
+    } else if (queue.serviceInfo && queue.serviceInfo.sameCommeceHours === false) {
       serviceInfo = queue.serviceInfo;
     }
     return this.buildBlocks(blockTime, serviceInfo);
@@ -35,11 +34,11 @@ export class BlockService {
 
   private buildBlocks(blockTime: number, serviceInfo: any): Block[] {
     let hourBlocks: Block[] = [];
-    let attentionHourFrom = serviceInfo.attentionHourFrom;
-    let attentionHourTo = serviceInfo.attentionHourTo;
-    let breakHourFrom = serviceInfo.breakHourFrom;
-    let breakHourTo = serviceInfo.breakHourTo;
-    let isBreak = serviceInfo.break;
+    const attentionHourFrom = serviceInfo.attentionHourFrom;
+    const attentionHourTo = serviceInfo.attentionHourTo;
+    const breakHourFrom = serviceInfo.breakHourFrom;
+    const breakHourTo = serviceInfo.breakHourTo;
+    const isBreak = serviceInfo.break;
 
     if (blockTime && attentionHourFrom >= 0 && attentionHourTo >= 0) {
       if (isBreak === false) {
@@ -48,12 +47,12 @@ export class BlockService {
         const minsTotal = minsTo - minsFrom;
         const blocksAmount = Math.floor(minsTotal / blockTime);
         const blocks = [];
-        for(let i = 1; i <= blocksAmount; i ++) {
+        for (let i = 1; i <= blocksAmount; i++) {
           const block: Block = {
             number: i,
-            hourFrom: timeConvert((minsFrom + (blockTime * (i - 1)))),
-            hourTo: timeConvert((minsFrom + (blockTime * i))),
-          }
+            hourFrom: timeConvert(minsFrom + blockTime * (i - 1)),
+            hourTo: timeConvert(minsFrom + blockTime * i),
+          };
           blocks.push(block);
         }
         hourBlocks = blocks;
@@ -68,21 +67,21 @@ export class BlockService {
         const blocksAmount2 = Math.floor(minsTotal2 / blockTime);
         const blocks: Block[] = [];
         let countBlock = 1;
-        for(let i = 1; i <= blocksAmount1; i ++) {
+        for (let i = 1; i <= blocksAmount1; i++) {
           const block: Block = {
             number: countBlock,
-            hourFrom: timeConvert((minsFrom1 + (blockTime * (i - 1)))),
-            hourTo: timeConvert((minsFrom1 + (blockTime * i))),
-          }
+            hourFrom: timeConvert(minsFrom1 + blockTime * (i - 1)),
+            hourTo: timeConvert(minsFrom1 + blockTime * i),
+          };
           blocks.push(block);
           countBlock++;
         }
-        for(let i = 1; i <= blocksAmount2; i ++) {
+        for (let i = 1; i <= blocksAmount2; i++) {
           const block: Block = {
             number: countBlock,
-            hourFrom: timeConvert((minsFrom2 + (blockTime * (i - 1)))),
-            hourTo: timeConvert((minsFrom2 + (blockTime * i))),
-          }
+            hourFrom: timeConvert(minsFrom2 + blockTime * (i - 1)),
+            hourTo: timeConvert(minsFrom2 + blockTime * i),
+          };
           blocks.push(block);
           countBlock++;
         }
@@ -104,27 +103,28 @@ export class BlockService {
     return blocksByDay;
   }
 
-  public async getCommerceQueueBlockDetailsByDay(commerce: Commerce, queue: Queue): Promise<Record<string, Block[]>> {
+  public async getCommerceQueueBlockDetailsByDay(
+    commerce: Commerce,
+    queue: Queue
+  ): Promise<Record<string, Block[]>> {
     let hourBlocks: Block[] = [];
-    let blocksByDay = {};
+    const blocksByDay = {};
     let serviceInfo;
     let blockTime;
     if (queue.blockTime) {
       blockTime = queue.blockTime;
     }
-    if (queue.serviceInfo &&
-      queue.serviceInfo.sameCommeceHours === true) {
+    if (queue.serviceInfo && queue.serviceInfo.sameCommeceHours === true) {
       if (commerce.serviceInfo) {
         serviceInfo = commerce.serviceInfo;
       }
-    } else if (queue.serviceInfo &&
-      queue.serviceInfo.sameCommeceHours === false) {
+    } else if (queue.serviceInfo && queue.serviceInfo.sameCommeceHours === false) {
       serviceInfo = queue.serviceInfo;
     }
 
     if (serviceInfo && serviceInfo.personalized === false) {
       hourBlocks = await this.buildBlocks(blockTime, serviceInfo);
-      [1,2,3,4,5,6,7].map(key => blocksByDay[key] = hourBlocks);
+      [1, 2, 3, 4, 5, 6, 7].map(key => (blocksByDay[key] = hourBlocks));
     } else if (serviceInfo && serviceInfo.personalized === true) {
       if (serviceInfo.attentionDays && serviceInfo.attentionDays.length >= 1) {
         serviceInfo.attentionDays.map(key => {
@@ -134,7 +134,7 @@ export class BlockService {
             serviceInfo.attentionHourFrom = block.attentionHourFrom;
             serviceInfo.attentionHourTo = block.attentionHourTo;
             hourBlocks = this.buildBlocks(blockTime, serviceInfo);
-            blocksByDay[key] = hourBlocks
+            blocksByDay[key] = hourBlocks;
           }
         });
       }
@@ -142,8 +142,9 @@ export class BlockService {
     return blocksByDay;
   }
 
-
-  public async getQueueBlockDetailsByDayByCommerceId(commerceId: string): Promise<Record<string, Record<string, Block[]>>> {
+  public async getQueueBlockDetailsByDayByCommerceId(
+    commerceId: string
+  ): Promise<Record<string, Record<string, Block[]>>> {
     const result = {};
     const commerce = await this.commerceService.getCommerceById(commerceId);
     const queues = commerce.queues;
@@ -157,7 +158,10 @@ export class BlockService {
     return result;
   }
 
-  public async getQueueBlockDetailsBySpecificDayByCommerceId(commerceId: string, queueId: string): Promise<Record<string, Block[]>> {
+  public async getQueueBlockDetailsBySpecificDayByCommerceId(
+    commerceId: string,
+    queueId: string
+  ): Promise<Record<string, Block[]>> {
     const result = {};
     const commerce = await this.commerceService.getCommerceById(commerceId);
     const queues = commerce.queues.filter(queue => queue.id === queueId);
@@ -184,10 +188,10 @@ export class BlockService {
               const serviceInfoToBuild = {
                 attentionHourFrom: block.attentionHourFrom,
                 attentionHourTo: block.attentionHourTo,
-                break: false
+                break: false,
               };
               result[date] = this.buildBlocks(blockTime, serviceInfoToBuild);
-            })
+            });
           }
         }
       }

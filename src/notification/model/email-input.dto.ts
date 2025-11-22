@@ -7,7 +7,7 @@ class Destination {
 export class Attachment {
   content: string;
   filename: string;
-  encoding: string = 'base64';
+  encoding = 'base64';
 }
 
 export class EmailInputDto {

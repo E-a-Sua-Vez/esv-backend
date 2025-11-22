@@ -1,7 +1,9 @@
 import { Collection } from 'fireorm';
+
+import { PatientHistoryItem } from '../../patient-history-item/model/patient-history-item.entity';
+
 import { QuestionType } from './question-type.enum';
 import { FormType } from './type.enum';
-import { PatientHistoryItem } from '../../patient-history-item/model/patient-history-item.entity';
 
 export class Question {
   title: string;

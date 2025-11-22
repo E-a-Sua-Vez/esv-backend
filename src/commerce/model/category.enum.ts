@@ -6,5 +6,5 @@ export enum Category {
   pharmacy = 'pharmacy',
   services = 'services',
   restaurant = 'restaurant',
-  supermarket = 'supermarket'
+  supermarket = 'supermarket',
 }

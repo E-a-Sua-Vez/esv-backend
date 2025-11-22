@@ -1,5 +1,5 @@
 export class Block {
-    number: number;
-    hourFrom: string;
-    hourTo: string;
+  number: number;
+  hourFrom: string;
+  hourTo: string;
 }

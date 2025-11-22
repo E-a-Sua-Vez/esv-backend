@@ -1,3 +1,3 @@
 export enum UserType {
-    STANDARD = 'STANDARD'
+  STANDARD = 'STANDARD',
 }

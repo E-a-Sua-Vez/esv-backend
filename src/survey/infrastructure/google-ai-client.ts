@@ -1,18 +1,15 @@
-
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+
 import { AiAnalyzerClient } from './ai-analyzer';
 
 @Injectable()
 export class GoogleAiClient implements AiAnalyzerClient {
-
   private readonly googleAiLanguageUrl = process.env.GOOGLE_AI_LANGUAGE_URL;
   private readonly googleAiLanguageApiKey = process.env.GOOGLE_AI_LANGUAGE_API_KEY;
 
-  constructor(
-    private readonly httpService: HttpService
-  ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   async analyzeCommentScore(message: string, method: string, type: string): Promise<any> {
     let analysis;
@@ -23,15 +20,15 @@ export class GoogleAiClient implements AiAnalyzerClient {
       const body = {
         document: {
           content: message,
-          type: type
+          type: type,
         },
-        encodingType: 'UTF8'
+        encodingType: 'UTF8',
       };
       const config = {
         headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+          'Content-Type': 'application/json',
+        },
+      };
       try {
         analysis = (await firstValueFrom(this.httpService.post(url, body, config))).data;
         if (analysis && analysis.documentSentiment) {
@@ -45,7 +42,6 @@ export class GoogleAiClient implements AiAnalyzerClient {
     return { score, ...analysis };
   }
 
-
   async analyzeCommentEntities(message: string, method?: string, type?: string): Promise<any> {
     let analysis;
     let result = {};
@@ -54,15 +50,15 @@ export class GoogleAiClient implements AiAnalyzerClient {
       const body = {
         document: {
           content: message,
-          type: type
+          type: type,
         },
-        encodingType: 'UTF8'
+        encodingType: 'UTF8',
       };
       const config = {
         headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+          'Content-Type': 'application/json',
+        },
+      };
 
       try {
         analysis = (await firstValueFrom(this.httpService.post(url, body, config))).data;
@@ -71,7 +67,7 @@ export class GoogleAiClient implements AiAnalyzerClient {
           if (entity) {
             const entityFulfilled = {};
             entityFulfilled['name'] = entity.name;
-            entityFulfilled['type'] = entity.type
+            entityFulfilled['type'] = entity.type;
             entityFulfilled['salience'] = entity.salience || 0;
             entityFulfilled['score'] = 0;
             if (entity.sentiment) {
@@ -81,11 +77,9 @@ export class GoogleAiClient implements AiAnalyzerClient {
           }
         });
       } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message);
       }
     }
     return { result, ...analysis };
   }
-
 }
-

@@ -1,10 +1,11 @@
-import { ItemCharacteristics, PatientHistoryItem } from './model/patient-history-item.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import PatientHistoryItemCreated from './events/PatientHistoryItemCreated';
 import PatientHistoryItemUpdated from './events/PatientHistoryItemUpdated';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { ItemCharacteristics, PatientHistoryItem } from './model/patient-history-item.entity';
 import { PatientHistoryItemType } from './model/patient-history-type.enum';
 
 export class PatientHistoryItemService {
@@ -19,48 +20,63 @@ export class PatientHistoryItemService {
 
   public async getAllPatientHistoryItem(): Promise<PatientHistoryItem[]> {
     return await this.patientHistoryItemRepository
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
-  public async getPatientHistoryItemsByCommerceId(commerceId: string): Promise<PatientHistoryItem[]> {
+  public async getPatientHistoryItemsByCommerceId(
+    commerceId: string
+  ): Promise<PatientHistoryItem[]> {
     return await this.patientHistoryItemRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
-  public async getActivePatientHistoryItemsByCommerceId(commerceId: string): Promise<PatientHistoryItem[]> {
+  public async getActivePatientHistoryItemsByCommerceId(
+    commerceId: string
+  ): Promise<PatientHistoryItem[]> {
     return await this.patientHistoryItemRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('active', true)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
-  public async getActivePatientHistoryItemsByCommerceIdAndType(commerceId: string, type: PatientHistoryItemType): Promise<PatientHistoryItem[]> {
+  public async getActivePatientHistoryItemsByCommerceIdAndType(
+    commerceId: string,
+    type: PatientHistoryItemType
+  ): Promise<PatientHistoryItem[]> {
     return await this.patientHistoryItemRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('type', type)
-    .whereEqualTo('active', true)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('type', type)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
   name: string;
-    type: PatientHistoryItemType;
-    characteristics: ItemCharacteristics;
-    commerceId: string;
-    createdAt: Date;
-    active: boolean;
-    available: boolean;
+  type: PatientHistoryItemType;
+  characteristics: ItemCharacteristics;
+  commerceId: string;
+  createdAt: Date;
+  active: boolean;
+  available: boolean;
 
-  public async createPatientHistoryItem(user: string, commerceId: string, name: string, tag: string, order: number, type: PatientHistoryItemType, characteristics: ItemCharacteristics): Promise<PatientHistoryItem> {
-    let item = new PatientHistoryItem();
+  public async createPatientHistoryItem(
+    user: string,
+    commerceId: string,
+    name: string,
+    tag: string,
+    order: number,
+    type: PatientHistoryItemType,
+    characteristics: ItemCharacteristics
+  ): Promise<PatientHistoryItem> {
+    const item = new PatientHistoryItem();
     item.commerceId = commerceId;
     item.name = name;
     item.type = type;
@@ -77,9 +93,20 @@ export class PatientHistoryItemService {
     return itemCreated;
   }
 
-  public async updatePatientHistoryItemConfigurations(user: string, id: string, name: string, tag: string, order: number, type: PatientHistoryItemType, characteristics: ItemCharacteristics, active: boolean, available: boolean, online: boolean): Promise<PatientHistoryItem> {
+  public async updatePatientHistoryItemConfigurations(
+    user: string,
+    id: string,
+    name: string,
+    tag: string,
+    order: number,
+    type: PatientHistoryItemType,
+    characteristics: ItemCharacteristics,
+    active: boolean,
+    available: boolean,
+    online: boolean
+  ): Promise<PatientHistoryItem> {
     try {
-      let item = await this.patientHistoryItemRepository.findById(id);
+      const item = await this.patientHistoryItemRepository.findById(id);
       if (name) {
         item.name = name;
       }
@@ -109,7 +136,10 @@ export class PatientHistoryItemService {
       publish(itemUpdatedEvent);
       return itemUpdated;
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el patient history item: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el patient history item: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

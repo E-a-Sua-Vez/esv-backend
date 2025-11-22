@@ -3,8 +3,7 @@ import { Request } from 'express';
 
 @Injectable()
 export class SimpleGuard implements CanActivate {
-
-  constructor() { }
+  constructor() {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const environment = process.env.NODE_ENV;

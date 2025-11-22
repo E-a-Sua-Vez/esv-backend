@@ -1,53 +1,60 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { FireormModule } from 'nestjs-fireorm';
+
+import { AdministratorModule } from './administrator/administrator.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CommerceModule } from './commerce/commerce.module';
-import { CollaboratorModule } from './collaborator/collaborator.module';
-import { AdministratorModule } from './administrator/administrator.module';
 import { AttentionModule } from './attention/attention.module';
-import { QueueModule } from './queue/queue.module';
-import { UserModule } from './user/user.module';
-import { SurveyModule } from './survey/survey.module';
-import { PaymentModule } from './payment/payment.module';
-import { NotificationModule } from './notification/notification.module';
-import { ModuleModule } from './module/module.module';
-import { HealthModule } from './health/health.module';
-import { FeatureToggleModule } from './feature-toggle/feature-toggle.module';
-import { PlanModule } from './plan/plan.module';
-import { BusinessModule } from './business/business.module';
-import { RolModule } from './rol/rol.module';
-import { SuggestionModule } from './suggestion/suggestion.module';
-import { FeatureModule } from './feature/feature.module';
-import { PlanActivationModule } from './plan-activation/plan-activation.module';
-import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
-import { BookingModule } from './booking/booking.module';
-import { WaitlistModule } from './waitlist/waitlist.module';
 import { BlockModule } from './block/block.module';
-import { ServiceModule } from './service/service.module';
+import { BookingModule } from './booking/booking.module';
+import { BusinessModule } from './business/business.module';
 import { ClientModule } from './client/client.module';
 import { ClientContactModule } from './client-contact/client-contact.module';
-import { ProductModule } from './product/product.module';
-import { DocumentsModule } from './documents/documents.module';
-import { IncomeModule } from './income/income.module';
+import { CollaboratorModule } from './collaborator/collaborator.module';
+import { CommerceModule } from './commerce/commerce.module';
 import { OutcomeTypeModule } from './outcome-type/outcome-type.module';
 import { PackageModule } from './package/package.module';
 import { OutcomeModule } from './outcome/outcome.module';
 import { PatientHistoryModule } from './patient-history/patient-history.module';
 import { CompanyModule } from './company/company.module';
-import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
-import { FormPersonalizedModule } from './form-personalized/form-personalized.module';
+import { configValidationSchema } from './config/config.schema';
+import { DocumentsModule } from './documents/documents.module';
+import { FeatureModule } from './feature/feature.module';
+import { FeatureToggleModule } from './feature-toggle/feature-toggle.module';
 import { FormModule } from './form/form.module';
+import { FormPersonalizedModule } from './form-personalized/form-personalized.module';
+import { HealthModule } from './health/health.module';
+import { IncomeModule } from './income/income.module';
 import { MessageModule } from './message/message.module';
+import { ModuleModule } from './module/module.module';
+import { NotificationModule } from './notification/notification.module';
+import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
+import { PaymentModule } from './payment/payment.module';
+import { PlanModule } from './plan/plan.module';
+import { PlanActivationModule } from './plan-activation/plan-activation.module';
+import { ProductModule } from './product/product.module';
+import { QueueModule } from './queue/queue.module';
+import { RolModule } from './rol/rol.module';
+import { ServiceModule } from './service/service.module';
+import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { LoggerModule } from './shared/logger/logger.module';
+import { LoggingInterceptor } from './shared/logger/logging.interceptor';
+import { SuggestionModule } from './suggestion/suggestion.module';
+import { SurveyModule } from './survey/survey.module';
+import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
+import { UserModule } from './user/user.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
+    LoggerModule,
     FireormModule.forRoot({
       firestoreSettings: {
         projectId: process.env.PROJECT_ID,
-        ignoreUndefinedProperties: true
+        ignoreUndefinedProperties: true,
       },
       fireormSettings: { validateModels: true },
     }),
@@ -91,10 +98,33 @@ import { MessageModule } from './message/message.module';
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      envFilePath: `${process.env.NODE_ENV || 'local'}.env`
-    })
+      envFilePath: `${process.env.NODE_ENV || 'local'}.env`,
+      validationSchema: configValidationSchema,
+      validationOptions: {
+        allowUnknown: true, // Allow unknown env vars (for flexibility)
+        abortEarly: false, // Show all validation errors at once
+      },
+    }),
+    ThrottlerModule.forRoot({
+      ttl: 60, // Time window in seconds
+      limit: 100, // Maximum number of requests per window
+    } as any), // Type definition issue with @nestjs/throttler v6
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,4 +1,5 @@
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
+
 import { Queue } from '../../queue/model/queue.entity';
 
 export interface WaitlistBuilderInterface {

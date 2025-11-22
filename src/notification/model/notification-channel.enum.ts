@@ -1,4 +1,4 @@
 export enum NotificationChannel {
-    WHATSAPP = 'WHATSAPP',
-    EMAIL = 'EMAIL'
+  WHATSAPP = 'WHATSAPP',
+  EMAIL = 'EMAIL',
 }

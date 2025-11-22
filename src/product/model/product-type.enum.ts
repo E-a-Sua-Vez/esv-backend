@@ -1,3 +1,3 @@
 export enum ProductType {
-    SERVICE = 'SERVICE'
+  SERVICE = 'SERVICE',
 }

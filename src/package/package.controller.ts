@@ -1,91 +1,260 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { PackageService } from './package.service';
-import { Package } from './model/package.entity';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 
+import { Package } from './model/package.entity';
+import { PackageService } from './package.service';
+
+@ApiTags('package')
 @Controller('package')
 export class PackageController {
   constructor(private readonly incomeTypeService: PackageService) {}
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/:id')
+  @ApiOperation({
+    summary: 'Get package by ID',
+    description: 'Retrieves a package by its unique identifier',
+  })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiResponse({ status: 200, description: 'Package found', type: Package })
+  @ApiResponse({ status: 404, description: 'Package not found' })
   public async getPackageById(@Param() params: any): Promise<Package> {
     const { id } = params;
     return this.incomeTypeService.getPackageById(id);
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/')
+  @ApiOperation({ summary: 'Get all packages', description: 'Retrieves a list of all packages' })
+  @ApiResponse({ status: 200, description: 'List of packages', type: [Package] })
   public async getPackages(): Promise<Package[]> {
     return this.incomeTypeService.getPackages();
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/commerce/:commerceId')
+  @ApiOperation({
+    summary: 'Get packages by commerce',
+    description: 'Retrieves all packages for a specific commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiResponse({ status: 200, description: 'List of packages', type: [Package] })
   public async getPackageByCommerce(@Param() params: any): Promise<Package[]> {
     const { commerceId } = params;
     return this.incomeTypeService.getPackageByCommerce(commerceId);
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/commerceId/:commerceId/clientId/:clientId')
+  @ApiOperation({
+    summary: 'Get packages by commerce and client',
+    description: 'Retrieves all packages for a specific commerce and client',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({ status: 200, description: 'List of packages', type: [Package] })
   public async getPackageByCommerceIdAndClientId(@Param() params: any): Promise<Package[]> {
     const { commerceId, clientId } = params;
     return this.incomeTypeService.getPackageByCommerceIdAndClientId(commerceId, clientId);
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/commerceId/:commerceId/serviceId/:serviceId/clientId/:clientId')
+  @ApiOperation({
+    summary: 'Get packages by commerce, service, and client',
+    description: 'Retrieves packages filtered by commerce, service, and client',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'serviceId', description: 'Service ID', example: 'service-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({ status: 200, description: 'List of packages', type: [Package] })
   public async getPackageByCommerceIdAndClientServices(@Param() params: any): Promise<Package[]> {
     const { commerceId, clientId, serviceId } = params;
-    return this.incomeTypeService.getPackageByCommerceIdAndClientServices(commerceId, clientId, serviceId);
+    return this.incomeTypeService.getPackageByCommerceIdAndClientServices(
+      commerceId,
+      clientId,
+      serviceId
+    );
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/list/:ids')
+  @ApiOperation({
+    summary: 'Get packages by IDs',
+    description: 'Retrieves multiple packages by their IDs (comma-separated)',
+  })
+  @ApiParam({
+    name: 'ids',
+    description: 'Comma-separated package IDs',
+    example: 'package-1,package-2,package-3',
+  })
+  @ApiResponse({ status: 200, description: 'List of packages', type: [Package] })
   public async getPackagesById(@Param() params: any): Promise<Package[]> {
     const { ids } = params;
     return this.incomeTypeService.getPackagesById(ids.split(','));
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Post('/')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new package',
+    description: 'Creates a new service package for a client',
+  })
+  @ApiBody({ type: Package })
+  @ApiResponse({ status: 201, description: 'Package created successfully', type: Package })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   public async createPackage(@User() user, @Body() body: Package): Promise<Package> {
     const {
-      commerceId, clientId, firstBookingId, firstAttentionId, proceduresAmount,
-      name, servicesId, bookingsId, attentionsId, type, status
+      commerceId,
+      clientId,
+      firstBookingId,
+      firstAttentionId,
+      proceduresAmount,
+      name,
+      servicesId,
+      bookingsId,
+      attentionsId,
+      type,
+      status,
     } = body;
     return this.incomeTypeService.createPackage(
-      user, commerceId, clientId, firstBookingId, firstAttentionId, proceduresAmount, name,
-      servicesId,  bookingsId, attentionsId, type, status
+      user,
+      commerceId,
+      clientId,
+      firstBookingId,
+      firstAttentionId,
+      proceduresAmount,
+      name,
+      servicesId,
+      bookingsId,
+      attentionsId,
+      type,
+      status
     );
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Patch('/:id')
-  public async updatePackage(@User() user, @Param() params: any, @Body() body: Package): Promise<Package> {
+  @ApiOperation({
+    summary: 'Update package',
+    description: 'Updates package configuration and information',
+  })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiBody({ type: Package })
+  @ApiResponse({ status: 200, description: 'Package updated successfully', type: Package })
+  @ApiResponse({ status: 404, description: 'Package not found' })
+  public async updatePackage(
+    @User() user,
+    @Param() params: any,
+    @Body() body: Package
+  ): Promise<Package> {
     const { id } = params;
-    const { firstBookingId, firstAttentionId, proceduresAmount, proceduresLeft,
-        name, servicesId, bookingsId, attentionsId, active, available,
-        type, status, cancelledAt, cancelledBy, completedAt, completedBy, expireAt } = body;
+    const {
+      firstBookingId,
+      firstAttentionId,
+      proceduresAmount,
+      proceduresLeft,
+      name,
+      servicesId,
+      bookingsId,
+      attentionsId,
+      active,
+      available,
+      type,
+      status,
+      cancelledAt,
+      cancelledBy,
+      completedAt,
+      completedBy,
+      expireAt,
+    } = body;
     return this.incomeTypeService.updatePackageConfigurations(
-        user, id, firstBookingId, firstAttentionId, proceduresAmount, proceduresLeft,
-        name, servicesId, bookingsId, attentionsId, active, available,
-        type, status, cancelledAt, cancelledBy, completedAt, completedBy, expireAt
+      user,
+      id,
+      firstBookingId,
+      firstAttentionId,
+      proceduresAmount,
+      proceduresLeft,
+      name,
+      servicesId,
+      bookingsId,
+      attentionsId,
+      active,
+      available,
+      type,
+      status,
+      cancelledAt,
+      cancelledBy,
+      completedAt,
+      completedBy,
+      expireAt
     );
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Patch('/cancel/:id')
+  @ApiOperation({ summary: 'Cancel package', description: 'Cancels an active package' })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiResponse({ status: 200, description: 'Package cancelled successfully', type: Package })
+  @ApiResponse({ status: 404, description: 'Package not found' })
   public async cancelPackage(@User() user, @Param() params: any): Promise<Package> {
     const { id } = params;
     return this.incomeTypeService.cancelPackage(user, id);
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Patch('/pay/:id')
-  public async payPackage(@User() user, @Param() params: any, @Body() body: Package): Promise<Package> {
+  @ApiOperation({
+    summary: 'Pay package',
+    description: 'Marks a package as paid using income records',
+  })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        incomesId: { type: 'array', items: { type: 'string' }, example: ['income-1', 'income-2'] },
+      },
+      required: ['incomesId'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Package paid successfully', type: Package })
+  @ApiResponse({ status: 404, description: 'Package not found' })
+  public async payPackage(
+    @User() user,
+    @Param() params: any,
+    @Body() body: Package
+  ): Promise<Package> {
     const { id } = params;
     const { incomesId } = body;
     return this.incomeTypeService.payPackage(user, id, incomesId);

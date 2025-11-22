@@ -9,11 +9,21 @@
     "prebuild": "rimraf dist",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "start": "nest start",
     "start:local": "cross-env NODE_ENV=local nest start --watch",
     "start:local:br": "cross-env NODE_ENV=local APP_ENV=br nest start --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
+    "lint:check": "eslint \"{src,apps,libs}/**/*.ts\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prepare": "husky install",
+    "swagger:generate": "cross-env GENERATE_SWAGGER_JSON=true nest start",
+    "postman:generate": "node scripts/generate-postman-collection.js"
   },
   "dependencies": {
     "@google-cloud/firestore": "^6.4.1",
@@ -22,6 +32,8 @@
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
+    "@nestjs/swagger": "^6.3.0",
+    "@nestjs/throttler": "^6.4.0",
     "aws-sdk": "^2.699.0",
     "bottleneck": "^2.19.5",
     "class-validator": "^0.14.0",
@@ -30,6 +42,7 @@
     "firebase": "^9.14.0",
     "firebase-admin": "^11.5.0",
     "fireorm": "^0.23.3",
+    "joi": "^18.0.2",
     "module": "^1.2.5",
     "nestjs-fireorm": "^1.1.0",
     "nodemailer": "^6.9.13",
@@ -37,24 +50,39 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
+    "swagger-ui-express": "^5.0.1",
     "twilio": "^4.7.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
     "@nestjs/schematics": "^9.0.0",
+    "@nestjs/testing": "^9.0.0",
     "@types/express": "^4.17.13",
+    "@types/jest": "^29.5.0",
+    "@types/joi": "^17.2.3",
     "@types/node": "^16.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.0.0",
     "cross-env": "^7.0.2",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^8.0.3",
+    "jest": "^29.5.0",
+    "lint-staged": "^13.2.0",
     "prettier": "^2.3.2",
     "source-map-support": "^0.5.20",
+    "ts-jest": "^29.1.0",
     "ts-loader": "^9.2.3",
     "ts-node": "^10.0.0",
-    "tsconfig-paths": "4.1.0",
+    "tsconfig-paths": "^4.1.0",
     "typescript": "^4.7.4"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

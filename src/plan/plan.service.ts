@@ -1,17 +1,18 @@
-import { Plan } from './model/plan.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
-import PlanUpdated from './events/PlanUpdated';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import PlanCreated from './events/PlanCreated';
+import PlanUpdated from './events/PlanUpdated';
 import { Periodicity } from './model/periodicity.enum';
-import * as plans from './model/plan.json';
 import * as permissions from './model/plan-permissions.json';
+import { Plan } from './model/plan.entity';
+import * as plans from './model/plan.json';
 import { ProductType } from './model/product.enum';
 
 export class PlanService {
   constructor(
-  @InjectRepository(Plan)
+    @InjectRepository(Plan)
     private planRepository = getRepository(Plan)
   ) {}
 
@@ -20,9 +21,7 @@ export class PlanService {
   }
 
   public async getAll(): Promise<Plan[]> {
-    return await this.planRepository
-      .orderByAscending('order')
-      .find();
+    return await this.planRepository.orderByAscending('order').find();
   }
 
   public async getOnlinePlans(country: string): Promise<Plan[]> {
@@ -33,11 +32,10 @@ export class PlanService {
         .find();
     }
     return await this.planRepository
-        .whereEqualTo('country', country)
-        .whereEqualTo('online', true)
-        .orderByAscending('order')
-        .find();
-
+      .whereEqualTo('country', country)
+      .whereEqualTo('online', true)
+      .orderByAscending('order')
+      .find();
   }
 
   public async update(user, plan: Plan): Promise<Plan> {
@@ -48,11 +46,11 @@ export class PlanService {
   }
 
   public async initPlan(user: string): Promise<Plan[]> {
-    let plansCreated = [];
+    const plansCreated = [];
     const plansToCreate = plans;
     for (let i = 0; i < plansToCreate.length; i++) {
       const planToCreate = plansToCreate[i];
-      let plan = new Plan();
+      const plan = new Plan();
       const {
         name,
         description,
@@ -62,12 +60,11 @@ export class PlanService {
         price,
         periodicity,
         order,
-        permissions
+        permissions,
       } = planToCreate;
       plan.name = name;
       plan.description = description;
-      plan.country = '',
-      plan.online = online;
+      (plan.country = ''), (plan.online = online);
       plan.currency = currency || '';
       plan.price = price;
       plan.saving = 0;
@@ -86,8 +83,21 @@ export class PlanService {
     return plansCreated;
   }
 
-  public async createPlan(user: string, name: string, country: string, description: string, price: number, periodicity: Periodicity, order: number, online, onlinePrice: number, saving: number, onlineSaving: number, productType: ProductType): Promise<Plan> {
-    let plan = new Plan();
+  public async createPlan(
+    user: string,
+    name: string,
+    country: string,
+    description: string,
+    price: number,
+    periodicity: Periodicity,
+    order: number,
+    online,
+    onlinePrice: number,
+    saving: number,
+    onlineSaving: number,
+    productType: ProductType
+  ): Promise<Plan> {
+    const plan = new Plan();
     plan.name = name;
     plan.country = country;
     plan.description = description;
@@ -111,8 +121,13 @@ export class PlanService {
     return planCreated;
   }
 
-  public async updatePlanPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Plan> {
-    let plan = await this.getPlanById(id);
+  public async updatePlanPermission(
+    user: string,
+    id: string,
+    permissionName: string,
+    permissionValue: boolean | number
+  ): Promise<Plan> {
+    const plan = await this.getPlanById(id);
     if (plan) {
       if (plan.permissions) {
         plan.permissions[permissionName] = permissionValue;
@@ -121,9 +136,23 @@ export class PlanService {
     return await this.update(user, plan);
   }
 
-  public async updatePlanConfigurations(user: string, id: string, name: string, country: string, description: string, periodicity: Periodicity, order: number, price: number, active, online, onlinePrice: number, saving: number, onlineSaving: number): Promise<Plan> {
+  public async updatePlanConfigurations(
+    user: string,
+    id: string,
+    name: string,
+    country: string,
+    description: string,
+    periodicity: Periodicity,
+    order: number,
+    price: number,
+    active,
+    online,
+    onlinePrice: number,
+    saving: number,
+    onlineSaving: number
+  ): Promise<Plan> {
     try {
-      let plan = await this.planRepository.findById(id);
+      const plan = await this.planRepository.findById(id);
       if (name) {
         plan.name = name;
       }
@@ -169,7 +198,9 @@ export class PlanService {
     }
   }
 
-  public async activatedPermissionsForPlan(planId: string): Promise<Record<string, number | boolean>> {
+  public async activatedPermissionsForPlan(
+    planId: string
+  ): Promise<Record<string, number | boolean>> {
     const permissions = {};
     let planPermissions = {};
     const plan = await this.getPlanById(planId);
@@ -183,20 +214,22 @@ export class PlanService {
         } else {
           permissions[permission] = planPermissions[permission];
         }
-      })
+      });
     }
     return permissions;
   }
 
-  public async desactivatedPermissionsForPlan(planId: string): Promise<Record<string, number | boolean>> {
+  public async desactivatedPermissionsForPlan(
+    planId: string
+  ): Promise<Record<string, number | boolean>> {
     const permissions = {};
     let planPermissions = {};
     const fixedExclutions = [
       'business.main-menu.your-plan',
       'plan.admin.edit',
       'plan.admin.view',
-      'plan.admin.update'
-    ]
+      'plan.admin.update',
+    ];
     const plan = await this.getPlanById(planId);
     if (plan && plan.permissions) {
       planPermissions = plan.permissions;
@@ -211,7 +244,7 @@ export class PlanService {
         if (fixedExclutions.includes(permission)) {
           permissions[permission] = true;
         }
-      })
+      });
     }
     return permissions;
   }

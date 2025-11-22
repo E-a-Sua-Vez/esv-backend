@@ -1,23 +1,25 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
-import { AttentionController } from './attention.controller';
-import { Attention } from './model/attention.entity';
-import { AttentionService } from './attention.service';
-import { QueueModule } from '../queue/queue.module';
+import { DocumentsModule } from 'src/documents/documents.module';
+import { PackageModule } from 'src/package/package.module';
+import { ServiceModule } from 'src/service/service.module';
+
 import { CollaboratorModule } from '../collaborator/collaborator.module';
-import { NotificationModule } from '../notification/notification.module';
-import { UserModule } from '../user/user.module';
-import { ModuleModule } from '../module/module.module';
-import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
-import { AttentionDefaultBuilder } from './builders/attention-default';
-import { AttentionSurveyBuilder } from './builders/attention-survey';
 import { CommerceModule } from '../commerce/commerce.module';
+import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
+import { IncomeModule } from '../income/income.module';
+import { ModuleModule } from '../module/module.module';
+import { NotificationModule } from '../notification/notification.module';
+import { QueueModule } from '../queue/queue.module';
+import { UserModule } from '../user/user.module';
+
+import { AttentionController } from './attention.controller';
+import { AttentionService } from './attention.service';
+import { AttentionDefaultBuilder } from './builders/attention-default';
 import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
-import { ServiceModule } from 'src/service/service.module';
-import { PackageModule } from 'src/package/package.module';
-import { IncomeModule } from '../income/income.module';
-import { DocumentsModule } from 'src/documents/documents.module';
+import { AttentionSurveyBuilder } from './builders/attention-survey';
+import { Attention } from './model/attention.entity';
 
 @Module({
   imports: [
@@ -32,14 +34,14 @@ import { DocumentsModule } from 'src/documents/documents.module';
     forwardRef(() => ServiceModule),
     forwardRef(() => PackageModule),
     forwardRef(() => IncomeModule),
-    forwardRef(() => DocumentsModule)
+    forwardRef(() => DocumentsModule),
   ],
   providers: [
     AttentionService,
     AttentionDefaultBuilder,
     AttentionSurveyBuilder,
     AttentionNoDeviceBuilder,
-    AttentionReserveBuilder
+    AttentionReserveBuilder,
   ],
   exports: [AttentionService],
   controllers: [AttentionController],

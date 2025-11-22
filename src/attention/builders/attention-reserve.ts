@@ -1,20 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+import { PackageStatus } from 'src/package/model/package-status.enum';
+import { PackageType } from 'src/package/model/package-type.enum';
+import { PackageService } from 'src/package/package.service';
+import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
+import { QueueType } from 'src/queue/model/queue-type.enum';
+import { ServiceService } from 'src/service/service.service';
+
+import { Queue } from '../../queue/model/queue.entity';
+import { QueueService } from '../../queue/queue.service';
 import { BuilderInterface } from '../../shared/interfaces/builder';
+import AttentionCreated from '../events/AttentionCreated';
 import { AttentionStatus } from '../model/attention-status.enum';
 import { AttentionType } from '../model/attention-type.enum';
 import { Attention, Block } from '../model/attention.entity';
-import { QueueService } from '../../queue/queue.service';
-import { Queue } from '../../queue/model/queue.entity';
-import AttentionCreated from '../events/AttentionCreated';
-import { publish } from 'ett-events-lib';
-import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
-import { QueueType } from 'src/queue/model/queue-type.enum';
-import { PackageType } from 'src/package/model/package-type.enum';
-import { PackageStatus } from 'src/package/model/package-status.enum';
-import { ServiceService } from 'src/service/service.service';
-import { PackageService } from 'src/package/package.service';
 
 @Injectable()
 export class AttentionReserveBuilder implements BuilderInterface {
@@ -24,7 +25,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
     private queueService: QueueService,
     private serviceService: ServiceService,
     private packageService: PackageService
-  ){}
+  ) {}
 
   async create(
     queue: Queue,
@@ -44,9 +45,12 @@ export class AttentionReserveBuilder implements BuilderInterface {
     termsConditionsToAcceptedAt?: Date
   ): Promise<Attention> {
     if (!block) {
-      throw new HttpException(`Intentando crear atención pero no tiene block`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        `Intentando crear atención pero no tiene block`,
+        HttpStatus.BAD_REQUEST
+      );
     }
-    let attention = new Attention();
+    const attention = new Attention();
     attention.status = AttentionStatus.PENDING;
     attention.type = type || AttentionType.STANDARD;
     attention.createdAt = date || new Date();
@@ -83,9 +87,16 @@ export class AttentionReserveBuilder implements BuilderInterface {
       attention.termsConditionsToAcceptedAt = termsConditionsToAcceptedAt;
     }
     const dateToCreate = date || new Date();
-    const existingAttention = await this.getAttentionByNumberAndDate(attention.number, attention.queueId, dateToCreate);
+    const existingAttention = await this.getAttentionByNumberAndDate(
+      attention.number,
+      attention.queueId,
+      dateToCreate
+    );
     if (existingAttention && existingAttention.length > 0) {
-      throw new HttpException(`Ya existe una atención con este numero para esta fecha ${attention.number} ${attention.queueId} ${dateToCreate}´`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        `Ya existe una atención con este numero para esta fecha ${attention.number} ${attention.queueId} ${dateToCreate}´`,
+        HttpStatus.BAD_REQUEST
+      );
     }
     if (queue.serviceId !== undefined) {
       attention.serviceId = queue.serviceId;
@@ -111,7 +122,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
     if (clientId) {
       attention.clientId = clientId;
     }
-    let attentionCreated = await this.attentionRepository.create(attention);
+    const attentionCreated = await this.attentionRepository.create(attention);
     if (paymentConfirmationData && paymentConfirmationData.packageId) {
       attention.packageId = paymentConfirmationData.packageId;
       attention.packageProceduresTotalNumber = paymentConfirmationData.proceduresTotalNumber;
@@ -119,13 +130,35 @@ export class AttentionReserveBuilder implements BuilderInterface {
     } else {
       if (attentionCreated.servicesId && attentionCreated.servicesId.length === 1) {
         const service = await this.serviceService.getServiceById(attentionCreated.servicesId[0]);
-        if (service && service.id && service.serviceInfo && service.serviceInfo.procedures && service.serviceInfo.procedures > 1) {
+        if (
+          service &&
+          service.id &&
+          service.serviceInfo &&
+          service.serviceInfo.procedures &&
+          service.serviceInfo.procedures > 1
+        ) {
           if (attentionCreated.clientId) {
-            const packs = await this.packageService.getPackageByCommerceIdAndClientServices(attentionCreated.commerceId, attentionCreated.clientId, attentionCreated.servicesId[0]);
+            const packs = await this.packageService.getPackageByCommerceIdAndClientServices(
+              attentionCreated.commerceId,
+              attentionCreated.clientId,
+              attentionCreated.servicesId[0]
+            );
             if (packs && packs.length === 0) {
               const packageName = service.tag.toLocaleUpperCase();
-              const packCreated = await this.packageService.createPackage('ett', attentionCreated.commerceId, attentionCreated.clientId, undefined, attentionCreated.id,
-              service.serviceInfo.procedures, packageName, attentionCreated.servicesId, [], [attentionCreated.id], PackageType.STANDARD, PackageStatus.REQUESTED);
+              const packCreated = await this.packageService.createPackage(
+                'ett',
+                attentionCreated.commerceId,
+                attentionCreated.clientId,
+                undefined,
+                attentionCreated.id,
+                service.serviceInfo.procedures,
+                packageName,
+                attentionCreated.servicesId,
+                [],
+                [attentionCreated.id],
+                PackageType.STANDARD,
+                PackageStatus.REQUESTED
+              );
               attention.packageId = packCreated.id;
               await this.attentionRepository.update(attention);
             }
@@ -145,8 +178,12 @@ export class AttentionReserveBuilder implements BuilderInterface {
     return attentionCreated;
   }
 
-  public async getAttentionByNumberAndDate(number: number, queueId: string, date: Date): Promise<Attention[]> {
-    const startDate = date.toISOString().slice(0,10);
+  public async getAttentionByNumberAndDate(
+    number: number,
+    queueId: string,
+    date: Date
+  ): Promise<Attention[]> {
+    const startDate = date.toISOString().slice(0, 10);
     const dateValue = new Date(startDate);
     return await this.attentionRepository
       .whereEqualTo('queueId', queueId)
@@ -156,7 +193,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
         AttentionStatus.PROCESSING,
         AttentionStatus.RATED,
         AttentionStatus.TERMINATED,
-        AttentionStatus.REACTIVATED
+        AttentionStatus.REACTIVATED,
       ])
       .whereGreaterOrEqualThan('createdAt', dateValue)
       .whereLessOrEqualThan('createdAt', dateValue)

@@ -1,16 +1,18 @@
-import { Collaborator } from './model/collaborator.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { AdministratorService } from 'src/administrator/administrator.service';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+import { AdministratorService } from 'src/administrator/administrator.service';
+import { PermissionService } from 'src/permission/permission.service';
+
+import { ServiceService } from '../service/service.service';
+
+import { CollaboratorDetailsDto } from './dto/collaborator-details.dto';
 import CollaboratorCreated from './events/CollaboratorCreated';
 import CollaboratorUpdated from './events/CollaboratorUpdated';
-import { PermissionService } from 'src/permission/permission.service';
-import * as defaultPermissions from './model/default-permissions.json';
 import { CollaboratorType } from './model/collaborator-type.enum';
-import { ServiceService } from '../service/service.service';
-import { CollaboratorDetailsDto } from './dto/collaborator-details.dto';
+import { Collaborator } from './model/collaborator.entity';
+import * as defaultPermissions from './model/default-permissions.json';
 
 @Injectable()
 export class CollaboratorService {
@@ -48,7 +50,10 @@ export class CollaboratorService {
       if (collaborator.permissions) {
         userPermissions = collaborator.permissions;
       }
-      const permissions = await this.permissionService.getPermissionsForCollaborator(collaborator.commerceId, userPermissions);
+      const permissions = await this.permissionService.getPermissionsForCollaborator(
+        collaborator.commerceId,
+        userPermissions
+      );
       if (permissions) {
         collaborator.permissions = permissions;
       }
@@ -60,19 +65,19 @@ export class CollaboratorService {
 
   public async getCollaboratorBot(commerceId: string): Promise<Collaborator> {
     const collaborator = await this.collaboratorRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('bot', true)
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('bot', true)
+      .find();
     return collaborator[0];
   }
 
   public async getCollaboratorsByCommerceId(commerceId: string): Promise<CollaboratorDetailsDto[]> {
-    let collaborators = [];
+    const collaborators = [];
     const result = await this.collaboratorRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
     for (let i = 0; i < result.length; i++) {
       const collaborator = result[i];
       if (collaborator.servicesId && collaborator.servicesId.length > 0) {
@@ -83,19 +88,21 @@ export class CollaboratorService {
     return collaborators;
   }
 
-  public async getDetailsCollaboratorsByCommerceId(commerceId: string): Promise<CollaboratorDetailsDto[]> {
-    let collaborators = [];
+  public async getDetailsCollaboratorsByCommerceId(
+    commerceId: string
+  ): Promise<CollaboratorDetailsDto[]> {
+    const collaborators = [];
     const result = await this.collaboratorRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
     for (let i = 0; i < result.length; i++) {
       const collaborator = result[i];
       if (collaborator.servicesId && collaborator.servicesId.length > 0) {
         collaborator.services = await this.serviceService.getServicesById(collaborator.servicesId);
       }
-      let collaboratorDetailsDto: CollaboratorDetailsDto = new CollaboratorDetailsDto();
+      const collaboratorDetailsDto: CollaboratorDetailsDto = new CollaboratorDetailsDto();
       collaboratorDetailsDto.id = collaborator.id;
       collaboratorDetailsDto.name = collaborator.name;
       collaboratorDetailsDto.active = collaborator.active;
@@ -113,7 +120,10 @@ export class CollaboratorService {
     return collaborators;
   }
 
-  public async getCollaboratorsByCommerceIdAndEmail(commerceId: string, email: string): Promise<Collaborator> {
+  public async getCollaboratorsByCommerceIdAndEmail(
+    commerceId: string,
+    email: string
+  ): Promise<Collaborator> {
     try {
       const collaborator = await this.collaboratorRepository.whereEqualTo('email', email).findOne();
       if (collaborator) {
@@ -122,7 +132,10 @@ export class CollaboratorService {
           if (collaborator.permissions) {
             userPermissions = collaborator.permissions;
           }
-          const permissions = await this.permissionService.getPermissionsForCollaborator(collaborator.commerceId, userPermissions);
+          const permissions = await this.permissionService.getPermissionsForCollaborator(
+            collaborator.commerceId,
+            userPermissions
+          );
           if (permissions) {
             collaborator.permissions = permissions;
           }
@@ -131,20 +144,34 @@ export class CollaboratorService {
           throw new HttpException(`Colaborador no existe`, HttpStatus.NOT_FOUND);
         }
       }
-    } catch(error) {
+    } catch (error) {
       throw new HttpException(`Colaborador no existe: ${error.message}`, HttpStatus.NOT_FOUND);
     }
   }
 
   public async update(user: string, collaborator: Collaborator): Promise<Collaborator> {
     const collaboratorUpdated = await this.collaboratorRepository.update(collaborator);
-    const collaboratorUpdatedEvent = new CollaboratorUpdated(new Date(), collaboratorUpdated, { user });
+    const collaboratorUpdatedEvent = new CollaboratorUpdated(new Date(), collaboratorUpdated, {
+      user,
+    });
     publish(collaboratorUpdatedEvent);
     return collaboratorUpdated;
   }
 
-  public async updateCollaborator(user: string, id: string, name: string, moduleId: string, phone: string, active: boolean, available: boolean, alias: string, servicesId: string[], type: CollaboratorType, commercesId: string[]): Promise<Collaborator> {
-    let collaborator = await this.getCollaboratorById(id);
+  public async updateCollaborator(
+    user: string,
+    id: string,
+    name: string,
+    moduleId: string,
+    phone: string,
+    active: boolean,
+    available: boolean,
+    alias: string,
+    servicesId: string[],
+    type: CollaboratorType,
+    commercesId: string[]
+  ): Promise<Collaborator> {
+    const collaborator = await this.getCollaboratorById(id);
     if (name) {
       collaborator.name = name;
     }
@@ -179,15 +206,27 @@ export class CollaboratorService {
   }
 
   public async updateToken(user: string, id: string, token: string): Promise<Collaborator> {
-    let collaborator = await this.getCollaboratorById(id);
+    const collaborator = await this.getCollaboratorById(id);
     collaborator.token = token;
     collaborator.lastSignIn = new Date();
     return await this.update(user, collaborator);
   }
 
-  public async createCollaborator(user: string, name: string, commerceId: string, commercesId: string[], email: string, type: CollaboratorType, phone: string, moduleId: string, bot: boolean = false, alias: string, servicesId: string[]): Promise<Collaborator> {
+  public async createCollaborator(
+    user: string,
+    name: string,
+    commerceId: string,
+    commercesId: string[],
+    email: string,
+    type: CollaboratorType,
+    phone: string,
+    moduleId: string,
+    bot = false,
+    alias: string,
+    servicesId: string[]
+  ): Promise<Collaborator> {
     try {
-      let collaborator = new Collaborator();
+      const collaborator = new Collaborator();
       collaborator.name = name;
       collaborator.commerceId = commerceId;
       collaborator.commercesId = commercesId || [commerceId];
@@ -217,21 +256,26 @@ export class CollaboratorService {
         collaborator.servicesId = servicesId;
       }
       const collaboratorCreated = await this.collaboratorRepository.create(collaborator);
-      const collaboratorCreatedEvent = new CollaboratorCreated(new Date(), collaboratorCreated, { user });
+      const collaboratorCreatedEvent = new CollaboratorCreated(new Date(), collaboratorCreated, {
+        user,
+      });
       publish(collaboratorCreatedEvent);
       return collaboratorCreated;
-    } catch(error) {
-      throw new HttpException(`Hubo un problema al crear el colaborador: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      throw new HttpException(
+        `Hubo un problema al crear el colaborador: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
   public async changeStatus(user: string, id: string, action: boolean): Promise<Collaborator> {
     try {
-      let collaborator = await this.collaboratorRepository.findById(id);
+      const collaborator = await this.collaboratorRepository.findById(id);
       collaborator.active = action;
       await this.administratorService.changeStatus(collaborator.administratorId, action);
       return await this.update(user, collaborator);
-    } catch(error){
+    } catch (error) {
       throw `Hubo un problema al activar o desactivar el colaborador: ${error.message}`;
     }
   }
@@ -243,9 +287,14 @@ export class CollaboratorService {
         collaborator.firstPasswordChanged = true;
       }
       if (collaborator.lastPasswordChanged) {
-        let days = Math.abs(new Date().getTime() - collaborator.lastPasswordChanged.getTime()) / (1000 * 60 * 60 * 24);
+        const days =
+          Math.abs(new Date().getTime() - collaborator.lastPasswordChanged.getTime()) /
+          (1000 * 60 * 60 * 24);
         if (days < 1) {
-          throw new HttpException('Limite de cambio de password alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+          throw new HttpException(
+            'Limite de cambio de password alcanzado',
+            HttpStatus.INTERNAL_SERVER_ERROR
+          );
         } else {
           collaborator.lastPasswordChanged = new Date();
           collaborator = await this.update(user, collaborator);
@@ -261,11 +310,16 @@ export class CollaboratorService {
     }
   }
 
-  public async updateCollaboratorPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Collaborator> {
-    let collaborator = await this.getCollaboratorById(id);
+  public async updateCollaboratorPermission(
+    user: string,
+    id: string,
+    permissionName: string,
+    permissionValue: boolean | number
+  ): Promise<Collaborator> {
+    const collaborator = await this.getCollaboratorById(id);
     if (collaborator) {
       if (!collaborator.permissions) {
-        collaborator.permissions = {}
+        collaborator.permissions = {};
       }
       if (collaborator.permissions) {
         collaborator.permissions[permissionName] = permissionValue;

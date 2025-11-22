@@ -1,13 +1,14 @@
-import { FeatureToggle, FeatureToggleOption } from './model/feature-toggle.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
-import { FeatureToggleName } from './model/feature-toggle.enum';
-import { publish } from 'ett-events-lib';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import FeatureToggleUpdated from './events/FeatureToggleUpdated';
-import FeatureToggleCreated from './events/FeatureToggleCreated';
-import * as features from './model/features.json';
+import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import { FeatureToggleDetailsDto } from './dto/feature-toggle-details.dto';
+import FeatureToggleCreated from './events/FeatureToggleCreated';
+import FeatureToggleUpdated from './events/FeatureToggleUpdated';
+import { FeatureToggle, FeatureToggleOption } from './model/feature-toggle.entity';
+import { FeatureToggleName } from './model/feature-toggle.enum';
+import * as features from './model/features.json';
 
 export class FeatureToggleService {
   constructor(
@@ -27,52 +28,65 @@ export class FeatureToggleService {
   }
   public async getFeatureToggleByCommerceId(commerceId: string): Promise<FeatureToggle[]> {
     const result = await this.featureToggleRepository
-    .whereEqualTo('commerceId', commerceId)
-    .orderByAscending('type')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .orderByAscending('type')
+      .find();
     return result;
   }
-  public async getFeatureToggleDetailsByCommerceId(commerceId: string): Promise<FeatureToggleDetailsDto[]> {
+  public async getFeatureToggleDetailsByCommerceId(
+    commerceId: string
+  ): Promise<FeatureToggleDetailsDto[]> {
     const result: FeatureToggleDetailsDto[] = [];
     const features = await this.featureToggleRepository
-    .whereEqualTo('commerceId', commerceId)
-    .orderByAscending('type')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .orderByAscending('type')
+      .find();
     if (features && features.length > 0) {
       features.forEach(feature => {
-        let featureToggleDetailsDto: FeatureToggleDetailsDto = new FeatureToggleDetailsDto();
+        const featureToggleDetailsDto: FeatureToggleDetailsDto = new FeatureToggleDetailsDto();
         featureToggleDetailsDto.name = feature.name;
         featureToggleDetailsDto.active = feature.active;
-        featureToggleDetailsDto.type= feature.type;
+        featureToggleDetailsDto.type = feature.type;
         result.push(featureToggleDetailsDto);
-      })
+      });
     }
     return result;
   }
-  public async getFeatureToggleByNameAndCommerceId(commerceId: string, name: string): Promise<FeatureToggle> {
+  public async getFeatureToggleByNameAndCommerceId(
+    commerceId: string,
+    name: string
+  ): Promise<FeatureToggle> {
     const result = await this.featureToggleRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('name', name)
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('name', name)
+      .find();
     return result[0];
   }
-  public async getFeatureToggleByCommerceAndType(commerceId: string, type: FeatureToggleName): Promise<FeatureToggle[]> {
+  public async getFeatureToggleByCommerceAndType(
+    commerceId: string,
+    type: FeatureToggleName
+  ): Promise<FeatureToggle[]> {
     const result = await this.featureToggleRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('type', type)
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('type', type)
+      .find();
     return result;
   }
   public getFeatureToggleOptions(): FeatureToggleOption[] {
     const options = features;
-    return options.sort((a, b) => a.type < b.type ? -1 : 1);
+    return options.sort((a, b) => (a.type < b.type ? -1 : 1));
   }
-  public async createFeatureToggle(user: string, name: string, commerceId: string, type: string): Promise<FeatureToggle> {
+  public async createFeatureToggle(
+    user: string,
+    name: string,
+    commerceId: string,
+    type: string
+  ): Promise<FeatureToggle> {
     const existingFeature = await this.getFeatureToggleByNameAndCommerceId(commerceId, name);
     if (existingFeature !== undefined) {
       throw new HttpException('feature-toggle ya existe para este comercio', HttpStatus.FOUND);
     }
-    let feature = new FeatureToggle();
+    const feature = new FeatureToggle();
     feature.name = name;
     feature.commerceId = commerceId;
     feature.type = type;
@@ -89,8 +103,12 @@ export class FeatureToggleService {
     publish(featureUpdatedEvent);
     return featureUpdated;
   }
-  public async updateFeatureToggle(user: string, id: string, active: boolean): Promise<FeatureToggle> {
-    let commerce = await this.getFeatureToggleById(id);
+  public async updateFeatureToggle(
+    user: string,
+    id: string,
+    active: boolean
+  ): Promise<FeatureToggle> {
+    const commerce = await this.getFeatureToggleById(id);
     if (active !== undefined) {
       commerce.active = active;
     }
