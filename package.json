@@ -39,7 +39,7 @@
     "class-validator": "^0.14.0",
     "dayjs": "^1.8.27",
     "ett-events-lib": "1.0.1",
-    "firebase": "^9.14.0",
+    "firebase": "^12.6.0",
     "firebase-admin": "^11.5.0",
     "fireorm": "^0.23.3",
     "joi": "^18.0.2",
