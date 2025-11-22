@@ -49,7 +49,11 @@ export class UserDto {
   @ApiPropertyOptional({ description: 'Email notification enabled', example: true })
   notificationEmailOn?: boolean;
 
-  @ApiPropertyOptional({ description: 'Personal information', type: 'object' })
+  @ApiPropertyOptional({
+    description: 'Personal information',
+    type: 'object',
+    additionalProperties: true,
+  })
   personalInfo?: any;
 }
 

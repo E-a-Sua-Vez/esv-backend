@@ -6,6 +6,7 @@ export class ConfirmBookingDto {
     description: 'Confirmation data',
     type: 'object',
     example: { confirmed: true, confirmedAt: '2024-01-15T10:00:00Z' },
+    additionalProperties: true,
   })
   @IsObject()
   @IsOptional()

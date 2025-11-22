@@ -2,7 +2,7 @@
 # BUILD FOR LOCAL DEVELOPMENT
 ###################
 
-FROM node:18-alpine As development
+FROM node:20-alpine AS development
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -13,7 +13,8 @@ WORKDIR /usr/src/app
 COPY --chown=node:node package*.json ./
 
 # Install app dependencies using the `npm ci` command instead of `npm install`
-RUN npm ci
+# Using --legacy-peer-deps to handle TypeORM 0.3.x compatibility with @nestjs/typeorm 8.0.3
+RUN npm ci --legacy-peer-deps
 
 # Bundle app source
 COPY --chown=node:node . .
@@ -25,7 +26,7 @@ USER node
 # BUILD FOR PRODUCTION
 ###################
 
-FROM node:18-alpine As build
+FROM node:20-alpine AS build
 
 WORKDIR /usr/src/app
 
@@ -43,7 +44,8 @@ RUN npm run build
 ENV NODE_ENV production
 
 # Running `npm ci` removes the existing node_modules directory and passing in --only=production ensures that only the production dependencies are installed. This ensures that the node_modules directory is as optimized as possible
-RUN npm ci --only=production && npm cache clean --force
+# Using --legacy-peer-deps to handle TypeORM 0.3.x compatibility with @nestjs/typeorm 8.0.3
+RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
 USER node
 
@@ -51,7 +53,7 @@ USER node
 # PRODUCTION
 ###################
 
-FROM node:18-alpine As production
+FROM node:20-alpine AS production
 
 # Copy the bundled code from the build stage to the production image
 COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
