@@ -42,6 +42,7 @@ import { ServiceModule } from './service/service.module';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { LoggerModule } from './shared/logger/logger.module';
 import { LoggingInterceptor } from './shared/logger/logging.interceptor';
+import { SecurityModule } from './shared/security/security.module';
 import { SuggestionModule } from './suggestion/suggestion.module';
 import { SurveyModule } from './survey/survey.module';
 import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
@@ -51,6 +52,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 @Module({
   imports: [
     LoggerModule,
+    SecurityModule,
     FireormModule.forRoot({
       firestoreSettings: {
         projectId: process.env.PROJECT_ID,
