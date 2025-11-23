@@ -227,11 +227,15 @@ async function bootstrap(): Promise<void> {
     const server = await app.listen(port);
     server.setTimeout(60000);
 
-    logger.info(`Application is running on: http://localhost:${port}`, {
+    const baseUrl = `http://localhost:${port}`;
+    logger.info(`Application is running on: ${baseUrl}/health`, {
       environment: process.env.NODE_ENV || 'local',
       port,
+      healthEndpoint: `${baseUrl}/health`,
+      swaggerEndpoint: `${baseUrl}/api-docs`,
     });
-    console.log(`[Bootstrap] ✓ Application is running on: http://localhost:${port}`);
+    console.log(`[Bootstrap] ✓ Application is running on: ${baseUrl}/health`);
+    console.log(`[Bootstrap] ✓ Swagger documentation available at: ${baseUrl}/api-docs`);
   } catch (error) {
     console.error('[Bootstrap] Error during bootstrap:', error);
     process.exit(1);
