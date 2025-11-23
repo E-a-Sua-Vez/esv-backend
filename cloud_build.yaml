@@ -45,7 +45,7 @@ steps:
         "0",
         "--concurrency",
         "80",
-        "--set-env-vars",
+        "--update-env-vars",
         "NODE_ENV=production",
       ]
     env:

@@ -86,6 +86,18 @@ async function bootstrap(): Promise<void> {
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        // Log CORS violation for security monitoring
+        console.warn(
+          JSON.stringify({
+            severity: 'WARNING',
+            timestamp: new Date().toISOString(),
+            message: 'CORS violation - Origin not allowed',
+            origin,
+            allowedOrigins,
+            service: 'esv-backend',
+            securityEvent: 'CORS_VIOLATION',
+          })
+        );
         callback(new Error('Not allowed by CORS'));
       }
     },
