@@ -7,18 +7,24 @@ import { AppModule } from './app.module';
 import { GcpLoggerService } from './shared/logger/gcp-logger.service';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, {
-    logger: false, // Disable default NestJS logger, we'll use our custom logger
-  });
+  try {
+    console.log('[Bootstrap] Starting NestJS application...');
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log'], // Enable some logging to see what's happening
+    });
+    console.log('[Bootstrap] AppModule created successfully');
 
-  // Get the custom logger service
-  const logger = app.get(GcpLoggerService);
-  logger.setContext('Bootstrap');
+    // Get the custom logger service
+    const logger = app.get(GcpLoggerService);
+    logger.setContext('Bootstrap');
+    console.log('[Bootstrap] Logger initialized');
+    console.log('[Bootstrap] Setting up middleware...');
   // Request size limits - reduced from 10mb for security
   // Consider reducing further based on actual needs
   const maxRequestSize = process.env.MAX_REQUEST_SIZE || '5mb';
   app.use(bodyParser.json({ limit: maxRequestSize }));
   app.use(bodyParser.urlencoded({ limit: maxRequestSize, extended: true }));
+  console.log('[Bootstrap] Body parser configured');
   const corsOriginConfig = {
     local: ['http://localhost:5173'],
     test: [
@@ -69,6 +75,7 @@ async function bootstrap(): Promise<void> {
   };
   // CORS configuration - removed manual headers for security
   // Only use enableCors() to avoid conflicts and security issues
+  console.log('[Bootstrap] Configuring CORS...');
   const allowedOrigins = corsOriginConfig[process.env.NODE_ENV] || corsOriginConfig['local'];
   app.enableCors({
     origin: (origin, callback) => {
@@ -87,12 +94,15 @@ async function bootstrap(): Promise<void> {
     credentials: true,
     maxAge: 86400, // 24 hours
   });
+  console.log('[Bootstrap] CORS configured');
   app.enableVersioning({
     type: VersioningType.URI,
   });
+  console.log('[Bootstrap] Versioning enabled');
   // Global exception filter is registered via APP_FILTER in app.module.ts
 
   // Global validation pipe with security enhancements
+  console.log('[Bootstrap] Setting up ValidationPipe...');
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -103,8 +113,10 @@ async function bootstrap(): Promise<void> {
       },
     })
   );
+  console.log('[Bootstrap] ValidationPipe configured');
 
   // Security headers
+  console.log('[Bootstrap] Setting up security headers...');
   app.use((req, res, next) => {
     // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
@@ -123,7 +135,9 @@ async function bootstrap(): Promise<void> {
     }
     next();
   });
+  console.log('[Bootstrap] Security headers configured');
 
+  console.log('[Bootstrap] Setting up Swagger...');
   // Swagger/OpenAPI Documentation
   const config = new DocumentBuilder()
     .setTitle('ESV Backend API')
@@ -181,7 +195,9 @@ async function bootstrap(): Promise<void> {
     .addTag('app', 'Application root endpoints')
     .build();
 
+  console.log('[Bootstrap] Creating Swagger document...');
   const document = SwaggerModule.createDocument(app, config);
+  console.log('[Bootstrap] Setting up Swagger UI...');
   SwaggerModule.setup('api-docs', app, document, {
     customSiteTitle: 'ESV Backend API Documentation',
     customfavIcon: '/favicon.ico',
@@ -193,6 +209,7 @@ async function bootstrap(): Promise<void> {
     },
   });
 
+  console.log('[Bootstrap] Swagger setup complete');
   // Generate OpenAPI JSON file for Postman import
   if (process.env.NODE_ENV === 'local' || process.env.GENERATE_SWAGGER_JSON === 'true') {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -205,13 +222,23 @@ async function bootstrap(): Promise<void> {
     logger.info(`OpenAPI specification written to ${outputPath}`);
   }
 
-  const port = process.env.PORT || 3000;
-  const server = await app.listen(port);
-  server.setTimeout(60000);
+    const port = process.env.PORT || 3000;
+    console.log(`[Bootstrap] Starting server on port ${port}...`);
+    const server = await app.listen(port);
+    server.setTimeout(60000);
 
-  logger.info(`Application is running on: http://localhost:${port}`, {
-    environment: process.env.NODE_ENV || 'local',
-    port,
-  });
+    logger.info(`Application is running on: http://localhost:${port}`, {
+      environment: process.env.NODE_ENV || 'local',
+      port,
+    });
+    console.log(`[Bootstrap] ✓ Application is running on: http://localhost:${port}`);
+  } catch (error) {
+    console.error('[Bootstrap] Error during bootstrap:', error);
+    process.exit(1);
+  }
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('[Bootstrap] Unhandled error:', error);
+  process.exit(1);
+});

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import twilio from 'twilio';
+import twilio = require('twilio');
 
 import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
 

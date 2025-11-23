@@ -105,10 +105,12 @@ import { WaitlistModule } from './waitlist/waitlist.module';
         abortEarly: false, // Show all validation errors at once
       },
     }),
-    ThrottlerModule.forRoot({
-      ttl: 60, // Time window in seconds
-      limit: 100, // Maximum number of requests per window
-    } as any), // Type definition issue with @nestjs/throttler v6
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // Time window in milliseconds
+        limit: 100, // Maximum number of requests per window
+      },
+    ]),
   ],
   controllers: [AppController],
   providers: [
