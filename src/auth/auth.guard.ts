@@ -4,51 +4,66 @@ import * as admin from 'firebase-admin';
 
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 
-// Initialize Firebase Admin with error handling
+// Initialize Firebase Admin with error handling (lazy initialization)
 let firebaseInitialized = false;
+let initializationAttempted = false;
 
-try {
-  if (!process.env.PRIVATE_KEY) {
-    throw new Error('PRIVATE_KEY environment variable is required');
+function initializeFirebase() {
+  if (initializationAttempted) {
+    return firebaseInitialized;
   }
-  const { KEY } = JSON.parse(process.env.PRIVATE_KEY);
+  initializationAttempted = true;
 
-  if (!process.env.PROJECT_ID || !process.env.CLIENT_EMAIL) {
-    throw new Error('PROJECT_ID and CLIENT_EMAIL environment variables are required');
+  try {
+    if (!process.env.PRIVATE_KEY) {
+      throw new Error('PRIVATE_KEY environment variable is required');
+    }
+    const { KEY } = JSON.parse(process.env.PRIVATE_KEY);
+
+    if (!process.env.PROJECT_ID || !process.env.CLIENT_EMAIL) {
+      throw new Error('PROJECT_ID and CLIENT_EMAIL environment variables are required');
+    }
+
+    // Check if already initialized
+    if (admin.apps.length === 0) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.PROJECT_ID,
+          privateKey: KEY,
+          clientEmail: process.env.CLIENT_EMAIL,
+        }),
+      });
+    }
+    firebaseInitialized = true;
+  } catch (error) {
+    // Use console.error here as logger may not be initialized yet during bootstrap
+    // This will be caught by GCP logging in production
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(
+      JSON.stringify({
+        severity: 'ERROR',
+        timestamp: new Date().toISOString(),
+        message: 'Failed to initialize Firebase Admin',
+        error: errorMessage,
+        service: 'esv-backend',
+        context: 'FirebaseInitialization',
+      })
+    );
+    firebaseInitialized = false;
+    // Don't throw here to allow app to start, but auth will fail
   }
-
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.PROJECT_ID,
-      privateKey: KEY,
-      clientEmail: process.env.CLIENT_EMAIL,
-    }),
-  });
-  firebaseInitialized = true;
-} catch (error) {
-  // Use console.error here as logger may not be initialized yet during bootstrap
-  // This will be caught by GCP logging in production
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error(
-    JSON.stringify({
-      severity: 'ERROR',
-      timestamp: new Date().toISOString(),
-      message: 'Failed to initialize Firebase Admin',
-      error: errorMessage,
-      service: 'esv-backend',
-      context: 'FirebaseInitialization',
-    })
-  );
-  // Don't throw here to allow app to start, but auth will fail
+  return firebaseInitialized;
 }
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger: GcpLoggerService;
-
+  
   constructor(logger: GcpLoggerService) {
     this.logger = logger;
     this.logger.setContext('AuthGuard');
+    // Initialize Firebase when guard is instantiated (after ConfigModule loads)
+    initializeFirebase();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -69,7 +84,8 @@ export class AuthGuard implements CanActivate {
     }
 
     // Ensure Firebase is initialized
-    if (!firebaseInitialized) {
+    // Ensure Firebase is initialized before use
+    if (!initializeFirebase()) {
       this.logger.logWithRequest(
         'ERROR',
         'Firebase Admin not initialized - authentication will fail',
