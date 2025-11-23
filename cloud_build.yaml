@@ -12,6 +12,8 @@ steps:
         "gcr.io/estuturno-411922/ett-backend:latest",
         ".",
       ]
+    env:
+      - "DOCKER_BUILDKIT=1"
     # push the container image to Container Registry
   - name: "gcr.io/cloud-builders/docker"
     args: ["push", "gcr.io/estuturno-411922/ett-backend:${SHORT_SHA}"]
