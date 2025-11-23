@@ -12,6 +12,8 @@ steps:
         "gcr.io/easuavez/esv-backend-test:latest",
         ".",
       ]
+    env:
+      - "DOCKER_BUILDKIT=1"
     # push the container image to Container Registry
   - name: "gcr.io/cloud-builders/docker"
     args: ["push", "gcr.io/easuavez/esv-backend-test:${SHORT_SHA}"]
