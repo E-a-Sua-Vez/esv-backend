@@ -22,6 +22,12 @@ docs
 README.md
 .eslintrc*
 .prettierrc*
-tsconfig*.json
 nest-cli.json
+*.map
+.cache
+.husky
+scripts
+*.md
+!package.json
+!package-lock.json
 

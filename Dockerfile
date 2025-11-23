@@ -13,7 +13,6 @@ WORKDIR /usr/src/app
 COPY --chown=node:node package*.json ./
 
 # Install app dependencies using the `npm ci` command instead of `npm install`
-# Using --legacy-peer-deps to handle TypeORM 0.3.x compatibility with @nestjs/typeorm 8.0.3
 # Using BuildKit cache mount for faster npm installs
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --legacy-peer-deps
@@ -34,9 +33,12 @@ WORKDIR /usr/src/app
 
 COPY --chown=node:node package*.json ./
 
-# In order to run `npm run build` we need access to the Nest CLI which is a dev dependency. In the previous development stage we ran `npm ci` which installed all dependencies, so we can copy over the node_modules directory from the development image
-COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
+# Install all dependencies (including dev) needed for building
+# Using BuildKit cache mount for faster npm installs
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps
 
+# Copy source code
 COPY --chown=node:node . .
 
 # Run the build command which creates the production bundle
@@ -45,9 +47,15 @@ RUN npm run build
 # Set NODE_ENV environment variable
 ENV NODE_ENV production
 
-# Running `npm ci` removes the existing node_modules directory and passing in --only=production ensures that only the production dependencies are installed. This ensures that the node_modules directory is as optimized as possible
-# Using --legacy-peer-deps to handle TypeORM 0.3.x compatibility with @nestjs/typeorm 8.0.3
-RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
+# Install only production dependencies and clean up
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --only=production --legacy-peer-deps && \
+    npm cache clean --force && \
+    # Remove unnecessary files from node_modules to reduce size
+    find node_modules -type d \( -name "test" -o -name "tests" -o -name "__tests__" -o -name "docs" -o -name "doc" \) -exec rm -rf {} + 2>/dev/null || true && \
+    find node_modules -type f \( -name "*.md" -o -name "*.map" -o -name "CHANGELOG*" -o -name "LICENSE*" -o -name "README*" \) -delete 2>/dev/null || true && \
+    find node_modules -type f -name "*.ts" ! -name "*.d.ts" -delete 2>/dev/null || true && \
+    rm -rf node_modules/.cache 2>/dev/null || true
 
 USER node
 
@@ -57,9 +65,12 @@ USER node
 
 FROM node:20-alpine AS production
 
-# Copy the bundled code from the build stage to the production image
+WORKDIR /usr/src/app
+
+# Copy only production dependencies and built code
 COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+COPY --chown=node:node --from=build /usr/src/app/package*.json ./
 
 # Expose port 8080 for Cloud Run
 EXPOSE 8080
