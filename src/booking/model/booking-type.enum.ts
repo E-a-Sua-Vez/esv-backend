@@ -1,3 +1,3 @@
 export enum BookingType {
-    STANDARD = 'STANDARD'
+  STANDARD = 'STANDARD',
 }

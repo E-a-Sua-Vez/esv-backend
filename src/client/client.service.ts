@@ -1,23 +1,25 @@
-import { Client, PersonalInfo } from './model/client.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
-import { publish } from 'ett-events-lib';
-import { ClientContactType } from 'src/client-contact/model/client-contact-type.enum';
-import { ClientContactService } from '../client-contact/client-contact.service';
-import ClientCreated from './events/ClientCreated';
-import ClientUpdated from './events/ClientUpdated';
-import { ClientContactResult } from '../client-contact/model/client-contact-result.enum';
-import { ClientContact } from 'src/client-contact/model/client-contact.entity';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { CommerceService } from '../commerce/commerce.service';
+import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+import { ClientContactType } from 'src/client-contact/model/client-contact-type.enum';
+import { ClientContact } from 'src/client-contact/model/client-contact.entity';
 import { Commerce } from 'src/commerce/model/commerce.entity';
 import { FeatureToggleName } from 'src/feature-toggle/model/feature-toggle.enum';
-import { ClientSearchDto } from './dto/client-search.dto';
+
+import { ClientContactService } from '../client-contact/client-contact.service';
+import { ClientContactResult } from '../client-contact/model/client-contact-result.enum';
+import { CommerceService } from '../commerce/commerce.service';
 import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
+
+import { ClientSearchDto } from './dto/client-search.dto';
+import ClientCreated from './events/ClientCreated';
+import ClientUpdated from './events/ClientUpdated';
+import { Client, PersonalInfo } from './model/client.entity';
 
 export class ClientService {
   constructor(
-  @InjectRepository(Client)
+    @InjectRepository(Client)
     private clientRepository = getRepository(Client),
     private clientContactService: ClientContactService,
     private commerceService: CommerceService
@@ -27,11 +29,13 @@ export class ClientService {
     return await this.clientRepository.findById(id);
   }
 
-  private getActiveFeature(commerce: Commerce, name: string, type: string): Boolean {
-    let active = false;
+  private getActiveFeature(commerce: Commerce, name: string, type: string): boolean {
+    const active = false;
     let features = [];
     if (commerce !== undefined && commerce.features && commerce.features.length > 0) {
-      features = commerce.features.filter(feature => feature.type === type && feature.name === name);
+      features = commerce.features.filter(
+        feature => feature.type === type && feature.name === name
+      );
       if (features.length > 0) {
         return features[0]['active'];
       }
@@ -51,7 +55,7 @@ export class ClientService {
   }
 
   public async searchClient(commerceId: string, idNumber: string): Promise<ClientSearchDto> {
-    let response: ClientSearchDto = new ClientSearchDto();
+    const response: ClientSearchDto = new ClientSearchDto();
     const commerce = await this.commerceService.getCommerceById(commerceId);
     if (commerce && commerce.id) {
       if (commerce.features && commerce.features.length > 0) {
@@ -77,14 +81,27 @@ export class ClientService {
                 }
               });
               if (featuresToValidate.length > 0) {
-                const toValidate = ['name', 'lastName', 'phone', 'email', 'birthday', 'origin', 'idNumber', 'code1', 'code2', 'code3', 'address'];
+                const toValidate = [
+                  'name',
+                  'lastName',
+                  'phone',
+                  'email',
+                  'birthday',
+                  'origin',
+                  'idNumber',
+                  'code1',
+                  'code2',
+                  'code3',
+                  'address',
+                ];
                 toValidate.forEach(toValid => {
                   if (toValid === 'address') {
                     if (featuresToValidate.includes(`${type}-${toValid}`)) {
                       if (
                         (!client[`${toValid}Text`] && !client.personalInfo[`${toValid}Text`]) ||
                         (!client[`${toValid}Code`] && !client.personalInfo[`${toValid}Code`]) ||
-                        (!client[`${toValid}Complement`] && !client.personalInfo[`${toValid}Complement`])
+                        (!client[`${toValid}Complement`] &&
+                          !client.personalInfo[`${toValid}Complement`])
                       ) {
                         neededToInclude.push(`${type}-${toValid}`);
                       }
@@ -94,7 +111,7 @@ export class ClientService {
                       neededToInclude.push(`${type}-${toValid}`);
                     }
                   }
-                })
+                });
                 response.neededToInclude = neededToInclude;
               }
             }
@@ -102,7 +119,10 @@ export class ClientService {
             throw new HttpException(`Cliente no encontrado`, HttpStatus.NOT_FOUND);
           }
         } else {
-          throw new HttpException(`No puede realizar esta acción`, HttpStatus.INTERNAL_SERVER_ERROR);
+          throw new HttpException(
+            `No puede realizar esta acción`,
+            HttpStatus.INTERNAL_SERVER_ERROR
+          );
         }
       }
     } else {
@@ -111,7 +131,11 @@ export class ClientService {
     return response;
   }
 
-  public async getClientByIdNumberOrEmail(businessId: string, idNumber: string, email: string): Promise<Client> {
+  public async getClientByIdNumberOrEmail(
+    businessId: string,
+    idNumber: string,
+    email: string
+  ): Promise<Client> {
     let client: Client;
     if (idNumber) {
       client = await this.clientRepository
@@ -121,7 +145,8 @@ export class ClientService {
     } else if (email && !client) {
       client = await this.clientRepository
         .whereEqualTo('businessId', businessId)
-        .whereEqualTo('email', email).findOne();
+        .whereEqualTo('email', email)
+        .findOne();
     }
     return client;
   }
@@ -130,7 +155,17 @@ export class ClientService {
     return await this.clientRepository.find();
   }
 
-  public async saveClient(clientId?: string, businessId?: string, commerceId?: string, name?: string, phone?: string, email?: string, lastName?: string, idNumber?: string, personalInfo?: PersonalInfo): Promise<Client> {
+  public async saveClient(
+    clientId?: string,
+    businessId?: string,
+    commerceId?: string,
+    name?: string,
+    phone?: string,
+    email?: string,
+    lastName?: string,
+    idNumber?: string,
+    personalInfo?: PersonalInfo
+  ): Promise<Client> {
     let client: Client;
     let newClient = false;
     if (clientId !== undefined) {
@@ -164,7 +199,7 @@ export class ClientService {
       client.email = email;
     }
     if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
-      client.personalInfo = { ...client.personalInfo || {}, ...personalInfo };
+      client.personalInfo = { ...(client.personalInfo || {}), ...personalInfo };
     }
     client.frequentCustomer = false;
     client.createdAt = new Date();
@@ -177,7 +212,7 @@ export class ClientService {
     } else {
       client.counter = client.counter + 1;
       client.frequentCustomer = true;
-      const clientUpdated = await this.update(client.email || client.idNumber, client)
+      const clientUpdated = await this.update(client.email || client.idNumber, client);
       client = clientUpdated;
       const clientUpdatedEvent = new ClientUpdated(new Date(), clientUpdated, { client });
       publish(clientUpdatedEvent);
@@ -192,8 +227,16 @@ export class ClientService {
     return clientUpdated;
   }
 
-  public async contactClient(user: string, id: string, contactType: ClientContactType, contactResult: ClientContactResult, comment: string, commerceId?: string, collaboratorId?: string): Promise<ClientContact> {
-    let clientById = await this.getClientById(id);
+  public async contactClient(
+    user: string,
+    id: string,
+    contactType: ClientContactType,
+    contactResult: ClientContactResult,
+    comment: string,
+    commerceId?: string,
+    collaboratorId?: string
+  ): Promise<ClientContact> {
+    const clientById = await this.getClientById(id);
     if (clientById && contactResult) {
       const result = await this.clientContactService.createClientContact(
         clientById.id,
@@ -219,14 +262,25 @@ export class ClientService {
   }
 
   public async updateFirstAttentionForm(user: string, id: string): Promise<Client> {
-    let clientById = await this.getClientById(id);
+    const clientById = await this.getClientById(id);
     if (clientById && clientById.id) {
       clientById.firstAttentionForm = true;
       clientById.updatedAt = new Date();
       return await this.update(user, clientById);
     }
   }
-  public async updateClient(user: string, id?: string, businessId?: string, commerceId?: string, name?: string, phone?: string, email?: string, lastName?: string, idNumber?: string, personalInfo?: PersonalInfo): Promise<Client> {
+  public async updateClient(
+    user: string,
+    id?: string,
+    businessId?: string,
+    commerceId?: string,
+    name?: string,
+    phone?: string,
+    email?: string,
+    lastName?: string,
+    idNumber?: string,
+    personalInfo?: PersonalInfo
+  ): Promise<Client> {
     let client: Client;
     let newClient = false;
     if (id !== undefined) {
@@ -260,7 +314,7 @@ export class ClientService {
       client.email = email;
     }
     if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
-      client.personalInfo = { ...client.personalInfo || {}, ...personalInfo };
+      client.personalInfo = { ...(client.personalInfo || {}), ...personalInfo };
     }
     client.frequentCustomer = false;
     client.createdAt = new Date();
@@ -273,7 +327,7 @@ export class ClientService {
     } else {
       client.counter = client.counter + 1;
       client.frequentCustomer = true;
-      const clientUpdated = await this.update(client.email || client.idNumber, client)
+      const clientUpdated = await this.update(client.email || client.idNumber, client);
       client = clientUpdated;
       const clientUpdatedEvent = new ClientUpdated(new Date(), clientUpdated, { user });
       publish(clientUpdatedEvent);

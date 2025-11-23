@@ -1,4 +1,5 @@
 import { Service } from 'src/service/model/service.entity';
+
 import { QueueType } from '../model/queue-type.enum';
 import { ServiceInfo } from '../model/queue.entity';
 

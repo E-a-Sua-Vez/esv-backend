@@ -86,7 +86,11 @@ export class DateModel {
     return this.dayjsObj.isSameOrBefore(dayjsObj);
   }
 
-  public isBetween(startDate: DateModel, endDate: DateModel, isBetweenIncludes: '()' | '[]' | '[)' | '(]' = '[]'): boolean {
+  public isBetween(
+    startDate: DateModel,
+    endDate: DateModel,
+    isBetweenIncludes: '()' | '[]' | '[)' | '(]' = '[]'
+  ): boolean {
     const startDateAsString = startDate.toString();
     const endDateAsString = endDate.toString();
     const dayjsObjStart = dayjs.utc(startDateAsString);
@@ -94,11 +98,14 @@ export class DateModel {
     return this.dayjsObj.isBetween(dayjsObjStart, dayjsObjEnd, 'day', isBetweenIncludes);
   }
 
-  public daysDiff = (dateBefore: DateModel): number => this.dayjsObj.diff(dateBefore.dayjsObj, 'days');
+  public daysDiff = (dateBefore: DateModel): number =>
+    this.dayjsObj.diff(dateBefore.dayjsObj, 'days');
 
-  public monthsDiff = (dateBefore: DateModel): number => this.dayjsObj.diff(dateBefore.dayjsObj, 'months');
+  public monthsDiff = (dateBefore: DateModel): number =>
+    this.dayjsObj.diff(dateBefore.dayjsObj, 'months');
 
-  public yearsDiff = (dateBefore: DateModel): number => this.dayjsObj.diff(dateBefore.dayjsObj, 'years');
+  public yearsDiff = (dateBefore: DateModel): number =>
+    this.dayjsObj.diff(dateBefore.dayjsObj, 'years');
 
   public setDateOfMonth(dayOfMonth: number): DateModel {
     const dateAsString = this.dayjsObj.date(dayOfMonth);

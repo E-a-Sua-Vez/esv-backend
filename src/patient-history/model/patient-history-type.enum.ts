@@ -1,3 +1,3 @@
 export enum PatientHistoryType {
-    STANDARD = 'STANDARD'
+  STANDARD = 'STANDARD',
 }

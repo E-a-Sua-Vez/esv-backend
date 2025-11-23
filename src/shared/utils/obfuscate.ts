@@ -1,5 +1,5 @@
 export const simpleObsfuscate = (value, lastCharacters = 4) => {
-  if(value) {
+  if (value) {
     let valueObsfuscated = value.toString();
     if (valueObsfuscated.length >= lastCharacters) {
       const charactersToObsfuscate = valueObsfuscated.length - lastCharacters;
@@ -10,4 +10,4 @@ export const simpleObsfuscate = (value, lastCharacters = 4) => {
   } else {
     return value;
   }
-}
+};

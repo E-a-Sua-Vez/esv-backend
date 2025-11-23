@@ -1,19 +1,21 @@
-import { Notification } from './model/notification.entity';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { NotificationChannel } from './model/notification-channel.enum';
-import { NotificationType } from './model/notification-type.enum';
-import { publish } from 'ett-events-lib';
+
+import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+
 import NotificationCreated from './events/NotificationCreated';
+import NotificationReceived from './events/NotificationReceived';
+import NotificationUpdated from './events/NotificationUpdated';
 import { NotificationClient } from './infrastructure/notification-client';
 import { clientStrategy } from './infrastructure/notification-client-strategy';
-import { NotificationProvider } from './model/notification-provider';
 import { EmailInputDto, RawEmailInputDto, Attachment } from './model/email-input.dto';
-import NotificationReceived from './events/NotificationReceived';
+import { NotificationChannel } from './model/notification-channel.enum';
+import { NotificationProvider } from './model/notification-provider';
 import { NotificationThirdPartyDto } from './model/notification-third-party.dto';
-import NotificationUpdated from './events/NotificationUpdated';
-
+import { NotificationType } from './model/notification-type.enum';
+import { Notification } from './model/notification.entity';
 
 @Injectable()
 export class NotificationService {
@@ -23,8 +25,12 @@ export class NotificationService {
     @Inject(forwardRef(() => clientStrategy(NotificationChannel.WHATSAPP)))
     private whatsappNotificationClient: NotificationClient,
     @Inject(forwardRef(() => clientStrategy(NotificationChannel.EMAIL)))
-    private emailNotificationClient: NotificationClient
-  ) { }
+    private emailNotificationClient: NotificationClient,
+    @Inject(GcpLoggerService)
+    private readonly logger: GcpLoggerService
+  ) {
+    this.logger.setContext('NotificationService');
+  }
 
   private readonly whatsappProvider = process.env.WHATSAPP_NOTIFICATION_PROVIDER || 'N/I';
   private readonly emailProvider = process.env.EMAIL_NOTIFICATION_PROVIDER || 'N/I';
@@ -53,8 +59,8 @@ export class NotificationService {
     commerceId: string,
     queueId: string,
     servicePhoneNumber: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.WHATSAPP;
     notification.type = type;
@@ -68,7 +74,13 @@ export class NotificationService {
     publish(notificationCreatedEvent);
     let metadata;
     try {
-      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId, servicePhoneNumber);
+      metadata = await this.whatsappNotify(
+        phone,
+        message,
+        notificationCreated.id,
+        commerceId,
+        servicePhoneNumber
+      );
       if (this.whatsappProvider === NotificationProvider.TWILIO) {
         notificationCreated.twilioId = metadata['sid'];
         notificationCreated.providerId = metadata['sid'];
@@ -97,8 +109,8 @@ export class NotificationService {
     logo: string,
     moduleNumber: string,
     collaboratorName: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -114,15 +126,15 @@ export class NotificationService {
         link,
         logo,
         moduleNumber,
-        collaboratorName
+        collaboratorName,
       };
       const data: EmailInputDto = {
         Source: process.env.EMAIL_SOURCE,
         Destination: {
-          ToAddresses: [email]
+          ToAddresses: [email],
         },
         Template: template,
-        TemplateData: JSON.stringify(templateData)
+        TemplateData: JSON.stringify(templateData),
       };
       metadata = await this.emailNotify(email, data, template);
       delete metadata.raw;
@@ -132,15 +144,47 @@ export class NotificationService {
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
+      this.logger.info('Email notification created successfully', {
+        notificationId: notificationCreated.id,
+        email,
+        type,
+        commerceId,
+        queueId,
+        template,
+        provider: this.emailProvider,
+        providerId: notificationCreated.providerId,
+      });
     } catch (error) {
       notification.comment = error.message;
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        email,
+        type,
+        commerceId,
+        queueId,
+        template,
+        provider: this.emailProvider,
+        operation: 'createEmailNotification',
+      });
     }
   }
 
-  public async whatsappNotify(phone: string, message: string, notificationId: string, commerceId: string, servicePhoneNumber?: string): Promise<string> {
-    return this.whatsappNotificationClient.sendMessage(message, phone, notificationId, servicePhoneNumber);
+  public async whatsappNotify(
+    phone: string,
+    message: string,
+    notificationId: string,
+    commerceId: string,
+    servicePhoneNumber?: string
+  ): Promise<string> {
+    return this.whatsappNotificationClient.sendMessage(
+      message,
+      phone,
+      notificationId,
+      servicePhoneNumber
+    );
   }
 
   public async emailNotify(email: string, data: EmailInputDto, template: string): Promise<any> {
@@ -163,9 +207,9 @@ export class NotificationService {
     to: string[],
     subject: string,
     attachments: Attachment[],
-    html: string,
-  ){
-    let notification = new Notification();
+    html: string
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -173,25 +217,40 @@ export class NotificationService {
     notification.commerceId = commerceId;
     let metadata;
     try {
-      metadata = await this.rawEmailNotify(
-        {
-          from,
-          to,
-          subject,
-          html,
-          attachments
-        }
-      );
+      metadata = await this.rawEmailNotify({
+        from,
+        to,
+        subject,
+        html,
+        attachments,
+      });
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
+      this.logger.info('Raw email notification created successfully (booking)', {
+        notificationId: notificationCreated.id,
+        bookingId,
+        commerceId,
+        type,
+        toCount: to.length,
+        provider: this.emailProvider,
+        providerId: notificationCreated.providerId,
+      });
     } catch (error) {
       notification.comment = error.message;
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        bookingId,
+        commerceId,
+        type,
+        operation: 'createBookingRawEmailNotification',
+      });
     }
   }
 
@@ -203,9 +262,9 @@ export class NotificationService {
     to: string[],
     subject: string,
     attachments: Attachment[],
-    html: string,
-  ){
-    let notification = new Notification();
+    html: string
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -213,25 +272,40 @@ export class NotificationService {
     notification.commerceId = commerceId;
     let metadata;
     try {
-      metadata = await this.rawEmailNotify(
-        {
-          from,
-          to,
-          subject,
-          html,
-          attachments
-        }
-      );
+      metadata = await this.rawEmailNotify({
+        from,
+        to,
+        subject,
+        html,
+        attachments,
+      });
       if (this.emailProvider === NotificationProvider.AWS) {
         notification.twilioId = 'N/A';
         notification.providerId = metadata['MessageId'] || 'N/I';
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
+      this.logger.info('Raw email notification created successfully (attention)', {
+        notificationId: notificationCreated.id,
+        attentionId,
+        commerceId,
+        type,
+        toCount: to.length,
+        provider: this.emailProvider,
+        providerId: notificationCreated.providerId,
+      });
     } catch (error) {
       notification.comment = error.message;
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        attentionId,
+        commerceId,
+        type,
+        operation: 'createAttentionRawEmailNotification',
+      });
     }
   }
 
@@ -247,8 +321,8 @@ export class NotificationService {
     commerce: string,
     link: string,
     logo: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -262,15 +336,15 @@ export class NotificationService {
         attentionNumber,
         commerce,
         link,
-        logo
+        logo,
       };
       const data: EmailInputDto = {
         Source: process.env.EMAIL_SOURCE,
         Destination: {
-          ToAddresses: [email]
+          ToAddresses: [email],
         },
         Template: template,
-        TemplateData: JSON.stringify(templateData)
+        TemplateData: JSON.stringify(templateData),
       };
       metadata = await this.emailNotify(email, data, template);
       delete metadata.raw;
@@ -280,7 +354,9 @@ export class NotificationService {
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
     } catch (error) {
       notification.comment = error.message;
@@ -305,7 +381,11 @@ export class NotificationService {
       thirdPartyNotification.eventTime = body['event_time'] || 'N/I';
       thirdPartyNotification.messageCustomId = body['message_custom_id'] || 'N/I';
       const notification = await this.getNotificationById(id);
-      const notificationReceivedEvent = new NotificationReceived(new Date(), { id, providerData: thirdPartyNotification, ourData: notification, received: true }, { provider });
+      const notificationReceivedEvent = new NotificationReceived(
+        new Date(),
+        { id, providerData: thirdPartyNotification, ourData: notification, received: true },
+        { provider }
+      );
       await publish(notificationReceivedEvent);
       return notificationReceivedEvent;
     }
@@ -321,16 +401,16 @@ export class NotificationService {
     tag: string,
     from: string,
     to: string,
-    currentAttentionNumber: number|string,
-    pastAttentionNumber: number|string,
-    currentAttentionAvgTime: number|string,
-    pastAttentionAvgTime: number|string,
-    currentAttentionDailyAvg: number|string,
-    pastAttentionDailyAvg: number|string,
-    currentCSAT: number|string,
-    pastCSAT: number|string
-  ){
-    let notification = new Notification();
+    currentAttentionNumber: number | string,
+    pastAttentionNumber: number | string,
+    currentAttentionAvgTime: number | string,
+    pastAttentionAvgTime: number | string,
+    currentAttentionDailyAvg: number | string,
+    pastAttentionDailyAvg: number | string,
+    currentCSAT: number | string,
+    pastCSAT: number | string
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -349,15 +429,15 @@ export class NotificationService {
         currentAttentionDailyAvg,
         pastAttentionDailyAvg,
         currentCSAT,
-        pastCSAT
+        pastCSAT,
       };
       const data: EmailInputDto = {
         Source: process.env.EMAIL_SOURCE,
         Destination: {
-          ToAddresses: [email, process.env.EMAIL_SOURCE]
+          ToAddresses: [email, process.env.EMAIL_SOURCE],
         },
         Template: template,
-        TemplateData: JSON.stringify(templateData)
+        TemplateData: JSON.stringify(templateData),
       };
       metadata = await this.emailNotify(email, data, template);
       delete metadata.raw;
@@ -367,7 +447,9 @@ export class NotificationService {
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
     } catch (error) {
       notification.comment = error.message;
@@ -387,8 +469,8 @@ export class NotificationService {
     commerce: string,
     link: string,
     logo: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -403,15 +485,15 @@ export class NotificationService {
         reserveDate,
         commerce,
         link,
-        logo
+        logo,
       };
       const data: EmailInputDto = {
         Source: process.env.EMAIL_SOURCE,
         Destination: {
-          ToAddresses: [email]
+          ToAddresses: [email],
         },
         Template: template,
-        TemplateData: JSON.stringify(templateData)
+        TemplateData: JSON.stringify(templateData),
       };
       metadata = await this.emailNotify(email, data, template);
       delete metadata.raw;
@@ -421,7 +503,9 @@ export class NotificationService {
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
     } catch (error) {
       notification.comment = error.message;
@@ -440,8 +524,8 @@ export class NotificationService {
     commerce: string,
     link: string,
     logo: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.EMAIL;
     notification.type = type;
@@ -455,15 +539,15 @@ export class NotificationService {
         waitlistBlock,
         commerce,
         link,
-        logo
+        logo,
       };
       const data: EmailInputDto = {
         Source: process.env.EMAIL_SOURCE,
         Destination: {
-          ToAddresses: [email]
+          ToAddresses: [email],
         },
         Template: template,
-        TemplateData: JSON.stringify(templateData)
+        TemplateData: JSON.stringify(templateData),
       };
       metadata = await this.emailNotify(email, data, template);
       delete metadata.raw;
@@ -473,7 +557,9 @@ export class NotificationService {
       }
       notification.provider = this.emailProvider;
       const notificationCreated = await this.notificationRepository.create(notification);
-      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, { metadata });
+      const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated, {
+        metadata,
+      });
       publish(notificationCreatedEvent);
     } catch (error) {
       notification.comment = error.message;
@@ -489,8 +575,8 @@ export class NotificationService {
     commerceId: string,
     queueId: string,
     servicePhoneNumber: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.WHATSAPP;
     notification.type = type;
@@ -504,7 +590,13 @@ export class NotificationService {
     publish(notificationCreatedEvent);
     let metadata;
     try {
-      metadata = await this.whatsappNotify(phone, message, notificationCreated.id, commerceId, servicePhoneNumber);
+      metadata = await this.whatsappNotify(
+        phone,
+        message,
+        notificationCreated.id,
+        commerceId,
+        servicePhoneNumber
+      );
       if (this.whatsappProvider === NotificationProvider.TWILIO) {
         notificationCreated.twilioId = metadata['sid'];
         notificationCreated.providerId = metadata['sid'];
@@ -527,8 +619,8 @@ export class NotificationService {
     waitlistId: string,
     commerceId: string,
     queueId: string
-  ){
-    let notification = new Notification();
+  ) {
+    const notification = new Notification();
     notification.createdAt = new Date();
     notification.channel = NotificationChannel.WHATSAPP;
     notification.type = type;

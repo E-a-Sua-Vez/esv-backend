@@ -1,7 +1,8 @@
+import { v4 as uuidv4 } from 'uuid';
+
+import { DefaultEventMetadata } from '../../shared/events/default-event-metadata';
 import DomainEvent from '../../shared/events/domain-event';
 import { DomainEventDataAttributes } from '../../shared/events/domain-event-data-attributes';
-import { DefaultEventMetadata } from '../../shared/events/default-event-metadata';
-import { v4 as uuidv4 } from 'uuid';
 
 export default class BusinessWhatsappConnectionCreated extends DomainEvent {
   constructor(occuredOn: Date, attributes: object, metadata?: object) {

@@ -1,10 +1,11 @@
-import { getRepository} from 'fireorm';
+import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+
 import SurveyPersonalizedCreated from './events/SurveyPersonalizedCreated';
+import SurveyPersonalizedUpdated from './events/SurveyPersonalizedUpdated';
 import { Question, SurveyPersonalized } from './model/survey-personalized.entity';
 import { SurveyType } from './model/type.enum';
-import { publish } from 'ett-events-lib';
-import SurveyPersonalizedUpdated from './events/SurveyPersonalizedUpdated';
 
 export class SurveyPersonalizedService {
   constructor(
@@ -20,13 +21,14 @@ export class SurveyPersonalizedService {
     return await this.surveyPersonalizedRepository.find();
   }
 
-  public async getSurveysPersonalizedByCommerceId(commerceId: string): Promise<SurveyPersonalized[]> {
-    let surveys: SurveyPersonalized[];
-    surveys = await this.surveyPersonalizedRepository
+  public async getSurveysPersonalizedByCommerceId(
+    commerceId: string
+  ): Promise<SurveyPersonalized[]> {
+    const surveys: SurveyPersonalized[] = await this.surveyPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('available', true)
       .find();
-    let surveysToReturn = [];
+    const surveysToReturn = [];
     if (surveys && surveys.length > 0) {
       surveys.forEach(survey => {
         let questions = survey.questions;
@@ -35,20 +37,22 @@ export class SurveyPersonalizedService {
           survey.questions = questions;
           surveysToReturn.push(survey);
         }
-      })
+      });
     }
     return surveys;
   }
 
-  public async getSurveysPersonalizedByQueueId(commerceId: string, queueId: string): Promise<SurveyPersonalized[]> {
-    let surveys: SurveyPersonalized[];
-    surveys = await this.surveyPersonalizedRepository
+  public async getSurveysPersonalizedByQueueId(
+    commerceId: string,
+    queueId: string
+  ): Promise<SurveyPersonalized[]> {
+    const surveys: SurveyPersonalized[] = await this.surveyPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
       .find();
-    let surveysToReturn = [];
+    const surveysToReturn = [];
     if (surveys && surveys.length > 0) {
       surveys.forEach(survey => {
         let questions = survey.questions;
@@ -57,13 +61,22 @@ export class SurveyPersonalizedService {
           survey.questions = questions;
           surveysToReturn.push(survey);
         }
-      })
+      });
     }
     return surveys;
   }
 
-  public async createSurveyPersonalized(commerceId: string, type: SurveyType, attentionDefault: boolean, hasCSAT: boolean, hasNPS: boolean, hasMessage: boolean, questions?: Question[], queueId?: string): Promise<SurveyPersonalized> {
-    let survey = new SurveyPersonalized();
+  public async createSurveyPersonalized(
+    commerceId: string,
+    type: SurveyType,
+    attentionDefault: boolean,
+    hasCSAT: boolean,
+    hasNPS: boolean,
+    hasMessage: boolean,
+    questions?: Question[],
+    queueId?: string
+  ): Promise<SurveyPersonalized> {
+    const survey = new SurveyPersonalized();
 
     survey.commerceId = commerceId;
     survey.type = type;
@@ -97,14 +110,30 @@ export class SurveyPersonalizedService {
 
   public async update(user, survey: SurveyPersonalized): Promise<SurveyPersonalized> {
     const surveyPersonalizedUpdated = await this.surveyPersonalizedRepository.update(survey);
-    const surveyPersonalizedUpdatedEvent = new SurveyPersonalizedUpdated(new Date(), surveyPersonalizedUpdated, { user });
+    const surveyPersonalizedUpdatedEvent = new SurveyPersonalizedUpdated(
+      new Date(),
+      surveyPersonalizedUpdated,
+      { user }
+    );
     publish(surveyPersonalizedUpdatedEvent);
     return surveyPersonalizedUpdated;
   }
 
-  public async updateSurveyPersonalized(user: string, type: SurveyType, id: string, active: boolean, available: boolean, attentionDefault: boolean, hasCSAT: boolean, hasNPS: boolean, hasMessage: boolean, questions?: Question[], queueId?: string): Promise<SurveyPersonalized> {
+  public async updateSurveyPersonalized(
+    user: string,
+    type: SurveyType,
+    id: string,
+    active: boolean,
+    available: boolean,
+    attentionDefault: boolean,
+    hasCSAT: boolean,
+    hasNPS: boolean,
+    hasMessage: boolean,
+    questions?: Question[],
+    queueId?: string
+  ): Promise<SurveyPersonalized> {
     try {
-      let survey = await this.surveyPersonalizedRepository.findById(id);
+      const survey = await this.surveyPersonalizedRepository.findById(id);
       if (type) {
         survey.type = type;
       }

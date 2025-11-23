@@ -1,13 +1,13 @@
-
-import { Injectable } from "@nestjs/common";
-import { NotificationClient } from './notification-client';
+import { Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
-import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
 import { createTransport } from 'nodemailer';
+
+import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
+
+import { NotificationClient } from './notification-client';
 
 @Injectable()
 export class AwsClient implements NotificationClient {
-
   constructor() {
     AWS.config.update({ region: process.env.AWS_DEFAULT_REGION });
   }
@@ -48,4 +48,3 @@ export class AwsClient implements NotificationClient {
     throw new Error('Method not implemented.');
   }
 }
-

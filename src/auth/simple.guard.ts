@@ -3,8 +3,9 @@ import { Request } from 'express';
 
 @Injectable()
 export class SimpleGuard implements CanActivate {
-
-  constructor() { }
+  // Empty constructor is required for dependency injection
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  constructor() {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const environment = process.env.NODE_ENV;

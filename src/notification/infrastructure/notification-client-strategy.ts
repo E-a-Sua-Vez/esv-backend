@@ -1,8 +1,9 @@
+import { NotificationChannel } from '../model/notification-channel.enum';
 import { NotificationProvider } from '../model/notification-provider';
+
+import { AwsClient } from './aws-client';
 import { TwilioClient } from './twilio-client';
 import { WhatsGwClient } from './whatsgw-client';
-import { NotificationChannel } from '../model/notification-channel.enum';
-import { AwsClient } from './aws-client';
 
 export function clientStrategy(channel: NotificationChannel) {
   let provider;

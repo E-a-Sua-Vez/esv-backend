@@ -1,21 +1,22 @@
-import { Service, ServiceInfo } from './model/service.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import ServiceCreated from './events/ServiceCreated';
 import ServiceUpdated from './events/ServiceUpdated';
 import { ServiceType } from './model/service-type.enum';
+import { Service, ServiceInfo } from './model/service.entity';
 
 @Injectable()
 export class ServiceService {
   constructor(
-  @InjectRepository(Service)
+    @InjectRepository(Service)
     private serviceRepository = getRepository(Service)
   ) {}
 
   public async getServiceById(id: string): Promise<Service> {
-    let service = await this.serviceRepository.findById(id);
+    const service = await this.serviceRepository.findById(id);
     return service;
   }
 
@@ -68,9 +69,19 @@ export class ServiceService {
     return services;
   }
 
-  public async updateServiceConfigurations(user: string, id: string, name: string, tag: string, order: number, active: boolean, available: boolean, online: boolean, serviceInfo: ServiceInfo): Promise<Service> {
+  public async updateServiceConfigurations(
+    user: string,
+    id: string,
+    name: string,
+    tag: string,
+    order: number,
+    active: boolean,
+    available: boolean,
+    online: boolean,
+    serviceInfo: ServiceInfo
+  ): Promise<Service> {
     try {
-      let service = await this.serviceRepository.findById(id);
+      const service = await this.serviceRepository.findById(id);
       if (name) {
         service.name = name;
       }
@@ -94,7 +105,10 @@ export class ServiceService {
       }
       return await this.updateService(user, service);
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el servicio: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el servicio: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -105,8 +119,17 @@ export class ServiceService {
     return serviceUpdated;
   }
 
-  public async createService(user: string, commerceId: string, name: string, type: ServiceType, tag: string, online: boolean, order: number, serviceInfo: ServiceInfo): Promise<Service> {
-    let service = new Service();
+  public async createService(
+    user: string,
+    commerceId: string,
+    name: string,
+    type: ServiceType,
+    tag: string,
+    online: boolean,
+    order: number,
+    serviceInfo: ServiceInfo
+  ): Promise<Service> {
+    const service = new Service();
     service.commerceId = commerceId;
     service.name = name;
     service.type = type || ServiceType.STANDARD;

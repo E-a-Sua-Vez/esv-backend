@@ -1,3 +1,3 @@
 export enum PackageType {
-    STANDARD = 'STANDARD'
+  STANDARD = 'STANDARD',
 }

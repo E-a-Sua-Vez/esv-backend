@@ -1,22 +1,31 @@
-import { Commerce, ContactInfo, LocaleInfo, ServiceInfo, WhatsappConnection } from './model/commerce.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
-import { QueueService } from 'src/queue/queue.service';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
-import { Country } from 'src/shared/model/country.enum';
-import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
-import { Category } from './model/category.enum';
-import { SurveyPersonalizedService } from '../survey-personalized/survey-personalized.service';
-import { NotificationService } from 'src/notification/notification.service';
-import { QueryStackClient } from './infrastructure/query-stack-client';
-import { NotificationType } from 'src/notification/model/notification-type.enum';
-import { NotificationTemplate } from '../notification/model/notification-template.enum';
-import { FeatureToggleName } from 'src/feature-toggle/model/feature-toggle.enum';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
 import { FeatureToggle } from 'src/feature-toggle/model/feature-toggle.entity';
-import CommerceUpdated from './events/CommerceUpdated';
-import CommerceCreated from './events/CommerceCreated';
+import { FeatureToggleName } from 'src/feature-toggle/model/feature-toggle.enum';
+import { NotificationType } from 'src/notification/model/notification-type.enum';
+import { NotificationService } from 'src/notification/notification.service';
+import { QueueService } from 'src/queue/queue.service';
+import { Country } from 'src/shared/model/country.enum';
+
+import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
+import { NotificationTemplate } from '../notification/model/notification-template.enum';
+import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+import { SurveyPersonalizedService } from '../survey-personalized/survey-personalized.service';
+
 import { CommerceKeyNameDetailsDto } from './dto/commerce-keyname-details.dto';
+import CommerceCreated from './events/CommerceCreated';
+import CommerceUpdated from './events/CommerceUpdated';
+import { QueryStackClient } from './infrastructure/query-stack-client';
+import { Category } from './model/category.enum';
+import {
+  Commerce,
+  ContactInfo,
+  LocaleInfo,
+  ServiceInfo,
+  WhatsappConnection,
+} from './model/commerce.entity';
 
 @Injectable()
 export class CommerceService {
@@ -27,21 +36,21 @@ export class CommerceService {
     private featureToggleService: FeatureToggleService,
     private surveyPersonalizedService: SurveyPersonalizedService,
     private notificationService: NotificationService,
-    private queryStackClient: QueryStackClient
-  ) {}
+    private queryStackClient: QueryStackClient,
+    @Inject(GcpLoggerService)
+    private readonly logger: GcpLoggerService
+  ) {
+    this.logger.setContext('CommerceService');
+  }
 
   public async getCommerceById(id: string): Promise<Commerce> {
-    let commerce = await this.commerceRepository.findById(id);
-    const [
-      queues,
-      surveys,
-      features
-    ] = await Promise.all([
+    const commerce = await this.commerceRepository.findById(id);
+    const [queues, surveys, features] = await Promise.all([
       this.queueService.getActiveQueuesByCommerce(id),
       this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id),
-      this.featureToggleService.getFeatureToggleByCommerceId(id)
+      this.featureToggleService.getFeatureToggleByCommerceId(id),
     ]);
-    let commerceAux = commerce;
+    const commerceAux = commerce;
     if (queues && queues.length > 0) {
       commerceAux.queues = queues;
     }
@@ -55,16 +64,12 @@ export class CommerceService {
   }
 
   public async getCommerceDetails(id: string): Promise<CommerceKeyNameDetailsDto> {
-    let commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
-    let commerce = await this.commerceRepository.findById(id);
-    const [
-      queues,
-      surveys,
-      features
-    ] = await Promise.all([
+    const commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
+    const commerce = await this.commerceRepository.findById(id);
+    const [queues, surveys, features] = await Promise.all([
       this.queueService.getActiveQueuesByCommerce(id),
       this.surveyPersonalizedService.getSurveysPersonalizedByCommerceId(id),
-      this.featureToggleService.getFeatureToggleDetailsByCommerceId(id)
+      this.featureToggleService.getFeatureToggleDetailsByCommerceId(id),
     ]);
     commerceKeyNameDetailsDto.id = commerce.id;
     commerceKeyNameDetailsDto.name = commerce.name;
@@ -90,17 +95,15 @@ export class CommerceService {
   }
 
   public async getCommercesDetails(): Promise<Commerce[]> {
-    let result: Commerce[] = [];
-    let commerces = await this.commerceRepository.find();
+    const result: Commerce[] = [];
+    const commerces = await this.commerceRepository.find();
     if (commerces && commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
-        const commerce = commerces[i]
-        const [
-          features
-        ] = await Promise.all([
-          this.featureToggleService.getFeatureToggleByCommerceId(commerce.id)
+        const commerce = commerces[i];
+        const [features] = await Promise.all([
+          this.featureToggleService.getFeatureToggleByCommerceId(commerce.id),
         ]);
-        let commerceAux = commerce;
+        const commerceAux = commerce;
         commerceAux.features = features;
         result.push(commerceAux);
       }
@@ -109,14 +112,12 @@ export class CommerceService {
   }
 
   public async getCommerceByKeyName(keyName: string): Promise<CommerceKeyNameDetailsDto> {
-    let commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
-    let commerces = await this.commerceRepository.whereEqualTo('keyName', keyName).find();
+    const commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
+    const commerces = await this.commerceRepository.whereEqualTo('keyName', keyName).find();
     if (commerces.length > 0) {
-      let commerceAux = commerces[0];
-      const [
-        features
-      ] = await Promise.all([
-        this.featureToggleService.getFeatureToggleDetailsByCommerceId(commerceAux.id)
+      const commerceAux = commerces[0];
+      const [features] = await Promise.all([
+        this.featureToggleService.getFeatureToggleDetailsByCommerceId(commerceAux.id),
       ]);
       commerceKeyNameDetailsDto.id = commerceAux.id;
       commerceKeyNameDetailsDto.name = commerceAux.name;
@@ -128,7 +129,7 @@ export class CommerceService {
       commerceKeyNameDetailsDto.available = commerceAux.available;
       commerceKeyNameDetailsDto.localeInfo = commerceAux.localeInfo;
       commerceKeyNameDetailsDto.serviceInfo = commerceAux.serviceInfo;
-      commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo ;
+      commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo;
       commerceKeyNameDetailsDto.features = features;
       return commerceKeyNameDetailsDto;
     }
@@ -143,8 +144,10 @@ export class CommerceService {
     return commerces;
   }
 
-  public async getActiveCommercesByBusinessId(businessId: string): Promise<CommerceKeyNameDetailsDto[]> {
-    let commercesToReturn: CommerceKeyNameDetailsDto[] = [];
+  public async getActiveCommercesByBusinessId(
+    businessId: string
+  ): Promise<CommerceKeyNameDetailsDto[]> {
+    const commercesToReturn: CommerceKeyNameDetailsDto[] = [];
     const commerces = await this.commerceRepository
       .whereEqualTo('businessId', businessId)
       .whereEqualTo('active', true)
@@ -153,9 +156,12 @@ export class CommerceService {
       .find();
     if (commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
-        let commerceAux = commerces[i];
-        let commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
-        commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
+        const commerceAux = commerces[i];
+        const commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto =
+          new CommerceKeyNameDetailsDto();
+        commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(
+          commerceAux.id
+        );
         commerceKeyNameDetailsDto.id = commerceAux.id;
         commerceKeyNameDetailsDto.name = commerceAux.name;
         commerceKeyNameDetailsDto.keyName = commerceAux.keyName;
@@ -167,7 +173,7 @@ export class CommerceService {
         commerceKeyNameDetailsDto.available = commerceAux.available;
         commerceKeyNameDetailsDto.localeInfo = commerceAux.localeInfo;
         commerceKeyNameDetailsDto.serviceInfo = commerceAux.serviceInfo;
-        commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo ;
+        commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo;
         commerceKeyNameDetailsDto.features = commerceAux.features;
         commercesToReturn.push(commerceKeyNameDetailsDto);
       }
@@ -175,8 +181,10 @@ export class CommerceService {
     return commercesToReturn;
   }
 
-  public async getActiveCommercesByBusinessKeyName(businessId: string): Promise<CommerceKeyNameDetailsDto[]> {
-    let commercesToReturn: CommerceKeyNameDetailsDto[] = [];
+  public async getActiveCommercesByBusinessKeyName(
+    businessId: string
+  ): Promise<CommerceKeyNameDetailsDto[]> {
+    const commercesToReturn: CommerceKeyNameDetailsDto[] = [];
     const commerces = await this.commerceRepository
       .whereEqualTo('businessId', businessId)
       .whereEqualTo('active', true)
@@ -185,9 +193,12 @@ export class CommerceService {
       .find();
     if (commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
-        let commerceAux = commerces[i];
-        let commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto = new CommerceKeyNameDetailsDto();
-        commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(commerceAux.id);
+        const commerceAux = commerces[i];
+        const commerceKeyNameDetailsDto: CommerceKeyNameDetailsDto =
+          new CommerceKeyNameDetailsDto();
+        commerceAux.features = await this.featureToggleService.getFeatureToggleByCommerceId(
+          commerceAux.id
+        );
         commerceKeyNameDetailsDto.id = commerceAux.id;
         commerceKeyNameDetailsDto.name = commerceAux.name;
         commerceKeyNameDetailsDto.keyName = commerceAux.keyName;
@@ -198,7 +209,7 @@ export class CommerceService {
         commerceKeyNameDetailsDto.available = commerceAux.available;
         commerceKeyNameDetailsDto.localeInfo = commerceAux.localeInfo;
         commerceKeyNameDetailsDto.serviceInfo = commerceAux.serviceInfo;
-        commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo ;
+        commerceKeyNameDetailsDto.contactInfo = commerceAux.contactInfo;
         commerceKeyNameDetailsDto.features = commerceAux.features;
         commercesToReturn.push(commerceKeyNameDetailsDto);
       }
@@ -206,8 +217,23 @@ export class CommerceService {
     return commercesToReturn;
   }
 
-  public async createCommerce(user: string, name: string, keyName: string, tag: string, businessId: string, country: Country, email: string, logo: string, phone: string, url: string, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, category: Category): Promise<Commerce> {
-    let commerce = new Commerce();
+  public async createCommerce(
+    user: string,
+    name: string,
+    keyName: string,
+    tag: string,
+    businessId: string,
+    country: Country,
+    email: string,
+    logo: string,
+    phone: string,
+    url: string,
+    localeInfo: LocaleInfo,
+    contactInfo: ContactInfo,
+    serviceInfo: ServiceInfo,
+    category: Category
+  ): Promise<Commerce> {
+    const commerce = new Commerce();
     commerce.businessId = businessId;
     commerce.name = name;
     commerce.keyName = keyName;
@@ -235,6 +261,15 @@ export class CommerceService {
     const commerceCreated = await this.commerceRepository.create(commerce);
     const commerceCreatedEvent = new CommerceCreated(new Date(), commerceCreated, { user });
     publish(commerceCreatedEvent);
+    this.logger.info('Commerce created successfully', {
+      commerceId: commerceCreated.id,
+      businessId,
+      name,
+      keyName,
+      category,
+      country,
+      user,
+    });
     return commerceCreated;
   }
 
@@ -245,15 +280,29 @@ export class CommerceService {
     return commerceUpdated;
   }
 
-  public async updateCommerce(user: string, id: string, tag: string, logo: string, phone: string, url: string, active: boolean, available: boolean, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, category: Category): Promise<Commerce> {
-    let commerce = await this.getCommerce(id);
+  public async updateCommerce(
+    user: string,
+    id: string,
+    tag: string,
+    logo: string,
+    phone: string,
+    url: string,
+    active: boolean,
+    available: boolean,
+    localeInfo: LocaleInfo,
+    contactInfo: ContactInfo,
+    serviceInfo: ServiceInfo,
+    category: Category
+  ): Promise<Commerce> {
+    const commerce = await this.getCommerce(id);
     if (tag) {
       commerce.tag = tag;
     }
     if (logo) {
       commerce.logo = logo;
     }
-    if (url) {url
+    if (url) {
+      url;
       commerce.url = url;
     }
     if (phone) {
@@ -277,11 +326,26 @@ export class CommerceService {
     if (serviceInfo !== undefined) {
       commerce.serviceInfo = serviceInfo;
     }
-    return await this.update(user, commerce);
+    const updatedCommerce = await this.update(user, commerce);
+    this.logger.info('Commerce updated successfully', {
+      commerceId: id,
+      businessId: commerce.businessId,
+      active,
+      available,
+      hasLocaleInfo: !!localeInfo,
+      hasContactInfo: !!contactInfo,
+      hasServiceInfo: !!serviceInfo,
+      user,
+    });
+    return updatedCommerce;
   }
 
-  public async updateWhatsappConnectionCommerce(user: string, businessId: string, whatsappConnection: WhatsappConnection): Promise<Commerce[]> {
-    let commercesUpdated = [];
+  public async updateWhatsappConnectionCommerce(
+    user: string,
+    businessId: string,
+    whatsappConnection: WhatsappConnection
+  ): Promise<Commerce[]> {
+    const commercesUpdated = [];
     const commerces = await this.getCommercesByBusinessId(businessId);
     if (commerces && commerces.length > 0 && whatsappConnection) {
       for (let i = 0; i < commerces.length; i++) {
@@ -289,7 +353,7 @@ export class CommerceService {
         if (commerce && commerce.id) {
           commerce.whatsappConnection = whatsappConnection;
           await this.update(user, commerce);
-          commercesUpdated.push(commerce)
+          commercesUpdated.push(commerce);
         }
       }
     }
@@ -297,11 +361,12 @@ export class CommerceService {
   }
 
   public async getWhatsappConnectionCommerce(id: string): Promise<WhatsappConnection> {
-    let commerce = await this.getCommerce(id);
-    if (commerce.whatsappConnection &&
-        commerce.whatsappConnection.connected === true &&
-        commerce.whatsappConnection.whatsapp
-      ) {
+    const commerce = await this.getCommerce(id);
+    if (
+      commerce.whatsappConnection &&
+      commerce.whatsappConnection.connected === true &&
+      commerce.whatsappConnection.whatsapp
+    ) {
       commerce.whatsappConnection = commerce.whatsappConnection;
       return commerce.whatsappConnection;
     }
@@ -335,17 +400,35 @@ export class CommerceService {
 
   public async notifyCommerceStatistics(): Promise<any> {
     const commerces = await this.getCommerces();
-    const from = new Date(new Date(new Date().setMonth(new Date().getMonth() - 1)).setDate(0)).toISOString().slice(0, 10);
-    const pastFromDate = new Date(new Date(new Date().setMonth(new Date().getMonth() - 1)).setDate(0));
-    const to = new Date(pastFromDate.getFullYear(), pastFromDate.getMonth() + 2, 0).toISOString().slice(0, 10);
+    const from = new Date(new Date(new Date().setMonth(new Date().getMonth() - 1)).setDate(0))
+      .toISOString()
+      .slice(0, 10);
+    const pastFromDate = new Date(
+      new Date(new Date().setMonth(new Date().getMonth() - 1)).setDate(0)
+    );
+    const to = new Date(pastFromDate.getFullYear(), pastFromDate.getMonth() + 2, 0)
+      .toISOString()
+      .slice(0, 10);
     if (commerces.length > 0) {
-      for(let i = 0; i < commerces.length; i++) {
+      for (let i = 0; i < commerces.length; i++) {
         const commerce = commerces[i];
-        const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(commerce.id, FeatureToggleName.EMAIL);
-        let notify = this.featureToggleIsActive(featureToggle, 'email-monthly-commerce-statistics');
-        const template = `${NotificationTemplate.MONTHLY_COMMERCE_STATISTICS}-${commerce.localeInfo.language || 'es'}`;
+        const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
+          commerce.id,
+          FeatureToggleName.EMAIL
+        );
+        const notify = this.featureToggleIsActive(
+          featureToggle,
+          'email-monthly-commerce-statistics'
+        );
+        const template = `${NotificationTemplate.MONTHLY_COMMERCE_STATISTICS}-${
+          commerce.localeInfo.language || 'es'
+        }`;
         if (commerce.email && notify === true) {
-          const { calculatedMetrics } =  await this.queryStackClient.getMetrics({ commerceId: commerce.id, from, to});
+          const { calculatedMetrics } = await this.queryStackClient.getMetrics({
+            commerceId: commerce.id,
+            from,
+            to,
+          });
           await this.notificationService.createAttentionStatisticsEmailNotification(
             commerce.email,
             NotificationType.MONTHLY_COMMERCE_STATISTICS,
@@ -360,7 +443,9 @@ export class CommerceService {
             parseFloat(calculatedMetrics['attention.created'].avgDuration).toFixed(2) || 0,
             parseFloat(calculatedMetrics['attention.created'].avgDuration).toFixed(2) || 0,
             parseFloat(calculatedMetrics['attention.created'].dailyAvg).toFixed(2) || 0,
-            parseFloat(calculatedMetrics['attention.created'].pastMonthAttentionNumber.dailyAvg).toFixed(2) || 0,
+            parseFloat(
+              calculatedMetrics['attention.created'].pastMonthAttentionNumber.dailyAvg
+            ).toFixed(2) || 0,
             parseFloat(calculatedMetrics['survey.created'].avgRating).toFixed(2) || 0,
             parseFloat(calculatedMetrics['survey.created'].avgRating).toFixed(2) || 0
           );

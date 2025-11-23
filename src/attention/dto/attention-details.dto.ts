@@ -1,10 +1,10 @@
-import { User } from '../../user/model/user.entity';
-import { Commerce } from '../../commerce/model/commerce.entity';
-import { Queue } from '../../queue/model/queue.entity';
 import { Collaborator } from '../../collaborator/model/collaborator.entity';
+import { Commerce } from '../../commerce/model/commerce.entity';
 import { Module } from '../../module/module.entity';
-import { Block } from '../model/attention.entity';
 import { PaymentConfirmation } from '../../payment/model/payment-confirmation';
+import { Queue } from '../../queue/model/queue.entity';
+import { User } from '../../user/model/user.entity';
+import { Block } from '../model/attention.entity';
 
 export class AttentionDetailsDto {
   id: string;

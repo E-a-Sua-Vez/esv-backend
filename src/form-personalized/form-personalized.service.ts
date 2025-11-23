@@ -1,10 +1,11 @@
-import { getRepository} from 'fireorm';
+import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+
 import FormPersonalizedCreated from './events/FormPersonalizedCreated';
+import FormPersonalizedUpdated from './events/FormPersonalizedUpdated';
 import { Question, FormPersonalized } from './model/form-personalized.entity';
 import { FormType } from './model/type.enum';
-import { publish } from 'ett-events-lib';
-import FormPersonalizedUpdated from './events/FormPersonalizedUpdated';
 
 export class FormPersonalizedService {
   constructor(
@@ -21,12 +22,11 @@ export class FormPersonalizedService {
   }
 
   public async getFormsPersonalizedByCommerceId(commerceId: string): Promise<FormPersonalized[]> {
-    let forms: FormPersonalized[];
-    forms = await this.formPersonalizedRepository
+    const forms: FormPersonalized[] = await this.formPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('available', true)
       .find();
-    let formsToReturn = [];
+    const formsToReturn = [];
     if (forms && forms.length > 0) {
       forms.forEach(form => {
         let questions = form.questions;
@@ -35,19 +35,21 @@ export class FormPersonalizedService {
           form.questions = questions;
           formsToReturn.push(form);
         }
-      })
+      });
     }
     return forms;
   }
 
-  public async getFormsPersonalizedByCommerceIdAndType(commerceId: string, type: FormType): Promise<FormPersonalized[]> {
-    let forms: FormPersonalized[];
-    forms = await this.formPersonalizedRepository
+  public async getFormsPersonalizedByCommerceIdAndType(
+    commerceId: string,
+    type: FormType
+  ): Promise<FormPersonalized[]> {
+    const forms: FormPersonalized[] = await this.formPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('type', type)
       .whereEqualTo('available', true)
       .find();
-    let formsToReturn = [];
+    const formsToReturn = [];
     if (forms && forms.length > 0) {
       forms.forEach(form => {
         let questions = form.questions;
@@ -56,20 +58,22 @@ export class FormPersonalizedService {
           form.questions = questions;
           formsToReturn.push(form);
         }
-      })
+      });
     }
     return forms;
   }
 
-  public async getFormsPersonalizedByQueueId(commerceId: string, queueId: string): Promise<FormPersonalized[]> {
-    let forms: FormPersonalized[];
-    forms = await this.formPersonalizedRepository
+  public async getFormsPersonalizedByQueueId(
+    commerceId: string,
+    queueId: string
+  ): Promise<FormPersonalized[]> {
+    const forms: FormPersonalized[] = await this.formPersonalizedRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
       .find();
-    let formsToReturn = [];
+    const formsToReturn = [];
     if (forms && forms.length > 0) {
       forms.forEach(form => {
         let questions = form.questions;
@@ -78,13 +82,19 @@ export class FormPersonalizedService {
           form.questions = questions;
           formsToReturn.push(form);
         }
-      })
+      });
     }
     return forms;
   }
 
-  public async createFormPersonalized(commerceId: string, type: FormType, questions?: Question[], queueId?: string, servicesId?: string[]): Promise<FormPersonalized> {
-    let form = new FormPersonalized();
+  public async createFormPersonalized(
+    commerceId: string,
+    type: FormType,
+    questions?: Question[],
+    queueId?: string,
+    servicesId?: string[]
+  ): Promise<FormPersonalized> {
+    const form = new FormPersonalized();
     form.commerceId = commerceId;
     form.type = type;
     if (servicesId) {
@@ -108,14 +118,27 @@ export class FormPersonalizedService {
 
   public async update(user, form: FormPersonalized): Promise<FormPersonalized> {
     const formPersonalizedUpdated = await this.formPersonalizedRepository.update(form);
-    const formPersonalizedUpdatedEvent = new FormPersonalizedUpdated(new Date(), formPersonalizedUpdated, { user });
+    const formPersonalizedUpdatedEvent = new FormPersonalizedUpdated(
+      new Date(),
+      formPersonalizedUpdated,
+      { user }
+    );
     publish(formPersonalizedUpdatedEvent);
     return formPersonalizedUpdated;
   }
 
-  public async updateFormPersonalized(user: string, type: FormType, id: string, active: boolean, available: boolean, questions?: Question[], queueId?: string, servicesId?: string[]): Promise<FormPersonalized> {
+  public async updateFormPersonalized(
+    user: string,
+    type: FormType,
+    id: string,
+    active: boolean,
+    available: boolean,
+    questions?: Question[],
+    queueId?: string,
+    servicesId?: string[]
+  ): Promise<FormPersonalized> {
     try {
-      let form = await this.formPersonalizedRepository.findById(id);
+      const form = await this.formPersonalizedRepository.findById(id);
       if (type) {
         form.type = type;
       }

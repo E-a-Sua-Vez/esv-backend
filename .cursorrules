@@ -1,0 +1,237 @@
+# ESV Backend - Cursor AI Guidelines
+
+## Project Overview
+This is a NestJS backend application for an appointment/queue management system (estuturno/easuavez) that serves businesses in healthcare, beauty, restaurants, and other service industries.
+
+## Architecture
+
+### Technology Stack
+- **Framework**: NestJS 9.x
+- **Database**: Google Cloud Firestore (via FireORM)
+- **Authentication**: Firebase Admin SDK
+- **Language**: TypeScript
+- **Event System**: ett-events-lib (custom event publishing)
+
+### Project Structure
+```
+src/
+├── [module-name]/
+│   ├── [module-name].controller.ts    # HTTP endpoints
+│   ├── [module-name].service.ts        # Business logic
+│   ├── [module-name].module.ts         # Module definition
+│   ├── dto/                            # Data Transfer Objects
+│   ├── model/                          # Entity models
+│   ├── events/                         # Domain events
+│   └── builders/                       # Builder pattern implementations
+├── shared/                             # Shared utilities and interfaces
+├── auth/                               # Authentication guards
+└── app.module.ts                       # Root module
+```
+
+## Coding Standards
+
+### TypeScript
+- Use TypeScript strict mode where possible (currently disabled for legacy reasons)
+- Prefer interfaces for object shapes, classes for entities
+- Use proper typing - avoid `any` when possible
+- Use async/await over promises
+
+### NestJS Patterns
+- **Controllers**: Handle HTTP requests, delegate to services
+- **Services**: Contain business logic, use `@Injectable()` decorator
+- **Modules**: Organize related functionality
+- **DTOs**: Use for request/response validation with `class-validator`
+- **Guards**: Use `@UseGuards()` for authentication/authorization
+
+### Code Style
+- Use single quotes for strings
+- 2 spaces for indentation
+- Trailing commas in multi-line objects/arrays
+- Maximum line length: 100 characters
+- Use semicolons
+
+### Naming Conventions
+- **Files**: kebab-case (e.g., `booking.service.ts`)
+- **Classes**: PascalCase (e.g., `BookingService`)
+- **Methods/Variables**: camelCase (e.g., `createBooking`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_BOOKINGS`)
+- **Interfaces**: PascalCase with `I` prefix optional (e.g., `IBookingBuilder`)
+
+### Error Handling
+- Use `HttpException` from `@nestjs/common` for HTTP errors
+- Include descriptive error messages in Spanish (current convention)
+- Log errors with context using `Logger` from `@nestjs/common`
+- Wrap async operations in try-catch when needed
+
+### Database Patterns
+- Use FireORM repositories via `@InjectRepository()` decorator
+- Use repository methods: `findById()`, `create()`, `update()`, `whereEqualTo()`, etc.
+- Handle Firestore-specific query patterns
+
+### Event Publishing
+- Use `publish()` from `ett-events-lib` for domain events
+- Create event classes in `events/` directory
+- Include metadata: timestamp, entity, user context
+
+## Common Patterns
+
+### Service Method Structure
+```typescript
+public async methodName(params: Type): Promise<ReturnType> {
+  try {
+    // 1. Validate inputs
+    // 2. Fetch related data
+    // 3. Business logic
+    // 4. Save/update
+    // 5. Publish events
+    // 6. Return result
+  } catch (error) {
+    throw new HttpException(`Error message: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+}
+```
+
+### Controller Endpoint Structure
+```typescript
+@UseGuards(AuthGuard)
+@Post('/endpoint')
+public async endpointName(@Body() dto: DtoClass, @User() user: string): Promise<ReturnType> {
+  return this.service.methodName(dto, user);
+}
+```
+
+### Builder Pattern
+- Used for complex object creation (e.g., `BookingDefaultBuilder`)
+- Implement `Builder` interface from `shared/interfaces/builder.ts`
+- Separate construction logic from business logic
+
+## Module-Specific Guidelines
+
+### Booking Module
+- Core business logic for appointment management
+- Handles booking lifecycle: create, confirm, cancel, process
+- Integrates with Queue, Commerce, Client, Notification modules
+- Uses Bottleneck for rate limiting async operations
+
+### Notification Module
+- Handles email and WhatsApp notifications
+- Uses feature toggles to control notification types
+- Supports multiple languages via templates
+
+### Commerce Module
+- Represents business locations
+- Contains queue, service, and contact information
+- Has locale settings (language, timezone)
+
+### Queue Module
+- Represents service queues within a commerce
+- Has different types: standard, select service, etc.
+- Contains block scheduling information
+
+## Testing Guidelines
+
+### Unit Tests
+- Test services in isolation with mocked dependencies
+- Use `@nestjs/testing` utilities
+- Mock FireORM repositories
+- Test both success and error cases
+
+### Test Structure
+```typescript
+describe('ServiceName', () => {
+  let service: ServiceName;
+  let repository: MockRepository;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        ServiceName,
+        { provide: Repository, useValue: mockRepository },
+      ],
+    }).compile();
+    service = module.get<ServiceName>(ServiceName);
+  });
+
+  describe('methodName', () => {
+    it('should do something', async () => {
+      // Arrange
+      // Act
+      // Assert
+    });
+  });
+});
+```
+
+## Environment Variables
+- `NODE_ENV`: Environment (local, test, prod)
+- `PROJECT_ID`: Firebase project ID
+- `PRIVATE_KEY`: Firebase private key (JSON)
+- `CLIENT_EMAIL`: Firebase client email
+- `PORT`: Server port (default: 3000)
+- `BACKEND_URL`: Base URL for links
+- `VALIDATE_AUTH`: Enable auth validation (1/0)
+
+## Common Dependencies
+- `@nestjs/common`, `@nestjs/core`: Core NestJS
+- `nestjs-fireorm`: FireORM integration
+- `fireorm`: Firestore ORM
+- `firebase-admin`: Firebase Admin SDK
+- `class-validator`: DTO validation
+- `ett-events-lib`: Event publishing
+- `bottleneck`: Rate limiting
+
+## When Making Changes
+
+1. **Follow existing patterns**: Look at similar modules for consistency
+2. **Add DTOs**: Create proper DTOs for new endpoints
+3. **Handle errors**: Use HttpException with appropriate status codes
+4. **Publish events**: For domain events that other systems might care about
+5. **Add logging**: Use Logger for important operations
+6. **Update tests**: Add/update tests for new functionality
+7. **Document**: Add JSDoc comments for public methods
+
+## Things to Avoid
+
+- Don't use `any` types without good reason
+- Don't bypass authentication guards
+- Don't hardcode configuration values
+- Don't ignore errors silently
+- Don't create circular dependencies between modules
+- Don't mix business logic in controllers
+- Don't forget to handle async errors
+
+## Quick Reference
+
+### Creating a New Module
+1. Generate module: `nest g module module-name`
+2. Generate service: `nest g service module-name`
+3. Generate controller: `nest g controller module-name`
+4. Create model in `model/` directory
+5. Create DTOs in `dto/` directory
+6. Register module in `app.module.ts`
+
+### Common FireORM Queries
+```typescript
+// Find by ID
+await repository.findById(id);
+
+// Find with conditions
+await repository.whereEqualTo('field', value).find();
+
+// Create
+await repository.create(entity);
+
+// Update
+await repository.update(entity);
+```
+
+### Common HTTP Status Codes
+- `200 OK`: Success
+- `201 Created`: Resource created
+- `400 Bad Request`: Invalid input
+- `401 Unauthorized`: Authentication required
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `409 Conflict`: Resource conflict (e.g., duplicate)
+- `500 Internal Server Error`: Server error
+

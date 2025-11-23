@@ -1,10 +1,12 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { FireormModule } from 'nestjs-fireorm';;
-import { Client } from './model/client.entity';
-import { ClientService } from './client.service';
+import { FireormModule } from 'nestjs-fireorm';
+
 import { ClientContactModule } from '../client-contact/client-contact.module';
-import { ClientController } from './client.controller';
 import { CommerceModule } from '../commerce/commerce.module';
+
+import { ClientController } from './client.controller';
+import { ClientService } from './client.service';
+import { Client } from './model/client.entity';
 
 @Module({
   imports: [

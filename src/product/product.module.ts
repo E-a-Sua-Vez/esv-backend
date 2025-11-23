@@ -1,17 +1,15 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
-import { ProductController } from './product.controller';
-import { Product, ProductReplacement, ProductConsumption } from './model/product.entity';
-import { ProductService } from './product.service';
+
 import { MessageModule } from '../message/message.module';
+
+import { Product, ProductReplacement, ProductConsumption } from './model/product.entity';
+import { ProductController } from './product.controller';
+import { ProductService } from './product.service';
 
 @Module({
   imports: [
-    FireormModule.forFeature([
-      Product,
-      ProductReplacement,
-      ProductConsumption
-    ]),
+    FireormModule.forFeature([Product, ProductReplacement, ProductConsumption]),
     forwardRef(() => MessageModule),
   ],
   providers: [ProductService],

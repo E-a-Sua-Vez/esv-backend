@@ -1,14 +1,15 @@
-import { Rol } from './model/rol.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
-import * as roles from './model/rol.json';
-import RolUpdated from './events/RolUpdated';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import RolCreated from './events/RolCreated';
+import RolUpdated from './events/RolUpdated';
+import { Rol } from './model/rol.entity';
+import * as roles from './model/rol.json';
 
 export class RolService {
   constructor(
-  @InjectRepository(Rol)
+    @InjectRepository(Rol)
     private rolRepository = getRepository(Rol)
   ) {}
 
@@ -21,14 +22,17 @@ export class RolService {
   }
 
   public async getRolByName(name: string): Promise<Rol> {
-    const rol = await this.rolRepository
-      .whereEqualTo('name', name)
-      .find();
+    const rol = await this.rolRepository.whereEqualTo('name', name).find();
     return rol[0];
   }
 
-  public async createRol(user: string, name: string, description: string, permissions: Record<string, boolean|number>): Promise<Rol> {
-    let rol = new Rol();
+  public async createRol(
+    user: string,
+    name: string,
+    description: string,
+    permissions: Record<string, boolean | number>
+  ): Promise<Rol> {
+    const rol = new Rol();
     rol.name = name;
     rol.description = description;
     rol.permissions = permissions;
@@ -47,8 +51,13 @@ export class RolService {
     return rolUpdated;
   }
 
-  public async updateRolPermission(user: string, id: string, permissionName: string, permissionValue: boolean|number): Promise<Rol> {
-    let rol = await this.getRolById(id);
+  public async updateRolPermission(
+    user: string,
+    id: string,
+    permissionName: string,
+    permissionValue: boolean | number
+  ): Promise<Rol> {
+    const rol = await this.getRolById(id);
     if (rol) {
       if (rol.permissions) {
         rol.permissions[permissionName] = permissionValue;
@@ -58,11 +67,11 @@ export class RolService {
   }
 
   public async initRol(user: string): Promise<Rol[]> {
-    let rolesCreated = [];
+    const rolesCreated = [];
     const rolesToCreate = roles;
     for (let i = 0; i < rolesToCreate.length; i++) {
       const rolToCreate = rolesToCreate[i];
-      let rol = new Rol();
+      const rol = new Rol();
       rol.name = rolToCreate.name;
       rol.description = rolToCreate.description;
       rol.permissions = rolToCreate.permissions;

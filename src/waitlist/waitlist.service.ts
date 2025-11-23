@@ -1,25 +1,27 @@
-import { Block, Waitlist } from './model/waitlist.entity';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-import { QueueService } from '../queue/queue.service';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from '../notification/model/notification-type.enum';
-import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
-import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
-import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
-import { WaitlistType } from './model/waitlist-type.enum';
-import { WaitlistChannel } from './model/waitlist-channel.enum';
-import { CommerceService } from '../commerce/commerce.service';
-import { User } from '../user/model/user.entity';
-import { publish } from 'ett-events-lib';
+import { Booking } from 'src/booking/model/booking.entity';
 import { NotificationTemplate } from 'src/notification/model/notification-template.enum';
+
+import { ClientService } from '../client/client.service';
+import { CommerceService } from '../commerce/commerce.service';
+import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
+import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
+import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
+import { NotificationType } from '../notification/model/notification-type.enum';
+import { NotificationService } from '../notification/notification.service';
+import { QueueService } from '../queue/queue.service';
+import { User } from '../user/model/user.entity';
+
 import { WaitlistDefaultBuilder } from './builders/waitlist-default';
 import { WaitlistDetailsDto } from './dto/waitlist-details.dto';
-import { WaitlistStatus } from './model/waitlist-status.enum';
 import WaitlistUpdated from './events/WaitlistUpdated';
-import { Booking } from 'src/booking/model/booking.entity';
-import { ClientService } from '../client/client.service';
+import { WaitlistChannel } from './model/waitlist-channel.enum';
+import { WaitlistStatus } from './model/waitlist-status.enum';
+import { WaitlistType } from './model/waitlist-type.enum';
+import { Block, Waitlist } from './model/waitlist.entity';
 
 @Injectable()
 export class WaitlistService {
@@ -32,34 +34,32 @@ export class WaitlistService {
     private commerceService: CommerceService,
     private waitlistDefaultBuilder: WaitlistDefaultBuilder,
     private clientService: ClientService
-  ) { }
+  ) {}
 
   public async getWaitlistById(id: string): Promise<Waitlist> {
     return await this.waitlistRepository.findById(id);
   }
 
-  public async createWaitlist(queueId: string, channel: string = WaitlistChannel.QR, date: string, user?: User, clientId?: string): Promise<Waitlist> {
-    let waitlistCreated;
-    let queue = await this.queueService.getQueueById(queueId);
-    let email = undefined;
-    let phone = undefined;
+  public async createWaitlist(
+    queueId: string,
+    channel: string = WaitlistChannel.QR,
+    date: string,
+    user?: User,
+    clientId?: string
+  ): Promise<Waitlist> {
+    const queue = await this.queueService.getQueueById(queueId);
     if (clientId !== undefined) {
       const client = await this.clientService.getClientById(clientId);
       if (client && client.id) {
-        user = { ...user,
+        user = {
+          ...user,
           email: client.email || user.email,
           phone: client.phone || user.phone,
           name: client.name || user.name,
           lastName: client.lastName || user.lastName,
           personalInfo: client.personalInfo || user.personalInfo,
-          idNumber: client.idNumber || user.idNumber
+          idNumber: client.idNumber || user.idNumber,
         };
-        if (client.email) {
-          email = client.email;
-        }
-        if (client.phone) {
-          phone = client.phone;
-        }
         await this.clientService.saveClient(
           clientId,
           user.businessId,
@@ -72,17 +72,24 @@ export class WaitlistService {
           user.personalInfo
         );
       } else {
-        throw new HttpException(`Error creando lista de espera: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException(
+          `Error creando lista de espera: Cliente no existe ${clientId}`,
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
       }
     }
-    waitlistCreated = await this.waitlistDefaultBuilder.create(date, queue, channel, user, clientId);
+    const waitlistCreated = await this.waitlistDefaultBuilder.create(
+      date,
+      queue,
+      channel,
+      user,
+      clientId
+    );
     return waitlistCreated;
   }
 
   public async getWaitlistsByDate(date: string): Promise<Waitlist[]> {
-    return await this.waitlistRepository
-      .whereEqualTo('date', date)
-      .find();
+    return await this.waitlistRepository.whereEqualTo('date', date).find();
   }
 
   public async getWaitlistsByQueueAndDate(queueId: string, date: string): Promise<Waitlist[]> {
@@ -92,7 +99,10 @@ export class WaitlistService {
       .find();
   }
 
-  public async getPendingWaitlistsByQueueAndDate(queueId: string, date: string): Promise<Waitlist[]> {
+  public async getPendingWaitlistsByQueueAndDate(
+    queueId: string,
+    date: string
+  ): Promise<Waitlist[]> {
     return await this.waitlistRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
@@ -117,14 +127,17 @@ export class WaitlistService {
 
   public async waitlistEmail(waitlist: Waitlist, block?: Block): Promise<Waitlist[]> {
     const waitlistCommerce = await this.commerceService.getCommerceById(waitlist.commerceId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(waitlist.commerceId, FeatureToggleName.EMAIL);
-    let toNotify = [];
-    if(this.featureToggleIsActive(featureToggle, 'email-waitlist')){
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
+      waitlist.commerceId,
+      FeatureToggleName.EMAIL
+    );
+    const toNotify = [];
+    if (this.featureToggleIsActive(featureToggle, 'email-waitlist')) {
       toNotify.push(waitlist);
     }
     const notified = [];
     const commerceLanguage = waitlistCommerce.localeInfo.language;
-    toNotify.forEach(async (waitlist) => {
+    toNotify.forEach(async waitlist => {
       if (waitlist !== undefined && waitlist.type === WaitlistType.STANDARD) {
         if (waitlist.user.email) {
           const template = `${NotificationTemplate.WAITLIST}-${commerceLanguage}`;
@@ -155,31 +168,33 @@ export class WaitlistService {
 
   public async waitlistWhatsapp(waitlist: Waitlist, block: Block): Promise<Waitlist[]> {
     const waitlistCommerce = await this.commerceService.getCommerceById(waitlist.commerceId);
-    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(waitlist.commerceId, FeatureToggleName.WHATSAPP);
-    let toNotify = [];
-    if(this.featureToggleIsActive(featureToggle, 'whatsapp-waitlist')){
+    const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
+      waitlist.commerceId,
+      FeatureToggleName.WHATSAPP
+    );
+    const toNotify = [];
+    if (this.featureToggleIsActive(featureToggle, 'whatsapp-waitlist')) {
       toNotify.push(waitlist);
     }
     const notified = [];
     let message = '';
     let type;
-    toNotify.forEach(async (waitlist) => {
+    toNotify.forEach(async waitlist => {
       if (waitlist !== undefined && waitlist.type === WaitlistType.STANDARD) {
         const user = waitlist.user;
-        if(user.notificationOn) {
+        if (user.notificationOn) {
           type = NotificationType.WAITLIST;
           const link = `${process.env.BACKEND_URL}/interno/waitlist/${waitlist.id}/${block.number}`;
-          message = waitlistCommerce.localeInfo.language === 'pt'
-          ?
-`Olá, a espera acabou! Está disponível uma hora em *${waitlistCommerce.name}* para o día *${waitlist.date}* as *${block.hourFrom}*.
+          message =
+            waitlistCommerce.localeInfo.language === 'pt'
+              ? `Olá, a espera acabou! Está disponível uma hora em *${waitlistCommerce.name}* para o día *${waitlist.date}* as *${block.hourFrom}*.
 
 Quer confirmar? Confirme sua reserva no próximo link:
 
 ${link}
 
 Obrigado!`
-          :
-`Hola, ¡terminó la espera! Está disponible una hora en *${waitlistCommerce.name}* para el día *${waitlist.date}* a las *${block.hourFrom}*.
+              : `Hola, ¡terminó la espera! Está disponible una hora en *${waitlistCommerce.name}* para el día *${waitlist.date}* a las *${block.hourFrom}*.
 
 ¿La quieres? Confirma tu reserva en el siguiente link:
 
@@ -187,7 +202,15 @@ ${link}
 
 ¡Muchas gracias!
 `;
-          await this.notificationService.createWaitlistWhatsappNotification(user.phone, waitlist.id, message, type, waitlist.id, waitlist.commerceId, waitlist.queueId);
+          await this.notificationService.createWaitlistWhatsappNotification(
+            user.phone,
+            waitlist.id,
+            message,
+            type,
+            waitlist.id,
+            waitlist.commerceId,
+            waitlist.queueId
+          );
           notified.push(waitlist);
         }
       }
@@ -198,7 +221,7 @@ ${link}
   public async getWaitlistDetails(id: string): Promise<WaitlistDetailsDto> {
     try {
       const waitlist = await this.getWaitlistById(id);
-      let waitlistDetailsDto: WaitlistDetailsDto = new WaitlistDetailsDto();
+      const waitlistDetailsDto: WaitlistDetailsDto = new WaitlistDetailsDto();
 
       waitlistDetailsDto.id = waitlist.id;
       waitlistDetailsDto.commerceId = waitlist.commerceId;
@@ -213,16 +236,18 @@ ${link}
       waitlistDetailsDto.user = waitlist.user;
       waitlistDetailsDto.processedAt = waitlist.processedAt;
       waitlistDetailsDto.processed = waitlist.processed;
-      waitlistDetailsDto.cancelledAt= waitlist.cancelledAt;
+      waitlistDetailsDto.cancelledAt = waitlist.cancelledAt;
       waitlistDetailsDto.cancelled = waitlist.cancelled;
       waitlistDetailsDto.bookingId = waitlist.bookingId;
       if (waitlist.queueId) {
-          waitlistDetailsDto.queue = await this.queueService.getQueueById(waitlist.queueId);
-          waitlistDetailsDto.commerce = await this.commerceService.getCommerceById(waitlistDetailsDto.queue.commerceId);
-          delete waitlistDetailsDto.commerce.queues;
+        waitlistDetailsDto.queue = await this.queueService.getQueueById(waitlist.queueId);
+        waitlistDetailsDto.commerce = await this.commerceService.getCommerceById(
+          waitlistDetailsDto.queue.commerceId
+        );
+        delete waitlistDetailsDto.commerce.queues;
       }
       return waitlistDetailsDto;
-    } catch(error) {
+    } catch (error) {
       throw `Hubo un problema al obtener detalles de la reserva: ${error.message}`;
     }
   }

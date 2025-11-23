@@ -1,14 +1,16 @@
-import { Message } from './model/message.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
-import { publish } from 'ett-events-lib';
-import MessageCreated from './events/MessageCreated';
-import { MessageType } from './model/type.enum';
-import MessageUpdated from './events/MessageUpdated';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import { AdministratorService } from '../administrator/administrator.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
+
+import MessageCreated from './events/MessageCreated';
+import MessageUpdated from './events/MessageUpdated';
+import { Message } from './model/message.entity';
+import { MessageType } from './model/type.enum';
 
 export class MessageService {
   constructor(
@@ -27,8 +29,7 @@ export class MessageService {
   }
 
   public async getMessagesByClient(clientId: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('clientId', clientId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
@@ -38,8 +39,7 @@ export class MessageService {
   }
 
   public async getMessagesByAdministrator(administratorId: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('administratorId', administratorId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
@@ -49,8 +49,7 @@ export class MessageService {
   }
 
   public async getMessagesByCollaborator(collaboratorId: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('collaboratorId', collaboratorId)
       .whereEqualTo('active', true)
       .whereEqualTo('available', true)
@@ -59,9 +58,11 @@ export class MessageService {
     return messages;
   }
 
-  public async getMessagesByAdministratorAndType(administratorId: string, type: string): Promise<Message[]> {
-    let messages: Message[];
-    messages = await this.messageRepository
+  public async getMessagesByAdministratorAndType(
+    administratorId: string,
+    type: string
+  ): Promise<Message[]> {
+    const messages: Message[] = await this.messageRepository
       .whereEqualTo('administratorId', administratorId)
       .whereEqualTo('type', type)
       .whereEqualTo('active', true)
@@ -79,9 +80,19 @@ export class MessageService {
     return false;
   }
 
-  public async createMessage(user: string, type: MessageType, commerceId: string, administratorId: string, collaboratorId: string, clientId: string,
-    title: string, content: string, link: string, icon: string): Promise<Message> {
-    let message = new Message();
+  public async createMessage(
+    user: string,
+    type: MessageType,
+    commerceId: string,
+    administratorId: string,
+    collaboratorId: string,
+    clientId: string,
+    title: string,
+    content: string,
+    link: string,
+    icon: string
+  ): Promise<Message> {
+    const message = new Message();
     message.commerceId = commerceId;
     if (administratorId) {
       message.administratorId = administratorId;
@@ -114,9 +125,15 @@ export class MessageService {
     return messageUpdated;
   }
 
-  public async updateMessageConfigurations(user: string, id: string, active, available, read): Promise<Message> {
+  public async updateMessageConfigurations(
+    user: string,
+    id: string,
+    active,
+    available,
+    read
+  ): Promise<Message> {
     try {
-      let message = await this.messageRepository.findById(id);
+      const message = await this.messageRepository.findById(id);
       if (active !== undefined) {
         message.active = active;
       }
@@ -131,14 +148,22 @@ export class MessageService {
       publish(messageUpdatedEvent);
       return messageUpdated;
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el mensaje: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el mensaje: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  public async markAllAsRead(user: string, administratorId: string, collaboratorId: string, clientId: string): Promise<Message[]> {
+  public async markAllAsRead(
+    user: string,
+    administratorId: string,
+    collaboratorId: string,
+    clientId: string
+  ): Promise<Message[]> {
     try {
       let messages;
-      let result = [];
+      const result = [];
       if (administratorId) {
         messages = await this.getMessagesByAdministrator(administratorId);
       }
@@ -149,7 +174,7 @@ export class MessageService {
         messages = await this.getMessagesByClient(clientId);
       }
       if (messages && messages.length > 0) {
-        for(let i = 0; i < messages.length; i++) {
+        for (let i = 0; i < messages.length; i++) {
           const message = messages[i];
           message.read = true;
           message.reatAt = new Date();
@@ -159,11 +184,19 @@ export class MessageService {
       }
       return result;
     } catch (error) {
-      throw new HttpException(`Hubo un problema al marcar los mensajes: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al marcar los mensajes: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  public async sendMessageToAdministrator(user: string, commerceId: string, type: MessageType, messageToSend: any): Promise<Message[]> {
+  public async sendMessageToAdministrator(
+    user: string,
+    commerceId: string,
+    type: MessageType,
+    messageToSend: any
+  ): Promise<Message[]> {
     try {
       const messages = [];
       const commerce = await this.commerceService.getCommerceById(commerceId);
@@ -173,13 +206,30 @@ export class MessageService {
         if (msg.toggle && commerce.features && commerce.features.length > 0) {
           if (this.featureToggleIsActive(commerce.features, msg.toggle)) {
             const businessId = commerce.businessId;
-            const administrators = await this.administratorService.getAdministratorsByCommerce(businessId, commerceId);
+            const administrators = await this.administratorService.getAdministratorsByCommerce(
+              businessId,
+              commerceId
+            );
             if (administrators && administrators.length > 0) {
               for (let i = 0; i < administrators.length; i++) {
                 const administrator = administrators[i];
-                const existingMessage = await this.getMessagesByAdministratorAndType(administrator.id, type);
+                const existingMessage = await this.getMessagesByAdministratorAndType(
+                  administrator.id,
+                  type
+                );
                 if (!existingMessage || existingMessage.length === 0) {
-                  const message = await this.createMessage(user, type, commerceId, administrator.id, undefined, undefined, msg.title, msg.content, msg.link, msg.icon);
+                  const message = await this.createMessage(
+                    user,
+                    type,
+                    commerceId,
+                    administrator.id,
+                    undefined,
+                    undefined,
+                    msg.title,
+                    msg.content,
+                    msg.link,
+                    msg.icon
+                  );
                   messages.push(message);
                 }
               }
@@ -189,8 +239,10 @@ export class MessageService {
         }
       }
     } catch (error) {
-      throw new HttpException(`Hubo un problema al enviar los mensajes: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al enviar los mensajes: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
-
 }

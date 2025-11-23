@@ -1,19 +1,27 @@
-import { Business, ContactInfo, LocaleInfo, ServiceInfo, WhatsappConnection } from './model/business.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CommerceService } from '../commerce/commerce.service';
 import { publish } from 'ett-events-lib';
-import BusinessCreated from './events/BusinessCreated';
-import BusinessUpdated from './events/BusinessUpdated';
-import { Category } from './model/category.enum';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+import { NotificationClient } from 'src/notification/infrastructure/notification-client';
 import { clientStrategy } from 'src/notification/infrastructure/notification-client-strategy';
 import { NotificationChannel } from 'src/notification/model/notification-channel.enum';
-import { NotificationClient } from 'src/notification/infrastructure/notification-client';
-import BusinessWhatsappConnectionRequested from './events/BusinessWhatsappConnectionRequested';
+
+import { CommerceService } from '../commerce/commerce.service';
+
+import { BusinessKeyNameDetailsDto } from './dto/business-keyname-details.dto';
+import BusinessCreated from './events/BusinessCreated';
+import BusinessUpdated from './events/BusinessUpdated';
 import BusinessWhatsappConnectionCreated from './events/BusinessWhatsappConnectionCreated';
 import BusinessWhatsappConnectionDisconnected from './events/BusinessWhatsappConnectionDisconnected';
-import { BusinessKeyNameDetailsDto } from './dto/business-keyname-details.dto';
+import BusinessWhatsappConnectionRequested from './events/BusinessWhatsappConnectionRequested';
+import {
+  Business,
+  ContactInfo,
+  LocaleInfo,
+  ServiceInfo,
+  WhatsappConnection,
+} from './model/business.entity';
+import { Category } from './model/category.enum';
 
 @Injectable()
 export class BusinessService {
@@ -22,11 +30,11 @@ export class BusinessService {
     private businessRepository = getRepository(Business),
     private commerceService: CommerceService,
     @Inject(forwardRef(() => clientStrategy(NotificationChannel.WHATSAPP)))
-    private whatsappNotificationClient: NotificationClient,
+    private whatsappNotificationClient: NotificationClient
   ) {}
 
   public async getBusinessById(id: string): Promise<Business> {
-    let business = await this.businessRepository.findById(id);
+    const business = await this.businessRepository.findById(id);
     let businessAux = undefined;
     if (business) {
       businessAux = business;
@@ -47,14 +55,16 @@ export class BusinessService {
   }
 
   public async getBusinessByKeyName(keyName: string): Promise<BusinessKeyNameDetailsDto> {
-    let businessKeyNameDetailsDto: BusinessKeyNameDetailsDto = new BusinessKeyNameDetailsDto();
-    let business = await this.businessRepository.whereEqualTo('keyName', keyName).find();
+    const businessKeyNameDetailsDto: BusinessKeyNameDetailsDto = new BusinessKeyNameDetailsDto();
+    const business = await this.businessRepository.whereEqualTo('keyName', keyName).find();
     let businessAux = undefined;
     if (business && business.length > 0) {
       businessAux = business[0];
     }
     if (businessAux) {
-      businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessKeyName(businessAux.id);
+      businessAux.commerces = await this.commerceService.getActiveCommercesByBusinessKeyName(
+        businessAux.id
+      );
     }
     businessKeyNameDetailsDto.id = businessAux.id;
     businessKeyNameDetailsDto.name = businessAux.name;
@@ -67,8 +77,22 @@ export class BusinessService {
     return businessKeyNameDetailsDto;
   }
 
-  public async createBusiness(user: string, name: string, keyName: string, country: string, email: string, logo: string, phone: string, url: string, category: Category, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, partnerId: string): Promise<Business> {
-    let business = new Business();
+  public async createBusiness(
+    user: string,
+    name: string,
+    keyName: string,
+    country: string,
+    email: string,
+    logo: string,
+    phone: string,
+    url: string,
+    category: Category,
+    localeInfo: LocaleInfo,
+    contactInfo: ContactInfo,
+    serviceInfo: ServiceInfo,
+    partnerId: string
+  ): Promise<Business> {
+    const business = new Business();
     business.name = name;
     business.keyName = keyName;
     business.email = email;
@@ -119,17 +143,30 @@ export class BusinessService {
 
   public async update(user: string, business: Business): Promise<Business> {
     const businessUpdated = await this.businessRepository.update(business);
-    const businessUpdatedEvent = new BusinessUpdated(new Date(), businessUpdated,{ user });
+    const businessUpdatedEvent = new BusinessUpdated(new Date(), businessUpdated, { user });
     publish(businessUpdatedEvent);
     return businessUpdated;
   }
 
-  public async updateBusiness(user: string, id: string, logo: string, phone: string, url: string, active: boolean, category: Category, localeInfo: LocaleInfo, contactInfo: ContactInfo, serviceInfo: ServiceInfo, partnerId: string): Promise<Business> {
-    let business = await this.getBusiness(id);
+  public async updateBusiness(
+    user: string,
+    id: string,
+    logo: string,
+    phone: string,
+    url: string,
+    active: boolean,
+    category: Category,
+    localeInfo: LocaleInfo,
+    contactInfo: ContactInfo,
+    serviceInfo: ServiceInfo,
+    partnerId: string
+  ): Promise<Business> {
+    const business = await this.getBusiness(id);
     if (logo) {
       business.logo = logo;
     }
-    if (url) {url
+    if (url) {
+      url;
       business.url = url;
     }
     if (phone) {
@@ -164,7 +201,7 @@ export class BusinessService {
     const commerces = await this.commerceService.getActiveCommercesByBusinessId(businessId);
     if (commerces && commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
-        let commerce = commerces[i];
+        const commerce = commerces[i];
         await this.commerceService.desactivateCommerce(user, commerce.id);
       }
     }
@@ -172,7 +209,12 @@ export class BusinessService {
     await this.update(user, business);
   }
 
-  public async activateBusiness(user: string, businessId: string, planId: string, planActivationId: string): Promise<void> {
+  public async activateBusiness(
+    user: string,
+    businessId: string,
+    planId: string,
+    planActivationId: string
+  ): Promise<void> {
     const business = await this.getBusiness(businessId);
     if (!business) {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);
@@ -180,13 +222,13 @@ export class BusinessService {
     const commerces = await this.commerceService.getActiveCommercesByBusinessId(businessId);
     if (commerces && commerces.length > 0) {
       for (let i = 0; i < commerces.length; i++) {
-        let commerce = commerces[i];
+        const commerce = commerces[i];
         await this.commerceService.activateCommerce(user, commerce.id);
       }
     }
     business.active = true;
     business.planId = planId;
-    business .currentPlanActivationId = planActivationId;
+    business.currentPlanActivationId = planActivationId;
     await this.update(user, business);
   }
 
@@ -208,14 +250,20 @@ export class BusinessService {
     }
   }
 
-  public async updateWhatsappConnection(user: string, id: string, idConnection: string, whatsapp: string, connected?: boolean): Promise<Business> {
-    let business = await this.businessRepository.findById(id);
+  public async updateWhatsappConnection(
+    user: string,
+    id: string,
+    idConnection: string,
+    whatsapp: string,
+    connected?: boolean
+  ): Promise<Business> {
+    const business = await this.businessRepository.findById(id);
     if (business && business.id) {
       if (!business.whatsappConnection) {
         const whatsappConnection = {
           createdAt: new Date(),
           lastConection: new Date(),
-          whatsapp: whatsapp
+          whatsapp: whatsapp,
         };
         business.whatsappConnection = whatsappConnection;
       } else {
@@ -233,20 +281,33 @@ export class BusinessService {
       }
       const businessUpdated = await this.update(user, business);
       if (businessUpdated.whatsappConnection) {
-        await this.commerceService.updateWhatsappConnectionCommerce(user, business.id, businessUpdated.whatsappConnection);
+        await this.commerceService.updateWhatsappConnectionCommerce(
+          user,
+          business.id,
+          businessUpdated.whatsappConnection
+        );
       }
       return businessUpdated;
     }
   }
 
-  public async requestWhatsappConnectionById(user: string, id: string, whatsapp: string): Promise<any> {
+  public async requestWhatsappConnectionById(
+    user: string,
+    id: string,
+    whatsapp: string
+  ): Promise<any> {
     const business = await this.businessRepository.findById(id);
     if (business && business.id) {
       try {
         if (business.whatsappConnection && business.whatsappConnection.lastConection) {
-          let days = Math.abs(new Date().getTime() - business.whatsappConnection.lastConection.getTime()) / (1000 * 60 * 60 * 24);
+          const days =
+            Math.abs(new Date().getTime() - business.whatsappConnection.lastConection.getTime()) /
+            (1000 * 60 * 60 * 24);
           if (days >= 1) {
-            throw new HttpException('Limite de peticiones alcanzado', HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException(
+              'Limite de peticiones alcanzado',
+              HttpStatus.INTERNAL_SERVER_ERROR
+            );
           }
         }
         const connection = await this.whatsappNotificationClient.requestConnection();
@@ -256,22 +317,39 @@ export class BusinessService {
             result: connection['result'],
             instance: connection['w_instancia_id'],
             createdAt: new Date(),
-            user
-          }
-          await this.updateWhatsappConnection(user, id, connection['w_instancia_id'], whatsapp, false);
-          const businessWhatsappConnectionRequestedEvent = new BusinessWhatsappConnectionRequested(new Date(), eventData, { user });
+            user,
+          };
+          await this.updateWhatsappConnection(
+            user,
+            id,
+            connection['w_instancia_id'],
+            whatsapp,
+            false
+          );
+          const businessWhatsappConnectionRequestedEvent = new BusinessWhatsappConnectionRequested(
+            new Date(),
+            eventData,
+            { user }
+          );
           publish(businessWhatsappConnectionRequestedEvent);
           return connection;
         }
       } catch (error) {
-        throw new HttpException(`No fue posible solicitar conexion whatsapp: ${error.message}`, HttpStatus.FAILED_DEPENDENCY);
+        throw new HttpException(
+          `No fue posible solicitar conexion whatsapp: ${error.message}`,
+          HttpStatus.FAILED_DEPENDENCY
+        );
       }
     } else {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);
     }
   }
 
-  public async returnWhatsappConnectionById(user: string, id: string, instanceId: number): Promise<any> {
+  public async returnWhatsappConnectionById(
+    user: string,
+    id: string,
+    instanceId: number
+  ): Promise<any> {
     const business = await this.businessRepository.findById(id);
     if (business && business.id) {
       try {
@@ -281,7 +359,10 @@ export class BusinessService {
             let event;
             events['data'].forEach(evt => {
               const payload = JSON.parse(evt.payload);
-              if (payload['event'].toString() === 'qrcode' && payload['w_instancia_id'].toString() === instanceId.toString()) {
+              if (
+                payload['event'].toString() === 'qrcode' &&
+                payload['w_instancia_id'].toString() === instanceId.toString()
+              ) {
                 event = evt;
                 event.payload = payload;
               }
@@ -293,23 +374,31 @@ export class BusinessService {
                 result: events['result'],
                 instance: event['payload']['w_instancia_id'],
                 createdAt: new Date(),
-                user
-              }
-              const businessWhatsappConnectionRequestedEvent = new BusinessWhatsappConnectionCreated(new Date(), eventData, { user });
+                user,
+              };
+              const businessWhatsappConnectionRequestedEvent =
+                new BusinessWhatsappConnectionCreated(new Date(), eventData, { user });
               publish(businessWhatsappConnectionRequestedEvent);
               return event;
             }
           }
         }
       } catch (error) {
-        throw new HttpException(`No fue posible solicitar conexion whatsapp: ${error.message}`, HttpStatus.FAILED_DEPENDENCY);
+        throw new HttpException(
+          `No fue posible solicitar conexion whatsapp: ${error.message}`,
+          HttpStatus.FAILED_DEPENDENCY
+        );
       }
     } else {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);
     }
   }
 
-  public async disconnectedWhatsappConnectionById(user: string, id: string, instanceId: string): Promise<any> {
+  public async disconnectedWhatsappConnectionById(
+    user: string,
+    id: string,
+    instanceId: string
+  ): Promise<any> {
     const business = await this.businessRepository.findById(id);
     if (business && business.id) {
       try {
@@ -321,10 +410,17 @@ export class BusinessService {
               result: connection['result'],
               instance: connection['w_instancia_id'],
               createdAt: new Date(),
-              user
-            }
-            await this.updateWhatsappConnection(user, id, connection['w_instancia_id'], business.whatsappConnection.whatsapp, false);
-            const businessWhatsappConnectionDisconnectedEvent = new BusinessWhatsappConnectionDisconnected(new Date(), eventData, { user });
+              user,
+            };
+            await this.updateWhatsappConnection(
+              user,
+              id,
+              connection['w_instancia_id'],
+              business.whatsappConnection.whatsapp,
+              false
+            );
+            const businessWhatsappConnectionDisconnectedEvent =
+              new BusinessWhatsappConnectionDisconnected(new Date(), eventData, { user });
             publish(businessWhatsappConnectionDisconnectedEvent);
             return connection;
           }
@@ -332,7 +428,10 @@ export class BusinessService {
           throw new HttpException(`Whatsapp ya fue desconectado`, HttpStatus.BAD_REQUEST);
         }
       } catch (error) {
-        throw new HttpException(`No fue posible solicitar conexion whatsapp: ${error.message}`, HttpStatus.FAILED_DEPENDENCY);
+        throw new HttpException(
+          `No fue posible solicitar conexion whatsapp: ${error.message}`,
+          HttpStatus.FAILED_DEPENDENCY
+        );
       }
     } else {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);
@@ -344,13 +443,25 @@ export class BusinessService {
     if (business && business.id) {
       try {
         if (business.whatsappConnection && business.whatsappConnection.whatsapp) {
-          const connection = await this.whatsappNotificationClient.requestServiceStatus(business.whatsappConnection.whatsapp);
+          const connection = await this.whatsappNotificationClient.requestServiceStatus(
+            business.whatsappConnection.whatsapp
+          );
           if (connection && connection['result'] && connection['result'] === 'success') {
             let result;
             if (connection['phone_state'] && connection['phone_state'] === 'connected') {
-              result = await this.updateWhatsappConnection(user, id, connection['w_instancia_id'], business.whatsappConnection.whatsapp);
+              result = await this.updateWhatsappConnection(
+                user,
+                id,
+                connection['w_instancia_id'],
+                business.whatsappConnection.whatsapp
+              );
             } else {
-              result = await this.updateWhatsappConnection(user, id, undefined, business.whatsappConnection.whatsapp);
+              result = await this.updateWhatsappConnection(
+                user,
+                id,
+                undefined,
+                business.whatsappConnection.whatsapp
+              );
             }
             return result;
           }
@@ -358,7 +469,10 @@ export class BusinessService {
           throw new HttpException(`No se encontró conexion Whatsapp`, HttpStatus.NOT_FOUND);
         }
       } catch (error) {
-        throw new HttpException(`No fue posible ver status conexion whatsapp: ${error.message}`, HttpStatus.FAILED_DEPENDENCY);
+        throw new HttpException(
+          `No fue posible ver status conexion whatsapp: ${error.message}`,
+          HttpStatus.FAILED_DEPENDENCY
+        );
       }
     } else {
       throw new HttpException(`Business no existe`, HttpStatus.BAD_REQUEST);

@@ -1,4 +1,4 @@
 export enum WaitlistChannel {
-    QR = 'QR',
-    MINISITE = 'MINISITE'
+  QR = 'QR',
+  MINISITE = 'MINISITE',
 }

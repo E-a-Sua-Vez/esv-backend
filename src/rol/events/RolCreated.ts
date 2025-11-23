@@ -1,6 +1,6 @@
+import { DefaultEventMetadata } from '../../shared/events/default-event-metadata';
 import DomainEvent from '../../shared/events/domain-event';
 import { DomainEventDataAttributes } from '../../shared/events/domain-event-data-attributes';
-import { DefaultEventMetadata } from '../../shared/events/default-event-metadata';
 
 export default class RolCreated extends DomainEvent {
   constructor(occuredOn: Date, attributes: object, metadata?: object) {

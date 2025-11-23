@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import { DomainEventDataAttributes } from './domain-event-data-attributes';
 
 export class DomainEventData {

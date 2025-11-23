@@ -1,21 +1,22 @@
-import { Company, CompanyInfo } from './model/company.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import CompanyCreated from './events/CompanyCreated';
 import CompanyUpdated from './events/CompanyUpdated';
 import { CompanyType } from './model/company-type.enum';
+import { Company, CompanyInfo } from './model/company.entity';
 
 @Injectable()
 export class CompanyService {
   constructor(
-  @InjectRepository(Company)
+    @InjectRepository(Company)
     private companyRepository = getRepository(Company)
   ) {}
 
   public async getCompanyById(id: string): Promise<Company> {
-    let company = await this.companyRepository.findById(id);
+    const company = await this.companyRepository.findById(id);
     return company;
   }
 
@@ -56,7 +57,10 @@ export class CompanyService {
     return companys;
   }
 
-  public async getActiveCompaniesByCommerceAndType(commerceId: string, type: CompanyType): Promise<Company[]> {
+  public async getActiveCompaniesByCommerceAndType(
+    commerceId: string,
+    type: CompanyType
+  ): Promise<Company[]> {
     let companys: Company[] = [];
     companys = await this.companyRepository
       .whereEqualTo('commerceId', commerceId)
@@ -80,9 +84,19 @@ export class CompanyService {
     return companys;
   }
 
-  public async updateCompanyConfigurations(user: string, id: string, name: string, tag: string, order: number, active: boolean, available: boolean, online: boolean, companyInfo: CompanyInfo): Promise<Company> {
+  public async updateCompanyConfigurations(
+    user: string,
+    id: string,
+    name: string,
+    tag: string,
+    order: number,
+    active: boolean,
+    available: boolean,
+    online: boolean,
+    companyInfo: CompanyInfo
+  ): Promise<Company> {
     try {
-      let company = await this.companyRepository.findById(id);
+      const company = await this.companyRepository.findById(id);
       if (name) {
         company.name = name;
       }
@@ -106,7 +120,10 @@ export class CompanyService {
       }
       return await this.updateCompany(user, company);
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el company: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el company: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -117,8 +134,17 @@ export class CompanyService {
     return companyUpdated;
   }
 
-  public async createCompany(user: string, commerceId: string, name: string, type: CompanyType, tag: string, online: boolean, order: number, companyInfo: CompanyInfo): Promise<Company> {
-    let company = new Company();
+  public async createCompany(
+    user: string,
+    commerceId: string,
+    name: string,
+    type: CompanyType,
+    tag: string,
+    online: boolean,
+    order: number,
+    companyInfo: CompanyInfo
+  ): Promise<Company> {
+    const company = new Company();
     company.commerceId = commerceId;
     company.name = name;
     company.type = type || CompanyType.STANDARD;

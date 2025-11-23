@@ -1,5 +1,5 @@
 export enum NotificationProvider {
-    WHATSGW = 'WHATSGW',
-    TWILIO = 'TWILIO',
-    AWS = 'AWS'
+  WHATSGW = 'WHATSGW',
+  TWILIO = 'TWILIO',
+  AWS = 'AWS',
 }

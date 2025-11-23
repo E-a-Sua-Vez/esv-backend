@@ -1,16 +1,18 @@
+import { HttpModule } from '@nestjs/axios';
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
-import { CommerceController } from './commerce.controller';
-import { Commerce } from './model/commerce.entity';
-import { CommerceService } from './commerce.service';
-import { QueueModule } from '../queue/queue.module';
-import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
-import { SurveyPersonalizedModule } from '../survey-personalized/survey-personalized.module';
-import { NotificationModule } from '../notification/notification.module';
-import { HttpModule } from '@nestjs/axios';
-import { QueryStackClient } from './infrastructure/query-stack-client';
+
 import { CollaboratorModule } from '../collaborator/collaborator.module';
+import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
+import { NotificationModule } from '../notification/notification.module';
+import { QueueModule } from '../queue/queue.module';
 import { ServiceModule } from '../service/service.module';
+import { SurveyPersonalizedModule } from '../survey-personalized/survey-personalized.module';
+
+import { CommerceController } from './commerce.controller';
+import { CommerceService } from './commerce.service';
+import { QueryStackClient } from './infrastructure/query-stack-client';
+import { Commerce } from './model/commerce.entity';
 
 @Module({
   imports: [
@@ -19,12 +21,9 @@ import { ServiceModule } from '../service/service.module';
     forwardRef(() => FeatureToggleModule),
     forwardRef(() => SurveyPersonalizedModule),
     forwardRef(() => NotificationModule),
-    HttpModule
+    HttpModule,
   ],
-  providers: [
-    CommerceService,
-    QueryStackClient
-  ],
+  providers: [CommerceService, QueryStackClient],
   exports: [CommerceService],
   controllers: [CommerceController],
 })

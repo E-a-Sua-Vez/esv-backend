@@ -1,14 +1,15 @@
-import { Module } from './module.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
 import ModuleCreated from './events/ModuleCreated';
 import ModuleUpdated from './events/ModuleUpdated';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { Module } from './module.entity';
 
 export class ModuleService {
   constructor(
-  @InjectRepository(Module)
+    @InjectRepository(Module)
     private moduleRepository = getRepository(Module)
   ) {}
 
@@ -18,30 +19,30 @@ export class ModuleService {
 
   public async getAllModule(): Promise<Module[]> {
     return await this.moduleRepository
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
   public async getModulesByCommerceId(commerceId: string): Promise<Module[]> {
     return await this.moduleRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
   public async getActiveModulesByCommerceId(commerceId: string): Promise<Module[]> {
     return await this.moduleRepository
-    .whereEqualTo('commerceId', commerceId)
-    .whereEqualTo('active', true)
-    .whereEqualTo('available', true)
-    .orderByAscending('name')
-    .find();
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
   }
 
   public async createModule(user: string, commerceId: string, name: string): Promise<Module> {
-    let module = new Module();
+    const module = new Module();
     module.commerceId = commerceId;
     module.name = name;
     module.active = true;
@@ -53,9 +54,15 @@ export class ModuleService {
     return moduleCreated;
   }
 
-  public async updateModuleConfigurations(user: string, id: string, name: string, active, available): Promise<Module> {
+  public async updateModuleConfigurations(
+    user: string,
+    id: string,
+    name: string,
+    active,
+    available
+  ): Promise<Module> {
     try {
-      let module = await this.moduleRepository.findById(id);
+      const module = await this.moduleRepository.findById(id);
       if (name) {
         module.name = name;
       }
@@ -70,7 +77,10 @@ export class ModuleService {
       publish(moduleUpdatedEvent);
       return moduleUpdated;
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el modulo: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el modulo: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

@@ -6,5 +6,5 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  * @type {(...dataOrPipes: Type<PipeTransform> | PipeTransform | any[]) => ParameterDecorator}
  */
 export const User = createParamDecorator((data: string, context: ExecutionContext) => {
-    return context.switchToHttp().getRequest().user;
+  return context.switchToHttp().getRequest().user;
 });

@@ -1,21 +1,29 @@
-import { User, PersonalInfo } from './model/user.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
+import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
+import { ClientService } from '../client/client.service';
+import { CommerceService } from '../commerce/commerce.service';
+import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+
 import UserCreated from './events/UserCreated';
 import UserUpdated from './events/UserUpdated';
-import { ClientService } from '../client/client.service';
 import { UserType } from './model/user-type.enum';
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { CommerceService } from '../commerce/commerce.service';
+import { User, PersonalInfo } from './model/user.entity';
 
+@Injectable()
 export class UserService {
   constructor(
-  @InjectRepository(User)
+    @InjectRepository(User)
     private userRepository = getRepository(User),
     private clientService: ClientService,
-    private commerceService: CommerceService
-  ) {}
+    private commerceService: CommerceService,
+    @Inject(GcpLoggerService)
+    private readonly logger: GcpLoggerService
+  ) {
+    this.logger.setContext('UserService');
+  }
 
   public async getUserById(id: string): Promise<User> {
     return await this.userRepository.findById(id);
@@ -25,14 +33,32 @@ export class UserService {
     return await this.userRepository.find();
   }
 
-  public async createUser (
-    name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string,
-    idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo,
-    clientId?: string, acceptTermsAndConditions?: boolean): Promise<User> {
-    let user = new User();
+  public async createUser(
+    name?: string,
+    phone?: string,
+    email?: string,
+    commerceId?: string,
+    queueId?: string,
+    lastName?: string,
+    idNumber?: string,
+    notificationOn?: boolean,
+    notificationEmailOn?: boolean,
+    personalInfo?: PersonalInfo,
+    clientId?: string,
+    acceptTermsAndConditions?: boolean
+  ): Promise<User> {
+    const user = new User();
     let client;
     if (!commerceId) {
-      throw new HttpException(`Error creando User: Debe enviarse el commerceId`, HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.warn('User creation failed: Missing commerceId', {
+        hasClientId: !!clientId,
+        hasEmail: !!email,
+        hasPhone: !!phone,
+      });
+      throw new HttpException(
+        `Error creando User: Debe enviarse el commerceId`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     } else {
       user.commerceId = commerceId;
       const commerce = await this.commerceService.getCommerce(commerceId);
@@ -42,7 +68,14 @@ export class UserService {
     if (clientId) {
       client = await this.clientService.getClientById(clientId);
       if (!client || !client.id) {
-        throw new HttpException(`Error creando User: Cliente no existe ${clientId}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        this.logger.warn('User creation failed: Client not found', {
+          clientId,
+          commerceId,
+        });
+        throw new HttpException(
+          `Error creando User: Cliente no existe ${clientId}`,
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
       } else {
         if (client.name) {
           user.name = client.name;
@@ -60,7 +93,7 @@ export class UserService {
           user.email = client.email;
         }
         if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
-          user.personalInfo = { ...user.personalInfo || {}, ...personalInfo };
+          user.personalInfo = { ...(user.personalInfo || {}), ...personalInfo };
         }
       }
     }
@@ -89,7 +122,7 @@ export class UserService {
       user.notificationEmailOn = notificationEmailOn;
     }
     if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
-      user.personalInfo = { ...user.personalInfo || {}, ...personalInfo };
+      user.personalInfo = { ...(user.personalInfo || {}), ...personalInfo };
     }
     if (acceptTermsAndConditions !== undefined) {
       user.acceptTermsAndConditions = acceptTermsAndConditions;
@@ -112,12 +145,33 @@ export class UserService {
     const userCreatedEvent = new UserCreated(new Date(), userCreated);
     publish(userCreatedEvent);
     userCreated.clientId = clientSaved.id;
+    this.logger.info('User created successfully', {
+      userId: userCreated.id,
+      commerceId,
+      queueId,
+      clientId: userCreated.clientId,
+      hasEmail: !!userCreated.email,
+      hasPhone: !!userCreated.phone,
+    });
     return userCreated;
   }
 
-  public async updateUser(user: string, id: string, name?: string, phone?: string, email?: string, commerceId?: string, queueId?: string, lastName?: string, idNumber?: string, notificationOn?: boolean, notificationEmailOn?: boolean, personalInfo?: PersonalInfo): Promise<User> {
+  public async updateUser(
+    user: string,
+    id: string,
+    name?: string,
+    phone?: string,
+    email?: string,
+    commerceId?: string,
+    queueId?: string,
+    lastName?: string,
+    idNumber?: string,
+    notificationOn?: boolean,
+    notificationEmailOn?: boolean,
+    personalInfo?: PersonalInfo
+  ): Promise<User> {
     try {
-      let userById = await this.userRepository.findById(id);
+      const userById = await this.userRepository.findById(id);
       if (name) {
         userById.name = name;
       }
@@ -146,14 +200,28 @@ export class UserService {
         userById.notificationEmailOn = notificationEmailOn;
       }
       if (personalInfo !== undefined && Object.keys(personalInfo).length > 0) {
-        userById.personalInfo = { ...userById.personalInfo || {}, ...personalInfo };
+        userById.personalInfo = { ...(userById.personalInfo || {}), ...personalInfo };
       }
       const userUpdated = await this.userRepository.update(userById);
       const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
       publish(userUpdatedEvent);
+      this.logger.info('User updated successfully', {
+        userId: id,
+        commerceId,
+        queueId,
+        user,
+      });
       return userUpdated;
     } catch (error) {
-      throw `Hubo un problema al modificar el usuario: ${error.message}`;
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        userId: id,
+        user,
+        operation: 'updateUser',
+      });
+      throw new HttpException(
+        `Hubo un problema al modificar el usuario: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -172,6 +240,11 @@ export class UserService {
     );
     const userUpdatedEvent = new UserUpdated(new Date(), userUpdated, { user });
     publish(userUpdatedEvent);
+    this.logger.info('User updated', {
+      userId: userById.id,
+      commerceId: userById.commerceId,
+      user,
+    });
     return userUpdated;
   }
 }

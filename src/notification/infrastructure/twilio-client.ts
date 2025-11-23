@@ -1,24 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationClient } from './notification-client';
+import twilio = require('twilio');
+
 import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
-const twilio = require('twilio');
+
+import { NotificationClient } from './notification-client';
 
 @Injectable()
 export class TwilioClient implements NotificationClient {
+  private readonly client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-  private readonly client = new twilio();
-
-  constructor(){}
+  constructor() {}
 
   public async sendMessage(message: string, phone: string): Promise<any> {
     return this.client.messages
       .create({
         body: message,
         to: `whatsapp:+${phone}`,
-        messagingServiceSid: process.env.TWILIO_MESSAGING_SID
+        messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
       })
       .then(message => {
-        return message
+        return message;
       });
   }
   sendEmail(email: EmailInputDto): Promise<any> {
@@ -40,4 +41,3 @@ export class TwilioClient implements NotificationClient {
     throw new Error('Method not implemented.');
   }
 }
-

@@ -1,12 +1,14 @@
-import { Form } from './model/form.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
-import FormCreated from './events/FormCreated';
-import { FormType } from './model/type.enum';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
 import { Question } from 'src/form-personalized/model/form-personalized.entity';
-import FormUpdated from './events/FormUpdated';
+
 import { ClientService } from '../client/client.service';
+
+import FormCreated from './events/FormCreated';
+import FormUpdated from './events/FormUpdated';
+import { Form } from './model/form.entity';
+import { FormType } from './model/type.enum';
 
 export class FormService {
   constructor(
@@ -24,17 +26,19 @@ export class FormService {
   }
 
   public async getFormsByClient(commerceId: string, clientId: string): Promise<Form[]> {
-    let forms: Form[];
-    forms = await this.formRepository
+    const forms: Form[] = await this.formRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('clientId', clientId)
       .find();
     return forms;
   }
 
-  public async getFormsByClientAndType(commerceId: string, clientId: string, type: string): Promise<Form[]> {
-    let forms: Form[];
-    forms = await this.formRepository
+  public async getFormsByClientAndType(
+    commerceId: string,
+    clientId: string,
+    type: string
+  ): Promise<Form[]> {
+    const forms: Form[] = await this.formRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('clientId', clientId)
       .whereEqualTo('type', type)
@@ -42,9 +46,19 @@ export class FormService {
     return forms;
   }
 
-  public async createForm(user: string, personalizedId: string, type: FormType, bookingId: string, attentionId: string, commerceId: string, queueId: string,
-    clientId: string, questions?: Question[], answers?: object[]): Promise<Form> {
-    let form = new Form();
+  public async createForm(
+    user: string,
+    personalizedId: string,
+    type: FormType,
+    bookingId: string,
+    attentionId: string,
+    commerceId: string,
+    queueId: string,
+    clientId: string,
+    questions?: Question[],
+    answers?: object[]
+  ): Promise<Form> {
+    const form = new Form();
     form.commerceId = commerceId;
     form.attentionId = attentionId;
     form.attentionId = attentionId;

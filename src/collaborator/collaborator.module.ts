@@ -1,11 +1,12 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
-import { CollaboratorController } from './collaborator.controller';
-import { Collaborator } from './model/collaborator.entity';
-import { CollaboratorService } from './collaborator.service';
 import { AdministratorModule } from 'src/administrator/administrator.module';
 import { PermissionModule } from 'src/permission/permission.module';
 import { ServiceModule } from 'src/service/service.module';
+
+import { CollaboratorController } from './collaborator.controller';
+import { CollaboratorService } from './collaborator.service';
+import { Collaborator } from './model/collaborator.entity';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { ServiceModule } from 'src/service/service.module';
     forwardRef(() => PermissionModule),
     forwardRef(() => ServiceModule),
   ],
-  providers: [ CollaboratorService],
+  providers: [CollaboratorService],
   exports: [CollaboratorService],
   controllers: [CollaboratorController],
 })

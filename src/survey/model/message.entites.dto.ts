@@ -6,6 +6,5 @@ class Entity {
 }
 
 export class MessageEntitiesDto {
-  entities?: Entity[]
+  entities?: Entity[];
 }
-

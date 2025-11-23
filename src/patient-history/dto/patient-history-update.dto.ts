@@ -1,5 +1,17 @@
-import { PersonalData, ConsultationReason, CurrentIllness, PatientAnamnese, FunctionalExam, PhysicalExam, Diagnostic, MedicalOrder, AditionalInfo, Control, PatientDocument } from '../model/patient-history.entity';
 import { PatientHistoryType } from '../model/patient-history-type.enum';
+import {
+  PersonalData,
+  ConsultationReason,
+  CurrentIllness,
+  PatientAnamnese,
+  FunctionalExam,
+  PhysicalExam,
+  Diagnostic,
+  MedicalOrder,
+  AditionalInfo,
+  Control,
+  PatientDocument,
+} from '../model/patient-history.entity';
 
 export class PatientHistoryUpdateDto {
   commerceId: string;

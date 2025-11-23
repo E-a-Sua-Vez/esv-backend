@@ -1,10 +1,11 @@
-import { Feature } from './feature.entity';
-import { getRepository} from 'fireorm';
+import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+
+import { Feature } from './feature.entity';
 
 export class FeatureService {
   constructor(
-  @InjectRepository(Feature)
+    @InjectRepository(Feature)
     private featureRepository = getRepository(Feature)
   ) {}
 
@@ -19,18 +20,14 @@ export class FeatureService {
     return await this.featureRepository.find();
   }
   public async getFeatureByType(type: string): Promise<Feature[]> {
-    return await this.featureRepository
-    .whereEqualTo('type', type)
-    .find();
+    return await this.featureRepository.whereEqualTo('type', type).find();
   }
   public async getFeatureByModule(module: string): Promise<Feature[]> {
-    return await this.featureRepository
-    .whereEqualTo('module', module)
-    .find();
+    return await this.featureRepository.whereEqualTo('module', module).find();
   }
 
   public async createFeature(name, description, type, module): Promise<Feature> {
-    let feature = new Feature();
+    const feature = new Feature();
     feature.name = name;
     feature.description = description;
     feature.type = type;

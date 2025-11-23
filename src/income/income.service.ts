@@ -1,14 +1,16 @@
-import { Income, IncomeInfo } from './model/income.entity';
-import { getRepository} from 'fireorm';
-import { InjectRepository } from 'nestjs-fireorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
+import { InjectRepository } from 'nestjs-fireorm';
+
+import { PaymentConfirmation } from '../payment/model/payment-confirmation';
+import { PaymentMethod } from '../payment/model/payment-method.enum';
+
 import IncomeCreated from './events/IncomeCreated';
 import IncomeUpdated from './events/IncomeUpdated';
-import { PaymentConfirmation } from '../payment/model/payment-confirmation';
 import { IncomeStatus } from './model/income-status.enum';
 import { IncomeType } from './model/income-type.enum';
-import { PaymentMethod } from '../payment/model/payment-method.enum';
+import { Income, IncomeInfo } from './model/income.entity';
 
 @Injectable()
 export class IncomeService {
@@ -18,7 +20,7 @@ export class IncomeService {
   ) {}
 
   public async getIncomeById(id: string): Promise<Income> {
-    let income = await this.incomeRepository.findById(id);
+    const income = await this.incomeRepository.findById(id);
     return income;
   }
 
@@ -30,9 +32,7 @@ export class IncomeService {
 
   public async getIncomeByCommerce(commerceId: string): Promise<Income[]> {
     let incomes: Income[] = [];
-    incomes = await this.incomeRepository
-      .whereEqualTo('commerceId', commerceId)
-      .find();
+    incomes = await this.incomeRepository.whereEqualTo('commerceId', commerceId).find();
     return incomes;
   }
 
@@ -49,15 +49,19 @@ export class IncomeService {
 
   public async getIncomesById(incomesId: string[]): Promise<Income[]> {
     let incomes: Income[] = [];
-    incomes = await this.incomeRepository
-      .whereIn('id', incomesId)
-      .find();
+    incomes = await this.incomeRepository.whereIn('id', incomesId).find();
     return incomes;
   }
 
-  public async updateIncomeConfigurations(user: string, id: string, incomeInfo: IncomeInfo, paymentConfirmation: PaymentConfirmation, status: IncomeStatus): Promise<Income> {
+  public async updateIncomeConfigurations(
+    user: string,
+    id: string,
+    incomeInfo: IncomeInfo,
+    paymentConfirmation: PaymentConfirmation,
+    status: IncomeStatus
+  ): Promise<Income> {
     try {
-      let income = await this.incomeRepository.findById(id);
+      const income = await this.incomeRepository.findById(id);
       if (incomeInfo !== undefined) {
         income.incomeInfo = incomeInfo;
       }
@@ -69,7 +73,10 @@ export class IncomeService {
       }
       return await this.updateIncome(user, income);
     } catch (error) {
-      throw new HttpException(`Hubo un problema al modificar el income: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al modificar el income: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -80,10 +87,29 @@ export class IncomeService {
     return incomeUpdated;
   }
 
-  public async createIncome(user: string, commerceId: string, type: IncomeType, status: IncomeStatus, bookingId: string, attentionId: string,
-    clientId: string, packageId: string, amount: number, totalAmount: number, installments: number, paymentMethod: PaymentMethod,
-    commission: number, comment: string, fiscalNote: string, promotionalCode: string, transactionId: string, bankEntity: string, incomeInfo: IncomeInfo, installmentNumber?: number): Promise<Income> {
-    let income = new Income();
+  public async createIncome(
+    user: string,
+    commerceId: string,
+    type: IncomeType,
+    status: IncomeStatus,
+    bookingId: string,
+    attentionId: string,
+    clientId: string,
+    packageId: string,
+    amount: number,
+    totalAmount: number,
+    installments: number,
+    paymentMethod: PaymentMethod,
+    commission: number,
+    comment: string,
+    fiscalNote: string,
+    promotionalCode: string,
+    transactionId: string,
+    bankEntity: string,
+    incomeInfo: IncomeInfo,
+    installmentNumber?: number
+  ): Promise<Income> {
+    const income = new Income();
     income.commerceId = commerceId;
     income.type = type || IncomeType.STANDARD;
     income.bookingId = bookingId;
@@ -120,62 +146,130 @@ export class IncomeService {
     return incomeCreated;
   }
 
-  public async createIncomes(user: string, commerceId: string, status: IncomeStatus, bookingId: string, attentionId: string, clientId: string, packageId: string,
-    amount: number, totalAmount: number, installments: number, paymentMethod: PaymentMethod, commission: number, comment: string, fiscalNote: string,
-    promotionalCode: string, transactionId: string, bankEntity: string, confirmInstallments: boolean, incomeInfo: IncomeInfo): Promise<Income> {
+  public async createIncomes(
+    user: string,
+    commerceId: string,
+    status: IncomeStatus,
+    bookingId: string,
+    attentionId: string,
+    clientId: string,
+    packageId: string,
+    amount: number,
+    totalAmount: number,
+    installments: number,
+    paymentMethod: PaymentMethod,
+    commission: number,
+    comment: string,
+    fiscalNote: string,
+    promotionalCode: string,
+    transactionId: string,
+    bankEntity: string,
+    confirmInstallments: boolean,
+    incomeInfo: IncomeInfo
+  ): Promise<Income> {
     if (installments && installments > 1) {
-      let firstIncome = await this.createIncome(user, commerceId, IncomeType.FIRST_PAYMENT, status, bookingId, attentionId, clientId, packageId,
-        amount, totalAmount, installments, paymentMethod, commission, comment, fiscalNote, promotionalCode, transactionId, bankEntity, incomeInfo);
+      const firstIncome = await this.createIncome(
+        user,
+        commerceId,
+        IncomeType.FIRST_PAYMENT,
+        status,
+        bookingId,
+        attentionId,
+        clientId,
+        packageId,
+        amount,
+        totalAmount,
+        installments,
+        paymentMethod,
+        commission,
+        comment,
+        fiscalNote,
+        promotionalCode,
+        transactionId,
+        bankEntity,
+        incomeInfo
+      );
       if (firstIncome && firstIncome.id) {
         let installmentAmount = 0;
         if (totalAmount && totalAmount > 0) {
           installmentAmount = (totalAmount - amount) / installments;
         }
-        for(let i = 0; i < installments; i++) {
+        for (let i = 0; i < installments; i++) {
           let statusInstallments = IncomeStatus.PENDING;
           if (confirmInstallments && confirmInstallments === true) {
             statusInstallments = IncomeStatus.CONFIRMED;
-          };
+          }
           const installmentNumber = i + 1;
-          await this.createIncome(user, commerceId, IncomeType.INSTALLMENT, statusInstallments, bookingId, attentionId, clientId, packageId,
-            installmentAmount, totalAmount, installments, paymentMethod, 0, comment, fiscalNote, promotionalCode, transactionId, bankEntity, incomeInfo, installmentNumber);
+          await this.createIncome(
+            user,
+            commerceId,
+            IncomeType.INSTALLMENT,
+            statusInstallments,
+            bookingId,
+            attentionId,
+            clientId,
+            packageId,
+            installmentAmount,
+            totalAmount,
+            installments,
+            paymentMethod,
+            0,
+            comment,
+            fiscalNote,
+            promotionalCode,
+            transactionId,
+            bankEntity,
+            incomeInfo,
+            installmentNumber
+          );
         }
       }
       return firstIncome;
     }
   }
 
-  public async payPendingIncome(user: string, id: string, amount: number, paymentMethod: PaymentMethod, commission: number, comment: string,
-    fiscalNote: string, promotionalCode: string, transactionId: string, bankEntity: string) : Promise<Income> {
-      try {
-        if (id) {
-          let pendingIncome = await this.getIncomeById(id);
-          if (pendingIncome && pendingIncome.id && pendingIncome.status === IncomeStatus.PENDING) {
-            pendingIncome.amount = amount;
-            pendingIncome.paymentMethod = paymentMethod;
-            pendingIncome.commission = commission;
-            pendingIncome.comment = comment;
-            pendingIncome.fiscalNote = fiscalNote;
-            pendingIncome.promotionalCode = promotionalCode;
-            pendingIncome.transactionId = transactionId;
-            pendingIncome.bankEntity = bankEntity;
-            pendingIncome.status = IncomeStatus.CONFIRMED;
-            pendingIncome.paid = true;
-            pendingIncome.paidBy = user;
-            pendingIncome.paidAt = new Date();
-          }
-          return await this.updateIncome(user, pendingIncome);
+  public async payPendingIncome(
+    user: string,
+    id: string,
+    amount: number,
+    paymentMethod: PaymentMethod,
+    commission: number,
+    comment: string,
+    fiscalNote: string,
+    promotionalCode: string,
+    transactionId: string,
+    bankEntity: string
+  ): Promise<Income> {
+    try {
+      if (id) {
+        const pendingIncome = await this.getIncomeById(id);
+        if (pendingIncome && pendingIncome.id && pendingIncome.status === IncomeStatus.PENDING) {
+          pendingIncome.amount = amount;
+          pendingIncome.paymentMethod = paymentMethod;
+          pendingIncome.commission = commission;
+          pendingIncome.comment = comment;
+          pendingIncome.fiscalNote = fiscalNote;
+          pendingIncome.promotionalCode = promotionalCode;
+          pendingIncome.transactionId = transactionId;
+          pendingIncome.bankEntity = bankEntity;
+          pendingIncome.status = IncomeStatus.CONFIRMED;
+          pendingIncome.paid = true;
+          pendingIncome.paidBy = user;
+          pendingIncome.paidAt = new Date();
         }
-    }  catch (error) {
-      throw new HttpException(`Hubo un problema al pagar el income pendiente: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        return await this.updateIncome(user, pendingIncome);
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Hubo un problema al pagar el income pendiente: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  public async cancelIncome(
-    user: string, id: string
-  ): Promise<Income> {
+  public async cancelIncome(user: string, id: string): Promise<Income> {
     try {
-      let income = await this.incomeRepository.findById(id);
+      const income = await this.incomeRepository.findById(id);
       if (income && income.id) {
         if (!income.paid) {
           income.status = IncomeStatus.CANCELLED;
@@ -183,30 +277,39 @@ export class IncomeService {
           income.cancelledBy = user;
           return await this.updateIncome(user, income);
         } else {
-          throw new HttpException(`No puede cancelar income porque está pagado`, HttpStatus.INTERNAL_SERVER_ERROR);
+          throw new HttpException(
+            `No puede cancelar income porque está pagado`,
+            HttpStatus.INTERNAL_SERVER_ERROR
+          );
         }
       } else {
         throw new HttpException(`Income no existe`, HttpStatus.NOT_FOUND);
       }
     } catch (error) {
-      throw new HttpException(`Hubo un problema al cancelar el income: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `Hubo un problema al cancelar el income: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
-  public async confirmPendingIncome(user: string, id: string) : Promise<Income> {
-      try {
-        if (id) {
-          let pendingIncome = await this.getIncomeById(id);
-          if (pendingIncome && pendingIncome.id && pendingIncome.status === IncomeStatus.PENDING) {
-            pendingIncome.status = IncomeStatus.CONFIRMED;
-            pendingIncome.paid = true;
-            pendingIncome.paidBy = user;
-            pendingIncome.paidAt = new Date();
-          }
-          return await this.updateIncome(user, pendingIncome);
+  public async confirmPendingIncome(user: string, id: string): Promise<Income> {
+    try {
+      if (id) {
+        const pendingIncome = await this.getIncomeById(id);
+        if (pendingIncome && pendingIncome.id && pendingIncome.status === IncomeStatus.PENDING) {
+          pendingIncome.status = IncomeStatus.CONFIRMED;
+          pendingIncome.paid = true;
+          pendingIncome.paidBy = user;
+          pendingIncome.paidAt = new Date();
         }
-    }  catch (error) {
-      throw new HttpException(`Hubo un problema al confirmar el pago de income pendiente: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+        return await this.updateIncome(user, pendingIncome);
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Hubo un problema al confirmar el pago de income pendiente: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

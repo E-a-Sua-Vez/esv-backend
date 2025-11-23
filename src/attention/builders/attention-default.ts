@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+import { PackageStatus } from 'src/package/model/package-status.enum';
+import { PackageType } from 'src/package/model/package-type.enum';
+import { PackageService } from 'src/package/package.service';
+import { ServiceService } from 'src/service/service.service';
+
+import { Queue } from '../../queue/model/queue.entity';
+import { QueueService } from '../../queue/queue.service';
 import { BuilderInterface } from '../../shared/interfaces/builder';
+import AttentionCreated from '../events/AttentionCreated';
 import { AttentionStatus } from '../model/attention-status.enum';
 import { AttentionType } from '../model/attention-type.enum';
 import { Attention } from '../model/attention.entity';
-import { QueueService } from '../../queue/queue.service';
-import { Queue } from '../../queue/model/queue.entity';
-import AttentionCreated from '../events/AttentionCreated';
-import { publish } from 'ett-events-lib';
-import { ServiceService } from 'src/service/service.service';
-import { PackageService } from 'src/package/package.service';
-import { PackageType } from 'src/package/model/package-type.enum';
-import { PackageStatus } from 'src/package/model/package-status.enum';
 
 @Injectable()
 export class AttentionDefaultBuilder implements BuilderInterface {
@@ -22,7 +23,7 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     private queueService: QueueService,
     private serviceService: ServiceService,
     private packageService: PackageService
-  ){}
+  ) {}
 
   async create(
     queue: Queue,
@@ -35,7 +36,7 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     clientId?: string
   ): Promise<Attention> {
     const currentNumber = queue.currentNumber;
-    let attention = new Attention();
+    const attention = new Attention();
     attention.status = AttentionStatus.PENDING;
     attention.type = AttentionType.STANDARD;
     attention.createdAt = date || new Date();
@@ -64,16 +65,38 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     if (clientId) {
       attention.clientId = clientId;
     }
-    let attentionCreated = await this.attentionRepository.create(attention);
+    const attentionCreated = await this.attentionRepository.create(attention);
     if (attentionCreated.servicesId && attentionCreated.servicesId.length === 1) {
       const service = await this.serviceService.getServiceById(attentionCreated.servicesId[0]);
-      if (service && service.id && service.serviceInfo && service.serviceInfo.procedures && service.serviceInfo.procedures > 1) {
+      if (
+        service &&
+        service.id &&
+        service.serviceInfo &&
+        service.serviceInfo.procedures &&
+        service.serviceInfo.procedures > 1
+      ) {
         if (attentionCreated.clientId) {
-          const packs = await this.packageService.getPackageByCommerceIdAndClientServices(attentionCreated.commerceId, attentionCreated.clientId, attentionCreated.servicesId[0]);
+          const packs = await this.packageService.getPackageByCommerceIdAndClientServices(
+            attentionCreated.commerceId,
+            attentionCreated.clientId,
+            attentionCreated.servicesId[0]
+          );
           if (packs && packs.length === 0) {
             const packageName = service.tag.toLocaleUpperCase();
-            const packCreated = await this.packageService.createPackage('ett', attentionCreated.commerceId, attentionCreated.clientId, undefined, attentionCreated.id,
-            service.serviceInfo.procedures, packageName, attentionCreated.servicesId, [], [attentionCreated.id], PackageType.STANDARD, PackageStatus.REQUESTED);
+            const packCreated = await this.packageService.createPackage(
+              'ett',
+              attentionCreated.commerceId,
+              attentionCreated.clientId,
+              undefined,
+              attentionCreated.id,
+              service.serviceInfo.procedures,
+              packageName,
+              attentionCreated.servicesId,
+              [],
+              [attentionCreated.id],
+              PackageType.STANDARD,
+              PackageStatus.REQUESTED
+            );
             attention.packageId = packCreated.id;
             await this.attentionRepository.update(attention);
           }

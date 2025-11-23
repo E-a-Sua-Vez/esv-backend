@@ -1,5 +1,5 @@
 export enum PatientHistoryControlStatus {
-    PENDING = 'PENDING',
-    PROCCESSED = 'PROCCESSED',
-    CANCELLED = 'CANCELLED'
+  PENDING = 'PENDING',
+  PROCCESSED = 'PROCCESSED',
+  CANCELLED = 'CANCELLED',
 }

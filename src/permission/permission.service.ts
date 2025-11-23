@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { RolService } from 'src/rol/rol.service';
-import { BusinessService } from '../business/business.service';
-import { PlanService } from '../plan/plan.service';
 import { CommerceService } from 'src/commerce/commerce.service';
-import { PlanActivationService } from '../plan-activation/plan-activation.service';
+import { RolService } from 'src/rol/rol.service';
+
+import { BusinessService } from '../business/business.service';
 import { UserType } from '../commerce/model/user-type.enum';
+import { PlanService } from '../plan/plan.service';
+import { PlanActivationService } from '../plan-activation/plan-activation.service';
 
 @Injectable()
 export class PermissionService {
@@ -16,8 +17,11 @@ export class PermissionService {
     private readonly planActivationService: PlanActivationService
   ) {}
 
-  public async getPermissionsForBusiness(businessId: string, userPermissions: Record<string, number | boolean>): Promise<Record<string, number | boolean>> {
-    let permissions = {};
+  public async getPermissionsForBusiness(
+    businessId: string,
+    userPermissions: Record<string, number | boolean>
+  ): Promise<Record<string, number | boolean>> {
+    const permissions = {};
     let rolPermissions = {};
     let planPermissions = {};
     let planActivatedPermissions = {};
@@ -31,7 +35,10 @@ export class PermissionService {
       if (plan && plan.permissions) {
         planPermissions = plan.permissions;
       }
-      const planActivated = await this.planActivationService.getValidatedPlanActivationByBusinessId(business.id, 'true');
+      const planActivated = await this.planActivationService.getValidatedPlanActivationByBusinessId(
+        business.id,
+        'true'
+      );
       if (planActivated && planActivated.permissions) {
         planActivatedPermissions = planActivated.permissions;
       }
@@ -39,32 +46,35 @@ export class PermissionService {
     if (Object.keys(rolPermissions).length > 0) {
       Object.keys(rolPermissions).forEach(permission => {
         permissions[permission] = rolPermissions[permission];
-      })
+      });
     }
     if (Object.keys(planPermissions).length > 0) {
       Object.keys(planPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planPermissions[permission];
         }
-      })
+      });
     }
     if (Object.keys(planActivatedPermissions).length > 0) {
       Object.keys(planActivatedPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planActivatedPermissions[permission];
         }
-      })
+      });
     }
     if (Object.keys(userPermissions).length > 0) {
       Object.keys(userPermissions).forEach(permission => {
         permissions[permission] = userPermissions[permission];
-      })
+      });
     }
     return permissions;
   }
 
-  public async getPermissionsForCollaborator(commerceId: string, userPermissions: Record<string, number | boolean>): Promise<Record<string, number | boolean>> {
-    let permissions = {};
+  public async getPermissionsForCollaborator(
+    commerceId: string,
+    userPermissions: Record<string, number | boolean>
+  ): Promise<Record<string, number | boolean>> {
+    const permissions = {};
     let rolPermissions = {};
     let planPermissions = {};
     let planActivatedPermissions = {};
@@ -80,7 +90,11 @@ export class PermissionService {
         if (plan && plan.permissions) {
           planPermissions = plan.permissions;
         }
-        const planActivated = await this.planActivationService.getValidatedPlanActivationByBusinessId(business.id, 'true');
+        const planActivated =
+          await this.planActivationService.getValidatedPlanActivationByBusinessId(
+            business.id,
+            'true'
+          );
         if (planActivated && planActivated.permissions) {
           planActivatedPermissions = planActivated.permissions;
         }
@@ -88,33 +102,33 @@ export class PermissionService {
     }
     if (Object.keys(rolPermissions).length > 0) {
       Object.keys(rolPermissions).forEach(permission => {
-        permissions[permission] = rolPermissions[permission]
-      })
+        permissions[permission] = rolPermissions[permission];
+      });
     }
     if (Object.keys(planPermissions).length > 0) {
       Object.keys(planPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planPermissions[permission];
         }
-      })
+      });
     }
     if (Object.keys(planActivatedPermissions).length > 0) {
       Object.keys(planActivatedPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planActivatedPermissions[permission];
         }
-      })
+      });
     }
     if (Object.keys(userPermissions).length > 0) {
       Object.keys(userPermissions).forEach(permission => {
         permissions[permission] = userPermissions[permission];
-      })
+      });
     }
     return permissions;
   }
 
   public async getPermissionsForMaster(): Promise<Record<string, number | boolean>> {
-    let permissions = {};
+    const permissions = {};
     let rolPermissions = {};
 
     const rol = await this.rolService.getRolByName(UserType.MASTER);
@@ -124,8 +138,8 @@ export class PermissionService {
 
     if (Object.keys(rolPermissions).length > 0) {
       Object.keys(rolPermissions).forEach(permission => {
-        permissions[permission] = rolPermissions[permission]
-      })
+        permissions[permission] = rolPermissions[permission];
+      });
     }
 
     return permissions;

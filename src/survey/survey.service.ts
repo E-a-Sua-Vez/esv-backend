@@ -1,19 +1,21 @@
-import { Survey } from './model/survey.entity';
-import { getRepository} from 'fireorm';
+import { forwardRef, Inject } from '@nestjs/common';
+import { publish } from 'ett-events-lib';
+import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { AttentionService } from 'src/attention/attention.service';
-import { publish } from 'ett-events-lib';
-import SurveyCreated from './events/SurveyCreated';
+import { Question } from 'src/survey-personalized/model/survey-personalized.entity';
+
 import { AttentionStatus } from '../attention/model/attention-status.enum';
-import { SurveyType } from './model/type.enum';
-import { GoogleAiClient } from './infrastructure/google-ai-client';
-import { forwardRef, Inject } from '@nestjs/common';
+import { QuestionType } from '../survey-personalized/model/question-type.enum';
+
+import SurveyCreated from './events/SurveyCreated';
+import SurveyUpdated from './events/SurveyUpdated';
+import { AiAnalyzerClient } from './infrastructure/ai-analyzer';
 import { GoogleAiAnalyzerMethods } from './infrastructure/google-ai-analyzer-methods.enum';
 import { GoogleAiAnalyzerTypes } from './infrastructure/google-ai-analyzer-types.enum';
-import { AiAnalyzerClient } from './infrastructure/ai-analyzer';
-import { Question } from 'src/survey-personalized/model/survey-personalized.entity';
-import { QuestionType } from '../survey-personalized/model/question-type.enum';
-import SurveyUpdated from './events/SurveyUpdated';
+import { GoogleAiClient } from './infrastructure/google-ai-client';
+import { Survey } from './model/survey.entity';
+import { SurveyType } from './model/type.enum';
 
 export class SurveyService {
   constructor(
@@ -32,8 +34,17 @@ export class SurveyService {
     return await this.surveyRepository.find();
   }
 
-  public async createSurvey(attentionId: string, type: SurveyType, rating?: number, nps?: number, message?: string, personalizedId?: string, questions?: Question[], answers?: object[]): Promise<Survey> {
-    let survey = new Survey();
+  public async createSurvey(
+    attentionId: string,
+    type: SurveyType,
+    rating?: number,
+    nps?: number,
+    message?: string,
+    personalizedId?: string,
+    questions?: Question[],
+    answers?: object[]
+  ): Promise<Survey> {
+    const survey = new Survey();
 
     const attention = await this.attentionService.getAttentionById(attentionId);
 
@@ -54,20 +65,32 @@ export class SurveyService {
     if (message) {
       survey.message = message;
       try {
-        analyzeCommentScore = await this.aiAnalyzerClient.analyzeCommentScore(message, GoogleAiAnalyzerMethods.ANALYZE_SENTIMENT, GoogleAiAnalyzerTypes.PLAIN_TEXT);
+        analyzeCommentScore = await this.aiAnalyzerClient.analyzeCommentScore(
+          message,
+          GoogleAiAnalyzerMethods.ANALYZE_SENTIMENT,
+          GoogleAiAnalyzerTypes.PLAIN_TEXT
+        );
         survey.messageScore = analyzeCommentScore.score;
       } catch (error) {
         survey.messageScore = 0;
       }
       try {
-        analyzeCommentEntities = await this.aiAnalyzerClient.analyzeCommentEntities(message, GoogleAiAnalyzerMethods.ANALYZE_ENTITY_SENTIMENT, GoogleAiAnalyzerTypes.PLAIN_TEXT);
+        analyzeCommentEntities = await this.aiAnalyzerClient.analyzeCommentEntities(
+          message,
+          GoogleAiAnalyzerMethods.ANALYZE_ENTITY_SENTIMENT,
+          GoogleAiAnalyzerTypes.PLAIN_TEXT
+        );
         survey.messageEntities = analyzeCommentEntities.result;
       } catch (error) {
         survey.messageEntities = {};
       }
       if (Object.keys(survey.messageEntities).length === 0) {
         try {
-          analyzeCommentEntities = await this.aiAnalyzerClient.analyzeCommentEntities(message, GoogleAiAnalyzerMethods.ANALYZE_ENTITIES, GoogleAiAnalyzerTypes.PLAIN_TEXT);
+          analyzeCommentEntities = await this.aiAnalyzerClient.analyzeCommentEntities(
+            message,
+            GoogleAiAnalyzerMethods.ANALYZE_ENTITIES,
+            GoogleAiAnalyzerTypes.PLAIN_TEXT
+          );
           survey.messageEntities = analyzeCommentEntities.result;
         } catch (error) {
           survey.messageEntities = {};
@@ -83,21 +106,29 @@ export class SurveyService {
     if (answers && answers.length > 0) {
       for (let i = 0; i < answers.length; i++) {
         const answer = answers[i];
-        if (answer['type'] === QuestionType.OPEN_WRITING && (answer['analize'] !== undefined && answer['analize'] === true)) {
+        if (
+          answer['type'] === QuestionType.OPEN_WRITING &&
+          answer['analize'] !== undefined &&
+          answer['analize'] === true
+        ) {
           const message = answer['answer'] || undefined;
           try {
             if (message) {
-              const messageScore = await this.aiAnalyzerClient.analyzeCommentScore(message, GoogleAiAnalyzerMethods.ANALYZE_SENTIMENT, GoogleAiAnalyzerTypes.PLAIN_TEXT);
+              const messageScore = await this.aiAnalyzerClient.analyzeCommentScore(
+                message,
+                GoogleAiAnalyzerMethods.ANALYZE_SENTIMENT,
+                GoogleAiAnalyzerTypes.PLAIN_TEXT
+              );
               answer['answer'] = {
                 message,
-                messageScore
-              }
+                messageScore,
+              };
             }
           } catch (error) {
             answer['answer'] = {
               message,
-              messageScore: undefined
-            }
+              messageScore: undefined,
+            };
           }
         }
       }
@@ -105,14 +136,17 @@ export class SurveyService {
     }
     survey.createdAt = new Date();
     const surveyCreated = await this.surveyRepository.create(survey);
-    const surveyCreatedEvent = new SurveyCreated(new Date(), surveyCreated, { analyzeCommentScore, analyzeCommentEntities });
+    const surveyCreatedEvent = new SurveyCreated(new Date(), surveyCreated, {
+      analyzeCommentScore,
+      analyzeCommentEntities,
+    });
     publish(surveyCreatedEvent);
 
     attention.surveyId = surveyCreated.id;
     attention.status = AttentionStatus.RATED;
     attention.ratedAt = new Date();
     const diff = attention.ratedAt.getTime() - attention.endAt.getTime();
-    attention.rateDuration = diff/(1000*60);
+    attention.rateDuration = diff / (1000 * 60);
 
     await this.attentionService.update('', attention);
 
@@ -127,7 +161,7 @@ export class SurveyService {
   }
 
   public async contactSurvey(user: string, id: string): Promise<Survey> {
-    let survey = await this.getSurveyById(id);
+    const survey = await this.getSurveyById(id);
     if (survey && survey.contacted !== true) {
       survey.contacted = true;
       survey.contactedDate = new Date();
