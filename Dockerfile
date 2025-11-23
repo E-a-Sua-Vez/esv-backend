@@ -14,7 +14,9 @@ COPY --chown=node:node package*.json ./
 
 # Install app dependencies using the `npm ci` command instead of `npm install`
 # Using --legacy-peer-deps to handle TypeORM 0.3.x compatibility with @nestjs/typeorm 8.0.3
-RUN npm ci --legacy-peer-deps
+# Using BuildKit cache mount for faster npm installs
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps
 
 # Bundle app source
 COPY --chown=node:node . .
