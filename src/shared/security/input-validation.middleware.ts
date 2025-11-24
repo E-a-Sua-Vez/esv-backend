@@ -123,4 +123,3 @@ export class InputValidationMiddleware implements NestMiddleware {
     return dangerousPatterns.some(pattern => pattern.test(value));
   }
 }
-
