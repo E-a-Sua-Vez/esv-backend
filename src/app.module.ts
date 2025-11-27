@@ -17,6 +17,7 @@ import { CollaboratorModule } from './collaborator/collaborator.module';
 import { CommerceModule } from './commerce/commerce.module';
 import { CompanyModule } from './company/company.module';
 import { configValidationSchema } from './config/config.schema';
+import { ContactFormModule } from './contact-form/contact-form.module';
 import { DocumentsModule } from './documents/documents.module';
 import { FeatureModule } from './feature/feature.module';
 import { FeatureToggleModule } from './feature-toggle/feature-toggle.module';
@@ -85,6 +86,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     ServiceModule,
     ClientModule,
     ClientContactModule,
+    ContactFormModule,
     ProductModule,
     DocumentsModule,
     IncomeModule,
