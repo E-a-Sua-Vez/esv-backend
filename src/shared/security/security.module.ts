@@ -8,4 +8,3 @@ import { SecurityLoggerService } from './security-logger.service';
   exports: [SecurityLoggerService],
 })
 export class SecurityModule {}
-

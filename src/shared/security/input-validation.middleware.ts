@@ -85,7 +85,7 @@ export class InputValidationMiddleware implements NestMiddleware {
             });
             throw new BadRequestException(`Array ${key} exceeds maximum size`);
           }
-          value.forEach((item, index) => {
+          value.forEach(item => {
             if (item && typeof item === 'object') {
               this.validateObject(item as Record<string, unknown>, req, depth + 1);
             }
@@ -123,4 +123,3 @@ export class InputValidationMiddleware implements NestMiddleware {
     return dangerousPatterns.some(pattern => pattern.test(value));
   }
 }
-

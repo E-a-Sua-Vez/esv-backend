@@ -46,7 +46,7 @@ steps:
         "--concurrency",
         "80",
         "--update-env-vars",
-        "NODE_ENV=production",
+        "NODE_ENV=prod",
       ]
     env:
       - "PORT=8080"

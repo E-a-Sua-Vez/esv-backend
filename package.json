@@ -12,7 +12,7 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "start": "nest start",
     "start:local": "cross-env NODE_ENV=local NODE_OPTIONS=--no-deprecation nest start --watch",
-    "start:local:br": "cross-env NODE_ENV=local APP_ENV=br NODE_OPTIONS=--no-deprecation nest start --watch",
+    "start:local:br": "bash -c 'source env_br.sh && NODE_OPTIONS=--no-deprecation nest start --watch'",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,apps,libs}/**/*.ts\"",
