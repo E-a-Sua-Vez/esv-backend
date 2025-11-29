@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
-import { createTransport } from 'nodemailer';
 
 import { EmailInputDto, RawEmailInputDto } from '../model/email-input.dto';
 
 import { NotificationClient } from './notification-client';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const MailComposer = require('nodemailer/lib/mail-composer');
 
 @Injectable()
 export class AwsClient implements NotificationClient {
@@ -22,10 +24,28 @@ export class AwsClient implements NotificationClient {
   }
 
   public async sendRawEmail(email: RawEmailInputDto): Promise<any> {
-    const SES = new AWS.SES({ apiVersion: '2010-12-01' });
-    const transport = createTransport({ SES });
-    const result = await transport.sendMail(email);
-    return result;
+    // Ensure AWS config is updated before creating SES instance
+    if (!AWS.config.region) {
+      AWS.config.update({ region: process.env.AWS_DEFAULT_REGION || 'us-east-1' });
+    }
+    const SES = new AWS.SES({
+      apiVersion: '2010-12-01',
+      region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+    });
+
+    // Use MailComposer to build the raw email message, then send via SES directly
+    // This avoids the nodemailer SES transport compatibility issue
+    const mail = new MailComposer(email);
+    const message = await mail.compile().build();
+
+    const params = {
+      RawMessage: {
+        Data: message,
+      },
+      Destinations: email.to,
+    };
+
+    return await SES.sendRawEmail(params).promise();
   }
 
   private encodeSource(base64Name: string, email: string): string {

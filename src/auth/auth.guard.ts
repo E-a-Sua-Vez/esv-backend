@@ -58,7 +58,7 @@ function initializeFirebase() {
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger: GcpLoggerService;
-  
+
   constructor(logger: GcpLoggerService) {
     this.logger = logger;
     this.logger.setContext('AuthGuard');
