@@ -125,21 +125,36 @@ export class BookingService {
     } else {
       let bookingNumber;
       if (block && Object.keys(block).length > 0 && queue.type !== QueueType.SELECT_SERVICE) {
-        bookingNumber = block.number;
-        let blockLimit = 0;
-        const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(
-          queueId,
-          date,
-          bookingNumber
-        );
-        if (queue.serviceInfo.blockLimit && queue.serviceInfo.blockLimit > 0) {
-          blockLimit = queue.serviceInfo.blockLimit;
+        // Extract block number - handle both direct number and blocks array
+        if (block.number !== undefined) {
+          bookingNumber = block.number;
+        } else if (
+          block.blocks &&
+          block.blocks.length > 0 &&
+          block.blocks[0].number !== undefined
+        ) {
+          bookingNumber = block.blocks[0].number;
+        } else if (block.blockNumbers && block.blockNumbers.length > 0) {
+          bookingNumber = block.blockNumbers[0];
         }
-        if (alreadyBooked.length > blockLimit) {
-          throw new HttpException(
-            `Ya se alcanzó el límite de reservas en este bloque: ${bookingNumber}, bookings: ${alreadyBooked.length}, limite: ${blockLimit}`,
-            HttpStatus.INTERNAL_SERVER_ERROR
+
+        // Only query if bookingNumber is defined
+        if (bookingNumber !== undefined) {
+          let blockLimit = 0;
+          const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(
+            queueId,
+            date,
+            bookingNumber
           );
+          if (queue.serviceInfo.blockLimit && queue.serviceInfo.blockLimit > 0) {
+            blockLimit = queue.serviceInfo.blockLimit;
+          }
+          if (alreadyBooked.length > blockLimit) {
+            throw new HttpException(
+              `Ya se alcanzó el límite de reservas en este bloque: ${bookingNumber}, bookings: ${alreadyBooked.length}, limite: ${blockLimit}`,
+              HttpStatus.INTERNAL_SERVER_ERROR
+            );
+          }
         }
       } else {
         const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);
@@ -346,6 +361,9 @@ export class BookingService {
   }
 
   public async getBookingsByDate(date: string): Promise<Booking[]> {
+    if (date === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('date', date)
       .orderByDescending('number')
@@ -353,6 +371,9 @@ export class BookingService {
   }
 
   public async getBookingsByQueueAndDate(queueId: string, date: string): Promise<Booking[]> {
+    if (queueId === undefined || date === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
@@ -360,6 +381,9 @@ export class BookingService {
   }
 
   public async getPendingBookingsByQueueAndDate(queueId: string, date: string): Promise<Booking[]> {
+    if (queueId === undefined || date === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
@@ -372,6 +396,9 @@ export class BookingService {
     date: string,
     number: number
   ): Promise<Booking[]> {
+    if (queueId === undefined || date === undefined || number === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
@@ -381,6 +408,9 @@ export class BookingService {
   }
 
   public async getPendingBookingsByDate(date: string, limit = 100): Promise<Booking[]> {
+    if (date === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('date', date)
       .whereIn('status', [BookingStatus.PENDING])
@@ -390,6 +420,9 @@ export class BookingService {
   }
 
   public async getConfirmedBookingsByDate(date: string, limit = 100): Promise<Booking[]> {
+    if (date === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('date', date)
       .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
@@ -403,6 +436,9 @@ export class BookingService {
     dates: string[],
     limit = 100
   ): Promise<Booking[]> {
+    if (commerceId === undefined || dates === undefined || dates.length === 0) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('commerceId', commerceId)
       .whereIn('date', dates)
@@ -418,6 +454,9 @@ export class BookingService {
     queueId: string,
     date: string
   ): Promise<Booking[]> {
+    if (queueId === undefined || date === undefined || number === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
@@ -432,7 +471,7 @@ export class BookingService {
     clientId: string
   ): Promise<Booking[]> {
     let results: Booking[] = [];
-    if (clientId) {
+    if (clientId && commerceId !== undefined) {
       results = await this.bookingRepository
         .whereEqualTo('commerceId', commerceId)
         .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
@@ -462,6 +501,9 @@ export class BookingService {
     dateFrom: Date,
     dateTo: Date
   ): Promise<BookingAvailabilityDto[]> {
+    if (queueId === undefined || dateFrom === undefined || dateTo === undefined) {
+      return [];
+    }
     const startDate = new Date(dateFrom).toISOString().slice(0, 10);
     const endDate = new Date(dateTo).toISOString().slice(0, 10);
     const dateFromValue = new Date(startDate);
@@ -494,6 +536,9 @@ export class BookingService {
     commerceId: string,
     date: string
   ): Promise<Booking[]> {
+    if (commerceId === undefined || date === undefined) {
+      return [];
+    }
     return await this.bookingRepository
       .whereEqualTo('commerceId', commerceId)
       .whereIn('status', [BookingStatus.PENDING, BookingStatus.CONFIRMED])
@@ -506,6 +551,9 @@ export class BookingService {
     dateFrom: Date,
     dateTo: Date
   ): Promise<BookingAvailabilityDto[]> {
+    if (commerceId === undefined || dateFrom === undefined || dateTo === undefined) {
+      return [];
+    }
     const startDate = new Date(dateFrom).toISOString().slice(0, 10);
     const endDate = new Date(dateTo).toISOString().slice(0, 10);
     const dateFromValue = new Date(startDate);
@@ -535,6 +583,9 @@ export class BookingService {
   }
 
   public async getPendingBookingsBeforeDate(dateTo: Date): Promise<Booking[]> {
+    if (dateTo === undefined) {
+      return [];
+    }
     const endDate = new Date(dateTo).toISOString().slice(0, 10);
     const dateToValue = new Date(endDate);
     return await this.bookingRepository

@@ -72,13 +72,86 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
       booking.user = user;
     }
     if (block !== undefined) {
-      booking.block = block;
+      // Ensure block is properly serialized as a plain object for Firestore
+      // Firestore doesn't allow nested arrays, so we need to flatten the structure
+      // Create a plain object to avoid any Firestore serialization issues
+      const plainBlock: any = {};
+
+      // Copy properties, ensuring all are plain values
+      if (block.number !== undefined) {
+        plainBlock.number = block.number;
+      }
+      if (block.hourFrom !== undefined) {
+        plainBlock.hourFrom = block.hourFrom;
+      }
+      if (block.hourTo !== undefined) {
+        plainBlock.hourTo = block.hourTo;
+      }
+
+      // Handle blocks array - Firestore allows arrays of objects, but NOT nested arrays
+      // If we have a blocks array, we'll use that and NOT include blockNumbers to avoid nested arrays
+      if (block.blocks !== undefined && Array.isArray(block.blocks) && block.blocks.length > 0) {
+        // Map to plain objects, removing any nested arrays (blocks or blockNumbers) from child blocks
+        plainBlock.blocks = block.blocks.map(b => {
+          const plainBlockItem: any = {};
+          if (b.number !== undefined) {
+            plainBlockItem.number = b.number;
+          }
+          if (b.hourFrom !== undefined) {
+            plainBlockItem.hourFrom = b.hourFrom;
+          }
+          if (b.hourTo !== undefined) {
+            plainBlockItem.hourTo = b.hourTo;
+          }
+          // Do NOT include nested blocks or blockNumbers arrays - Firestore doesn't allow nested arrays
+          return plainBlockItem;
+        });
+
+        // If there's no root number but there are blocks, use the first block's number
+        if (plainBlock.number === undefined && plainBlock.blocks.length > 0) {
+          plainBlock.number = plainBlock.blocks[0].number;
+        }
+
+        // If there's no root hourFrom/hourTo but there are blocks, use the first block's times
+        if (plainBlock.hourFrom === undefined && plainBlock.blocks.length > 0) {
+          plainBlock.hourFrom = plainBlock.blocks[0].hourFrom;
+        }
+        if (plainBlock.hourTo === undefined && plainBlock.blocks.length > 0) {
+          plainBlock.hourTo = plainBlock.blocks[plainBlock.blocks.length - 1].hourTo;
+        }
+
+        // Do NOT include blockNumbers when we have blocks array to avoid "nested arrays" error
+        // The blockNumbers can be derived from the blocks array if needed
+      } else if (block.blockNumbers !== undefined && Array.isArray(block.blockNumbers)) {
+        // Only include blockNumbers if we don't have a blocks array
+        plainBlock.blockNumbers = [...block.blockNumbers];
+      }
+
+      booking.block = plainBlock as Block;
     }
     if (servicesId !== undefined) {
       booking.servicesId = servicesId;
     }
     if (servicesDetails !== undefined) {
-      booking.servicesDetails = servicesDetails;
+      // Ensure servicesDetails doesn't contain nested arrays
+      // Firestore doesn't allow nested arrays
+      booking.servicesDetails = JSON.parse(JSON.stringify(servicesDetails)).map((detail: any) => {
+        const plainDetail: any = {};
+        Object.keys(detail).forEach(key => {
+          const value = detail[key];
+          // Remove any nested arrays - convert them to plain objects or remove them
+          if (Array.isArray(value)) {
+            // Only include arrays of primitives, not nested arrays
+            if (value.length > 0 && typeof value[0] !== 'object') {
+              plainDetail[key] = value;
+            }
+            // Skip nested arrays
+          } else {
+            plainDetail[key] = value;
+          }
+        });
+        return plainDetail;
+      });
     }
     if (this.featureToggleIsActive(commerce.features, 'email-bookings-terms-conditions')) {
       booking.termsConditionsToAcceptCode = Math.random().toString(36).slice(2, 8);

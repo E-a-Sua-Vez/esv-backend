@@ -58,7 +58,16 @@ export class WhatsGwClient implements NotificationClient {
     const params = new URLSearchParams();
     params.append('apikey', this.whatsGwApiKey);
     params.append('phone_number', serviceId);
-    return (await firstValueFrom(this.httpService.post(url, params))).data;
+    try {
+      return (await firstValueFrom(this.httpService.post(url, params))).data;
+    } catch (error) {
+      // If the service returns 404, it means the instance doesn't exist
+      if (error.response && error.response.status === 404) {
+        throw new Error('WhatsApp instance not found in gateway (404)');
+      }
+      // Re-throw the original error message
+      throw new Error(error.response?.data?.message || error.message || 'Unknown error');
+    }
   }
 
   public async disconnectService(serviceId: string): Promise<any> {

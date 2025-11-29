@@ -447,30 +447,70 @@ export class BusinessService {
             business.whatsappConnection.whatsapp
           );
           if (connection && connection['result'] && connection['result'] === 'success') {
-            let result;
+            let businessUpdated;
             if (connection['phone_state'] && connection['phone_state'] === 'connected') {
-              result = await this.updateWhatsappConnection(
+              businessUpdated = await this.updateWhatsappConnection(
                 user,
                 id,
                 connection['w_instancia_id'],
-                business.whatsappConnection.whatsapp
+                business.whatsappConnection.whatsapp,
+                true
               );
             } else {
-              result = await this.updateWhatsappConnection(
+              businessUpdated = await this.updateWhatsappConnection(
                 user,
                 id,
                 undefined,
-                business.whatsappConnection.whatsapp
+                business.whatsappConnection.whatsapp,
+                false
               );
             }
-            return result;
+            return businessUpdated.whatsappConnection;
+          } else {
+            // If the response doesn't indicate success, update connection to disconnected
+            const businessUpdated = await this.updateWhatsappConnection(
+              user,
+              id,
+              undefined,
+              business.whatsappConnection.whatsapp,
+              false
+            );
+            return businessUpdated.whatsappConnection;
           }
         } else {
           throw new HttpException(`No se encontró conexion Whatsapp`, HttpStatus.NOT_FOUND);
         }
       } catch (error) {
+        // Check if it's a 404 error (instance not found in gateway)
+        const errorMessage =
+          error.message ||
+          (error.response && error.response.data && error.response.data.message) ||
+          String(error);
+        const is404 =
+          (error.response && error.response.status === 404) ||
+          (errorMessage &&
+            (errorMessage.includes('404') || errorMessage.toLowerCase().includes('not found')));
+
+        if (is404) {
+          // Update the connection status to disconnected since instance doesn't exist
+          try {
+            const businessUpdated = await this.updateWhatsappConnection(
+              user,
+              id,
+              undefined,
+              business.whatsappConnection?.whatsapp,
+              false
+            );
+            return businessUpdated.whatsappConnection;
+          } catch (updateError) {
+            throw new HttpException(
+              `La instancia de WhatsApp no existe en el gateway. No se pudo actualizar el estado: ${updateError.message}`,
+              HttpStatus.NOT_FOUND
+            );
+          }
+        }
         throw new HttpException(
-          `No fue posible ver status conexion whatsapp: ${error.message}`,
+          `No fue posible ver status conexion whatsapp: ${errorMessage}`,
           HttpStatus.FAILED_DEPENDENCY
         );
       }
