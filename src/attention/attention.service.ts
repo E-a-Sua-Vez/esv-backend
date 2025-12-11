@@ -1474,9 +1474,10 @@ export class AttentionService {
       const attentions = await this.getPostAttentionScheduledSurveys(today, 25);
       toProcess = attentions.length;
       if (attentions && attentions.length > 0) {
+        const promises = [];
         for (let i = 0; i < attentions.length; i++) {
           let attention = attentions[i];
-          limiter.schedule(async () => {
+          const promise = limiter.schedule(async () => {
             try {
               const attentionDetails = await this.getAttentionDetails(attention.id);
               const commerce = attentionDetails.commerce;
@@ -1489,7 +1490,10 @@ export class AttentionService {
             }
             responses.push(attention);
           });
+          promises.push(promise);
         }
+        // Wait for all scheduled jobs to complete
+        await Promise.all(promises);
         await limiter.stop({ dropWaitingJobs: false });
       }
       const response = { toProcess, processed: responses.length, errors: errors.length };
@@ -1507,7 +1511,7 @@ export class AttentionService {
         operation: 'surveyPostAttention',
       });
       throw new HttpException(
-        `Hubo un poblema al enviar las encuestas: ${error.message}`,
+        `Hubo un problema al enviar las encuestas: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
