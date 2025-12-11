@@ -1472,20 +1472,43 @@ export class AttentionService {
     try {
       const today = date || new DateModel().toString();
       const attentions = await this.getPostAttentionScheduledSurveys(today, 25);
-      toProcess = attentions.length;
+      toProcess = attentions?.length || 0;
       if (attentions && attentions.length > 0) {
         const promises = [];
         for (let i = 0; i < attentions.length; i++) {
           let attention = attentions[i];
+          if (!attention || !attention.id) {
+            this.logger.warn('Invalid attention found in scheduled surveys', {
+              date: today,
+              attentionIndex: i,
+            });
+            continue;
+          }
           const promise = limiter.schedule(async () => {
             try {
               const attentionDetails = await this.getAttentionDetails(attention.id);
+              if (!attentionDetails) {
+                this.logger.warn('Attention details not found', { attentionId: attention.id });
+                errors.push(new Error(`Attention details not found for ${attention.id}`));
+                return;
+              }
               const commerce = attentionDetails.commerce;
+              if (!commerce) {
+                this.logger.warn('Commerce not found in attention details', {
+                  attentionId: attention.id,
+                });
+                errors.push(new Error(`Commerce not found for attention ${attention.id}`));
+                return;
+              }
               this.csatEmail(attentionDetails, commerce);
               this.csatWhatsapp(attentionDetails, commerce);
               attention.notificationSurveySent = true;
               attention = await this.update('ett', attention);
             } catch (error) {
+              this.logger.warn('Error processing scheduled survey', {
+                attentionId: attention?.id,
+                error: error instanceof Error ? error.message : String(error),
+              });
               errors.push(error);
             }
             responses.push(attention);
@@ -1493,8 +1516,9 @@ export class AttentionService {
           promises.push(promise);
         }
         // Wait for all scheduled jobs to complete
-        await Promise.all(promises);
-        await limiter.stop({ dropWaitingJobs: false });
+        if (promises.length > 0) {
+          await Promise.all(promises);
+        }
       }
       const response = { toProcess, processed: responses.length, errors: errors.length };
       this.logger.info('Post-attention surveys processed', {
@@ -1514,6 +1538,15 @@ export class AttentionService {
         `Hubo un problema al enviar las encuestas: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
+    } finally {
+      // Ensure limiter is always stopped, even if there's an error
+      try {
+        await limiter.stop({ dropWaitingJobs: false });
+      } catch (stopError) {
+        this.logger.warn('Error stopping limiter', {
+          error: stopError instanceof Error ? stopError.message : String(stopError),
+        });
+      }
     }
   }
 }

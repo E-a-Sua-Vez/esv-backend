@@ -285,8 +285,8 @@ export class AttentionController {
 
   //@UseGuards(SimpleGuard)
   @Post('/scheduled-surveys')
-  public async surveyPostAttention(@Body() body: any): Promise<any> {
-    const { date } = body;
+  public async surveyPostAttention(@Body() body?: any): Promise<any> {
+    const date = body?.date;
     return this.attentionService.surveyPostAttention(date);
   }
 }
