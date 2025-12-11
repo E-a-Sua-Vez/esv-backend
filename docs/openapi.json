@@ -899,6 +899,79 @@
         ]
       }
     },
+    "/queue/{id}/estimated-wait-time": {
+      "get": {
+        "description": "Calculates estimated wait time using intelligent learning from historical data",
+        "operationId": "QueueController_getEstimatedWaitTime",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Queue ID",
+            "schema": {
+              "example": "queue-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "position",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "method",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estimated wait time calculated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "estimatedMinutes": {
+                      "type": "number",
+                      "description": "Estimated wait time in minutes"
+                    },
+                    "estimatedTime": {
+                      "type": "string",
+                      "description": "Estimated wait time formatted as HH:MM"
+                    },
+                    "method": {
+                      "type": "string",
+                      "description": "Method used: average, median, or p75"
+                    },
+                    "usingIntelligentEstimation": {
+                      "type": "boolean",
+                      "description": "Whether intelligent estimation was used"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get estimated wait time for queue",
+        "tags": [
+          "queue"
+        ]
+      }
+    },
     "/collaborator/{id}": {
       "get": {
         "description": "Retrieves a collaborator by its unique identifier",

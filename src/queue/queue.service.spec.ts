@@ -1,3 +1,4 @@
+import { HttpService } from '@nestjs/axios';
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -46,13 +47,22 @@ describe('QueueService', () => {
       getServicesById: jest.fn(),
     };
 
+    const mockHttpService = {
+      get: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
           provide: QueueService,
           useFactory: (logger: GcpLoggerService) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return new QueueService(mockRepository as any, mockServiceService as any, logger);
+            return new QueueService(
+              mockRepository as any,
+              mockServiceService as any,
+              mockHttpService as any,
+              logger
+            );
           },
           inject: [GcpLoggerService],
         },
@@ -73,6 +83,10 @@ describe('QueueService', () => {
         {
           provide: ServiceService,
           useValue: mockServiceService,
+        },
+        {
+          provide: HttpService,
+          useValue: mockHttpService,
         },
       ],
     }).compile();

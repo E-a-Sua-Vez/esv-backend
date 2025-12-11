@@ -364,9 +364,9 @@ export class QueueService {
 
       return estimatedMinutes;
     } catch (error) {
-      this.logger.error('Error calculating estimated wait time', {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
         queueId,
-        error: error.message,
+        operation: 'getEstimatedWaitTime',
       });
 
       // Final fallback: return a default value
