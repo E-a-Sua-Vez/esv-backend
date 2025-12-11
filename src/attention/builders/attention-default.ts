@@ -109,7 +109,16 @@ export class AttentionDefaultBuilder implements BuilderInterface {
       queue.currentAttentionNumber = attention.number;
     }
     await this.queueService.updateQueue('', queue);
-    const attentionCreatedEvent = new AttentionCreated(new Date(), attentionCreated);
+
+    // Note: userName/userLastName should be set in attention.service.ts after creation
+    // before publishing the event to ensure they're included in Firebase
+
+    // Use attention.createdAt for occurredOn to preserve historical dates
+    // Falls back to new Date() for backward compatibility if createdAt is not set
+    const attentionCreatedEvent = new AttentionCreated(
+      attentionCreated.createdAt || new Date(),
+      attentionCreated
+    );
     publish(attentionCreatedEvent);
 
     return attentionCreated;

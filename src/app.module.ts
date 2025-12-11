@@ -8,6 +8,7 @@ import { AdministratorModule } from './administrator/administrator.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AttentionModule } from './attention/attention.module';
+import { AuthModule } from './auth/auth.module';
 import { BlockModule } from './block/block.module';
 import { BookingModule } from './booking/booking.module';
 import { BusinessModule } from './business/business.module';
@@ -51,6 +52,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
+    AuthModule,
     LoggerModule,
     SecurityModule,
     FireormModule.forRoot({

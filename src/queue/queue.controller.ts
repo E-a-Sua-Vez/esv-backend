@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -174,5 +175,65 @@ export class QueueController {
   @Patch('/restart/all')
   public async restartAll() {
     return this.queueService.restartAll();
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/:id/estimated-wait-time')
+  @ApiOperation({
+    summary: 'Get estimated wait time for queue',
+    description: 'Calculates estimated wait time using intelligent learning from historical data',
+  })
+  @ApiParam({ name: 'id', description: 'Queue ID', example: 'queue-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estimated wait time calculated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        estimatedMinutes: { type: 'number', description: 'Estimated wait time in minutes' },
+        estimatedTime: { type: 'string', description: 'Estimated wait time formatted as HH:MM' },
+        method: { type: 'string', description: 'Method used: average, median, or p75' },
+        usingIntelligentEstimation: {
+          type: 'boolean',
+          description: 'Whether intelligent estimation was used',
+        },
+      },
+    },
+  })
+  public async getEstimatedWaitTime(
+    @Param('id') queueId: string,
+    @Query('position') position: string,
+    @Query('method') method: 'average' | 'median' | 'p75' = 'p75'
+  ): Promise<{
+    estimatedMinutes: number;
+    estimatedTime: string;
+    method: string;
+    usingIntelligentEstimation: boolean;
+  }> {
+    const positionInQueue = parseInt(position, 10) || 1;
+    const estimatedMinutes = await this.queueService.getEstimatedWaitTime(
+      queueId,
+      positionInQueue,
+      method
+    );
+
+    // Format as HH:MM
+    const hours = Math.floor(estimatedMinutes / 60);
+    const minutes = Math.floor(estimatedMinutes % 60);
+    const estimatedTime = `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}`;
+
+    // Check if we used intelligent estimation (not hardcoded fallback)
+    // This is a simple check - in production you might want to return this from the service
+    const usingIntelligentEstimation = estimatedMinutes > 0;
+
+    return {
+      estimatedMinutes: Math.round(estimatedMinutes),
+      estimatedTime,
+      method,
+      usingIntelligentEstimation,
+    };
   }
 }

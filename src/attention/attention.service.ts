@@ -499,6 +499,19 @@ export class AttentionService {
           clientId
         );
       }
+      // Update attention with user name for easy access in Firebase
+      if (user && (user.name || user.lastName)) {
+        attentionCreated.userName = user.name;
+        attentionCreated.userLastName = user.lastName;
+        const attentionUpdated = await this.attentionRepository.update(attentionCreated);
+        // Publish update event to sync userName/userLastName to Firebase
+        const attentionUpdatedEvent = new AttentionUpdated(new Date(), attentionUpdated, {
+          user: 'system',
+        });
+        publish(attentionUpdatedEvent);
+        attentionCreated = attentionUpdated;
+      }
+
       if (user.email !== undefined) {
         await this.attentionEmail(attentionCreated.id);
       }

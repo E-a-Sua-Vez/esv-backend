@@ -1,7 +1,9 @@
+import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+import { firstValueFrom } from 'rxjs';
 import { timeConvert } from 'src/shared/utils/date';
 
 import { ServiceService } from '../service/service.service';
@@ -15,10 +17,13 @@ import { Block, Queue, ServiceInfo } from './model/queue.entity';
 
 @Injectable()
 export class QueueService {
+  private readonly queryStackUrl = process.env.QUERY_APP_BACKEND_URL || 'http://localhost:3003';
+
   constructor(
     @InjectRepository(Queue)
     private queueRepository = getRepository(Queue),
     private serviceService: ServiceService,
+    private httpService: HttpService,
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService
   ) {
@@ -308,6 +313,65 @@ export class QueueService {
       );
     }
     return 'Las filas fueron reiniciadas exitosamente';
+  }
+
+  public async getEstimatedWaitTime(
+    queueId: string,
+    positionInQueue: number,
+    method: 'average' | 'median' | 'p75' = 'p75'
+  ): Promise<number> {
+    try {
+      const queue = await this.getQueueById(queueId);
+
+      // Try to get intelligent estimation from query-stack
+      try {
+        const url = `${this.queryStackUrl}/attention/queue/${queueId}/estimated-duration?method=${method}&days=30&limit=30`;
+        const response = await firstValueFrom(this.httpService.get(url));
+
+        if (
+          response.data &&
+          response.data.success &&
+          response.data.duration &&
+          response.data.duration > 0
+        ) {
+          const estimatedMinutes = response.data.duration * positionInQueue;
+          this.logger.info('Using intelligent estimation', {
+            queueId,
+            method,
+            duration: response.data.duration,
+            positionInQueue,
+            estimatedMinutes,
+          });
+          return estimatedMinutes;
+        }
+      } catch (error) {
+        this.logger.warn('Failed to get intelligent estimation, using fallback', {
+          queueId,
+          error: error.message,
+        });
+      }
+
+      // Fallback to hardcoded value
+      const hardcodedEstimatedTime = queue.estimatedTime || 5; // Default to 5 minutes if not set
+      const estimatedMinutes = hardcodedEstimatedTime * positionInQueue;
+
+      this.logger.info('Using hardcoded estimation', {
+        queueId,
+        hardcodedEstimatedTime,
+        positionInQueue,
+        estimatedMinutes,
+      });
+
+      return estimatedMinutes;
+    } catch (error) {
+      this.logger.error('Error calculating estimated wait time', {
+        queueId,
+        error: error.message,
+      });
+
+      // Final fallback: return a default value
+      return 5 * positionInQueue;
+    }
   }
 
   private getQueueBlockDetails(queue: Queue): Queue {

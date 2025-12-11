@@ -25,6 +25,8 @@ export class Attention {
   queueId: string;
   status: AttentionStatus;
   userId: string;
+  userName?: string;
+  userLastName?: string;
   clientId: string;
   moduleId: string;
   comment: string;

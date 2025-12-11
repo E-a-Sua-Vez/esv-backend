@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 
@@ -11,6 +12,7 @@ import { QueueService } from './queue.service';
 @Module({
   imports: [
     FireormModule.forFeature([Queue]),
+    HttpModule,
     forwardRef(() => CollaboratorModule),
     forwardRef(() => ServiceModule),
   ],

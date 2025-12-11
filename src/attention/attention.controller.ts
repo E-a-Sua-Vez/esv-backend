@@ -112,7 +112,11 @@ export class AttentionController {
       servicesId,
       servicesDetails,
       clientId,
+      createdAt,
     } = body;
+    // Convert createdAt string to Date if provided (for historical data generation)
+    // If not provided, undefined will be passed and service will use current date (backward compatible)
+    const date = createdAt ? new Date(createdAt) : undefined;
     return this.attentionService.createAttention(
       queueId,
       collaboratorId,
@@ -120,7 +124,7 @@ export class AttentionController {
       user,
       type,
       block,
-      undefined,
+      date,
       undefined,
       undefined,
       servicesId,

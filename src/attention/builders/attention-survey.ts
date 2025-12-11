@@ -69,7 +69,12 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     queue.currentAttentionNumber = queue.currentAttentionNumber + 1;
     await this.queueService.updateQueue('', queue);
 
-    const attentionCreatedEvent = new AttentionCreated(new Date(), attentionCreated);
+    // Use attention.createdAt for occurredOn to preserve historical dates
+    // Falls back to new Date() for backward compatibility if createdAt is not set
+    const attentionCreatedEvent = new AttentionCreated(
+      attentionCreated.createdAt || new Date(),
+      attentionCreated
+    );
     publish(attentionCreatedEvent);
     return attentionCreated;
   }
