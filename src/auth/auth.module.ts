@@ -10,3 +10,4 @@ import { SimpleGuard } from './simple.guard';
   exports: [AuthGuard, SimpleGuard],
 })
 export class AuthModule {}
+

@@ -236,10 +236,11 @@ async function bootstrap(): Promise<void> {
 
     const port = process.env.PORT || 3000;
     console.log(`[Bootstrap] Starting server on port ${port}...`);
-    const server = await app.listen(port);
+    // Listen on 0.0.0.0 to accept connections from Cloud Run
+    const server = await app.listen(port, '0.0.0.0');
     server.setTimeout(60000);
 
-    const baseUrl = `http://localhost:${port}`;
+    const baseUrl = `http://0.0.0.0:${port}`;
     logger.info(`Application is running on: ${baseUrl}/health`, {
       environment: process.env.NODE_ENV || 'local',
       port,

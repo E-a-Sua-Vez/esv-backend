@@ -7265,29 +7265,147 @@
     },
     "/lead/internal": {
       "post": {
+        "description": "Internal endpoint for creating leads from public contact forms. No authentication required.",
         "operationId": "LeadController_createLeadFromContactFormInternal",
         "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "example": "contact-123"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+1234567890"
+                  },
+                  "company": {
+                    "type": "string",
+                    "example": "Acme Inc"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Interested in your services"
+                  },
+                  "source": {
+                    "type": "string",
+                    "example": "contact-form"
+                  },
+                  "page": {
+                    "type": "string",
+                    "example": "https://easuavez.com/pricing"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "email",
+                  "source"
+                ]
+              }
+            }
           }
         },
+        "responses": {
+          "201": {
+            "description": "Lead created successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "summary": "Create lead from contact form (internal)",
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
     "/lead": {
       "post": {
+        "description": "Create a lead from contact form submission. Requires authentication.",
         "operationId": "LeadController_createLeadFromContactForm",
         "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "example": "contact-123"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+1234567890"
+                  },
+                  "company": {
+                    "type": "string",
+                    "example": "Acme Inc"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Interested in your services"
+                  },
+                  "source": {
+                    "type": "string",
+                    "example": "contact-form"
+                  },
+                  "page": {
+                    "type": "string",
+                    "example": "https://easuavez.com/pricing"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "email",
+                  "source"
+                ]
+              }
+            }
           }
         },
+        "responses": {
+          "201": {
+            "description": "Lead created successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create lead from contact form",
         "tags": [
-          "Lead"
+          "lead"
         ]
       },
       "get": {
@@ -7299,7 +7417,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7322,7 +7440,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7345,7 +7463,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7368,7 +7486,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       },
       "put": {
@@ -7389,7 +7507,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7412,7 +7530,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7435,7 +7553,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7458,7 +7576,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },
@@ -7481,7 +7599,7 @@
           }
         },
         "tags": [
-          "Lead"
+          "lead"
         ]
       }
     },

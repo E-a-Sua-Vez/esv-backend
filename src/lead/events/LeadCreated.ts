@@ -13,3 +13,4 @@ export default class LeadCreated extends DomainEvent {
     }
   }
 }
+

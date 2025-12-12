@@ -13,3 +13,4 @@ export default class LeadStatusChanged extends DomainEvent {
     }
   }
 }
+

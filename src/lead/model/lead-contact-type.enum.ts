@@ -6,3 +6,4 @@ export enum LeadContactType {
   MEETING = 'MEETING',
   // Extensible: Can add more contact types
 }
+
