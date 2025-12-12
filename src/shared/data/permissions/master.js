@@ -74,5 +74,11 @@ export default {
   'roles.admin.read': true,
   'roles.admin.edit': true,
   'roles.admin.update': true,
-  'roles.admin.add': true
+  'roles.admin.add': true,
+  'leadPipeline.admin.view': true,
+  'leadPipeline.admin.read': true,
+  'leadPipeline.admin.edit': true,
+  'leadPipeline.admin.update': true,
+  'leadPipeline.admin.add': true,
+  'leadPipeline.admin.limit': 1000
 };

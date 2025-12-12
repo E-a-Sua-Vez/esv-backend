@@ -25,6 +25,7 @@ import { FormModule } from './form/form.module';
 import { FormPersonalizedModule } from './form-personalized/form-personalized.module';
 import { HealthModule } from './health/health.module';
 import { IncomeModule } from './income/income.module';
+import { LeadModule } from './lead/lead.module';
 import { MessageModule } from './message/message.module';
 import { ModuleModule } from './module/module.module';
 import { NotificationModule } from './notification/notification.module';
@@ -87,6 +88,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     ServiceModule,
     ClientModule,
     ClientContactModule,
+    LeadModule,
     ProductModule,
     DocumentsModule,
     IncomeModule,

@@ -538,6 +538,13 @@
       "roles.admin.update": true,
       "roles.admin.add": true,
 
+      "leadPipeline.admin.view": true,
+      "leadPipeline.admin.read": true,
+      "leadPipeline.admin.edit": true,
+      "leadPipeline.admin.update": true,
+      "leadPipeline.admin.add": true,
+      "leadPipeline.admin.limit": 1000,
+
       "services.admin.limit": 5,
       "services.admin.read": true,
       "services.admin.edit": true,

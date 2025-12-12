@@ -7263,6 +7263,228 @@
         ]
       }
     },
+    "/lead/internal": {
+      "post": {
+        "operationId": "LeadController_createLeadFromContactFormInternal",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead": {
+      "post": {
+        "operationId": "LeadController_createLeadFromContactForm",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      },
+      "get": {
+        "operationId": "LeadController_getAllLeads",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/from-contact-form/{contactFormId}": {
+      "post": {
+        "operationId": "LeadController_createLeadFromContactFormId",
+        "parameters": [
+          {
+            "name": "contactFormId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/stage/{stage}": {
+      "get": {
+        "operationId": "LeadController_getLeadsByStage",
+        "parameters": [
+          {
+            "name": "stage",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/{id}": {
+      "get": {
+        "operationId": "LeadController_getLeadById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      },
+      "put": {
+        "operationId": "LeadController_updateLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/{id}/stage": {
+      "put": {
+        "operationId": "LeadController_updateLeadStage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/{id}/assign": {
+      "put": {
+        "operationId": "LeadController_assignLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/{id}/contact": {
+      "post": {
+        "operationId": "LeadController_addLeadContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
+    "/lead/{id}/contacts": {
+      "get": {
+        "operationId": "LeadController_getLeadContacts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead"
+        ]
+      }
+    },
     "/product/{id}": {
       "get": {
         "description": "Retrieves a product by its unique identifier",

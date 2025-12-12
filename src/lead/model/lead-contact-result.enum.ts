@@ -1,0 +1,8 @@
+export enum LeadContactResult {
+  INTERESTED = 'INTERESTED',
+  CONTACT_LATER = 'CONTACT_LATER',
+  REJECTED = 'REJECTED',
+  NO_RESPONSE = 'NO_RESPONSE',
+  WAITING_FOR_RESPONSE = 'WAITING_FOR_RESPONSE',
+  // Extensible: Can add more results
+}

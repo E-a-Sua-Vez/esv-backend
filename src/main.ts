@@ -26,7 +26,7 @@ async function bootstrap(): Promise<void> {
     app.use(bodyParser.urlencoded({ limit: maxRequestSize, extended: true }));
     console.log('[Bootstrap] Body parser configured');
     const corsOriginConfig = {
-      local: ['http://localhost:5173'],
+      local: ['http://localhost:5173', 'http://localhost:5174'],
       test: [
         'https://estuturno.app',
         'https://www.estuturno.app',
