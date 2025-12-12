@@ -1,4 +1,6 @@
 import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 
 import { SimpleGuard } from '../auth/simple.guard';
 import { User } from '../auth/user.decorator';
@@ -9,12 +11,37 @@ import { LeadContactType } from './model/lead-contact-type.enum';
 import { LeadPipelineStage } from './model/lead-pipeline-stage.enum';
 import { LeadStatus } from './model/lead-status.enum';
 
+@ApiTags('lead')
 @Controller('lead')
 export class LeadController {
   constructor(private leadService: LeadService) {}
 
   // Internal endpoint for public repo and event consumer (no auth required)
+  @SkipThrottle()
   @Post('internal')
+  @ApiOperation({
+    summary: 'Create lead from contact form (internal)',
+    description:
+      'Internal endpoint for creating leads from public contact forms. No authentication required.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'contact-123' },
+        name: { type: 'string', example: 'John Doe' },
+        email: { type: 'string', example: 'john@example.com' },
+        phone: { type: 'string', example: '+1234567890' },
+        company: { type: 'string', example: 'Acme Inc' },
+        message: { type: 'string', example: 'Interested in your services' },
+        source: { type: 'string', example: 'contact-form' },
+        page: { type: 'string', example: 'https://easuavez.com/pricing' },
+      },
+      required: ['id', 'name', 'email', 'source'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Lead created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   public async createLeadFromContactFormInternal(
     @Body()
     contactFormData: {
@@ -33,6 +60,30 @@ export class LeadController {
 
   @Post()
   @UseGuards(SimpleGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Create lead from contact form',
+    description: 'Create a lead from contact form submission. Requires authentication.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'contact-123' },
+        name: { type: 'string', example: 'John Doe' },
+        email: { type: 'string', example: 'john@example.com' },
+        phone: { type: 'string', example: '+1234567890' },
+        company: { type: 'string', example: 'Acme Inc' },
+        message: { type: 'string', example: 'Interested in your services' },
+        source: { type: 'string', example: 'contact-form' },
+        page: { type: 'string', example: 'https://easuavez.com/pricing' },
+      },
+      required: ['id', 'name', 'email', 'source'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Lead created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   public async createLeadFromContactForm(
     @Body()
     contactFormData: {
