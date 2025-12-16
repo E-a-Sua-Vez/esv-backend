@@ -53,6 +53,14 @@ export class IncomeService {
     return incomes;
   }
 
+  public async getIncomesByAttentionId(attentionId: string): Promise<Income[]> {
+    let incomes: Income[] = [];
+    if (attentionId) {
+      incomes = await this.incomeRepository.whereEqualTo('attentionId', attentionId).find();
+    }
+    return incomes;
+  }
+
   public async updateIncomeConfigurations(
     user: string,
     id: string,

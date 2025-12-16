@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, forwardRef } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
@@ -34,6 +34,7 @@ import { PackageType } from '../package/model/package-type.enum';
 import { PackageService } from '../package/package.service';
 import { QueueService } from '../queue/queue.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { User } from '../user/model/user.entity';
 import { UserService } from '../user/user.service';
 import { WaitlistStatus } from '../waitlist/model/waitlist-status.enum';
@@ -67,6 +68,8 @@ export class BookingService {
     private userService: UserService,
     private documentsService: DocumentsService,
     private bookingBlockNumbersUsedService: BookingBlockNumberUsedService,
+    @Inject(forwardRef(() => TelemedicineService))
+    private telemedicineService: TelemedicineService,
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService
   ) {
@@ -87,7 +90,14 @@ export class BookingService {
     servicesId?: string[],
     servicesDetails?: object[],
     clientId?: string,
-    sessionId?: string
+    sessionId?: string,
+    type?: string,
+    telemedicineConfig?: {
+      type: 'VIDEO' | 'CHAT' | 'BOTH';
+      scheduledAt: string;
+      recordingEnabled?: boolean;
+      notes?: string;
+    }
   ): Promise<Booking> {
     let bookingCreated;
     const queue = await this.queueService.getQueueById(queueId);
@@ -231,7 +241,9 @@ export class BookingService {
         status,
         servicesId,
         servicesDetails,
-        clientId
+        clientId,
+        type,
+        telemedicineConfig
       );
       if (user.email !== undefined) {
         email = user.email;
@@ -965,6 +977,8 @@ export class BookingService {
       bookingDetailsDto.cancelled = booking.cancelled;
       bookingDetailsDto.attentionId = booking.attentionId;
       bookingDetailsDto.block = booking.block;
+      bookingDetailsDto.telemedicineSessionId = booking.telemedicineSessionId;
+      bookingDetailsDto.telemedicineConfig = booking.telemedicineConfig;
       if (booking.queueId) {
         bookingDetailsDto.queue = await this.queueService.getQueueById(booking.queueId);
         bookingDetailsDto.commerce = await this.commerceService.getCommerceById(
@@ -1005,6 +1019,25 @@ export class BookingService {
         booking.cancelledAt = new Date();
         booking.cancelled = true;
         const bookingCancelled = await this.update(user, booking);
+
+        // Cancel telemedicine session if exists
+        if (bookingCancelled.telemedicineSessionId) {
+          try {
+            await this.telemedicineService.cancelSession(
+              bookingCancelled.telemedicineSessionId,
+              user
+            );
+            this.logger.log(
+              `[BookingService] Cancelled telemedicine session ${bookingCancelled.telemedicineSessionId} for cancelled booking ${bookingCancelled.id}`
+            );
+          } catch (error) {
+            this.logger.error(
+              `[BookingService] Failed to cancel telemedicine session ${bookingCancelled.telemedicineSessionId}: ${error.message}`
+            );
+            // Don't throw, continue with booking cancellation
+          }
+        }
+
         this.bookingBlockNumbersUsedService.deleteTakenBookingsBlocksByDate(
           undefined,
           booking.queueId,
@@ -1264,13 +1297,32 @@ export class BookingService {
       termsConditionsToAcceptCode,
       termsConditionsAcceptedCode,
       termsConditionsToAcceptedAt,
+      telemedicineConfig,
     } = booking;
+
+    // Determinar tipo de atención basado en telemedicina
+    const attentionType = telemedicineConfig ? AttentionType.TELEMEDICINE : undefined;
+
+    // Normalizar telemedicineConfig si existe para asegurar formato correcto
+    let normalizedTelemedicineConfig = undefined;
+    if (telemedicineConfig) {
+      normalizedTelemedicineConfig = {
+        type: telemedicineConfig.type || 'video', // Asegurar que siempre sea 'video' (único tipo permitido ahora)
+        scheduledAt:
+          telemedicineConfig.scheduledAt instanceof Date
+            ? telemedicineConfig.scheduledAt
+            : new Date(telemedicineConfig.scheduledAt),
+        recordingEnabled: telemedicineConfig.recordingEnabled,
+        notes: telemedicineConfig.notes,
+      };
+    }
+
     const attention = await this.attentionService.createAttention(
       queueId,
       undefined,
       channel,
       user,
-      undefined,
+      attentionType,
       block,
       undefined,
       confirmationData,
@@ -1280,8 +1332,16 @@ export class BookingService {
       clientId,
       termsConditionsToAcceptCode,
       termsConditionsAcceptedCode,
-      termsConditionsToAcceptedAt
+      termsConditionsToAcceptedAt,
+      normalizedTelemedicineConfig
     );
+
+    // Si se creó sesión de telemedicina, vincular con booking
+    if (attention.telemedicineSessionId) {
+      booking.telemedicineSessionId = attention.telemedicineSessionId;
+      await this.update(userIn, booking);
+    }
+
     await this.processBooking(userIn, booking, attention.id);
     return attention;
   }
@@ -1360,16 +1420,45 @@ export class BookingService {
       const booking = await this.getBookingById(bookingId);
       response.booking = booking;
       if (booking && booking.id) {
-        const { queueId, channel, user, block, date } = booking;
+        const { queueId, channel, user, block, date, telemedicineConfig } = booking;
         const dateOfAttention = new Date(date);
+
+        // Determinar tipo de atención basado en telemedicina
+        const attentionType = telemedicineConfig
+          ? AttentionType.TELEMEDICINE
+          : AttentionType.STANDARD;
+
+        // Normalizar telemedicineConfig si existe para asegurar formato correcto
+        let normalizedTelemedicineConfig = undefined;
+        if (telemedicineConfig) {
+          normalizedTelemedicineConfig = {
+            type: telemedicineConfig.type || 'video', // Asegurar que siempre sea 'video' (único tipo permitido ahora)
+            scheduledAt:
+              telemedicineConfig.scheduledAt instanceof Date
+                ? telemedicineConfig.scheduledAt
+                : new Date(telemedicineConfig.scheduledAt),
+            recordingEnabled: telemedicineConfig.recordingEnabled,
+            notes: telemedicineConfig.notes,
+          };
+        }
+
         const attention = await this.attentionService.createAttention(
           queueId,
           collaboratorId,
           channel,
           user,
-          AttentionType.STANDARD,
+          attentionType,
           block,
-          dateOfAttention
+          dateOfAttention,
+          undefined,
+          undefined,
+          booking.servicesId,
+          booking.servicesDetails,
+          booking.clientId,
+          undefined,
+          undefined,
+          undefined,
+          normalizedTelemedicineConfig
         );
         response.attention = attention;
         if (attention && attention.id) {
@@ -1581,7 +1670,25 @@ export class BookingService {
               booking.status = BookingStatus.RESERVE_CANCELLED;
               booking.cancelledAt = new Date();
               booking.cancelled = true;
-              await this.update('ett', booking);
+              const bookingCancelled = await this.update('ett', booking);
+
+              // Cancel telemedicine session if exists
+              if (bookingCancelled.telemedicineSessionId) {
+                try {
+                  await this.telemedicineService.cancelSession(
+                    bookingCancelled.telemedicineSessionId,
+                    'ett'
+                  );
+                  this.logger.log(
+                    `[BookingService] Cancelled telemedicine session ${bookingCancelled.telemedicineSessionId} for cancelled booking ${bookingCancelled.id}`
+                  );
+                } catch (error) {
+                  this.logger.error(
+                    `[BookingService] Failed to cancel telemedicine session ${bookingCancelled.telemedicineSessionId}: ${error.message}`
+                  );
+                  // Don't throw, continue with booking cancellation
+                }
+              }
             } catch (error) {
               errors.push(error);
             }
@@ -1660,7 +1767,13 @@ export class BookingService {
     user: string,
     id: string,
     date: string,
-    block: Block
+    block: Block,
+    telemedicineConfig?: {
+      type: 'VIDEO' | 'CHAT' | 'BOTH';
+      scheduledAt: string;
+      recordingEnabled?: boolean;
+      notes?: string;
+    }
   ): Promise<Booking> {
     let booking = undefined;
     try {
@@ -1687,6 +1800,34 @@ export class BookingService {
           const [year, month, day] = date.split('-');
           booking.dateFormatted = new Date(+year, +month - 1, +day);
           booking.block = block;
+
+          // Update telemedicine config if provided
+          if (telemedicineConfig) {
+            // Convert type to lowercase to match entity format
+            const configType = telemedicineConfig.type?.toLowerCase() as 'video' | 'chat' | 'both';
+            booking.telemedicineConfig = {
+              type: configType || 'video',
+              scheduledAt: telemedicineConfig.scheduledAt
+                ? new Date(telemedicineConfig.scheduledAt)
+                : new Date(),
+              recordingEnabled: telemedicineConfig.recordingEnabled || false,
+              notes: telemedicineConfig.notes || '',
+            };
+            // Update booking type if telemedicine config is provided
+            if (!booking.type || booking.type === BookingType.STANDARD) {
+              booking.type = BookingType.TELEMEDICINE;
+            }
+          } else if (block && booking.telemedicineConfig) {
+            // If telemedicine config exists but not provided in update, update scheduledAt based on new block
+            // This ensures the scheduled time matches the new block time
+            if (block.hourFrom) {
+              const dateStr =
+                typeof date === 'string' ? date : new Date(date).toISOString().slice(0, 10);
+              const scheduledDateTime = new Date(dateStr + 'T' + block.hourFrom + ':00');
+              booking.telemedicineConfig.scheduledAt = scheduledDateTime;
+            }
+          }
+
           booking.editedCount = booking.editedCount ? booking.editedCount + 1 : 1;
           booking.editedBy = user;
           booking = await this.update(user, booking);

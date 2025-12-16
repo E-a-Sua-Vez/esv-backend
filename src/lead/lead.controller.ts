@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Request, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
+import { AuthGuard } from '../auth/auth.guard';
 import { SimpleGuard } from '../auth/simple.guard';
 import { User } from '../auth/user.decorator';
 
@@ -59,7 +60,7 @@ export class LeadController {
   }
 
   @Post()
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create lead from contact form',
@@ -96,72 +97,94 @@ export class LeadController {
       source: string;
       page?: string;
     },
-    @User() user: any
+    @User() user: any,
+    @Request() request: any
   ) {
+    const userId = user?.id || user?.userId || request?.userId;
     return await this.leadService.createLeadFromContactForm(
       contactFormData,
-      user?.id,
+      userId,
       user?.businessId,
       user?.commerceId
     );
   }
 
   @Post('from-contact-form/:contactFormId')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async createLeadFromContactFormId(
     @Param('contactFormId') contactFormId: string,
-    @User() user: any
+    @User() user: any,
+    @Request() request: any
   ) {
     // This endpoint will be called to convert an existing contact form submission to a lead
     // First, we need to fetch the contact form data from query stack
-    return await this.leadService.createLeadFromContactFormId(contactFormId, user?.id);
+    const userId = user?.id || user?.userId || request?.userId;
+    return await this.leadService.createLeadFromContactFormId(contactFormId, userId);
   }
 
   @Get()
-  @UseGuards(SimpleGuard)
-  public async getAllLeads(@User() user: any) {
-    return await this.leadService.getAllLeads(user?.id, user?.businessId, user?.commerceId);
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  public async getAllLeads(@User() user: any, @Request() request: any) {
+    const userId = user?.id || user?.userId || request?.userId;
+    return await this.leadService.getAllLeads(userId, user?.businessId, user?.commerceId);
   }
 
   @Get('stage/:stage')
-  @UseGuards(SimpleGuard)
-  public async getLeadsByStage(@Param('stage') stage: LeadPipelineStage, @User() user: any) {
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  public async getLeadsByStage(
+    @Param('stage') stage: LeadPipelineStage,
+    @User() user: any,
+    @Request() request: any
+  ) {
+    // Get userId from user object or request
+    const userId = user?.id || user?.userId || request?.userId;
     return await this.leadService.getLeadsByStage(
       stage,
-      user?.id,
+      userId,
       user?.businessId,
       user?.commerceId
     );
   }
 
   @Get(':id')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async getLeadById(@Param('id') id: string) {
     return await this.leadService.getLeadById(id);
   }
 
   @Put(':id/stage')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async updateLeadStage(
     @Param('id') id: string,
     @Body() body: { stage: LeadPipelineStage; status?: LeadStatus },
-    @User() user: any
+    @User() user: any,
+    @Request() request: any
   ) {
-    return await this.leadService.updateLeadStage(id, body.stage, user?.id, body.status);
+    const userId = user?.id || user?.userId || request?.userId;
+    return await this.leadService.updateLeadStage(id, body.stage, userId, body.status);
   }
 
   @Put(':id')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async updateLead(
     @Param('id') id: string,
     @Body() updates: Partial<any>,
-    @User() user: any
+    @User() user: any,
+    @Request() request: any
   ) {
-    return await this.leadService.updateLead(id, updates, user?.id);
+    const userId = user?.id || user?.userId || request?.userId;
+    return await this.leadService.updateLead(id, updates, userId);
   }
 
   @Put(':id/assign')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async assignLead(
     @Param('id') id: string,
     @Body()
@@ -170,19 +193,22 @@ export class LeadController {
       businessId?: string;
       commerceId?: string;
     },
-    @User() user: any
+    @User() user: any,
+    @Request() request: any
   ) {
+    const userId = user?.id || user?.userId || request?.userId;
     return await this.leadService.assignLead(
       id,
       body.assignedToUserId,
-      user?.id,
+      userId,
       body.businessId || user?.businessId,
       body.commerceId || user?.commerceId
     );
   }
 
   @Post(':id/contact')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async addLeadContact(
     @Param('id') leadId: string,
     @Body()
@@ -192,23 +218,26 @@ export class LeadController {
       comment: string;
       scheduledAt?: Date;
     },
-    @User() user: any
+    @User() user: any,
+    @Request() request: any
   ) {
+    const userId = user?.id || user?.userId || request?.userId;
     return await this.leadService.addLeadContact(
       leadId,
       body.type,
       body.result,
       body.comment,
-      user?.id,
+      userId,
       user?.businessId,
       user?.commerceId,
-      user?.collaboratorId || user?.id,
+      user?.collaboratorId || userId,
       body.scheduledAt
     );
   }
 
   @Get(':id/contacts')
-  @UseGuards(SimpleGuard)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   public async getLeadContacts(@Param('id') leadId: string) {
     return await this.leadService.getLeadContacts(leadId);
   }

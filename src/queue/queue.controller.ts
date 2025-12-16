@@ -108,6 +108,7 @@ export class QueueController {
       collaboratorId,
       serviceId,
       servicesId,
+      telemedicineEnabled,
     } = body;
     return this.queueService.createQueue(
       user,
@@ -122,7 +123,8 @@ export class QueueController {
       blockTime,
       collaboratorId,
       serviceId,
-      servicesId
+      servicesId,
+      telemedicineEnabled
     );
   }
 
@@ -154,6 +156,7 @@ export class QueueController {
       serviceInfo,
       blockTime,
       servicesId,
+      telemedicineEnabled,
     } = body;
     return this.queueService.updateQueueConfigurations(
       user,
@@ -167,7 +170,8 @@ export class QueueController {
       online,
       serviceInfo,
       blockTime,
-      servicesId
+      servicesId,
+      telemedicineEnabled
     );
   }
 

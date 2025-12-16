@@ -74,6 +74,14 @@ export class NotificationService {
     publish(notificationCreatedEvent);
     let metadata;
     try {
+      this.logger.log(`[NotificationService] createWhatsappNotification called:`, {
+        notificationId: notificationCreated.id,
+        to: phone,
+        from: servicePhoneNumber || 'default',
+        provider: this.whatsappProvider,
+        commerceId,
+        type,
+      });
       metadata = await this.whatsappNotify(
         phone,
         message,
@@ -81,15 +89,32 @@ export class NotificationService {
         commerceId,
         servicePhoneNumber
       );
+      this.logger.log(`[NotificationService] WhatsApp metadata received:`, {
+        notificationId: notificationCreated.id,
+        metadata: JSON.stringify(metadata),
+        provider: this.whatsappProvider,
+      });
       if (this.whatsappProvider === NotificationProvider.TWILIO) {
         notificationCreated.twilioId = metadata['sid'];
         notificationCreated.providerId = metadata['sid'];
       }
       if (this.whatsappProvider === NotificationProvider.WHATSGW) {
         notificationCreated.twilioId = 'N/A';
-        notificationCreated.providerId = metadata['message_id'] || 'N/I';
+        notificationCreated.providerId = metadata['message_id'] || metadata['messageId'] || 'N/I';
+        // Log the full response for debugging
+        this.logger.log(`[NotificationService] WhatsGW response details:`, {
+          notificationId: notificationCreated.id,
+          fullResponse: JSON.stringify(metadata),
+          messageId: metadata['message_id'] || metadata['messageId'],
+        });
       }
     } catch (error) {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        notificationId: notificationCreated.id,
+        to: phone,
+        from: servicePhoneNumber || 'default',
+        operation: 'createWhatsappNotification',
+      });
       notificationCreated.comment = error.message;
     }
     return await this.update(notificationCreated);
@@ -179,12 +204,34 @@ export class NotificationService {
     commerceId: string,
     servicePhoneNumber?: string
   ): Promise<string> {
-    return this.whatsappNotificationClient.sendMessage(
-      message,
-      phone,
+    this.logger.log(`[NotificationService] Sending WhatsApp notification:`, {
+      to: phone,
+      from: servicePhoneNumber || 'default',
       notificationId,
-      servicePhoneNumber
-    );
+      commerceId,
+      messageLength: message.length,
+    });
+    try {
+      const response = await this.whatsappNotificationClient.sendMessage(
+        message,
+        phone,
+        notificationId,
+        servicePhoneNumber
+      );
+      this.logger.log(`[NotificationService] WhatsApp notification sent successfully:`, {
+        notificationId,
+        response: JSON.stringify(response),
+      });
+      return response;
+    } catch (error) {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        notificationId,
+        to: phone,
+        from: servicePhoneNumber || 'default',
+        operation: 'whatsappNotify',
+      });
+      throw error;
+    }
   }
 
   public async emailNotify(email: string, data: EmailInputDto, template: string): Promise<any> {
@@ -361,6 +408,40 @@ export class NotificationService {
     } catch (error) {
       notification.comment = error.message;
     }
+  }
+
+  /**
+   * Crear notificación genérica (para uso interno)
+   */
+  public async createNotification(notificationData: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    data?: any;
+    commerceId?: string;
+    attentionId?: string;
+    bookingId?: string;
+    queueId?: string;
+  }): Promise<Notification> {
+    const notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.APP;
+    notification.type = notificationData.type;
+    notification.receiver = notificationData.userId;
+    notification.title = notificationData.title;
+    notification.message = notificationData.message;
+    notification.data = notificationData.data;
+    notification.commerceId = notificationData.commerceId;
+    notification.attentionId = notificationData.attentionId;
+    notification.bookingId = notificationData.bookingId;
+    notification.queueId = notificationData.queueId;
+    notification.provider = 'internal';
+
+    const createdNotification = await this.notificationRepository.create(notification);
+    const notificationCreatedEvent = new NotificationCreated(new Date(), createdNotification);
+    publish(notificationCreatedEvent);
+    return createdNotification;
   }
 
   public async createNotificationReceived(provider: string, body: any): Promise<any> {

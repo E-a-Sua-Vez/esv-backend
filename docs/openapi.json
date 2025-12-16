@@ -5824,6 +5824,1384 @@
         ]
       }
     },
+    "/telemedicine/sessions": {
+      "post": {
+        "operationId": "TelemedicineController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTelemedicineSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create telemedicine session",
+        "tags": [
+          "Telemedicine"
+        ]
+      },
+      "get": {
+        "operationId": "TelemedicineController_listSessions",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TelemedicineSession"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List telemedicine sessions",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}": {
+      "get": {
+        "operationId": "TelemedicineController_getSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get session by ID",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/start": {
+      "post": {
+        "operationId": "TelemedicineController_startSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Start session",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/end": {
+      "post": {
+        "operationId": "TelemedicineController_endSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session ended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "End session",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/cancel": {
+      "post": {
+        "operationId": "TelemedicineController_cancelSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Cancel session",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/consent": {
+      "post": {
+        "operationId": "TelemedicineController_giveConsent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consent given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Give consent for recording",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/recording": {
+      "post": {
+        "operationId": "TelemedicineController_saveRecording",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording URL saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Save recording URL",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/recording/upload-url": {
+      "get": {
+        "operationId": "TelemedicineController_getRecordingUploadUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiresIn",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Presigned upload URL generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uploadUrl": {
+                      "type": "string",
+                      "description": "Presigned URL for PUT request"
+                    },
+                    "recordingKey": {
+                      "type": "string",
+                      "description": "S3 key for the recording"
+                    },
+                    "recordingUrl": {
+                      "type": "string",
+                      "description": "Final URL after upload"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get presigned URL for direct S3 upload (recommended)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/recording/save-url": {
+      "post": {
+        "operationId": "TelemedicineController_saveRecordingUrlFromUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording URL saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Save recording URL after direct S3 upload",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/recording/upload": {
+      "post": {
+        "operationId": "TelemedicineController_uploadRecording",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload recording file to S3 (legacy - prefer upload-url endpoint)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/messages": {
+      "get": {
+        "operationId": "TelemedicineController_getMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TelemedicineMessage"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get messages from session",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/messages": {
+      "post": {
+        "operationId": "TelemedicineController_sendMessage",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Message sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send message",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/messages/read": {
+      "post": {
+        "operationId": "TelemedicineController_markMessagesAsRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark messages as read",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/validate-key": {
+      "post": {
+        "operationId": "TelemedicineController_validateAccessKey",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Key validated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        },
+        "summary": "Validate access key (public)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/public": {
+      "get": {
+        "operationId": "TelemedicineController_getSessionPublic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get session by ID (public, after key validation)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/send-access-keys": {
+      "post": {
+        "operationId": "TelemedicineController_sendAccessKeysForUpcomingSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Access keys processed"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send access keys for upcoming sessions (scheduler)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/send-access-key": {
+      "post": {
+        "operationId": "TelemedicineController_sendAccessKeyOnDemand",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access key sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        },
+        "summary": "Send access key on demand (public)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/patient-connected": {
+      "post": {
+        "operationId": "TelemedicineController_markPatientConnected",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient marked as connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark patient as connected (public)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/sessions/{id}/doctor-connected": {
+      "post": {
+        "operationId": "TelemedicineController_markDoctorConnected",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Doctor marked as connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark doctor as connected",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/monitoring/stats": {
+      "get": {
+        "operationId": "TelemedicineController_getStatistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Telemedicine statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessions": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "active": {
+                          "type": "number"
+                        },
+                        "scheduled": {
+                          "type": "number"
+                        },
+                        "completed": {
+                          "type": "number"
+                        },
+                        "cancelled": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get telemedicine statistics",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/telemedicine/monitoring/health": {
+      "get": {
+        "operationId": "TelemedicineController_getHealthMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Telemedicine health metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activeSessions": {
+                      "type": "number"
+                    },
+                    "connections": {
+                      "type": "object",
+                      "properties": {
+                        "active": {
+                          "type": "number"
+                        },
+                        "max": {
+                          "type": "number"
+                        },
+                        "activeRooms": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get telemedicine health metrics",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
+    "/patient-history/{id}": {
+      "get": {
+        "description": "Retrieves a patient history record by its unique identifier",
+        "operationId": "PatientHistoryController_getPatientHistoryById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Patient history ID",
+            "schema": {
+              "example": "patient-history-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient history found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientHistory"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Patient history not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get patient history by ID",
+        "tags": [
+          "patient-history"
+        ]
+      },
+      "patch": {
+        "description": "Updates patient history information and status",
+        "operationId": "PatientHistoryController_updatePatientHistoryConfigurations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Patient history ID",
+            "schema": {
+              "example": "patient-history-123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientHistoryUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Patient history updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientHistory"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Patient history not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update patient history configurations",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history": {
+      "get": {
+        "description": "Retrieves a list of all patient history records",
+        "operationId": "PatientHistoryController_getAllPatientHistory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of patient histories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientHistory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all patient histories",
+        "tags": [
+          "patient-history"
+        ]
+      },
+      "post": {
+        "description": "Creates a new patient medical history record",
+        "operationId": "PatientHistoryController_createPatientHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientHistory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Patient history created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientHistory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new patient history",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/commerceId/{commerceId}": {
+      "get": {
+        "description": "Retrieves all patient histories for a specific commerce",
+        "operationId": "PatientHistoryController_getPatientHistorysByCommerceId",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of patient histories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientHistory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get patient histories by commerce",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/commerceId/{commerceId}/active": {
+      "get": {
+        "description": "Retrieves all active patient histories for a specific commerce",
+        "operationId": "PatientHistoryController_getActivePatientHistorysByCommerceId",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active patient histories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientHistory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get active patient histories by commerce",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/control/{id}": {
+      "patch": {
+        "description": "Updates control information for a patient history",
+        "operationId": "PatientHistoryController_updatePatientHistoryControl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Patient history ID",
+            "schema": {
+              "example": "patient-history-123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientHistory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Patient history control updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientHistory"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Patient history not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update patient history control",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/save": {
+      "post": {
+        "description": "Creates or updates a patient history record",
+        "operationId": "PatientHistoryController_savePatientHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientHistoryUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Patient history saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientHistory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Save patient history",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/consultation/{attentionId}": {
+      "get": {
+        "description": "Retrieves the complete consultation history for a specific attention/visit",
+        "operationId": "PatientHistoryController_getConsultationByAttentionId",
+        "parameters": [
+          {
+            "name": "attentionId",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consultation history found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationHistory"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Consultation history not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get consultation history by attention ID",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/consultations/patient/{patientHistoryId}": {
+      "get": {
+        "description": "Retrieves all consultation histories for a specific patient history ID",
+        "operationId": "PatientHistoryController_getConsultationsByPatientHistoryId",
+        "parameters": [
+          {
+            "name": "patientHistoryId",
+            "required": true,
+            "in": "path",
+            "description": "Patient History ID",
+            "schema": {
+              "example": "patient-history-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of consultations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultationHistory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all consultations for a patient",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/consultations/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retrieves all consultation histories for a specific client",
+        "operationId": "PatientHistoryController_getConsultationsByClientId",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of consultations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultationHistory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all consultations for a client",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/journey/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retrieves the complete patient journey including bookings, attentions, consultations, controls, prescriptions, and exam orders with all relationships",
+        "operationId": "PatientHistoryController_getPatientJourney",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete patient journey",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientJourneyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get complete patient journey",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
+    "/patient-history/journey/attention/{attentionId}": {
+      "get": {
+        "description": "Retrieves the complete patient journey for the client associated with a specific attention",
+        "operationId": "PatientHistoryController_getPatientJourneyByAttention",
+        "parameters": [
+          {
+            "name": "attentionId",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete patient journey",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientJourneyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attention not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get patient journey by attention ID",
+        "tags": [
+          "patient-history"
+        ]
+      }
+    },
     "/survey/{id}": {
       "get": {
         "description": "Retrieves a survey by its unique identifier",
@@ -7416,6 +8794,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7439,6 +8822,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7462,6 +8850,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7485,6 +8878,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7506,6 +8904,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7529,6 +8932,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7552,6 +8960,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7575,6 +8988,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7598,6 +9016,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "lead"
         ]
@@ -7998,6 +9421,37 @@
           }
         ],
         "summary": "Get active replacements by product",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/product/alerts/{commerceId}": {
+      "get": {
+        "description": "Retrieves all active alerts for products in a commerce",
+        "operationId": "ProductController_getActiveAlerts",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active alerts"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get active product alerts",
         "tags": [
           "product"
         ]
@@ -8936,340 +10390,6 @@
         ]
       }
     },
-    "/patient-history/{id}": {
-      "get": {
-        "description": "Retrieves a patient history record by its unique identifier",
-        "operationId": "PatientHistoryController_getPatientHistoryById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Patient history ID",
-            "schema": {
-              "example": "patient-history-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Patient history found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PatientHistory"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Patient history not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get patient history by ID",
-        "tags": [
-          "patient-history"
-        ]
-      },
-      "patch": {
-        "description": "Updates patient history information and status",
-        "operationId": "PatientHistoryController_updatePatientHistoryConfigurations",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Patient history ID",
-            "schema": {
-              "example": "patient-history-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PatientHistoryUpdateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Patient history updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PatientHistory"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Patient history not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Update patient history configurations",
-        "tags": [
-          "patient-history"
-        ]
-      }
-    },
-    "/patient-history": {
-      "get": {
-        "description": "Retrieves a list of all patient history records",
-        "operationId": "PatientHistoryController_getAllPatientHistory",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of patient histories",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PatientHistory"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get all patient histories",
-        "tags": [
-          "patient-history"
-        ]
-      },
-      "post": {
-        "description": "Creates a new patient medical history record",
-        "operationId": "PatientHistoryController_createPatientHistory",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PatientHistory"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Patient history created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PatientHistory"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Create a new patient history",
-        "tags": [
-          "patient-history"
-        ]
-      }
-    },
-    "/patient-history/commerceId/{commerceId}": {
-      "get": {
-        "description": "Retrieves all patient histories for a specific commerce",
-        "operationId": "PatientHistoryController_getPatientHistorysByCommerceId",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of patient histories",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PatientHistory"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get patient histories by commerce",
-        "tags": [
-          "patient-history"
-        ]
-      }
-    },
-    "/patient-history/commerceId/{commerceId}/active": {
-      "get": {
-        "description": "Retrieves all active patient histories for a specific commerce",
-        "operationId": "PatientHistoryController_getActivePatientHistorysByCommerceId",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of active patient histories",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PatientHistory"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get active patient histories by commerce",
-        "tags": [
-          "patient-history"
-        ]
-      }
-    },
-    "/patient-history/control/{id}": {
-      "patch": {
-        "description": "Updates control information for a patient history",
-        "operationId": "PatientHistoryController_updatePatientHistoryControl",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Patient history ID",
-            "schema": {
-              "example": "patient-history-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PatientHistory"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Patient history control updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PatientHistory"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Patient history not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Update patient history control",
-        "tags": [
-          "patient-history"
-        ]
-      }
-    },
-    "/patient-history/save": {
-      "post": {
-        "description": "Creates or updates a patient history record",
-        "operationId": "PatientHistoryController_savePatientHistory",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PatientHistoryUpdateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Patient history saved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PatientHistory"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Save patient history",
-        "tags": [
-          "patient-history"
-        ]
-      }
-    },
     "/company/{id}": {
       "get": {
         "description": "Retrieves a company by its unique identifier",
@@ -9892,6 +11012,2881 @@
         "summary": "Get active patient history items by commerce and type",
         "tags": [
           "patient-history-item"
+        ]
+      }
+    },
+    "/prescription/medications/search": {
+      "get": {
+        "description": "Search for medications in the catalog",
+        "operationId": "PrescriptionController_searchMedications",
+        "parameters": [
+          {
+            "name": "searchTerm",
+            "required": false,
+            "in": "query",
+            "description": "Término de búsqueda",
+            "schema": {
+              "example": "paracetamol",
+              "type": "string"
+            }
+          },
+          {
+            "name": "atcCode",
+            "required": false,
+            "in": "query",
+            "description": "Código ATC",
+            "schema": {
+              "example": "N02BE01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "activePrinciple",
+            "required": false,
+            "in": "query",
+            "description": "Principio activo",
+            "schema": {
+              "example": "acetaminophen",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número de página",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Tamaño de página",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of medications"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search medications",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/medications/{id}": {
+      "get": {
+        "description": "Retrieves a medication from the catalog by ID",
+        "operationId": "PrescriptionController_getMedicationById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Medication ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Medication found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicationCatalog"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Medication not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get medication by ID",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription": {
+      "post": {
+        "description": "Creates a structured prescription with medications",
+        "operationId": "PrescriptionController_createPrescription",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePrescriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Prescription created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prescription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new prescription",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/{id}": {
+      "get": {
+        "description": "Retrieves a prescription by its ID",
+        "operationId": "PrescriptionController_getPrescriptionById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prescription found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prescription"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prescription not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get prescription by ID",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retrieves all prescriptions for a specific client",
+        "operationId": "PrescriptionController_getPrescriptionsByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of prescriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Prescription"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get prescriptions by client",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/client/{commerceId}/{clientId}/active": {
+      "get": {
+        "description": "Retrieves all active prescriptions for a specific client",
+        "operationId": "PrescriptionController_getActivePrescriptionsByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active prescriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Prescription"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get active prescriptions by client",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/{id}/refill": {
+      "post": {
+        "description": "Refills a prescription or a specific medication",
+        "operationId": "PrescriptionController_refillPrescription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "medicationIndex",
+            "required": false,
+            "in": "query",
+            "description": "Index of medication to refill",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prescription refilled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prescription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Refill prescription",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/{id}/dispensation": {
+      "post": {
+        "description": "Records a medication dispensation",
+        "operationId": "PrescriptionController_recordDispensation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pharmacy": {
+                    "type": "string"
+                  },
+                  "pharmacist": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dispensation recorded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prescription"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Record dispensation",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/{id}/cancel": {
+      "patch": {
+        "description": "Cancels a prescription",
+        "operationId": "PrescriptionController_cancelPrescription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prescription cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prescription"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Cancel prescription",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/validate-interactions": {
+      "post": {
+        "description": "Validates potential interactions between medications",
+        "operationId": "PrescriptionController_validateInteractions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "medicationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interaction validation result"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Validate medication interactions",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/{id}/pdf": {
+      "get": {
+        "description": "Downloads the PDF file for a prescription",
+        "operationId": "PrescriptionController_downloadPrescriptionPdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PDF not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Download prescription PDF",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/{id}/pdf-url": {
+      "get": {
+        "description": "Gets a signed URL to download the prescription PDF",
+        "operationId": "PrescriptionController_getPrescriptionPdfUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiresIn",
+            "required": false,
+            "in": "query",
+            "description": "URL expiration in seconds (default: 3600)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL for PDF download",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "expiresIn": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get prescription PDF URL",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/suggestions/attention/{commerceId}/{clientId}/{attentionId}": {
+      "get": {
+        "description": "Gets active prescriptions with matching products and stock availability for an attention",
+        "operationId": "PrescriptionController_getPrescriptionSuggestionsForAttention",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attentionId",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of prescription suggestions with product availability"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get prescription suggestions for attention",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/cie10/search": {
+      "get": {
+        "description": "Search for CIE-10 codes by code or description",
+        "operationId": "CIE10Controller_searchCodes",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search term",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of CIE-10 codes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search CIE-10 codes",
+        "tags": [
+          "cie10"
+        ]
+      }
+    },
+    "/cie10/code/{code}": {
+      "get": {
+        "description": "Retrieves a CIE-10 code by its exact code",
+        "operationId": "CIE10Controller_getCodeByCode",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "description": "CIE-10 code",
+            "schema": {
+              "example": "E11",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CIE-10 code found"
+          },
+          "404": {
+            "description": "CIE-10 code not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get CIE-10 code by code",
+        "tags": [
+          "cie10"
+        ]
+      }
+    },
+    "/cie10/validate/{code}": {
+      "get": {
+        "description": "Validates if a CIE-10 code exists",
+        "operationId": "CIE10Controller_validateCode",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "description": "CIE-10 code to validate",
+            "schema": {
+              "example": "E11",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Validate CIE-10 code",
+        "tags": [
+          "cie10"
+        ]
+      }
+    },
+    "/cie10": {
+      "get": {
+        "description": "Retrieves all CIE-10 codes with pagination",
+        "operationId": "CIE10Controller_getAllCodes",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of CIE-10 codes"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all CIE-10 codes (paginated)",
+        "tags": [
+          "cie10"
+        ]
+      }
+    },
+    "/cie10/chapter/{chapter}": {
+      "get": {
+        "description": "Retrieves all CIE-10 codes for a specific chapter",
+        "operationId": "CIE10Controller_getCodesByChapter",
+        "parameters": [
+          {
+            "name": "chapter",
+            "required": true,
+            "in": "path",
+            "description": "Chapter number (Roman numeral)",
+            "schema": {
+              "example": "IX",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of CIE-10 codes for the chapter"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get CIE-10 codes by chapter",
+        "tags": [
+          "cie10"
+        ]
+      }
+    },
+    "/clinical-alerts": {
+      "post": {
+        "description": "Creates a new clinical alert",
+        "operationId": "ClinicalAlertsController_createAlert",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Alert created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalAlert"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a clinical alert",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/clinical-alerts/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retrieves all alerts for a specific client",
+        "operationId": "ClinicalAlertsController_getAlertsByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of alerts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicalAlert"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get alerts by client",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/clinical-alerts/attention/{commerceId}/{attentionId}": {
+      "get": {
+        "description": "Retrieves all alerts for a specific attention",
+        "operationId": "ClinicalAlertsController_getAlertsByAttention",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attentionId",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of alerts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicalAlert"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get alerts by attention",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/clinical-alerts/{id}/acknowledge": {
+      "patch": {
+        "description": "Marks an alert as acknowledged",
+        "operationId": "ClinicalAlertsController_acknowledgeAlert",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Alert ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert acknowledged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalAlert"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Acknowledge alert",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/clinical-alerts/{id}/resolve": {
+      "patch": {
+        "description": "Marks an alert as resolved",
+        "operationId": "ClinicalAlertsController_resolveAlert",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Alert ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert resolved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalAlert"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Resolve alert",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/clinical-alerts/validate/allergies": {
+      "post": {
+        "description": "Validates allergies for medications",
+        "operationId": "ClinicalAlertsController_checkAllergies",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "medicationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of allergy alerts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicalAlert"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Check allergies",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/clinical-alerts/validate/interactions": {
+      "post": {
+        "description": "Validates drug interactions",
+        "operationId": "ClinicalAlertsController_checkInteractions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "medicationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of interaction alerts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicalAlert"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Check drug interactions",
+        "tags": [
+          "clinical-alerts"
+        ]
+      }
+    },
+    "/medical-exam-order/exams/search": {
+      "get": {
+        "description": "Search for medical exams in the catalog",
+        "operationId": "MedicalExamOrderController_searchExams",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search term",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "laboratory",
+                "imaging",
+                "procedure",
+                "other"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of exams"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search medical exams",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order": {
+      "post": {
+        "description": "Creates a new medical exam order",
+        "operationId": "MedicalExamOrderController_createExamOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExamOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exam order created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExamOrder"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create exam order",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}": {
+      "get": {
+        "description": "Retrieves an exam order by its ID",
+        "operationId": "MedicalExamOrderController_getExamOrderById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exam order found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExamOrder"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get exam order by ID",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retrieves all exam orders for a specific client",
+        "operationId": "MedicalExamOrderController_getExamOrdersByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of exam orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicalExamOrder"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get exam orders by client",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}/status": {
+      "patch": {
+        "description": "Updates the status of an exam order",
+        "operationId": "MedicalExamOrderController_updateOrderStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "scheduled",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ]
+                  },
+                  "scheduledDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExamOrder"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update exam order status",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}/results": {
+      "post": {
+        "description": "Adds results to an exam order",
+        "operationId": "MedicalExamOrderController_addExamResults",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Results added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExamOrder"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Add exam results",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}/pdf": {
+      "get": {
+        "description": "Downloads the PDF file for an exam order",
+        "operationId": "MedicalExamOrderController_downloadExamOrderPdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PDF not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Download exam order PDF",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}/pdf-url": {
+      "get": {
+        "description": "Gets a signed URL to download the exam order PDF",
+        "operationId": "MedicalExamOrderController_getExamOrderPdfUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam order ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiresIn",
+            "required": false,
+            "in": "query",
+            "description": "URL expiration in seconds (default: 3600)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL for PDF download",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "expiresIn": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get exam order PDF URL",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/exam-result": {
+      "post": {
+        "operationId": "ExamResultController_createStructuredResult",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExamResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exam result created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create structured exam result",
+        "tags": [
+          "Exam Result"
+        ]
+      }
+    },
+    "/exam-result/{examOrderId}/compare/{resultId}": {
+      "get": {
+        "operationId": "ExamResultController_compareWithPrevious",
+        "parameters": [
+          {
+            "name": "examOrderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resultId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comparison data"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Compare result with previous results",
+        "tags": [
+          "Exam Result"
+        ]
+      }
+    },
+    "/exam-result-template": {
+      "post": {
+        "operationId": "ExamResultTemplateController_createTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExamResultTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamResultTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create exam result template",
+        "tags": [
+          "Exam Result Template"
+        ]
+      },
+      "get": {
+        "operationId": "ExamResultTemplateController_listTemplates",
+        "parameters": [
+          {
+            "name": "examCode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamResultTemplate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List exam result templates",
+        "tags": [
+          "Exam Result Template"
+        ]
+      }
+    },
+    "/exam-result-template/{id}": {
+      "get": {
+        "operationId": "ExamResultTemplateController_getTemplateById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamResultTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get template by ID",
+        "tags": [
+          "Exam Result Template"
+        ]
+      },
+      "put": {
+        "operationId": "ExamResultTemplateController_updateTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamResultTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update template",
+        "tags": [
+          "Exam Result Template"
+        ]
+      },
+      "delete": {
+        "operationId": "ExamResultTemplateController_deleteTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Template deleted"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete template",
+        "tags": [
+          "Exam Result Template"
+        ]
+      }
+    },
+    "/medical-reference": {
+      "post": {
+        "description": "Creates a new medical reference",
+        "operationId": "MedicalReferenceController_createReference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMedicalReferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reference created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalReference"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create medical reference",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/{id}": {
+      "get": {
+        "description": "Retrieves a medical reference by its ID",
+        "operationId": "MedicalReferenceController_getReferenceById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reference ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reference found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalReference"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get reference by ID",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retrieves all references for a specific client",
+        "operationId": "MedicalReferenceController_getReferencesByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of references",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicalReference"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get references by client",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/{id}/accept": {
+      "patch": {
+        "description": "Accepts a medical reference",
+        "operationId": "MedicalReferenceController_acceptReference",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reference ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "response": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reference accepted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalReference"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Accept reference",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/{id}/attend": {
+      "patch": {
+        "description": "Marks a medical reference as attended and adds return report",
+        "operationId": "MedicalReferenceController_markAsAttended",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reference ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "returnReport": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reference marked as attended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalReference"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark reference as attended",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/{id}/reject": {
+      "patch": {
+        "description": "Rejects a medical reference",
+        "operationId": "MedicalReferenceController_rejectReference",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reference ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reference rejected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalReference"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Reject reference",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/{id}/pdf": {
+      "get": {
+        "description": "Downloads the PDF file for a medical reference",
+        "operationId": "MedicalReferenceController_downloadReferencePdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reference ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PDF not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Download medical reference PDF",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-reference/{id}/pdf-url": {
+      "get": {
+        "description": "Gets a signed URL to download the medical reference PDF",
+        "operationId": "MedicalReferenceController_getReferencePdfUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reference ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiresIn",
+            "required": false,
+            "in": "query",
+            "description": "URL expiration in seconds (default: 3600)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL for PDF download",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "expiresIn": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get medical reference PDF URL",
+        "tags": [
+          "medical-reference"
+        ]
+      }
+    },
+    "/medical-template": {
+      "post": {
+        "description": "Creates a new template for medical records",
+        "operationId": "MedicalTemplateController_createTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMedicalTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new medical template",
+        "tags": [
+          "medical-template"
+        ]
+      }
+    },
+    "/medical-template/{id}": {
+      "patch": {
+        "description": "Updates an existing medical template",
+        "operationId": "MedicalTemplateController_updateTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Template ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMedicalTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update a medical template",
+        "tags": [
+          "medical-template"
+        ]
+      },
+      "get": {
+        "description": "Retrieves a medical template by its ID",
+        "operationId": "MedicalTemplateController_getTemplateById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Template ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get template by ID",
+        "tags": [
+          "medical-template"
+        ]
+      },
+      "delete": {
+        "description": "Soft deletes a medical template",
+        "operationId": "MedicalTemplateController_deleteTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Template ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Template deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete template",
+        "tags": [
+          "medical-template"
+        ]
+      }
+    },
+    "/medical-template/commerce/{commerceId}/doctor/{doctorId}/search": {
+      "get": {
+        "description": "Searches for medical templates with filters",
+        "operationId": "MedicalTemplateController_searchTemplates",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "path",
+            "description": "Doctor ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "searchTerm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "diagnostic",
+                "anamnesis",
+                "evolution",
+                "prescription",
+                "exam_order",
+                "reference",
+                "general"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "commerce",
+                "global"
+              ]
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "favoritesOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of templates"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search templates",
+        "tags": [
+          "medical-template"
+        ]
+      }
+    },
+    "/medical-template/process": {
+      "post": {
+        "description": "Processes a template by replacing variables with values",
+        "operationId": "MedicalTemplateController_processTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "processedContent": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Process template",
+        "tags": [
+          "medical-template"
+        ]
+      }
+    },
+    "/medical-template/{id}/favorite": {
+      "post": {
+        "description": "Marks or unmarks a template as favorite",
+        "operationId": "MedicalTemplateController_toggleFavorite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Template ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorite status toggled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Toggle favorite",
+        "tags": [
+          "medical-template"
+        ]
+      }
+    },
+    "/medical-template/commerce/{commerceId}/doctor/{doctorId}/most-used": {
+      "get": {
+        "description": "Retrieves the most frequently used templates",
+        "operationId": "MedicalTemplateController_getMostUsedTemplates",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "path",
+            "description": "Doctor ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of templates to return",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of most used templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicalTemplate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get most used templates",
+        "tags": [
+          "medical-template"
+        ]
+      }
+    },
+    "/hl7/receive": {
+      "post": {
+        "description": "Receives and processes HL7 messages from laboratories (ORU^R01). Requires API Key in X-API-Key header.",
+        "operationId": "HL7Controller_receiveMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveHL7MessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HL7MessageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid HL7 message format"
+          },
+          "401": {
+            "description": "Invalid or missing API Key"
+          },
+          "404": {
+            "description": "Matching exam order not found"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Receive HL7 message",
+        "tags": [
+          "HL7"
+        ]
+      }
+    },
+    "/hl7/test": {
+      "post": {
+        "description": "Test endpoint to verify HL7 message parsing without processing",
+        "operationId": "HL7Controller_testMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveHL7MessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Test HL7 message parsing",
+        "tags": [
+          "HL7"
+        ]
+      }
+    },
+    "/laboratory": {
+      "post": {
+        "operationId": "LaboratoryController_createLaboratory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLaboratoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Laboratory created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Laboratory"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create laboratory",
+        "tags": [
+          "Laboratory"
+        ]
+      },
+      "get": {
+        "operationId": "LaboratoryController_listLaboratories",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of laboratories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Laboratory"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List laboratories",
+        "tags": [
+          "Laboratory"
+        ]
+      }
+    },
+    "/laboratory/{id}": {
+      "get": {
+        "operationId": "LaboratoryController_getLaboratoryById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Laboratory found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Laboratory"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get laboratory by ID",
+        "tags": [
+          "Laboratory"
+        ]
+      },
+      "put": {
+        "operationId": "LaboratoryController_updateLaboratory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Laboratory updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Laboratory"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update laboratory",
+        "tags": [
+          "Laboratory"
         ]
       }
     },
@@ -10780,6 +14775,87 @@
         "type": "object",
         "properties": {}
       },
+      "CreateTelemedicineSessionDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "ID del paciente"
+          },
+          "doctorId": {
+            "type": "string",
+            "description": "ID del médico"
+          },
+          "attentionId": {
+            "type": "string",
+            "description": "ID de la atención (si existe)"
+          },
+          "patientHistoryId": {
+            "type": "string",
+            "description": "ID del historial médico"
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de sesión",
+            "enum": [
+              "video",
+              "chat",
+              "both"
+            ],
+            "default": "both"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Fecha y hora programada"
+          },
+          "recordingEnabled": {
+            "type": "boolean",
+            "description": "Habilitar grabación",
+            "default": false
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas previas",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "commerceId",
+          "clientId",
+          "doctorId",
+          "type",
+          "scheduledAt"
+        ]
+      },
+      "TelemedicineSession": {
+        "type": "object",
+        "properties": {}
+      },
+      "TelemedicineMessage": {
+        "type": "object",
+        "properties": {}
+      },
+      "PatientHistory": {
+        "type": "object",
+        "properties": {}
+      },
+      "PatientHistoryUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ConsultationHistory": {
+        "type": "object",
+        "properties": {}
+      },
+      "PatientJourneyDto": {
+        "type": "object",
+        "properties": {}
+      },
       "Survey": {
         "type": "object",
         "properties": {}
@@ -10909,7 +14985,8 @@
             "description": "Booking channel",
             "enum": [
               "QR",
-              "MINISITE"
+              "MINISITE",
+              "TELEMEDICINE"
             ],
             "default": "QR"
           },
@@ -10964,6 +15041,21 @@
           "sessionId": {
             "type": "string",
             "description": "Session ID for block reservation"
+          },
+          "type": {
+            "type": "string",
+            "description": "Booking type",
+            "example": "TELEMEDICINE"
+          },
+          "telemedicineConfig": {
+            "type": "object",
+            "description": "Telemedicine configuration",
+            "example": {
+              "type": "VIDEO",
+              "scheduledAt": "2024-01-15T10:00:00Z",
+              "recordingEnabled": false,
+              "notes": "Optional notes"
+            }
           }
         },
         "required": [
@@ -11085,6 +15177,20 @@
                 "$ref": "#/components/schemas/Block"
               }
             ]
+          },
+          "telemedicineSessionId": {
+            "type": "string",
+            "description": "Telemedicine session ID"
+          },
+          "telemedicineConfig": {
+            "type": "object",
+            "description": "Telemedicine configuration",
+            "example": {
+              "type": "video",
+              "scheduledAt": "2024-01-15T10:00:00Z",
+              "recordingEnabled": false,
+              "notes": "Optional notes"
+            }
           }
         },
         "required": [
@@ -11148,6 +15254,16 @@
                 "$ref": "#/components/schemas/BlockDto"
               }
             ]
+          },
+          "telemedicineConfig": {
+            "type": "object",
+            "description": "Telemedicine configuration",
+            "example": {
+              "type": "VIDEO",
+              "scheduledAt": "2024-01-20T10:00:00Z",
+              "recordingEnabled": false,
+              "notes": "Optional notes"
+            }
           }
         },
         "required": [
@@ -11186,19 +15302,896 @@
         "type": "object",
         "properties": {}
       },
-      "PatientHistory": {
-        "type": "object",
-        "properties": {}
-      },
-      "PatientHistoryUpdateDto": {
-        "type": "object",
-        "properties": {}
-      },
       "Company": {
         "type": "object",
         "properties": {}
       },
       "PatientHistoryItem": {
+        "type": "object",
+        "properties": {}
+      },
+      "MedicationCatalog": {
+        "type": "object",
+        "properties": {}
+      },
+      "MedicationItemDto": {
+        "type": "object",
+        "properties": {
+          "medicationId": {
+            "type": "string",
+            "description": "ID del medicamento en el catálogo",
+            "example": "med-123"
+          },
+          "medicationName": {
+            "type": "string",
+            "description": "Nombre del medicamento",
+            "example": "Paracetamol"
+          },
+          "commercialName": {
+            "type": "string",
+            "description": "Nombre comercial",
+            "example": "Tylenol"
+          },
+          "dosage": {
+            "type": "string",
+            "description": "Dosis",
+            "example": "500mg"
+          },
+          "frequency": {
+            "type": "string",
+            "description": "Frecuencia",
+            "example": "cada 8 horas"
+          },
+          "duration": {
+            "type": "number",
+            "description": "Duración en días",
+            "example": 7
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Cantidad total",
+            "example": 21
+          },
+          "route": {
+            "type": "string",
+            "description": "Vía de administración",
+            "example": "oral"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Indicaciones especiales"
+          },
+          "refillsAllowed": {
+            "type": "number",
+            "description": "Número de refuerzos permitidos",
+            "example": 2
+          }
+        },
+        "required": [
+          "medicationId",
+          "medicationName",
+          "dosage",
+          "frequency",
+          "duration",
+          "quantity",
+          "route",
+          "refillsAllowed"
+        ]
+      },
+      "CreatePrescriptionDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio",
+            "example": "commerce-123"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "ID del cliente/paciente",
+            "example": "client-123"
+          },
+          "attentionId": {
+            "type": "string",
+            "description": "ID de la atención asociada",
+            "example": "attention-123"
+          },
+          "patientHistoryId": {
+            "type": "string",
+            "description": "ID del prontuario asociado"
+          },
+          "doctorId": {
+            "type": "string",
+            "description": "ID del médico",
+            "example": "doctor-123"
+          },
+          "doctorName": {
+            "type": "string",
+            "description": "Nombre del médico",
+            "example": "Dr. Juan Pérez"
+          },
+          "doctorLicense": {
+            "type": "string",
+            "description": "Número de licencia médica"
+          },
+          "medications": {
+            "description": "Lista de medicamentos",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicationItemDto"
+            }
+          },
+          "date": {
+            "type": "string",
+            "description": "Fecha de la receta",
+            "example": "2024-01-15T10:00:00Z"
+          },
+          "validUntil": {
+            "type": "string",
+            "description": "Fecha de validez",
+            "example": "2024-01-30T10:00:00Z"
+          },
+          "observations": {
+            "type": "string",
+            "description": "Observaciones"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Instrucciones generales"
+          }
+        },
+        "required": [
+          "commerceId",
+          "clientId",
+          "attentionId",
+          "doctorId",
+          "doctorName",
+          "medications",
+          "date",
+          "validUntil"
+        ]
+      },
+      "Prescription": {
+        "type": "object",
+        "properties": {}
+      },
+      "Object": {
+        "type": "object",
+        "properties": {}
+      },
+      "ClinicalAlert": {
+        "type": "object",
+        "properties": {}
+      },
+      "ExamItemDto": {
+        "type": "object",
+        "properties": {
+          "examId": {
+            "type": "string",
+            "description": "ID del examen",
+            "example": "exam-123"
+          },
+          "examName": {
+            "type": "string",
+            "description": "Nombre del examen",
+            "example": "Hemograma completo"
+          },
+          "examCode": {
+            "type": "string",
+            "description": "Código del examen"
+          },
+          "preparation": {
+            "type": "string",
+            "description": "Preparación requerida"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Instrucciones especiales"
+          }
+        },
+        "required": [
+          "examId",
+          "examName"
+        ]
+      },
+      "CreateExamOrderDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio",
+            "example": "commerce-123"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "ID del cliente/paciente",
+            "example": "client-123"
+          },
+          "attentionId": {
+            "type": "string",
+            "description": "ID de la atención asociada",
+            "example": "attention-123"
+          },
+          "patientHistoryId": {
+            "type": "string",
+            "description": "ID del prontuario asociado"
+          },
+          "doctorId": {
+            "type": "string",
+            "description": "ID del médico",
+            "example": "doctor-123"
+          },
+          "doctorName": {
+            "type": "string",
+            "description": "Nombre del médico",
+            "example": "Dr. Juan Pérez"
+          },
+          "exams": {
+            "description": "Lista de exámenes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExamItemDto"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de examen",
+            "enum": [
+              "laboratory",
+              "imaging",
+              "procedure",
+              "other"
+            ],
+            "example": "laboratory"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Prioridad",
+            "enum": [
+              "routine",
+              "urgent",
+              "emergency"
+            ],
+            "example": "routine"
+          },
+          "clinicalJustification": {
+            "type": "string",
+            "description": "Justificación clínica"
+          },
+          "scheduledDate": {
+            "type": "string",
+            "description": "Fecha programada"
+          },
+          "laboratoryId": {
+            "type": "string",
+            "description": "ID del laboratorio"
+          },
+          "laboratoryName": {
+            "type": "string",
+            "description": "Nombre del laboratorio"
+          },
+          "hl7OrderNumber": {
+            "type": "string",
+            "description": "Número de orden para HL7"
+          },
+          "hl7PatientId": {
+            "type": "string",
+            "description": "ID de paciente para HL7"
+          }
+        },
+        "required": [
+          "commerceId",
+          "clientId",
+          "attentionId",
+          "doctorId",
+          "doctorName",
+          "exams",
+          "type",
+          "priority"
+        ]
+      },
+      "MedicalExamOrder": {
+        "type": "object",
+        "properties": {}
+      },
+      "ExamValueDto": {
+        "type": "object",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "description": "Nombre del parámetro"
+          },
+          "value": {
+            "type": "object",
+            "description": "Valor del parámetro"
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unidad de medida"
+          },
+          "referenceRange": {
+            "type": "string",
+            "description": "Rango de referencia"
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado del valor",
+            "enum": [
+              "normal",
+              "high",
+              "low",
+              "critical"
+            ]
+          },
+          "loincCode": {
+            "type": "string",
+            "description": "Código LOINC del parámetro"
+          }
+        },
+        "required": [
+          "parameter",
+          "value"
+        ]
+      },
+      "CreateExamResultDto": {
+        "type": "object",
+        "properties": {
+          "examOrderId": {
+            "type": "string",
+            "description": "ID de la orden de examen"
+          },
+          "examName": {
+            "type": "string",
+            "description": "Nombre del examen"
+          },
+          "examCode": {
+            "type": "string",
+            "description": "Código del examen (LOINC)"
+          },
+          "performedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Fecha de realización del examen"
+          },
+          "resultDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Fecha del resultado"
+          },
+          "values": {
+            "description": "Valores del examen",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExamValueDto"
+            }
+          },
+          "observations": {
+            "type": "string",
+            "description": "Observaciones"
+          },
+          "interpretation": {
+            "type": "string",
+            "description": "Interpretación del médico"
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado del resultado",
+            "enum": [
+              "preliminary",
+              "final",
+              "corrected"
+            ]
+          },
+          "attachments": {
+            "description": "URLs de documentos adjuntos",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "normalRange": {
+            "type": "string",
+            "description": "Rango normal general"
+          }
+        },
+        "required": [
+          "examOrderId",
+          "examName",
+          "resultDate",
+          "values"
+        ]
+      },
+      "ExamResult": {
+        "type": "object",
+        "properties": {}
+      },
+      "ExamParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre del parámetro"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código LOINC del parámetro"
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unidad de medida"
+          },
+          "dataType": {
+            "type": "string",
+            "description": "Tipo de dato",
+            "enum": [
+              "numeric",
+              "text",
+              "boolean",
+              "date"
+            ]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Si el parámetro es requerido"
+          },
+          "order": {
+            "type": "number",
+            "description": "Orden de visualización"
+          }
+        },
+        "required": [
+          "name",
+          "unit",
+          "dataType",
+          "required",
+          "order"
+        ]
+      },
+      "CreateExamResultTemplateDto": {
+        "type": "object",
+        "properties": {
+          "examCode": {
+            "type": "string",
+            "description": "Código del examen (LOINC)"
+          },
+          "examName": {
+            "type": "string",
+            "description": "Nombre del examen"
+          },
+          "examType": {
+            "type": "string",
+            "description": "Tipo de examen"
+          },
+          "parameters": {
+            "description": "Parámetros del examen",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExamParameterDto"
+            }
+          },
+          "normalRanges": {
+            "type": "object",
+            "description": "Rangos normales por parámetro"
+          },
+          "criticalValues": {
+            "type": "object",
+            "description": "Valores críticos por parámetro"
+          },
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "ID del negocio"
+          }
+        },
+        "required": [
+          "examCode",
+          "examName",
+          "parameters"
+        ]
+      },
+      "ExamResultTemplate": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateMedicalReferenceDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio",
+            "example": "commerce-123"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "ID del cliente/paciente",
+            "example": "client-123"
+          },
+          "attentionId": {
+            "type": "string",
+            "description": "ID de la atención asociada",
+            "example": "attention-123"
+          },
+          "patientHistoryId": {
+            "type": "string",
+            "description": "ID del prontuario asociado"
+          },
+          "doctorOriginId": {
+            "type": "string",
+            "description": "ID del médico origen",
+            "example": "doctor-123"
+          },
+          "doctorOriginName": {
+            "type": "string",
+            "description": "Nombre del médico origen",
+            "example": "Dr. Juan Pérez"
+          },
+          "doctorDestinationId": {
+            "type": "string",
+            "description": "ID del médico destino"
+          },
+          "doctorDestinationName": {
+            "type": "string",
+            "description": "Nombre del médico destino"
+          },
+          "specialtyDestination": {
+            "type": "string",
+            "description": "Especialidad destino",
+            "example": "Cardiología"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo de la referencia",
+            "example": "Evaluación cardiológica"
+          },
+          "presumptiveDiagnosis": {
+            "type": "string",
+            "description": "Diagnóstico presuntivo"
+          },
+          "studiesPerformed": {
+            "type": "string",
+            "description": "Estudios realizados"
+          },
+          "currentTreatment": {
+            "type": "string",
+            "description": "Tratamiento actual"
+          },
+          "urgency": {
+            "type": "string",
+            "description": "Urgencia",
+            "enum": [
+              "routine",
+              "preferred",
+              "urgent"
+            ],
+            "example": "routine"
+          },
+          "attachedDocuments": {
+            "description": "Documentos adjuntos",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "commerceId",
+          "clientId",
+          "attentionId",
+          "doctorOriginId",
+          "doctorOriginName",
+          "specialtyDestination",
+          "reason",
+          "urgency"
+        ]
+      },
+      "MedicalReference": {
+        "type": "object",
+        "properties": {}
+      },
+      "TemplateVariableDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "date",
+              "number",
+              "select"
+            ]
+          },
+          "defaultValue": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "type",
+          "required"
+        ]
+      },
+      "CreateMedicalTemplateDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string"
+          },
+          "doctorId": {
+            "type": "string"
+          },
+          "doctorName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "diagnostic",
+              "anamnesis",
+              "evolution",
+              "prescription",
+              "exam_order",
+              "reference",
+              "general"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateVariableDto"
+            }
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "commerce",
+              "global"
+            ],
+            "default": "personal"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isFavorite": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "commerceId",
+          "doctorId",
+          "name",
+          "type",
+          "content",
+          "variables",
+          "scope"
+        ]
+      },
+      "MedicalTemplate": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateMedicalTemplateDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string"
+          },
+          "doctorId": {
+            "type": "string"
+          },
+          "doctorName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "diagnostic",
+              "anamnesis",
+              "evolution",
+              "prescription",
+              "exam_order",
+              "reference",
+              "general"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateVariableDto"
+            }
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "commerce",
+              "global"
+            ],
+            "default": "personal"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isFavorite": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "ProcessTemplateDto": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "templateId"
+        ]
+      },
+      "ReceiveHL7MessageDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "HL7 message in raw format",
+            "example": "MSH|^~\\&|LAB|HOSPITAL|ESV|CLINIC|20240101120000||ORU^R01|12345|P|2.5\rOBR|1||12345^LAB|..."
+          },
+          "laboratoryId": {
+            "type": "string",
+            "description": "Laboratory ID sending the message"
+          },
+          "laboratoryName": {
+            "type": "string",
+            "description": "Laboratory name"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "HL7MessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Success status"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "Message ID"
+          },
+          "examOrderIds": {
+            "description": "Processed exam order IDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if any"
+          }
+        },
+        "required": [
+          "success",
+          "messageId"
+        ]
+      },
+      "CreateLaboratoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre del laboratorio"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código único del laboratorio"
+          },
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio asociado"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "ID del negocio asociado"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email de contacto"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Teléfono de contacto"
+          },
+          "address": {
+            "type": "string",
+            "description": "Dirección"
+          },
+          "hl7Enabled": {
+            "type": "boolean",
+            "description": "Habilitado para HL7",
+            "default": false
+          },
+          "hl7ApiKey": {
+            "type": "string",
+            "description": "API Key para HL7"
+          },
+          "hl7Endpoint": {
+            "type": "string",
+            "description": "Endpoint HL7"
+          },
+          "integrationType": {
+            "type": "string",
+            "description": "Tipo de integración",
+            "enum": [
+              "hl7",
+              "api",
+              "manual"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "hl7Enabled"
+        ]
+      },
+      "Laboratory": {
         "type": "object",
         "properties": {}
       },

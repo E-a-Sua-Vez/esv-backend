@@ -187,6 +187,7 @@ export class CommerceController {
       contactInfo,
       serviceInfo,
       category,
+      telemedicineRecordingEnabled,
     } = body;
     return this.commerceService.updateCommerce(
       user,
@@ -200,7 +201,8 @@ export class CommerceController {
       localeInfo,
       contactInfo,
       serviceInfo,
-      category
+      category,
+      telemedicineRecordingEnabled
     );
   }
 

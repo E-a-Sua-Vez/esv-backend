@@ -79,10 +79,15 @@ export class BookingController {
       servicesDetails,
       clientId,
       sessionId,
+      type,
+      telemedicineConfig,
     } = body;
     // Convert DTOs to plain objects for Firestore serialization
     const plainBlock = block ? JSON.parse(JSON.stringify(block)) : undefined;
     const plainUser = user ? JSON.parse(JSON.stringify(user)) : undefined;
+    const plainTelemedicineConfig = telemedicineConfig
+      ? JSON.parse(JSON.stringify(telemedicineConfig))
+      : undefined;
     return this.bookingService.createBooking(
       queueId,
       channel,
@@ -93,7 +98,9 @@ export class BookingController {
       servicesId,
       servicesDetails,
       clientId,
-      sessionId
+      sessionId,
+      type,
+      plainTelemedicineConfig
     );
   }
 
@@ -278,10 +285,19 @@ export class BookingController {
     @Body() body: EditBookingDto
   ): Promise<Booking> {
     const { id } = params;
-    const { date, block } = body;
+    const { date, block, telemedicineConfig } = body;
     // Convert DTO to plain object for Firestore serialization
     const plainBlock = block ? JSON.parse(JSON.stringify(block)) : undefined;
-    return this.bookingService.editBookingDateAndBlock(user, id, date, plainBlock);
+    const plainTelemedicineConfig = telemedicineConfig
+      ? JSON.parse(JSON.stringify(telemedicineConfig))
+      : undefined;
+    return this.bookingService.editBookingDateAndBlock(
+      user,
+      id,
+      date,
+      plainBlock,
+      plainTelemedicineConfig
+    );
   }
 
   @UseGuards(AuthGuard)

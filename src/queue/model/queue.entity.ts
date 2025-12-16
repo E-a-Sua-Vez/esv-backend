@@ -60,4 +60,5 @@ export class Queue {
   service?: Service;
   servicesId?: string[];
   services?: Service[];
+  telemedicineEnabled?: boolean;
 }

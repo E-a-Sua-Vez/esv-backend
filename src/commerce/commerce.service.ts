@@ -292,7 +292,8 @@ export class CommerceService {
     localeInfo: LocaleInfo,
     contactInfo: ContactInfo,
     serviceInfo: ServiceInfo,
-    category: Category
+    category: Category,
+    telemedicineRecordingEnabled?: boolean
   ): Promise<Commerce> {
     const commerce = await this.getCommerce(id);
     if (tag) {
@@ -325,6 +326,9 @@ export class CommerceService {
     }
     if (serviceInfo !== undefined) {
       commerce.serviceInfo = serviceInfo;
+    }
+    if (telemedicineRecordingEnabled !== undefined) {
+      commerce.telemedicineRecordingEnabled = telemedicineRecordingEnabled;
     }
     const updatedCommerce = await this.update(user, commerce);
     this.logger.info('Commerce updated successfully', {

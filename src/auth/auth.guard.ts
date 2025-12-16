@@ -120,8 +120,13 @@ export class AuthGuard implements CanActivate {
       }
 
       // Set user information in request
+      // Populate user object with id (uid) for compatibility with @User() decorator
       if (decodeValue.email) {
-        request['user'] = decodeValue.email;
+        request['user'] = {
+          email: decodeValue.email,
+          id: decodeValue.uid,
+          userId: decodeValue.uid,
+        };
         request['userId'] = decodeValue.uid;
       }
 

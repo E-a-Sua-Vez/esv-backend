@@ -14,6 +14,7 @@ import { ModuleModule } from '../module/module.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PackageModule } from '../package/package.module';
 import { QueueModule } from '../queue/queue.module';
+import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
 import { WaitlistModule } from '../waitlist/waitlist.module';
 
@@ -42,6 +43,7 @@ import { Booking } from './model/booking.entity';
     forwardRef(() => PackageModule),
     forwardRef(() => DocumentsModule),
     forwardRef(() => BookingBlockNumberUsedModule),
+    forwardRef(() => TelemedicineModule),
   ],
   providers: [BookingService, BookingDefaultBuilder],
   exports: [BookingService],

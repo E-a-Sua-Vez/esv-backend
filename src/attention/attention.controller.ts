@@ -113,10 +113,15 @@ export class AttentionController {
       servicesDetails,
       clientId,
       createdAt,
+      telemedicineConfig,
     } = body;
     // Convert createdAt string to Date if provided (for historical data generation)
     // If not provided, undefined will be passed and service will use current date (backward compatible)
     const date = createdAt ? new Date(createdAt) : undefined;
+    // Convert telemedicineConfig to plain object for Firestore serialization
+    const plainTelemedicineConfig = telemedicineConfig
+      ? JSON.parse(JSON.stringify(telemedicineConfig))
+      : undefined;
     return this.attentionService.createAttention(
       queueId,
       collaboratorId,
@@ -129,7 +134,11 @@ export class AttentionController {
       undefined,
       servicesId,
       servicesDetails,
-      clientId
+      clientId,
+      undefined,
+      undefined,
+      undefined,
+      plainTelemedicineConfig
     );
   }
 

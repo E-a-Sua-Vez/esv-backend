@@ -68,4 +68,23 @@ export class BookingDetailsDto {
 
   @ApiPropertyOptional({ description: 'Time block information', type: Block })
   block?: Block;
+
+  @ApiPropertyOptional({ description: 'Telemedicine session ID' })
+  telemedicineSessionId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Telemedicine configuration',
+    example: {
+      type: 'video',
+      scheduledAt: '2024-01-15T10:00:00Z',
+      recordingEnabled: false,
+      notes: 'Optional notes',
+    },
+  })
+  telemedicineConfig?: {
+    type: 'video' | 'chat' | 'both';
+    scheduledAt: Date | string;
+    recordingEnabled?: boolean;
+    notes?: string;
+  };
 }

@@ -56,6 +56,9 @@ export class Attention {
   processedAt: Date;
   confirmedBy: string;
   bookingId: string;
+  patientHistoryId?: string; // Link to PatientHistory record
+  controlId?: string; // If this attention is from a control/comeback
+  originalAttentionId?: string; // If this is a comeback, link to original attention
   block?: Block;
   servicesDetails: object[];
   packageId?: string;
@@ -66,4 +69,18 @@ export class Attention {
   termsConditionsToAcceptedAt?: Date;
   surveyPostAttentionDateScheduled?: string;
   notificationSurveySent = false;
+  telemedicineSessionId?: string; // ID de la sesión de telemedicina asociada
+  telemedicineConfig?: {
+    type: string;
+    scheduledAt: Date | string;
+    recordingEnabled?: boolean;
+    notes?: string;
+  }; // Configuración de telemedicina para mostrar en detalles
+  telemedicineInfo?: {
+    patientConnectedAt?: Date | string;
+    doctorConnectedAt?: Date | string;
+    endedAt?: Date | string;
+    endedBy?: string;
+    duration?: number; // Duración en minutos
+  }; // Información de tracking de la sesión de telemedicina
 }

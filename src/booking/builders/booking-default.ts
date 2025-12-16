@@ -45,7 +45,14 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     status?: BookingStatus,
     servicesId?: string[],
     servicesDetails?: object[],
-    clientId?: string
+    clientId?: string,
+    type?: string,
+    telemedicineConfig?: {
+      type: 'VIDEO' | 'CHAT' | 'BOTH';
+      scheduledAt: string;
+      recordingEnabled?: boolean;
+      notes?: string;
+    }
   ): Promise<Booking> {
     const booking = new Booking();
     booking.status = BookingStatus.CONFIRMED;
@@ -56,7 +63,21 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
         booking.status = BookingStatus.PENDING;
       }
     }
-    booking.type = BookingType.STANDARD;
+    booking.type = type === 'TELEMEDICINE' ? BookingType.TELEMEDICINE : BookingType.STANDARD;
+    if (telemedicineConfig) {
+      // Convert type to lowercase to match entity format
+      const configType = telemedicineConfig.type?.toLowerCase() as 'video' | 'chat' | 'both';
+      // Use commerce configuration for recordingEnabled
+      const recordingEnabled = commerce.telemedicineRecordingEnabled || false;
+      booking.telemedicineConfig = {
+        type: configType || 'video',
+        scheduledAt: telemedicineConfig.scheduledAt
+          ? new Date(telemedicineConfig.scheduledAt)
+          : new Date(),
+        recordingEnabled: recordingEnabled, // Usar configuración del comercio
+        notes: telemedicineConfig.notes || '',
+      };
+    }
     booking.createdAt = new Date();
     booking.queueId = queue.id;
     booking.date = date;

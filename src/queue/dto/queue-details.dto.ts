@@ -21,4 +21,5 @@ export class QueueDetailsDto {
   serviceInfo: ServiceInfo;
   servicesId: string[];
   services: Service[];
+  telemedicineEnabled?: boolean;
 }

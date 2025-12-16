@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, forwardRef } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
@@ -14,6 +14,7 @@ import { PackageStatus } from 'src/package/model/package-status.enum';
 import { PackageType } from 'src/package/model/package-type.enum';
 import { PackageService } from 'src/package/package.service';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
+import { PaymentMethod } from 'src/payment/model/payment-method.enum';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 
 import { CollaboratorService } from '../collaborator/collaborator.service';
@@ -25,8 +26,10 @@ import { ModuleService } from '../module/module.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
 import { QueueService } from '../queue/queue.service';
+import { ServiceService } from '../service/service.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 import { DateModel } from '../shared/utils/date.model';
+import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { PersonalInfo, User } from '../user/model/user.entity';
 import { UserService } from '../user/user.service';
 
@@ -34,6 +37,7 @@ import { AttentionDefaultBuilder } from './builders/attention-default';
 import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 import { AttentionSurveyBuilder } from './builders/attention-survey';
+import { AttentionTelemedicineBuilder } from './builders/attention-telemedicine';
 import { AttentionDetailsDto } from './dto/attention-details.dto';
 import AttentionUpdated from './events/AttentionUpdated';
 import { AttentionChannel } from './model/attention-channel.enum';
@@ -57,10 +61,14 @@ export class AttentionService {
     private attentionSurveyBuilder: AttentionSurveyBuilder,
     private attentionNoDeviceBuilder: AttentionNoDeviceBuilder,
     private attentionReserveBuilder: AttentionReserveBuilder,
+    private attentionTelemedicineBuilder: AttentionTelemedicineBuilder,
     private commerceService: CommerceService,
     private packageService: PackageService,
     private incomeService: IncomeService,
+    private serviceService: ServiceService,
     private documentsService: DocumentsService,
+    @Inject(forwardRef(() => TelemedicineService))
+    private telemedicineService: TelemedicineService,
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService
   ) {
@@ -69,6 +77,17 @@ export class AttentionService {
 
   public async getAttentionById(id: string): Promise<Attention> {
     return await this.attentionRepository.findById(id);
+  }
+
+  private async hasIncomeForAttention(attentionId: string): Promise<boolean> {
+    try {
+      const incomes = await this.incomeService.getIncomesByAttentionId(attentionId);
+      return incomes && incomes.length > 0;
+    } catch (error) {
+      // If there's an error checking, assume no income exists to avoid duplicates
+      this.logger.warn(`Error checking income for attention ${attentionId}: ${error.message}`);
+      return false;
+    }
   }
 
   public async getAttentionDetails(id: string): Promise<AttentionDetailsDto> {
@@ -103,6 +122,10 @@ export class AttentionService {
       attentionDetailsDto.clientId = attention.clientId;
       attentionDetailsDto.surveyPostAttentionDateScheduled =
         attention.surveyPostAttentionDateScheduled;
+      attentionDetailsDto.processedAt = attention.processedAt;
+      attentionDetailsDto.telemedicineSessionId = attention.telemedicineSessionId;
+      attentionDetailsDto.telemedicineConfig = attention.telemedicineConfig;
+      attentionDetailsDto.telemedicineInfo = attention.telemedicineInfo;
       if (attention.queueId) {
         attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
         attentionDetailsDto.commerce = await this.commerceService.getCommerceById(
@@ -164,6 +187,7 @@ export class AttentionService {
       attentionDetailsDto.clientId = attention.clientId;
       attentionDetailsDto.surveyPostAttentionDateScheduled =
         attention.surveyPostAttentionDateScheduled;
+      attentionDetailsDto.processedAt = attention.processedAt;
       if (attention.userId !== undefined) {
         attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -365,7 +389,13 @@ export class AttentionService {
     clientId?: string,
     termsConditionsToAcceptCode?: string,
     termsConditionsAcceptedCode?: string,
-    termsConditionsToAcceptedAt?: Date
+    termsConditionsToAcceptedAt?: Date,
+    telemedicineConfig?: {
+      type: any;
+      scheduledAt: Date | string;
+      recordingEnabled?: boolean;
+      notes?: string;
+    }
   ): Promise<Attention> {
     try {
       let attentionCreated;
@@ -400,7 +430,41 @@ export class AttentionService {
         queue.commerceId,
         'only-survey'
       );
-      if (type && type === AttentionType.NODEVICE) {
+
+      // Handle TELEMEDICINE type - similar to bookings: if telemedicineConfig is provided, set type to TELEMEDICINE
+      // Also handle explicit TELEMEDICINE type
+      const isTelemedicine = (type && type === AttentionType.TELEMEDICINE) || !!telemedicineConfig;
+
+      if (isTelemedicine) {
+        if (!telemedicineConfig) {
+          throw new HttpException(
+            'Telemedicine configuration is required for TELEMEDICINE attention type',
+            HttpStatus.BAD_REQUEST
+          );
+        }
+        // Convert scheduledAt to Date if it's a string
+        const scheduledAtDate =
+          telemedicineConfig.scheduledAt instanceof Date
+            ? telemedicineConfig.scheduledAt
+            : new Date(telemedicineConfig.scheduledAt);
+
+        attentionCreated = await this.attentionTelemedicineBuilder.create(
+          queue,
+          collaboratorId,
+          channel,
+          userId,
+          date,
+          servicesId,
+          servicesDetails,
+          clientId,
+          {
+            type: telemedicineConfig.type as any,
+            scheduledAt: scheduledAtDate,
+            recordingEnabled: telemedicineConfig.recordingEnabled,
+            notes: telemedicineConfig.notes,
+          }
+        );
+      } else if (type && type === AttentionType.NODEVICE) {
         if (block && block.number) {
           attentionCreated = await this.attentionReserveBuilder.create(
             queue,
@@ -773,6 +837,84 @@ export class AttentionService {
       }
       this.postAttentionEmail(attentionDetails, attentionCommerce);
       const attentionFinished = await this.update(user, attention);
+
+      // Automatically charge pesquisa (survey) when attention is marked as attended
+      try {
+        const hasIncome = await this.hasIncomeForAttention(attentionId);
+        // Check if this is a survey attention (SURVEY_ONLY type or has surveyId)
+        const isSurveyAttention =
+          attention.type === AttentionType.SURVEY_ONLY ||
+          (attention.surveyId && attention.surveyId.trim().length > 0);
+
+        if (!hasIncome && isSurveyAttention) {
+          let totalAmount = 0;
+
+          // Try to get price from services if available
+          if (attention.servicesId && attention.servicesId.length > 0) {
+            const services = await this.serviceService.getServicesById(attention.servicesId);
+            for (const service of services) {
+              if (service && service.serviceInfo && service.serviceInfo.price) {
+                totalAmount += service.serviceInfo.price;
+              }
+            }
+          }
+
+          // If no service price found, try to get from serviceId
+          if (totalAmount === 0 && attention.serviceId) {
+            const service = await this.serviceService.getServiceById(attention.serviceId);
+            if (service && service.serviceInfo && service.serviceInfo.price) {
+              totalAmount = service.serviceInfo.price;
+            }
+          }
+
+          // Only create income if there's a price > 0
+          if (totalAmount > 0) {
+            await this.incomeService.createIncome(
+              user || 'system',
+              attention.commerceId,
+              IncomeType.UNIQUE,
+              IncomeStatus.CONFIRMED,
+              attention.bookingId,
+              attention.id,
+              attention.clientId,
+              attention.packageId,
+              totalAmount,
+              totalAmount,
+              1, // installments
+              PaymentMethod.OTHER, // Default payment method for automatic charges
+              0, // commission
+              `Cobrança automática de pesquisa - Atenção ${attention.number}`,
+              '', // fiscalNote
+              '', // promotionalCode
+              '', // transactionId
+              '', // bankEntity
+              { user: user || 'system', title: 'Pesquisa Automática' } // incomeInfo
+            );
+            this.logger.info('Automatic income created for survey attention', {
+              attentionId,
+              totalAmount,
+              attentionType: attention.type,
+              hasSurveyId: !!attention.surveyId,
+              user,
+            });
+          } else {
+            this.logger.warn('Survey attention has no price configured', {
+              attentionId,
+              attentionType: attention.type,
+              hasServices: !!(attention.servicesId && attention.servicesId.length > 0),
+              hasServiceId: !!attention.serviceId,
+            });
+          }
+        }
+      } catch (error) {
+        // Log error but don't fail the attention finish process
+        this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+          attentionId,
+          operation: 'createAutomaticIncome',
+          user,
+        });
+      }
+
       this.logger.info('Attention finished', {
         attentionId,
         commerceId: attention.commerceId,
@@ -1226,6 +1368,25 @@ export class AttentionService {
         attention.cancelled = true;
         attention.cancelledAt = new Date();
         const attentionCancelled = await this.update(user, attention);
+
+        // Cancel telemedicine session if exists
+        if (attentionCancelled.telemedicineSessionId) {
+          try {
+            await this.telemedicineService.cancelSession(
+              attentionCancelled.telemedicineSessionId,
+              user
+            );
+            this.logger.log(
+              `[AttentionService] Cancelled telemedicine session ${attentionCancelled.telemedicineSessionId} for cancelled attention ${attentionCancelled.id}`
+            );
+          } catch (error) {
+            this.logger.error(
+              `[AttentionService] Failed to cancel telemedicine session ${attentionCancelled.telemedicineSessionId}: ${error.message}`
+            );
+            // Don't throw, continue with attention cancellation
+          }
+        }
+
         await this.attentionCancelWhatsapp(attentionCancelled.id);
         const packs = await this.packageService.getPackageByCommerceIdAndClientId(
           attentionCancelled.commerceId,
@@ -1255,10 +1416,31 @@ export class AttentionService {
       const attentions = await this.attentionRepository
         .whereIn('status', [AttentionStatus.PENDING, AttentionStatus.PROCESSING])
         .find();
-      attentions.forEach(async attention => {
+
+      // Cancel telemedicine sessions for all cancelled attentions
+      for (const attention of attentions) {
         attention.status = AttentionStatus.CANCELLED;
-        await this.update('ett', attention);
-      });
+        const attentionCancelled = await this.update('ett', attention);
+
+        // Cancel telemedicine session if exists
+        if (attentionCancelled.telemedicineSessionId) {
+          try {
+            await this.telemedicineService.cancelSession(
+              attentionCancelled.telemedicineSessionId,
+              'ett'
+            );
+            this.logger.log(
+              `[AttentionService] Cancelled telemedicine session ${attentionCancelled.telemedicineSessionId} for cancelled attention ${attentionCancelled.id}`
+            );
+          } catch (error) {
+            this.logger.error(
+              `[AttentionService] Failed to cancel telemedicine session ${attentionCancelled.telemedicineSessionId}: ${error.message}`
+            );
+            // Don't throw, continue with attention cancellation
+          }
+        }
+      }
+
       return 'Las atenciones pendientes fueron canceladas exitosamente';
     } catch (error) {
       throw new HttpException(

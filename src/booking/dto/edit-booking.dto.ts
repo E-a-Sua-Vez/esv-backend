@@ -18,4 +18,22 @@ export class EditBookingDto {
   @IsObject()
   @IsOptional()
   block?: BlockDto;
+
+  @ApiPropertyOptional({
+    description: 'Telemedicine configuration',
+    example: {
+      type: 'VIDEO',
+      scheduledAt: '2024-01-20T10:00:00Z',
+      recordingEnabled: false,
+      notes: 'Optional notes',
+    },
+  })
+  @IsObject()
+  @IsOptional()
+  telemedicineConfig?: {
+    type: 'VIDEO' | 'CHAT' | 'BOTH';
+    scheduledAt: string;
+    recordingEnabled?: boolean;
+    notes?: string;
+  };
 }

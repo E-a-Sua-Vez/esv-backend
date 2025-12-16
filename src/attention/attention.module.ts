@@ -11,6 +11,7 @@ import { IncomeModule } from '../income/income.module';
 import { ModuleModule } from '../module/module.module';
 import { NotificationModule } from '../notification/notification.module';
 import { QueueModule } from '../queue/queue.module';
+import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
 
 import { AttentionController } from './attention.controller';
@@ -19,6 +20,7 @@ import { AttentionDefaultBuilder } from './builders/attention-default';
 import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
 import { AttentionReserveBuilder } from './builders/attention-reserve';
 import { AttentionSurveyBuilder } from './builders/attention-survey';
+import { AttentionTelemedicineBuilder } from './builders/attention-telemedicine';
 import { Attention } from './model/attention.entity';
 
 @Module({
@@ -35,6 +37,7 @@ import { Attention } from './model/attention.entity';
     forwardRef(() => PackageModule),
     forwardRef(() => IncomeModule),
     forwardRef(() => DocumentsModule),
+    forwardRef(() => TelemedicineModule),
   ],
   providers: [
     AttentionService,
@@ -42,6 +45,7 @@ import { Attention } from './model/attention.entity';
     AttentionSurveyBuilder,
     AttentionNoDeviceBuilder,
     AttentionReserveBuilder,
+    AttentionTelemedicineBuilder,
   ],
   exports: [AttentionService],
   controllers: [AttentionController],

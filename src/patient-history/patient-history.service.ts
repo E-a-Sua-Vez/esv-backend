@@ -1,9 +1,12 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { getDateFormatted } from 'src/shared/utils/date';
 
+import { Attention } from '../attention/model/attention.entity';
+
+import { ConsultationHistoryService } from './consultation-history.service';
 import PatientHistoryCreated from './events/PatientHistoryCreated';
 import PatientHistoryUpdated from './events/PatientHistoryUpdated';
 import { PatientHistoryType } from './model/patient-history-type.enum';
@@ -25,7 +28,9 @@ import {
 export class PatientHistoryService {
   constructor(
     @InjectRepository(PatientHistory)
-    private patientHistoryRepository = getRepository(PatientHistory)
+    private patientHistoryRepository = getRepository(PatientHistory),
+    @Inject(forwardRef(() => ConsultationHistoryService))
+    private consultationHistoryService?: ConsultationHistoryService
   ) {}
 
   public async getPatientHistoryById(id: string): Promise<PatientHistory> {
@@ -179,7 +184,7 @@ export class PatientHistoryService {
     personalData: PersonalData,
     consultationReason: ConsultationReason[],
     currentIllness: CurrentIllness[],
-    patientAnamnese: PatientAnamnese,
+    patientAnamnese: PatientAnamnese | PatientAnamnese[],
     functionalExam: FunctionalExam[],
     physicalExam: PhysicalExam[],
     diagnostic: Diagnostic[],
@@ -196,7 +201,12 @@ export class PatientHistoryService {
     patientHistory.personalData = personalData;
     patientHistory.consultationReason = consultationReason;
     patientHistory.currentIllness = currentIllness;
-    patientHistory.patientAnamnese = patientAnamnese;
+    // Convert PatientAnamnese to array if single object
+    patientHistory.patientAnamnese = Array.isArray(patientAnamnese)
+      ? patientAnamnese
+      : patientAnamnese
+      ? [patientAnamnese]
+      : [];
     patientHistory.functionalExam = functionalExam;
     patientHistory.physicalExam = physicalExam;
     patientHistory.diagnostic = diagnostic;
@@ -212,6 +222,63 @@ export class PatientHistoryService {
     patientHistory.modifiedAt = new Date();
     patientHistory.modifiedBy = user;
     const patientHistoryCreated = await this.patientHistoryRepository.create(patientHistory);
+
+    // Create consultation history record
+    if (this.consultationHistoryService && lastAttentionId) {
+      try {
+        // Fetch attention to get relationship fields
+        let bookingId: string | undefined;
+        let controlId: string | undefined;
+        let originalAttentionId: string | undefined;
+        try {
+          const attentionRepository = getRepository(Attention);
+          const attention = await attentionRepository.findById(lastAttentionId);
+          if (attention) {
+            bookingId = attention.bookingId;
+            controlId = attention.controlId;
+            originalAttentionId = attention.originalAttentionId;
+            // Also update attention with patientHistoryId
+            if (!attention.patientHistoryId) {
+              attention.patientHistoryId = patientHistoryCreated.id;
+              await attentionRepository.update(attention);
+            }
+          }
+        } catch (error) {
+          console.warn('Could not fetch attention for relationship fields:', error);
+        }
+
+        await this.consultationHistoryService.saveConsultationHistory(
+          user,
+          patientHistoryCreated.id,
+          commerceId,
+          clientId,
+          lastAttentionId,
+          consultationReason,
+          currentIllness,
+          Array.isArray(patientAnamnese)
+            ? patientAnamnese
+            : patientAnamnese
+            ? [patientAnamnese]
+            : [],
+          functionalExam,
+          physicalExam,
+          diagnostic,
+          medicalOrder,
+          control,
+          patientDocument,
+          [], // prescriptionIds - will be populated separately
+          [], // examOrderIds - will be populated separately
+          [], // referenceIds - will be populated separately
+          bookingId,
+          controlId,
+          originalAttentionId
+        );
+      } catch (error) {
+        console.error('Error creating consultation history:', error);
+        // Don't fail the main operation if consultation history creation fails
+      }
+    }
+
     const patientHistoryCreatedEvent = new PatientHistoryCreated(
       new Date(),
       patientHistoryCreated,
@@ -321,12 +388,50 @@ export class PatientHistoryService {
         }
       }
       if (patientAnamnese !== undefined) {
-        patientAnamnese.modifiedBy = user;
-        patientAnamnese.modifiedAt = new Date();
-        if (lastAttentionId !== undefined) {
-          patientAnamnese.attentionId = lastAttentionId;
+        // Handle PatientAnamnese as array
+        const anamneseToAdd = Array.isArray(patientAnamnese) ? patientAnamnese : [patientAnamnese];
+
+        // Set attentionId and metadata for each entry
+        anamneseToAdd.forEach(anamnese => {
+          anamnese.modifiedBy = user;
+          anamnese.modifiedAt = new Date();
+          if (lastAttentionId !== undefined) {
+            anamnese.attentionId = lastAttentionId;
+          }
+          if (!anamnese.createdAt) {
+            anamnese.createdAt = new Date();
+            anamnese.createdBy = user;
+          }
+        });
+
+        // Merge with existing or add new
+        if (patientHistory.patientAnamnese && patientHistory.patientAnamnese.length > 0) {
+          // Check if there's an entry for today's consultation
+          const todayResults = patientHistory.patientAnamnese.filter(
+            a =>
+              getDateFormatted(a.createdAt || a.modifiedAt) === getDateFormatted(new Date()) &&
+              a.attentionId === lastAttentionId
+          );
+
+          if (todayResults && todayResults.length > 0) {
+            // Update existing entry
+            const todayResult = todayResults[0];
+            const updatedAnamnese = { ...todayResult, ...anamneseToAdd[0] };
+            const otherResults = patientHistory.patientAnamnese.filter(
+              a =>
+                !(
+                  getDateFormatted(a.createdAt || a.modifiedAt) === getDateFormatted(new Date()) &&
+                  a.attentionId === lastAttentionId
+                )
+            );
+            patientHistory.patientAnamnese = [...otherResults, updatedAnamnese];
+          } else {
+            // Add new entry
+            patientHistory.patientAnamnese = [...patientHistory.patientAnamnese, ...anamneseToAdd];
+          }
+        } else {
+          patientHistory.patientAnamnese = anamneseToAdd;
         }
-        patientHistory.patientAnamnese = { ...patientHistory.patientAnamnese, ...patientAnamnese };
       }
       if (
         functionalExam !== undefined &&
@@ -538,6 +643,80 @@ export class PatientHistoryService {
       patientHistory.modifiedAt = new Date();
       patientHistory.modifiedBy = user;
       const patientHistoryUpdated = await this.patientHistoryRepository.update(patientHistory);
+
+      // Update or create consultation history record
+      if (this.consultationHistoryService && lastAttentionId) {
+        try {
+          // Get current consultation data from arrays filtered by attentionId
+          const consultationReasonForAttention =
+            patientHistory.consultationReason?.filter(cr => cr.attentionId === lastAttentionId) ||
+            [];
+          const currentIllnessForAttention =
+            patientHistory.currentIllness?.filter(ci => ci.attentionId === lastAttentionId) || [];
+          const patientAnamneseForAttention =
+            patientHistory.patientAnamnese?.filter(pa => pa.attentionId === lastAttentionId) || [];
+          const functionalExamForAttention =
+            patientHistory.functionalExam?.filter(fe => fe.attentionId === lastAttentionId) || [];
+          const physicalExamForAttention =
+            patientHistory.physicalExam?.filter(pe => pe.attentionId === lastAttentionId) || [];
+          const diagnosticForAttention =
+            patientHistory.diagnostic?.filter(d => d.attentionId === lastAttentionId) || [];
+          const medicalOrderForAttention =
+            patientHistory.medicalOrder?.filter(mo => mo.attentionId === lastAttentionId) || [];
+          const controlForAttention =
+            patientHistory.control?.filter(c => c.attentionId === lastAttentionId) || [];
+          const patientDocumentForAttention =
+            patientHistory.patientDocument?.filter(pd => pd.attentionId === lastAttentionId) || [];
+
+          // Fetch attention to get relationship fields
+          let bookingId: string | undefined;
+          let controlId: string | undefined;
+          let originalAttentionId: string | undefined;
+          try {
+            const attentionRepository = getRepository(Attention);
+            const attention = await attentionRepository.findById(lastAttentionId);
+            if (attention) {
+              bookingId = attention.bookingId;
+              controlId = attention.controlId;
+              originalAttentionId = attention.originalAttentionId;
+              // Also update attention with patientHistoryId
+              if (!attention.patientHistoryId) {
+                attention.patientHistoryId = id;
+                await attentionRepository.update(attention);
+              }
+            }
+          } catch (error) {
+            console.warn('Could not fetch attention for relationship fields:', error);
+          }
+
+          await this.consultationHistoryService.saveConsultationHistory(
+            user,
+            id,
+            patientHistory.commerceId,
+            patientHistory.clientId,
+            lastAttentionId,
+            consultationReasonForAttention,
+            currentIllnessForAttention,
+            patientAnamneseForAttention,
+            functionalExamForAttention,
+            physicalExamForAttention,
+            diagnosticForAttention,
+            medicalOrderForAttention,
+            controlForAttention,
+            patientDocumentForAttention,
+            [], // prescriptionIds - will be populated separately
+            [], // examOrderIds - will be populated separately
+            [], // referenceIds - will be populated separately
+            bookingId,
+            controlId,
+            originalAttentionId
+          );
+        } catch (error) {
+          console.error('Error updating consultation history:', error);
+          // Don't fail the main operation if consultation history update fails
+        }
+      }
+
       const patientHistoryUpdatedEvent = new PatientHistoryUpdated(
         new Date(),
         patientHistoryUpdated,

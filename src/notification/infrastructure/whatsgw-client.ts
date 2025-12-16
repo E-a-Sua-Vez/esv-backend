@@ -23,16 +23,26 @@ export class WhatsGwClient implements NotificationClient {
     servicePhoneNumber?: string
   ): Promise<any> {
     const url = `${this.whatsGwUrl}/Send`;
+    const fromNumber = servicePhoneNumber || this.whatsGwPhoneNumber;
     const body = {
       apikey: this.whatsGwApiKey,
-      phone_number: servicePhoneNumber || this.whatsGwPhoneNumber,
+      phone_number: fromNumber,
       contact_phone_number: phone,
       message_custom_id: notificationId,
       message_type: 'text',
       message_body: message,
       check_status: 1,
     };
+    console.log(`[WhatsGwClient] Sending WhatsApp message:`, {
+      from: fromNumber,
+      to: phone,
+      notificationId,
+      messageLength: message.length,
+      url,
+    });
     const response = (await firstValueFrom(this.httpService.post(url, body))).data;
+    console.log(`[WhatsGwClient] WhatsApp response:`, response);
+    return response;
   }
 
   public async requestConnection(): Promise<any> {

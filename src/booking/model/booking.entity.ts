@@ -58,4 +58,11 @@ export class Booking {
   termsConditionsToAcceptCode?: string;
   termsConditionsAcceptedCode?: string;
   termsConditionsToAcceptedAt?: Date;
+  telemedicineSessionId?: string; // ID de sesión de telemedicina si aplica
+  telemedicineConfig?: {
+    type: 'video' | 'chat' | 'both';
+    scheduledAt: Date;
+    recordingEnabled?: boolean;
+    notes?: string;
+  };
 }

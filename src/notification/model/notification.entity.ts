@@ -20,4 +20,7 @@ export class Notification {
   comment = 'OK';
   received = false;
   providerData?: NotificationThirdPartyDto;
+  title?: string;
+  message?: string;
+  data?: any;
 }

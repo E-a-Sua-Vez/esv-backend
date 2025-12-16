@@ -84,6 +84,11 @@ export class FunctionalExam {
 
 export class Diagnostic {
   diagnostic: string;
+  cie10Code?: string; // Código CIE-10
+  cie10Description?: string; // Descripción del código CIE-10
+  type?: 'principal' | 'secundario'; // Tipo de diagnóstico
+  confirmation?: 'presuntivo' | 'confirmado'; // Confirmación del diagnóstico
+  laterality?: 'derecho' | 'izquierdo' | 'bilateral'; // Lateralidad si aplica
   attentionId: string;
   createdAt: Date;
   createdBy: string;
@@ -101,7 +106,10 @@ export class Control {
   scheduledDate: Date;
   reason: PatientHistoryControlReason;
   status: PatientHistoryControlStatus;
-  attentionId: string;
+  attentionId: string; // Original attention that scheduled this control
+  controlId?: string; // Unique control ID for tracking
+  newBookingId?: string; // Booking created for this control/comeback
+  newAttentionId?: string; // Attention created for this control/comeback
   createdAt: Date;
   createdBy: string;
 }
@@ -130,7 +138,7 @@ export class PatientHistory {
   personalData: PersonalData;
   consultationReason: ConsultationReason[];
   currentIllness: CurrentIllness[];
-  patientAnamnese: PatientAnamnese;
+  patientAnamnese: PatientAnamnese[];
   functionalExam: FunctionalExam[];
   physicalExam: PhysicalExam[];
   diagnostic: Diagnostic[];

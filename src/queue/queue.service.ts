@@ -97,6 +97,7 @@ export class QueueService {
         queueDetailsDto.serviceInfo = queue.serviceInfo;
         queueDetailsDto.servicesId = queue.servicesId;
         queueDetailsDto.services = queue.services;
+        queueDetailsDto.telemedicineEnabled = queue.telemedicineEnabled || false; // Default to false for backward compatibility
         queues.push(queueDetailsDto);
       }
       if (queues && queues.length > 0) {
@@ -159,7 +160,8 @@ export class QueueService {
     online,
     serviceInfo,
     blockTime = 60,
-    servicesId
+    servicesId,
+    telemedicineEnabled?: boolean
   ): Promise<Queue> {
     try {
       const queue = await this.queueRepository.findById(id);
@@ -192,6 +194,9 @@ export class QueueService {
       }
       if (servicesId !== undefined) {
         queue.servicesId = servicesId;
+      }
+      if (telemedicineEnabled !== undefined) {
+        queue.telemedicineEnabled = telemedicineEnabled;
       }
       const updatedQueue = await this.update(user, queue);
       this.logger.info('Queue configuration updated', {
@@ -243,7 +248,8 @@ export class QueueService {
     blockTime = 60,
     collaboratorId: string,
     serviceId: string,
-    servicesId: string[]
+    servicesId: string[],
+    telemedicineEnabled?: boolean
   ): Promise<Queue> {
     const queue = new Queue();
     queue.commerceId = commerceId;
@@ -274,6 +280,7 @@ export class QueueService {
     if (tag) {
       queue.tag = tag;
     }
+    queue.telemedicineEnabled = telemedicineEnabled || false; // Default to false for backward compatibility
     const queueCreated = await this.queueRepository.create(queue);
     const queueCreatedEvent = new QueueCreated(new Date(), queueCreated, { user });
     publish(queueCreatedEvent);

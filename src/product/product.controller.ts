@@ -21,12 +21,16 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 
 import { Product, ProductConsumption, ProductReplacement } from './model/product.entity';
+import { ProductAlertService } from './product-alert.service';
 import { ProductService } from './product.service';
 
 @ApiTags('product')
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly productAlertService: ProductAlertService
+  ) {}
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -294,5 +298,19 @@ export class ProductController {
   public async getActiveReplacementsByProduct(@Param() params: any): Promise<ProductReplacement[]> {
     const { productId } = params;
     return this.productService.getActiveReplacementsByProduct(productId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/alerts/:commerceId')
+  @ApiOperation({
+    summary: 'Get active product alerts',
+    description: 'Retrieves all active alerts for products in a commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiResponse({ status: 200, description: 'List of active alerts' })
+  public async getActiveAlerts(@Param() params: any): Promise<any> {
+    const { commerceId } = params;
+    return this.productAlertService.getActiveAlerts(commerceId);
   }
 }

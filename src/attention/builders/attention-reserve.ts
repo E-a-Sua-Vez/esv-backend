@@ -166,7 +166,12 @@ export class AttentionReserveBuilder implements BuilderInterface {
       }
     }
     queue.currentNumber = attentionCreated.number;
-    if (queue.currentNumber === 1) {
+    // Set currentAttentionNumber when it's the first attention or when it's not set
+    if (
+      queue.currentNumber === 1 ||
+      !queue.currentAttentionNumber ||
+      queue.currentAttentionNumber === 0
+    ) {
       queue.currentAttentionId = attentionCreated.id;
       queue.currentAttentionNumber = attentionCreated.number;
     }

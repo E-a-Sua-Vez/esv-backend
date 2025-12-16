@@ -20,14 +20,21 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 
+import { ConsultationHistoryService } from './consultation-history.service';
 import { PatientHistoryUpdateDto } from './dto/patient-history-update.dto';
+import { ConsultationHistory } from './model/consultation-history.entity';
 import { PatientHistory } from './model/patient-history.entity';
 import { PatientHistoryService } from './patient-history.service';
+import { PatientJourneyService, PatientJourneyDto } from './patient-journey.service';
 
 @ApiTags('patient-history')
 @Controller('patient-history')
 export class PatientHistoryController {
-  constructor(private readonly patientHistoryService: PatientHistoryService) {}
+  constructor(
+    private readonly patientHistoryService: PatientHistoryService,
+    private readonly consultationHistoryService: ConsultationHistoryService,
+    private readonly patientJourneyService: PatientJourneyService
+  ) {}
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -292,5 +299,93 @@ export class PatientHistoryController {
       lastAttentionId,
       patientDocument
     );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/consultation/:attentionId')
+  @ApiOperation({
+    summary: 'Get consultation history by attention ID',
+    description: 'Retrieves the complete consultation history for a specific attention/visit',
+  })
+  @ApiParam({ name: 'attentionId', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Consultation history found',
+    type: ConsultationHistory,
+  })
+  @ApiResponse({ status: 404, description: 'Consultation history not found' })
+  public async getConsultationByAttentionId(@Param() params: any): Promise<ConsultationHistory> {
+    const { attentionId } = params;
+    return this.consultationHistoryService.getConsultationHistoryByAttentionId(attentionId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/consultations/patient/:patientHistoryId')
+  @ApiOperation({
+    summary: 'Get all consultations for a patient',
+    description: 'Retrieves all consultation histories for a specific patient history ID',
+  })
+  @ApiParam({
+    name: 'patientHistoryId',
+    description: 'Patient History ID',
+    example: 'patient-history-123',
+  })
+  @ApiResponse({ status: 200, description: 'List of consultations', type: [ConsultationHistory] })
+  public async getConsultationsByPatientHistoryId(
+    @Param() params: any
+  ): Promise<ConsultationHistory[]> {
+    const { patientHistoryId } = params;
+    return this.consultationHistoryService.getConsultationsByPatientHistoryId(patientHistoryId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/consultations/client/:commerceId/:clientId')
+  @ApiOperation({
+    summary: 'Get all consultations for a client',
+    description: 'Retrieves all consultation histories for a specific client',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({ status: 200, description: 'List of consultations', type: [ConsultationHistory] })
+  public async getConsultationsByClientId(@Param() params: any): Promise<ConsultationHistory[]> {
+    const { commerceId, clientId } = params;
+    return this.consultationHistoryService.getConsultationsByClientId(commerceId, clientId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/journey/:commerceId/:clientId')
+  @ApiOperation({
+    summary: 'Get complete patient journey',
+    description:
+      'Retrieves the complete patient journey including bookings, attentions, consultations, controls, prescriptions, and exam orders with all relationships',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({ status: 200, description: 'Complete patient journey', type: PatientJourneyDto })
+  public async getPatientJourney(@Param() params: any): Promise<PatientJourneyDto> {
+    const { commerceId, clientId } = params;
+    return this.patientJourneyService.getPatientJourney(commerceId, clientId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/journey/attention/:attentionId')
+  @ApiOperation({
+    summary: 'Get patient journey by attention ID',
+    description:
+      'Retrieves the complete patient journey for the client associated with a specific attention',
+  })
+  @ApiParam({ name: 'attentionId', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Complete patient journey', type: PatientJourneyDto })
+  @ApiResponse({ status: 404, description: 'Attention not found' })
+  public async getPatientJourneyByAttention(
+    @Param() params: any
+  ): Promise<PatientJourneyDto | null> {
+    const { attentionId } = params;
+    return this.patientJourneyService.getPatientJourneyByAttention(attentionId);
   }
 }

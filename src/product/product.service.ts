@@ -74,6 +74,51 @@ export class ProductService {
     return products;
   }
 
+  /**
+   * Buscar productos por nombre similar (útil para integrar con prescripciones)
+   * Busca por nombre, código, tag y también por palabras clave del nombre
+   */
+  public async findProductsByName(commerceId: string, searchTerm: string): Promise<Product[]> {
+    const allProducts = await this.productRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .find();
+
+    if (!searchTerm || searchTerm.trim().length === 0) {
+      return [];
+    }
+
+    // Búsqueda por similitud de nombre (case-insensitive)
+    const searchLower = searchTerm.toLowerCase().trim();
+    const searchWords = searchLower.split(/\s+/).filter(w => w.length > 0);
+
+    return allProducts.filter(product => {
+      const productName = product.name?.toLowerCase() || '';
+      const productCode = product.code?.toLowerCase() || '';
+      const productTag = product.tag?.toLowerCase() || '';
+
+      // Búsqueda exacta o parcial
+      if (
+        productName.includes(searchLower) ||
+        productCode.includes(searchLower) ||
+        productTag.includes(searchLower)
+      ) {
+        return true;
+      }
+
+      // Búsqueda por palabras clave (todas las palabras deben estar presentes)
+      if (searchWords.length > 1) {
+        return searchWords.every(
+          word =>
+            productName.includes(word) || productCode.includes(word) || productTag.includes(word)
+        );
+      }
+
+      return false;
+    });
+  }
+
   public async getOnlineProductsByCommerce(commerceId: string): Promise<Product[]> {
     let products: Product[] = [];
     products = await this.productRepository
@@ -326,6 +371,8 @@ export class ProductService {
           );
           product.actualLevel = actualLevel;
           await this.updateProduct(user, product);
+
+          // Mantener alerta básica para compatibilidad
           this.sendMessage(user, product, MessageType.STOCK_PRODUCT_RECHARGE);
           return productConsumptionCreated;
         } else {

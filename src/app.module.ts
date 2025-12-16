@@ -12,8 +12,10 @@ import { AuthModule } from './auth/auth.module';
 import { BlockModule } from './block/block.module';
 import { BookingModule } from './booking/booking.module';
 import { BusinessModule } from './business/business.module';
+import { CIE10Module } from './cie10/cie10.module';
 import { ClientModule } from './client/client.module';
 import { ClientContactModule } from './client-contact/client-contact.module';
+import { ClinicalAlertsModule } from './clinical-alerts/clinical-alerts.module';
 import { CollaboratorModule } from './collaborator/collaborator.module';
 import { CommerceModule } from './commerce/commerce.module';
 import { CompanyModule } from './company/company.module';
@@ -24,8 +26,13 @@ import { FeatureToggleModule } from './feature-toggle/feature-toggle.module';
 import { FormModule } from './form/form.module';
 import { FormPersonalizedModule } from './form-personalized/form-personalized.module';
 import { HealthModule } from './health/health.module';
+import { HL7Module } from './hl7/hl7.module';
 import { IncomeModule } from './income/income.module';
+import { LaboratoryModule } from './laboratory/laboratory.module';
 import { LeadModule } from './lead/lead.module';
+import { MedicalExamOrderModule } from './medical-exam-order/medical-exam-order.module';
+import { MedicalReferenceModule } from './medical-reference/medical-reference.module';
+import { MedicalTemplateModule } from './medical-template/medical-template.module';
 import { MessageModule } from './message/message.module';
 import { ModuleModule } from './module/module.module';
 import { NotificationModule } from './notification/notification.module';
@@ -37,6 +44,7 @@ import { PatientHistoryItemModule } from './patient-history-item/patient-history
 import { PaymentModule } from './payment/payment.module';
 import { PlanModule } from './plan/plan.module';
 import { PlanActivationModule } from './plan-activation/plan-activation.module';
+import { PrescriptionModule } from './prescription/prescription.module';
 import { ProductModule } from './product/product.module';
 import { QueueModule } from './queue/queue.module';
 import { RolModule } from './rol/rol.module';
@@ -48,6 +56,7 @@ import { SecurityModule } from './shared/security/security.module';
 import { SuggestionModule } from './suggestion/suggestion.module';
 import { SurveyModule } from './survey/survey.module';
 import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
+import { TelemedicineModule } from './telemedicine/telemedicine.module';
 import { UserModule } from './user/user.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 
@@ -98,6 +107,15 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     PatientHistoryModule,
     CompanyModule,
     PatientHistoryItemModule,
+    PrescriptionModule,
+    CIE10Module,
+    ClinicalAlertsModule,
+    MedicalExamOrderModule,
+    MedicalReferenceModule,
+    MedicalTemplateModule,
+    HL7Module,
+    LaboratoryModule,
+    TelemedicineModule,
     FormModule,
     FormPersonalizedModule,
     MessageModule,

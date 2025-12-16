@@ -43,4 +43,19 @@ export class AttentionDetailsDto {
   servicesDetails: object[];
   clientId: string;
   surveyPostAttentionDateScheduled: string;
+  processedAt: Date;
+  telemedicineSessionId?: string;
+  telemedicineConfig?: {
+    type: string;
+    scheduledAt: Date | string;
+    recordingEnabled?: boolean;
+    notes?: string;
+  };
+  telemedicineInfo?: {
+    patientConnectedAt?: Date | string;
+    doctorConnectedAt?: Date | string;
+    endedAt?: Date | string;
+    endedBy?: string;
+    duration?: number; // Duración en minutos
+  };
 }

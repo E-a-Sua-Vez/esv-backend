@@ -13,6 +13,7 @@ import { NotificationService } from '../notification/notification.service';
 import { PackageService } from '../package/package.service';
 import { QueueService } from '../queue/queue.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { UserService } from '../user/user.service';
 import { WaitlistService } from '../waitlist/waitlist.service';
 
@@ -157,6 +158,7 @@ describe('BookingService', () => {
             userService: UserService,
             documentsService: DocumentsService,
             bookingBlockNumbersUsedService: BookingBlockNumberUsedService,
+            telemedicineService: TelemedicineService,
             logger: GcpLoggerService
           ) => {
             const service = new BookingService(
@@ -174,6 +176,7 @@ describe('BookingService', () => {
               userService,
               documentsService,
               bookingBlockNumbersUsedService,
+              telemedicineService,
               logger
             );
             return service;
@@ -192,6 +195,7 @@ describe('BookingService', () => {
             UserService,
             DocumentsService,
             BookingBlockNumberUsedService,
+            TelemedicineService,
             GcpLoggerService,
           ],
         },
@@ -284,6 +288,12 @@ describe('BookingService', () => {
           provide: BookingDefaultBuilder,
           useValue: {
             create: jest.fn(),
+          },
+        },
+        {
+          provide: TelemedicineService,
+          useValue: {
+            cancelSession: jest.fn(),
           },
         },
         {

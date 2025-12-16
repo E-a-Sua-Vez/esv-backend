@@ -113,4 +113,27 @@ export class CreateBookingDto {
   @IsString()
   @IsOptional()
   sessionId?: string;
+
+  @ApiPropertyOptional({ description: 'Booking type', example: 'TELEMEDICINE' })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional({
+    description: 'Telemedicine configuration',
+    example: {
+      type: 'VIDEO',
+      scheduledAt: '2024-01-15T10:00:00Z',
+      recordingEnabled: false,
+      notes: 'Optional notes',
+    },
+  })
+  @IsObject()
+  @IsOptional()
+  telemedicineConfig?: {
+    type: 'VIDEO' | 'CHAT' | 'BOTH';
+    scheduledAt: string;
+    recordingEnabled?: boolean;
+    notes?: string;
+  };
 }

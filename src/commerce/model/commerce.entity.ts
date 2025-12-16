@@ -88,4 +88,5 @@ export class Commerce {
   collaborators: Collaborator[];
   services: Service[];
   available: boolean;
+  telemedicineRecordingEnabled?: boolean; // Enable/disable telemedicine session recording at commerce level
 }
