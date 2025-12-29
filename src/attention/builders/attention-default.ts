@@ -68,20 +68,81 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     const attentionCreated = await this.attentionRepository.create(attention);
     if (attentionCreated.servicesId && attentionCreated.servicesId.length === 1) {
       const service = await this.serviceService.getServiceById(attentionCreated.servicesId[0]);
-      if (
-        service &&
-        service.id &&
-        service.serviceInfo &&
-        service.serviceInfo.procedures &&
-        service.serviceInfo.procedures > 1
-      ) {
+
+      // Determine procedures amount: from servicesDetails first, then service.serviceInfo.procedures, then service.serviceInfo.proceduresList
+      let proceduresAmount = 0;
+      console.log('[AttentionDefaultBuilder] Determining procedures amount:', {
+        servicesDetails: servicesDetails,
+        servicesDetailsLength: servicesDetails?.length,
+        firstServiceDetails: servicesDetails?.[0],
+        proceduresInDetails: servicesDetails?.[0]?.['procedures'],
+        serviceProcedures: service?.serviceInfo?.procedures,
+        serviceProceduresList: service?.serviceInfo?.proceduresList
+      });
+
+      if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
+        proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
+        console.log('[AttentionDefaultBuilder] Using procedures from servicesDetails:', proceduresAmount);
+      } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
+        proceduresAmount = service.serviceInfo.procedures;
+        console.log('[AttentionDefaultBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
+      } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
+        // Use first value from proceduresList as fallback
+        const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
+        if (proceduresList.length > 0) {
+          proceduresAmount = proceduresList[0];
+          console.log('[AttentionDefaultBuilder] Using first value from proceduresList:', proceduresAmount);
+        }
+      }
+
+      console.log('[AttentionDefaultBuilder] Final proceduresAmount:', proceduresAmount);
+
+      if (proceduresAmount > 1) {
         if (attentionCreated.clientId) {
           const packs = await this.packageService.getPackageByCommerceIdAndClientServices(
             attentionCreated.commerceId,
             attentionCreated.clientId,
             attentionCreated.servicesId[0]
           );
-          if (packs && packs.length === 0) {
+          if (packs && packs.length > 0) {
+            // Associate attention to existing active package with sessions remaining
+            const activePackage = packs.find(pkg => {
+              const isActive = [PackageStatus.ACTIVE, PackageStatus.CONFIRMED, PackageStatus.REQUESTED].includes(pkg.status);
+              const hasPendingSessions = (pkg.proceduresLeft || 0) > 0;
+              return isActive && hasPendingSessions;
+            });
+            if (activePackage) {
+              attention.packageId = activePackage.id;
+              await this.attentionRepository.update(attention);
+              // Add attention to package
+              await this.packageService.addProcedureToPackage(
+                'ett',
+                activePackage.id,
+                [],
+                [attentionCreated.id]
+              );
+            } else {
+              // No active package found, create new one
+              const packageName = service.tag.toLocaleUpperCase();
+              const packCreated = await this.packageService.createPackage(
+                'ett',
+                attentionCreated.commerceId,
+                attentionCreated.clientId,
+                undefined,
+                attentionCreated.id,
+                proceduresAmount,
+                packageName,
+                attentionCreated.servicesId,
+                [],
+                [attentionCreated.id],
+                PackageType.STANDARD,
+                PackageStatus.REQUESTED
+              );
+              attention.packageId = packCreated.id;
+              await this.attentionRepository.update(attention);
+            }
+          } else {
+            // No packages exist, create new one
             const packageName = service.tag.toLocaleUpperCase();
             const packCreated = await this.packageService.createPackage(
               'ett',
@@ -89,7 +150,7 @@ export class AttentionDefaultBuilder implements BuilderInterface {
               attentionCreated.clientId,
               undefined,
               attentionCreated.id,
-              service.serviceInfo.procedures,
+              proceduresAmount,
               packageName,
               attentionCreated.servicesId,
               [],

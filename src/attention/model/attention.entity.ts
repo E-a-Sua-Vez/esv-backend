@@ -2,6 +2,8 @@ import { Collection } from 'fireorm';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { User } from 'src/user/model/user.entity';
 
+import { AttentionStage } from './attention-stage.enum';
+import { AttentionStageHistory } from './attention-stage-history.entity';
 import { AttentionStatus } from './attention-status.enum';
 
 export class Block {
@@ -83,4 +85,8 @@ export class Attention {
     endedBy?: string;
     duration?: number; // Duración en minutos
   }; // Información de tracking de la sesión de telemedicina
+  // Campos opcionales para sistema de etapas (feature flag: attentionStagesEnabled)
+  currentStage?: AttentionStage; // Etapa actual de la atención
+  stageHistory?: AttentionStageHistory[]; // Historial de etapas por las que ha pasado
+  originalQueueId?: string; // Referencia a la cola original (útil cuando se transfiere entre colas)
 }

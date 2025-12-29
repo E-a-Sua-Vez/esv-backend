@@ -68,4 +68,18 @@ export class Prescription {
   // PDF generado
   pdfUrl?: string; // URL del PDF generado
   qrCode?: string; // Código QR para verificación
+  documentHash?: string; // Hash SHA-256 del documento para verificación de integridad
+
+  // Assinatura digital ICP-Brasil (conformidade CFM)
+  signedAt?: Date; // Data da assinatura
+  signedBy?: string; // ID do usuário que assinou
+  digitalSignature?: string; // Assinatura digital PKCS#7 (Base64)
+  certificateInfo?: {
+    issuer: string;
+    subject: string;
+    serialNumber: string;
+    validFrom: Date;
+    validTo: Date;
+  };
+  isSigned?: boolean; // Indica se o documento está assinado (bloqueado para edição)
 }

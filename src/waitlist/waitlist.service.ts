@@ -103,11 +103,17 @@ export class WaitlistService {
     queueId: string,
     date: string
   ): Promise<Waitlist[]> {
-    return await this.waitlistRepository
+    const waitlists = await this.waitlistRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('date', date)
       .whereEqualTo('status', WaitlistStatus.PENDING)
       .find();
+
+    // Filter out waitlists that are already processed or have a bookingId
+    // This prevents race conditions where a waitlist was processed but status wasn't updated yet
+    return waitlists.filter(waitlist =>
+      !waitlist.processed && !waitlist.bookingId
+    );
   }
 
   public async getPendingWaitlistsByDate(date: string): Promise<Waitlist[]> {
@@ -265,6 +271,10 @@ ${link}
       for (let i = 0; i < waitlists.length; i++) {
         const waitlist = waitlists[i];
         if (waitlist) {
+          // Double-check waitlist hasn't been processed since query (race condition mitigation)
+          if (waitlist.processed || waitlist.bookingId) {
+            continue; // Skip already processed waitlists
+          }
           await this.waitlistWhatsapp(waitlist, booking.block);
           await this.waitlistEmail(waitlist, booking.block);
         }

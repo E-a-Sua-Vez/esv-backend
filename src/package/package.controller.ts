@@ -259,4 +259,212 @@ export class PackageController {
     const { incomesId } = body;
     return this.incomeTypeService.payPackage(user, id, incomesId);
   }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/commerce/:commerceId/active')
+  @ApiOperation({
+    summary: 'Get active packages by commerce',
+    description: 'Retrieves all active packages for a specific commerce with sessions remaining',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiResponse({ status: 200, description: 'List of active packages', type: [Package] })
+  public async getActivePackagesByCommerce(@Param() params: any): Promise<Package[]> {
+    const { commerceId } = params;
+    return this.incomeTypeService.getActivePackagesByCommerce(commerceId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/commerce/:commerceId/client/:clientId/all')
+  @ApiOperation({
+    summary: 'Get all packages by client',
+    description: 'Retrieves all packages for a client grouped by status',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Packages grouped by status',
+    schema: {
+      type: 'object',
+      properties: {
+        active: { type: 'array', items: { $ref: '#/components/schemas/Package' } },
+        completed: { type: 'array', items: { $ref: '#/components/schemas/Package' } },
+        expired: { type: 'array', items: { $ref: '#/components/schemas/Package' } },
+        cancelled: { type: 'array', items: { $ref: '#/components/schemas/Package' } },
+      },
+    },
+  })
+  public async getPackagesByClient(@Param() params: any): Promise<{
+    active: Package[];
+    completed: Package[];
+    expired: Package[];
+    cancelled: Package[];
+  }> {
+    const { commerceId, clientId } = params;
+    return this.incomeTypeService.getPackagesByClient(commerceId, clientId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/commerce/:commerceId/client/:clientId/active')
+  @ApiOperation({
+    summary: 'Get active packages by client',
+    description: 'Retrieves active packages for a specific client',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({ status: 200, description: 'List of active packages', type: [Package] })
+  public async getActivePackagesByClient(@Param() params: any): Promise<Package[]> {
+    const { commerceId, clientId } = params;
+    return this.incomeTypeService.getActivePackagesByClient(commerceId, clientId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/commerce/:commerceId/service/:serviceId/client/:clientId/available')
+  @ApiOperation({
+    summary: 'Get available packages for service',
+    description: 'Retrieves available packages for a specific service that can be used for booking',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'serviceId', description: 'Service ID', example: 'service-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({ status: 200, description: 'List of available packages', type: [Package] })
+  public async getAvailablePackagesForService(@Param() params: any): Promise<Package[]> {
+    const { commerceId, serviceId, clientId } = params;
+    return this.incomeTypeService.getAvailablePackagesForService(commerceId, clientId, serviceId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/analytics/:commerceId')
+  @ApiOperation({
+    summary: 'Get package analytics',
+    description: 'Retrieves comprehensive analytics for packages in a commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Package analytics',
+    schema: {
+      type: 'object',
+      properties: {
+        totalPackages: { type: 'number' },
+        activePackages: { type: 'number' },
+        completedPackages: { type: 'number' },
+        expiredPackages: { type: 'number' },
+        totalSessionsSold: { type: 'number' },
+        totalSessionsUsed: { type: 'number' },
+        totalSessionsRemaining: { type: 'number' },
+        averageSessionsPerPackage: { type: 'number' },
+        averageCompletionRate: { type: 'number' },
+        packagesByType: { type: 'object' },
+        packagesByStatus: { type: 'object' },
+        expiringSoon: { type: 'array', items: { $ref: '#/components/schemas/Package' } },
+        lowSessions: { type: 'array', items: { $ref: '#/components/schemas/Package' } },
+      },
+    },
+  })
+  public async getPackageAnalytics(@Param() params: any): Promise<any> {
+    const { commerceId } = params;
+    return this.incomeTypeService.getPackageAnalytics(commerceId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/metrics/:commerceId')
+  @ApiOperation({
+    summary: 'Get package metrics analytics',
+    description:
+      'Retrieves detailed metrics: most requested packages, no-show rate, completion rate, abandonment rate',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Package metrics analytics',
+    schema: {
+      type: 'object',
+      properties: {
+        mostRequestedPackages: {
+          type: 'array',
+          description: 'Top packages by creation count',
+        },
+        overallNoShowRate: { type: 'number', description: 'Overall no-show rate percentage' },
+        overallCompletionRate: { type: 'number', description: 'Overall completion rate percentage' },
+        overallAbandonmentRate: {
+          type: 'number',
+          description: 'Overall abandonment rate percentage',
+        },
+        packagesByCompletionRate: {
+          type: 'array',
+          description: 'Packages sorted by completion rate',
+        },
+        packagesByNoShowRate: {
+          type: 'array',
+          description: 'Packages sorted by no-show rate',
+        },
+        abandonedPackages: {
+          type: 'array',
+          description: 'List of abandoned packages',
+        },
+      },
+    },
+  })
+  public async getPackageMetricsAnalytics(@Param() params: any): Promise<any> {
+    const { commerceId } = params;
+    return this.incomeTypeService.getPackageMetricsAnalytics(commerceId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/:id/recommended-dates')
+  @ApiOperation({
+    summary: 'Get recommended session dates',
+    description: 'Retrieves recommended dates for next sessions based on periodicity',
+  })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of recommended dates',
+    schema: {
+      type: 'array',
+      items: { type: 'string', format: 'date-time' },
+    },
+  })
+  public async getRecommendedSessionDates(@Param() params: any): Promise<Date[]> {
+    const { id } = params;
+    return this.incomeTypeService.getRecommendedSessionDates(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/pause/:id')
+  @ApiOperation({
+    summary: 'Pause package',
+    description: 'Pauses an active package temporarily',
+  })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiResponse({ status: 200, description: 'Package paused successfully', type: Package })
+  @ApiResponse({ status: 404, description: 'Package not found' })
+  public async pausePackage(@User() user, @Param() params: any): Promise<Package> {
+    const { id } = params;
+    return this.incomeTypeService.pausePackage(user, id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/resume/:id')
+  @ApiOperation({
+    summary: 'Resume package',
+    description: 'Resumes a paused package',
+  })
+  @ApiParam({ name: 'id', description: 'Package ID', example: 'package-123' })
+  @ApiResponse({ status: 200, description: 'Package resumed successfully', type: Package })
+  @ApiResponse({ status: 404, description: 'Package not found' })
+  public async resumePackage(@User() user, @Param() params: any): Promise<Package> {
+    const { id } = params;
+    return this.incomeTypeService.resumePackage(user, id);
+  }
 }

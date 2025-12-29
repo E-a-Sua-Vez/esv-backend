@@ -17,4 +17,7 @@ export class Form {
   questions?: Question[];
   answers?: object[];
   createdAt: Date;
+  loadedToProntuario?: boolean;
+  loadedToProntuarioDate?: Date;
+  loadedToProntuarioBy?: string;
 }

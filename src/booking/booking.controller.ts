@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
   Param,
   Patch,
@@ -34,6 +35,54 @@ import { Booking } from './model/booking.entity';
 @Controller('booking')
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
+
+  /**
+   * Sanitize string to prevent XSS
+   */
+  private sanitizeString(input: string): string {
+    if (typeof input !== 'string') {
+      return String(input || '');
+    }
+    return input
+      .replace(/[<>]/g, '') // Remove < and >
+      .replace(/javascript:/gi, '') // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, '') // Remove event handlers
+      .replace(/<script/gi, '') // Remove script tags
+      .replace(/<iframe/gi, '') // Remove iframe tags
+      .replace(/<object/gi, '') // Remove object tags
+      .replace(/<embed/gi, '') // Remove embed tags
+      .replace(/data:text\/html/gi, '') // Remove data URIs
+      .replace(/eval\s*\(/gi, '') // Remove eval
+      .replace(/expression\s*\(/gi, '') // Remove expression
+      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
+      .trim();
+  }
+
+  /**
+   * Recursively sanitize object
+   */
+  private sanitizeObject(obj: any): any {
+    if (!obj || typeof obj !== 'object') {
+      return obj;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.sanitizeObject(item));
+    }
+    const sanitized: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key];
+        if (typeof value === 'string') {
+          sanitized[key] = this.sanitizeString(value);
+        } else if (typeof value === 'object') {
+          sanitized[key] = this.sanitizeObject(value);
+        } else {
+          sanitized[key] = value;
+        }
+      }
+    }
+    return sanitized;
+  }
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -83,11 +132,77 @@ export class BookingController {
       telemedicineConfig,
     } = body;
     // Convert DTOs to plain objects for Firestore serialization
-    const plainBlock = block ? JSON.parse(JSON.stringify(block)) : undefined;
-    const plainUser = user ? JSON.parse(JSON.stringify(user)) : undefined;
-    const plainTelemedicineConfig = telemedicineConfig
-      ? JSON.parse(JSON.stringify(telemedicineConfig))
-      : undefined;
+    // Handle circular references and sanitize inputs
+    let plainBlock = undefined;
+    let plainUser = undefined;
+    let plainTelemedicineConfig = undefined;
+
+    try {
+      if (block) {
+        console.log('[BookingController] Incoming block from request:', JSON.stringify(block, null, 2));
+        plainBlock = JSON.parse(JSON.stringify(block));
+        console.log('[BookingController] Serialized block:', JSON.stringify(plainBlock, null, 2));
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Error serializando bloque: ${error.message}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    try {
+      if (user) {
+        plainUser = JSON.parse(JSON.stringify(user));
+        // Sanitize user inputs to prevent XSS
+        if (plainUser.name && typeof plainUser.name === 'string') {
+          plainUser.name = this.sanitizeString(plainUser.name);
+        }
+        if (plainUser.lastName && typeof plainUser.lastName === 'string') {
+          plainUser.lastName = this.sanitizeString(plainUser.lastName);
+        }
+        if (plainUser.comment && typeof plainUser.comment === 'string') {
+          plainUser.comment = this.sanitizeString(plainUser.comment);
+        }
+        if (plainUser.personalInfo && typeof plainUser.personalInfo === 'object') {
+          // Recursively sanitize personalInfo
+          plainUser.personalInfo = this.sanitizeObject(plainUser.personalInfo);
+        }
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Error serializando usuario: ${error.message}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    try {
+      if (telemedicineConfig) {
+        plainTelemedicineConfig = JSON.parse(JSON.stringify(telemedicineConfig));
+        // Sanitize telemedicine notes
+        if (plainTelemedicineConfig.notes && typeof plainTelemedicineConfig.notes === 'string') {
+          plainTelemedicineConfig.notes = this.sanitizeString(plainTelemedicineConfig.notes);
+        }
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Error serializando configuración de telemedicina: ${error.message}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    // Debug: Log what we're sending to service
+    console.log('[BookingController] Sending to service:', {
+      queueId,
+      channel,
+      date,
+      hasBlock: !!plainBlock,
+      block: plainBlock ? JSON.stringify(plainBlock, null, 2) : null,
+      hasServicesId: !!servicesId,
+      servicesId,
+      hasServicesDetails: !!servicesDetails,
+      servicesDetails: servicesDetails ? JSON.stringify(servicesDetails, null, 2) : null,
+      clientId,
+    });
+
     return this.bookingService.createBooking(
       queueId,
       channel,

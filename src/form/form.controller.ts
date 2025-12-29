@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Patch,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -130,5 +131,60 @@ export class FormController {
       questions,
       answers
     );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/preprontuario/status/:commerceId/:clientId')
+  @ApiOperation({
+    summary: 'Check preprontuario completion status',
+    description: 'Checks if client has completed preprontuario for the commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Preprontuario status',
+    schema: {
+      type: 'object',
+      properties: {
+        completed: { type: 'boolean' },
+        completedAt: { type: 'string', format: 'date-time' },
+        formId: { type: 'string' },
+      },
+    },
+  })
+  public async getPreprontuarioStatus(@Param() params: any): Promise<any> {
+    const { commerceId, clientId } = params;
+    return this.formService.getPreprontuarioStatus(commerceId, clientId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/load-to-prontuario')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Mark form as loaded to prontuario',
+    description: 'Marks a form as having been loaded into the patient prontuario',
+  })
+  @ApiParam({ name: 'id', description: 'Form ID', example: 'form-123' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string', example: 'user-123' },
+      },
+      required: ['userId'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Form marked as loaded', type: Form })
+  @ApiResponse({ status: 404, description: 'Form not found' })
+  public async markAsLoadedToProntuario(
+    @Param('id') id: string,
+    @User() user: string,
+    @Body() body: { userId: string }
+  ): Promise<Form> {
+    const userId = body.userId || user;
+    return this.formService.markAsLoadedToProntuario(id, userId);
   }
 }

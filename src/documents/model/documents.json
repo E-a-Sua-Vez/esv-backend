@@ -1,10 +1,102 @@
 [
   {
     "name": "terms_of_service",
-    "type": "COMMERCE"
+    "type": "COMMERCE",
+    "category": "OTHER"
   },
   {
     "name": "post_attention",
-    "type": "COMMERCE"
+    "type": "COMMERCE",
+    "category": "OTHER"
+  },
+  {
+    "name": "laboratory_results",
+    "type": "CLIENT",
+    "category": "LABORATORY_RESULTS",
+    "description": "Resultados de laboratorio",
+    "icon": "bi-clipboard-data",
+    "acceptedFormats": ["pdf", "jpg", "jpeg", "png"],
+    "requiresReview": true
+  },
+  {
+    "name": "imaging_studies",
+    "type": "CLIENT",
+    "category": "IMAGING_STUDIES",
+    "description": "Estudios de imagen (Rayos X, Resonancia, etc.)",
+    "icon": "bi-camera",
+    "acceptedFormats": ["pdf", "jpg", "jpeg", "png", "dcm"],
+    "requiresReview": true
+  },
+  {
+    "name": "pathology_reports",
+    "type": "CLIENT",
+    "category": "PATHOLOGY_REPORTS",
+    "description": "Informes de patología",
+    "icon": "bi-file-medical",
+    "acceptedFormats": ["pdf", "doc", "docx"],
+    "requiresReview": true
+  },
+  {
+    "name": "consultation_notes",
+    "type": "CLIENT",
+    "category": "CONSULTATION_NOTES",
+    "description": "Notas de consulta",
+    "icon": "bi-journal-text",
+    "acceptedFormats": ["pdf", "doc", "docx", "txt"],
+    "requiresReview": false
+  },
+  {
+    "name": "prescription_records",
+    "type": "CLIENT",
+    "category": "PRESCRIPTION_RECORDS",
+    "description": "Recetas médicas",
+    "icon": "bi-prescription2",
+    "acceptedFormats": ["pdf", "jpg", "jpeg", "png"],
+    "requiresReview": false
+  },
+  {
+    "name": "consent_forms",
+    "type": "CLIENT",
+    "category": "CONSENT_FORMS",
+    "description": "Formularios de consentimiento",
+    "icon": "bi-file-earmark-check",
+    "acceptedFormats": ["pdf", "jpg", "jpeg", "png"],
+    "requiresReview": false
+  },
+  {
+    "name": "insurance_cards",
+    "type": "CLIENT",
+    "category": "INSURANCE_CARDS",
+    "description": "Tarjetas de seguro",
+    "icon": "bi-credit-card",
+    "acceptedFormats": ["pdf", "jpg", "jpeg", "png"],
+    "requiresReview": false
+  },
+  {
+    "name": "identification",
+    "type": "CLIENT",
+    "category": "IDENTIFICATION",
+    "description": "Documentos de identificación",
+    "icon": "bi-person-badge",
+    "acceptedFormats": ["pdf", "jpg", "jpeg", "png"],
+    "requiresReview": false
+  },
+  {
+    "name": "external_reports",
+    "type": "CLIENT",
+    "category": "EXTERNAL_REPORTS",
+    "description": "Informes externos",
+    "icon": "bi-file-earmark-arrow-up",
+    "acceptedFormats": ["pdf", "doc", "docx", "jpg", "jpeg", "png"],
+    "requiresReview": true
+  },
+  {
+    "name": "referral_letters",
+    "type": "CLIENT",
+    "category": "REFERRAL_LETTERS",
+    "description": "Cartas de referencia",
+    "icon": "bi-envelope-paper",
+    "acceptedFormats": ["pdf", "doc", "docx"],
+    "requiresReview": false
   }
 ]

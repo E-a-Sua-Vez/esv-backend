@@ -17,6 +17,11 @@ export class MedicationSearchDto {
   @IsString()
   activePrinciple?: string;
 
+  @ApiProperty({ description: 'Commerce ID', required: false })
+  @IsOptional()
+  @IsString()
+  commerceId?: string;
+
   @ApiProperty({ description: 'Número de página', required: false, default: 1 })
   @IsOptional()
   @IsNumber()

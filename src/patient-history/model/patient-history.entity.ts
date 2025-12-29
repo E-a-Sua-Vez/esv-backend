@@ -95,10 +95,21 @@ export class Diagnostic {
 }
 
 export class MedicalOrder {
-  medicalOrder: string;
+  medicalOrder?: string; // Texto libre (legacy)
   attentionId: string;
   createdAt: Date;
   createdBy: string;
+  // Referencias a entidades estructuradas
+  prescriptionId?: string; // ID de la prescripción creada
+  examOrderId?: string; // ID de la orden de exámenes creada
+  referenceId?: string; // ID de la referencia creada
+  type?: 'text' | 'prescription' | 'exam' | 'reference'; // Tipo de orden médica
+  // Metadata adicional
+  metadata?: {
+    prescription?: any; // Datos de la prescripción
+    examOrder?: any; // Datos de la orden de exámenes
+    reference?: any; // Datos de la referencia
+  };
 }
 
 export class Control {

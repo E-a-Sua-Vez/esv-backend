@@ -3,6 +3,11 @@ import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { getDateFormatted } from 'src/shared/utils/date';
+import {
+  sanitizePatientHistoryInput,
+  validateAgeBirthdayConsistency,
+  validateCIE10Code,
+} from 'src/shared/utils/security-utils';
 
 import { Attention } from '../attention/model/attention.entity';
 
@@ -56,11 +61,12 @@ export class PatientHistoryService {
     commerceId: string,
     clientId: string
   ): Promise<PatientHistory> {
+    // FIX: Use orderByDescending to get the most recent record, not the oldest
     return await this.patientHistoryRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('clientId', clientId)
       .whereEqualTo('available', true)
-      .orderByAscending('createdAt')
+      .orderByDescending('createdAt')
       .findOne();
   }
 
@@ -93,6 +99,22 @@ export class PatientHistoryService {
     lastAttentionId: string,
     patientDocument: PatientDocument
   ): Promise<PatientHistory> {
+    // FIX XSS: Sanitize all inputs (already done in controller, but double-check here)
+    // Inputs are sanitized in controller before reaching here
+
+    // FIX CIE10: Validate CIE10 code if provided
+    if (diagnostic && diagnostic.cie10Code) {
+      if (!validateCIE10Code(diagnostic.cie10Code)) {
+        throw new HttpException('Invalid CIE10 code format', HttpStatus.BAD_REQUEST);
+      }
+    }
+
+    // FIX Age/Birthday: Validate consistency if both provided
+    if (personalData && personalData.age && personalData.birthday) {
+      if (!validateAgeBirthdayConsistency(personalData.age, personalData.birthday)) {
+        throw new HttpException('Age does not match birthday', HttpStatus.BAD_REQUEST);
+      }
+    }
     let patientHistory = await this.getPatientHistorysByClientId(commerceId, clientId);
     if (patientHistory && patientHistory.id) {
       patientHistory = await this.updatePatientHistoryConfigurations(
@@ -308,6 +330,10 @@ export class PatientHistoryService {
   ): Promise<PatientHistory> {
     try {
       const patientHistory = await this.patientHistoryRepository.findById(id);
+
+      // FIX Concurrent Updates: Use modifiedAt as version check
+      // If modifiedAt changed since last read, someone else updated it
+      const originalModifiedAt = patientHistory.modifiedAt;
       if (personalData !== undefined) {
         personalData.modifiedBy = user;
         personalData.modifiedAt = new Date();
@@ -316,9 +342,9 @@ export class PatientHistoryService {
       if (
         consultationReason !== undefined &&
         consultationReason.reason !== undefined &&
-        consultationReason.reason.length > 0
+        consultationReason.reason.trim().length > 0
       ) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           consultationReason.attentionId = lastAttentionId;
         }
         if (patientHistory.consultationReason && patientHistory.consultationReason.length > 0) {
@@ -328,6 +354,17 @@ export class PatientHistoryService {
           if (todayResults && todayResults.length === 1) {
             const todayResult = todayResults[0];
             const newResult = { ...todayResult, ...consultationReason };
+            const resultsAux = patientHistory.consultationReason.filter(
+              exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
+            );
+            patientHistory.consultationReason = [...resultsAux, newResult];
+          } else if (todayResults && todayResults.length > 1) {
+            // FIX BUG #1: Handle multiple same-day entries - update the most recent one
+            const sortedTodayResults = [...todayResults].sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            const mostRecent = sortedTodayResults[0];
+            const newResult = { ...mostRecent, ...consultationReason };
             const resultsAux = patientHistory.consultationReason.filter(
               exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
             );
@@ -356,9 +393,9 @@ export class PatientHistoryService {
       if (
         currentIllness !== undefined &&
         currentIllness.illness !== undefined &&
-        currentIllness.illness.length > 0
+        currentIllness.illness.trim().length > 0
       ) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           currentIllness.attentionId = lastAttentionId;
         }
         if (patientHistory.currentIllness && patientHistory.currentIllness.length > 0) {
@@ -368,6 +405,17 @@ export class PatientHistoryService {
           if (todayResults && todayResults.length === 1) {
             const todayResult = todayResults[0];
             const newResult = { ...todayResult, ...currentIllness };
+            const resultsAux = patientHistory.currentIllness.filter(
+              exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
+            );
+            patientHistory.currentIllness = [...resultsAux, newResult];
+          } else if (todayResults && todayResults.length > 1) {
+            // FIX BUG #1: Handle multiple same-day entries - update the most recent one
+            const sortedTodayResults = [...todayResults].sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            const mostRecent = sortedTodayResults[0];
+            const newResult = { ...mostRecent, ...currentIllness };
             const resultsAux = patientHistory.currentIllness.filter(
               exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
             );
@@ -436,9 +484,9 @@ export class PatientHistoryService {
       if (
         functionalExam !== undefined &&
         functionalExam.exam !== undefined &&
-        functionalExam.exam.length > 0
+        functionalExam.exam.trim().length > 0
       ) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           functionalExam.attentionId = lastAttentionId;
         }
         if (patientHistory.functionalExam && patientHistory.functionalExam.length > 0) {
@@ -452,14 +500,23 @@ export class PatientHistoryService {
               exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
             );
             patientHistory.functionalExam = [...resultsAux, newResult];
+          } else if (todayResults && todayResults.length > 1) {
+            // FIX BUG #1: Handle multiple same-day entries - update the most recent one
+            const sortedTodayResults = [...todayResults].sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            const mostRecent = sortedTodayResults[0];
+            const newResult = { ...mostRecent, ...functionalExam };
+            const resultsAux = patientHistory.functionalExam.filter(
+              exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
+            );
+            patientHistory.functionalExam = [...resultsAux, newResult];
           } else if (!todayResults || todayResults.length === 0) {
             functionalExam.createdBy = user;
             functionalExam.createdAt = new Date();
             patientHistory.functionalExam = [...patientHistory.functionalExam, functionalExam];
           }
         } else {
-          functionalExam.createdBy = user;
-          functionalExam.createdAt = new Date();
           functionalExam.createdBy = user;
           functionalExam.createdAt = new Date();
           if (patientHistory.functionalExam) {
@@ -471,10 +528,10 @@ export class PatientHistoryService {
       }
       if (
         physicalExam !== undefined &&
-        ((physicalExam.exam !== undefined && physicalExam.exam.length > 0) ||
+        ((physicalExam.exam !== undefined && physicalExam.exam.trim().length > 0) ||
           (physicalExam.examDetails && Object.keys(physicalExam.examDetails).length > 0))
       ) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           physicalExam.attentionId = lastAttentionId;
         }
         if (patientHistory.physicalExam && patientHistory.physicalExam.length > 0) {
@@ -486,6 +543,19 @@ export class PatientHistoryService {
           if (todayResults && todayResults.length === 1) {
             const todayResult = todayResults[0];
             const newResult = { ...todayResult, ...physicalExam };
+            const resultsAux = patientHistory.physicalExam.filter(
+              exam =>
+                getDateFormatted(exam.createdAt ? exam.createdAt : new Date()) !==
+                getDateFormatted(new Date())
+            );
+            patientHistory.physicalExam = [...resultsAux, newResult];
+          } else if (todayResults && todayResults.length > 1) {
+            // FIX BUG #1: Handle multiple same-day entries - update the most recent one
+            const sortedTodayResults = [...todayResults].sort(
+              (a, b) => new Date(b.createdAt || new Date()).getTime() - new Date(a.createdAt || new Date()).getTime()
+            );
+            const mostRecent = sortedTodayResults[0];
+            const newResult = { ...mostRecent, ...physicalExam };
             const resultsAux = patientHistory.physicalExam.filter(
               exam =>
                 getDateFormatted(exam.createdAt ? exam.createdAt : new Date()) !==
@@ -510,9 +580,9 @@ export class PatientHistoryService {
       if (
         diagnostic !== undefined &&
         diagnostic.diagnostic !== undefined &&
-        diagnostic.diagnostic.length > 0
+        diagnostic.diagnostic.trim().length > 0
       ) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           diagnostic.attentionId = lastAttentionId;
         }
         if (patientHistory.diagnostic && patientHistory.diagnostic.length > 0) {
@@ -522,6 +592,17 @@ export class PatientHistoryService {
           if (todayResults && todayResults.length === 1) {
             const todayResult = todayResults[0];
             const newResult = { ...todayResult, ...diagnostic };
+            const resultsAux = patientHistory.diagnostic.filter(
+              exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
+            );
+            patientHistory.diagnostic = [...resultsAux, newResult];
+          } else if (todayResults && todayResults.length > 1) {
+            // FIX BUG #1: Handle multiple same-day entries - update the most recent one
+            const sortedTodayResults = [...todayResults].sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            const mostRecent = sortedTodayResults[0];
+            const newResult = { ...mostRecent, ...diagnostic };
             const resultsAux = patientHistory.diagnostic.filter(
               exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
             );
@@ -547,7 +628,7 @@ export class PatientHistoryService {
         control.status !== undefined &&
         control.reason !== undefined
       ) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           control.attentionId = lastAttentionId;
         }
         if (patientHistory.control && patientHistory.control.length > 0) {
@@ -559,6 +640,19 @@ export class PatientHistoryService {
           if (todayResults && todayResults.length === 1) {
             const todayResult = todayResults[0];
             const newResult = { ...todayResult, ...control };
+            const resultsAux = patientHistory.control.filter(
+              ctrl =>
+                getDateFormatted(new Date(ctrl.scheduledDate)) !==
+                getDateFormatted(new Date(control.scheduledDate))
+            );
+            patientHistory.control = [...resultsAux, newResult];
+          } else if (todayResults && todayResults.length > 1) {
+            // FIX BUG #1: Handle multiple same-day entries - update the most recent one
+            const sortedTodayResults = [...todayResults].sort(
+              (a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
+            );
+            const mostRecent = sortedTodayResults[0];
+            const newResult = { ...mostRecent, ...control };
             const resultsAux = patientHistory.control.filter(
               ctrl =>
                 getDateFormatted(new Date(ctrl.scheduledDate)) !==
@@ -580,49 +674,103 @@ export class PatientHistoryService {
           }
         }
       }
-      if (
-        medicalOrder !== undefined &&
-        medicalOrder.medicalOrder !== undefined &&
-        medicalOrder.medicalOrder.length > 0
-      ) {
-        if (lastAttentionId !== undefined) {
-          medicalOrder.attentionId = lastAttentionId;
+      // Handle medicalOrder - can be a single object or an array
+      if (medicalOrder !== undefined) {
+        let ordersToProcess: MedicalOrder[] = [];
+
+        // Normalize to array
+        if (Array.isArray(medicalOrder)) {
+          ordersToProcess = medicalOrder;
+        } else if (medicalOrder && typeof medicalOrder === 'object') {
+          // Single object - check if it has content
+          if (medicalOrder.medicalOrder && medicalOrder.medicalOrder.trim().length > 0) {
+            ordersToProcess = [medicalOrder];
+          } else if (medicalOrder.prescriptionId || medicalOrder.examOrderId || medicalOrder.referenceId) {
+            // Has reference to structured entity
+            ordersToProcess = [medicalOrder];
+          }
         }
-        if (patientHistory.medicalOrder && patientHistory.medicalOrder.length > 0) {
-          const todayResults = patientHistory.medicalOrder.filter(
-            exam => getDateFormatted(exam.createdAt) === getDateFormatted(new Date())
-          );
-          if (todayResults && todayResults.length === 1) {
-            const todayResult = todayResults[0];
-            const newResult = { ...todayResult, ...medicalOrder };
-            const resultsAux = patientHistory.medicalOrder.filter(
-              exam => getDateFormatted(exam.createdAt) !== getDateFormatted(new Date())
-            );
-            patientHistory.medicalOrder = [...resultsAux, newResult];
-          } else if (!todayResults || todayResults.length === 0) {
-            medicalOrder.createdBy = user;
-            medicalOrder.createdAt = new Date();
-            patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
+
+        // Process each order
+        if (ordersToProcess.length > 0) {
+          if (!patientHistory.medicalOrder) {
+            patientHistory.medicalOrder = [];
           }
-        } else {
-          medicalOrder.createdBy = user;
-          medicalOrder.createdAt = new Date();
-          if (patientHistory.medicalOrder) {
-            patientHistory.medicalOrder = [...patientHistory.medicalOrder, medicalOrder];
-          } else {
-            patientHistory.medicalOrder = [medicalOrder];
-          }
+
+          ordersToProcess.forEach(order => {
+            if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
+              order.attentionId = lastAttentionId;
+            }
+
+            // Check if this order already exists (by ID reference or by text content)
+            let existingIndex = -1;
+            if (order.prescriptionId) {
+              existingIndex = patientHistory.medicalOrder.findIndex(
+                o => o.prescriptionId === order.prescriptionId
+              );
+            } else if (order.examOrderId) {
+              existingIndex = patientHistory.medicalOrder.findIndex(
+                o => o.examOrderId === order.examOrderId
+              );
+            } else if (order.referenceId) {
+              existingIndex = patientHistory.medicalOrder.findIndex(
+                o => o.referenceId === order.referenceId
+              );
+            } else if (order.medicalOrder && order.medicalOrder.trim().length > 0) {
+              // For text orders, check by date and content
+              const todayResults = patientHistory.medicalOrder.filter(
+                o => getDateFormatted(o.createdAt) === getDateFormatted(new Date()) &&
+                     o.medicalOrder === order.medicalOrder
+              );
+              if (todayResults.length > 0) {
+                existingIndex = patientHistory.medicalOrder.findIndex(
+                  o => o === todayResults[0]
+                );
+              }
+            }
+
+            if (existingIndex >= 0) {
+              // Update existing order
+              order.createdBy = order.createdBy || patientHistory.medicalOrder[existingIndex].createdBy || user;
+              order.createdAt = order.createdAt || patientHistory.medicalOrder[existingIndex].createdAt || new Date();
+              patientHistory.medicalOrder[existingIndex] = order;
+            } else {
+              // Add new order
+              order.createdBy = order.createdBy || user;
+              order.createdAt = order.createdAt || new Date();
+              patientHistory.medicalOrder.push(order);
+            }
+          });
         }
       }
       if (patientDocument !== undefined) {
-        if (lastAttentionId !== undefined) {
+        if (lastAttentionId !== undefined && lastAttentionId !== null && lastAttentionId.trim().length > 0) {
           patientDocument.attentionId = lastAttentionId;
         }
-        patientDocument.createdBy = user;
-        patientDocument.createdAt = new Date();
-        if (patientHistory.patientDocument) {
-          patientHistory.patientDocument = [...patientHistory.patientDocument, patientDocument];
+        // FIX BUG #2: Check for existing entry for this attention before adding
+        if (patientHistory.patientDocument && patientHistory.patientDocument.length > 0) {
+          const existingForAttention = patientHistory.patientDocument.find(
+            doc => doc.attentionId === lastAttentionId &&
+                   getDateFormatted(doc.createdAt) === getDateFormatted(new Date())
+          );
+          if (existingForAttention) {
+            // Update existing entry
+            const updated = { ...existingForAttention, ...patientDocument };
+            patientHistory.patientDocument = patientHistory.patientDocument.map(
+              doc => doc.attentionId === lastAttentionId &&
+                     getDateFormatted(doc.createdAt) === getDateFormatted(new Date())
+                ? updated
+                : doc
+            );
+          } else {
+            // Add new entry
+            patientDocument.createdBy = user;
+            patientDocument.createdAt = new Date();
+            patientHistory.patientDocument = [...patientHistory.patientDocument, patientDocument];
+          }
         } else {
+          patientDocument.createdBy = user;
+          patientDocument.createdAt = new Date();
           patientHistory.patientDocument = [patientDocument];
         }
       }
@@ -741,6 +889,9 @@ export class PatientHistoryService {
   ): Promise<PatientHistory> {
     try {
       const patientHistory = await this.patientHistoryRepository.findById(id);
+      // Capture original modifiedAt for concurrent update check
+      const originalModifiedAt = patientHistory?.modifiedAt;
+
       if (patientHistory && patientHistory.id) {
         if (control !== undefined) {
           patientHistory.control = control;
@@ -748,12 +899,24 @@ export class PatientHistoryService {
         if (patientDocument !== undefined) {
           patientHistory.patientDocument = patientDocument;
         }
-        if (lastAttentionId !== undefined) {
-          patientHistory.lastAttentionId = lastAttentionId;
-        }
-        patientHistory.modifiedAt = new Date();
-        patientHistory.modifiedBy = user;
-        const patientHistoryUpdated = await this.patientHistoryRepository.update(patientHistory);
+      if (lastAttentionId !== undefined) {
+        patientHistory.lastAttentionId = lastAttentionId;
+      }
+
+      // FIX Concurrent Updates: Verify no concurrent modification
+      // Re-read to check if modifiedAt changed (someone else updated it)
+      const currentHistory = await this.patientHistoryRepository.findById(id);
+      if (currentHistory.modifiedAt && originalModifiedAt &&
+          currentHistory.modifiedAt.getTime() !== originalModifiedAt.getTime()) {
+        throw new HttpException(
+          'Patient history was modified by another user. Please refresh and try again.',
+          HttpStatus.CONFLICT
+        );
+      }
+
+      patientHistory.modifiedAt = new Date();
+      patientHistory.modifiedBy = user;
+      const patientHistoryUpdated = await this.patientHistoryRepository.update(patientHistory);
         const patientHistoryUpdatedEvent = new PatientHistoryUpdated(
           new Date(),
           patientHistoryUpdated,

@@ -7,6 +7,7 @@ import { ClientService } from '../client/client.service';
 
 import FormCreated from './events/FormCreated';
 import FormUpdated from './events/FormUpdated';
+import FormLoadedToProntuario from './events/FormLoadedToProntuario';
 import { Form } from './model/form.entity';
 import { FormType } from './model/type.enum';
 
@@ -88,6 +89,45 @@ export class FormService {
     const formUpdated = await this.formRepository.update(form);
     const formUpdatedEvent = new FormUpdated(new Date(), formUpdated, { user });
     publish(formUpdatedEvent);
+    return formUpdated;
+  }
+
+  public async getPreprontuarioStatus(commerceId: string, clientId: string): Promise<any> {
+    const forms = await this.getFormsByClientAndType(commerceId, clientId, FormType.PRE_ATTENTION);
+
+    if (forms && forms.length > 0) {
+      const latestForm = forms.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+
+      return {
+        completed: true,
+        completedAt: latestForm.createdAt,
+        formId: latestForm.id,
+      };
+    }
+
+    return {
+      completed: false,
+      completedAt: null,
+      formId: null,
+    };
+  }
+
+  public async markAsLoadedToProntuario(id: string, userId: string): Promise<Form> {
+    const form = await this.getFormById(id);
+    if (!form) {
+      throw new Error(`Form with id ${id} not found`);
+    }
+
+    form.loadedToProntuario = true;
+    form.loadedToProntuarioDate = new Date();
+    form.loadedToProntuarioBy = userId;
+
+    const formUpdated = await this.formRepository.update(form);
+    const formLoadedEvent = new FormLoadedToProntuario(new Date(), formUpdated, { user: userId });
+    publish(formLoadedEvent);
+
     return formUpdated;
   }
 }

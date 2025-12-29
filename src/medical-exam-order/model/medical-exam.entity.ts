@@ -3,6 +3,7 @@ import { Collection } from 'fireorm';
 @Collection('medical-exam')
 export class MedicalExam {
   id: string;
+  commerceId: string; // ✅ Agregado
   name: string;
   code?: string; // Código LOINC
   type: string; // laboratory, imaging, procedure, other

@@ -222,5 +222,13 @@
   {
     "name": "telemedicine-active",
     "type": "PRODUCT"
+  },
+  {
+    "name": "attention-stages-enabled",
+    "type": "PRODUCT"
+  },
+  {
+    "name": "attention-checkout-enabled",
+    "type": "PRODUCT"
   }
 ]

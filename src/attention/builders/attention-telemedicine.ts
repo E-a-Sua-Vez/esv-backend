@@ -4,7 +4,11 @@ import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 
 import { CommerceService } from '../../commerce/commerce.service';
+import { PackageService } from '../../package/package.service';
+import { PackageStatus } from '../../package/model/package-status.enum';
+import { PackageType } from '../../package/model/package-type.enum';
 import { QueueService } from '../../queue/queue.service';
+import { ServiceService } from '../../service/service.service';
 import { CreateTelemedicineSessionDto } from '../../telemedicine/dto/create-telemedicine-session.dto';
 import { TelemedicineSessionType } from '../../telemedicine/model/telemedicine-session.entity';
 import { TelemedicineService } from '../../telemedicine/telemedicine.service';
@@ -21,7 +25,9 @@ export class AttentionTelemedicineBuilder {
     private attentionRepository = getRepository(Attention),
     private queueService: QueueService,
     private telemedicineService: TelemedicineService,
-    private commerceService: CommerceService
+    private commerceService: CommerceService,
+    private packageService: PackageService,
+    private serviceService: ServiceService
   ) {}
 
   async create(
@@ -129,6 +135,106 @@ export class AttentionTelemedicineBuilder {
       notes: telemedicineConfig.notes,
     };
     await this.attentionRepository.update(attentionCreated);
+
+    // Crear package si el servicio tiene procedures > 1
+    if (attentionCreated.servicesId && attentionCreated.servicesId.length === 1) {
+      const service = await this.serviceService.getServiceById(attentionCreated.servicesId[0]);
+
+      // Determine procedures amount: from servicesDetails first, then service.serviceInfo.procedures, then service.serviceInfo.proceduresList
+      let proceduresAmount = 0;
+      console.log('[AttentionTelemedicineBuilder] Determining procedures amount:', {
+        servicesDetails: servicesDetails,
+        servicesDetailsLength: servicesDetails?.length,
+        firstServiceDetails: servicesDetails?.[0],
+        proceduresInDetails: servicesDetails?.[0]?.['procedures'],
+        serviceProcedures: service?.serviceInfo?.procedures,
+        serviceProceduresList: service?.serviceInfo?.proceduresList
+      });
+
+      if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
+        proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
+        console.log('[AttentionTelemedicineBuilder] Using procedures from servicesDetails:', proceduresAmount);
+      } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
+        proceduresAmount = service.serviceInfo.procedures;
+        console.log('[AttentionTelemedicineBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
+      } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
+        // Use first value from proceduresList as fallback
+        const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
+        if (proceduresList.length > 0) {
+          proceduresAmount = proceduresList[0];
+          console.log('[AttentionTelemedicineBuilder] Using first value from proceduresList:', proceduresAmount);
+        }
+      }
+
+      console.log('[AttentionTelemedicineBuilder] Final proceduresAmount:', proceduresAmount);
+
+      if (proceduresAmount > 1) {
+        if (attentionCreated.clientId) {
+          const packs = await this.packageService.getPackageByCommerceIdAndClientServices(
+            attentionCreated.commerceId,
+            attentionCreated.clientId,
+            attentionCreated.servicesId[0]
+          );
+          if (packs && packs.length > 0) {
+            // Associate attention to existing active package with sessions remaining
+            const activePackage = packs.find(pkg => {
+              const isActive = [PackageStatus.ACTIVE, PackageStatus.CONFIRMED, PackageStatus.REQUESTED].includes(pkg.status);
+              const hasPendingSessions = (pkg.proceduresLeft || 0) > 0;
+              return isActive && hasPendingSessions;
+            });
+            if (activePackage) {
+              attentionCreated.packageId = activePackage.id;
+              await this.attentionRepository.update(attentionCreated);
+              // Add attention to package
+              await this.packageService.addProcedureToPackage(
+                'ett',
+                activePackage.id,
+                [],
+                [attentionCreated.id]
+              );
+            } else {
+              // No active package found, create new one
+              const packageName = service.tag.toLocaleUpperCase();
+              const packCreated = await this.packageService.createPackage(
+                'ett',
+                attentionCreated.commerceId,
+                attentionCreated.clientId,
+                undefined,
+                attentionCreated.id,
+                proceduresAmount,
+                packageName,
+                attentionCreated.servicesId,
+                [],
+                [attentionCreated.id],
+                PackageType.STANDARD,
+                PackageStatus.REQUESTED
+              );
+              attentionCreated.packageId = packCreated.id;
+              await this.attentionRepository.update(attentionCreated);
+            }
+          } else {
+            // No packages exist, create new one
+            const packageName = service.tag.toLocaleUpperCase();
+            const packCreated = await this.packageService.createPackage(
+              'ett',
+              attentionCreated.commerceId,
+              attentionCreated.clientId,
+              undefined,
+              attentionCreated.id,
+              proceduresAmount,
+              packageName,
+              attentionCreated.servicesId,
+              [],
+              [attentionCreated.id],
+              PackageType.STANDARD,
+              PackageStatus.REQUESTED
+            );
+            attentionCreated.packageId = packCreated.id;
+            await this.attentionRepository.update(attentionCreated);
+          }
+        }
+      }
+    }
 
     // Publicar evento
     const attentionCreatedEvent = new AttentionCreated(

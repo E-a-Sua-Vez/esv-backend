@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Query,
   UseGuards,
@@ -26,8 +27,10 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
 
 import { CreateExamOrderDto } from './dto/create-exam-order.dto';
+import { CreateMedicalExamDto } from './dto/create-medical-exam.dto';
 import { MedicalExamOrderPdfService } from './medical-exam-order-pdf.service';
 import { MedicalExamOrderService } from './medical-exam-order.service';
+import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 import { ExamOrderStatus, ExamType } from './model/exam-order-status.enum';
 import { MedicalExamOrder, ExamResult } from './model/medical-exam-order.entity';
 import { MedicalExam } from './model/medical-exam.entity';
@@ -37,8 +40,42 @@ import { MedicalExam } from './model/medical-exam.entity';
 export class MedicalExamOrderController {
   constructor(
     private readonly examOrderService: MedicalExamOrderService,
-    private readonly examOrderPdfService: MedicalExamOrderPdfService
+    private readonly examOrderPdfService: MedicalExamOrderPdfService,
+    private readonly generatedDocumentService: GeneratedDocumentService
   ) {}
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/exams')
+  @ApiOperation({
+    summary: 'Get all medical exams',
+    description: 'Retrieves all active medical exams from the catalog',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of exams',
+    type: [MedicalExam],
+  })
+  async getAllExams() {
+    return this.examOrderService.getAllExams();
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/exams/commerce/:commerceId')
+  @ApiOperation({
+    summary: 'Get medical exams by commerce',
+    description: 'Retrieves all active medical exams for a specific commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of exams',
+    type: [MedicalExam],
+  })
+  async getExamsByCommerce(@Param('commerceId') commerceId: string) {
+    return this.examOrderService.getExamsByCommerce(commerceId);
+  }
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -49,6 +86,7 @@ export class MedicalExamOrderController {
   })
   @ApiQuery({ name: 'q', required: false, description: 'Search term' })
   @ApiQuery({ name: 'type', required: false, enum: ExamType })
+  @ApiQuery({ name: 'commerceId', required: false, description: 'Commerce ID' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -58,12 +96,86 @@ export class MedicalExamOrderController {
   async searchExams(
     @Query('q') searchTerm?: string,
     @Query('type') type?: ExamType,
+    @Query('commerceId') commerceId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number
   ) {
     const pageNum = page ? parseInt(page.toString(), 10) : 1;
     const limitNum = limit ? parseInt(limit.toString(), 10) : 50;
-    return this.examOrderService.searchExams(searchTerm, type, pageNum, limitNum);
+    return this.examOrderService.searchExams(searchTerm, type, commerceId, pageNum, limitNum);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/exams/:id')
+  @ApiOperation({
+    summary: 'Get exam by ID',
+    description: 'Retrieves a medical exam from the catalog by ID',
+  })
+  @ApiParam({ name: 'id', description: 'Exam ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Exam found',
+    type: MedicalExam,
+  })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  async getExamById(@Param('id') id: string) {
+    return this.examOrderService.getExamById(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/exams')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create medical exam',
+    description: 'Creates a new medical exam in the catalog',
+  })
+  @ApiBody({ type: CreateMedicalExamDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Exam created successfully',
+    type: MedicalExam,
+  })
+  async createMedicalExam(@User() user, @Body() createDto: CreateMedicalExamDto) {
+    return this.examOrderService.createMedicalExam(user.id || user, createDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/exams/:id')
+  @ApiOperation({
+    summary: 'Update medical exam',
+    description: 'Updates a medical exam in the catalog',
+  })
+  @ApiParam({ name: 'id', description: 'Exam ID' })
+  @ApiBody({ type: CreateMedicalExamDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Exam updated successfully',
+    type: MedicalExam,
+  })
+  async updateMedicalExam(@User() user, @Param('id') id: string, @Body() updateDto: CreateMedicalExamDto) {
+    const userId = typeof user === 'object' && user?.id ? user.id : typeof user === 'string' ? user : 'system';
+    return this.examOrderService.updateMedicalExam(id, updateDto, userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Delete('/exams/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete medical exam',
+    description: 'Soft deletes a medical exam from the catalog',
+  })
+  @ApiParam({ name: 'id', description: 'Exam ID' })
+  @ApiResponse({
+    status: 204,
+    description: 'Exam deleted successfully',
+  })
+  async deleteMedicalExam(@User() user, @Param('id') id: string) {
+    const userId = typeof user === 'object' && user?.id ? user.id : typeof user === 'string' ? user : 'system';
+    await this.examOrderService.deleteMedicalExam(id, userId);
   }
 
   @UseGuards(AuthGuard)
@@ -274,5 +386,74 @@ export class MedicalExamOrderController {
     );
 
     return { url, expiresIn: expires };
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/send-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send exam order PDF by email',
+    description: 'Sends the exam order PDF to the specified email address',
+  })
+  @ApiParam({ name: 'id', description: 'Exam Order ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        recipientEmail: { type: 'string', format: 'email' },
+        subject: { type: 'string' },
+        message: { type: 'string' },
+      },
+      required: ['recipientEmail'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email sent successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Exam Order not found' })
+  async sendExamOrderByEmail(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { recipientEmail: string; subject?: string; message?: string }
+  ): Promise<{ success: boolean; message: string }> {
+    const examOrder = await this.examOrderService.getExamOrderById(id);
+
+    // Buscar documento por examOrderId en metadata o por attentionId y option
+    const allDocuments = await this.generatedDocumentService['documentsService'].getDocumentsByClientWithFilters(
+      examOrder.commerceId,
+      examOrder.clientId,
+      {
+        attentionId: examOrder.attentionId,
+      }
+    );
+
+    // Buscar documento de orden de examen
+    const examOrderDocument = allDocuments.find(
+      doc => doc.option === 'exam_order_pdf' &&
+      (doc.attentionId === examOrder.attentionId ||
+       (doc.documentMetadata as any)?.examOrderId === id)
+    );
+
+    if (!examOrderDocument) {
+      throw new HttpException('Document not found for this exam order', HttpStatus.NOT_FOUND);
+    }
+
+    await this.generatedDocumentService.sendDocumentByEmail(
+      user.id || user,
+      examOrder.commerceId,
+      examOrder.clientId,
+      examOrder.attentionId,
+      examOrderDocument.id,
+      body.recipientEmail,
+      body.subject,
+      body.message
+    );
+
+    return {
+      success: true,
+      message: 'Exam order sent by email successfully',
+    };
   }
 }

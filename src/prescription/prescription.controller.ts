@@ -4,11 +4,13 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Query,
   UseGuards,
   HttpCode,
   HttpStatus,
+  HttpException,
   Res,
 } from '@nestjs/common';
 import {
@@ -26,17 +28,20 @@ import { User } from 'src/auth/user.decorator';
 
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { MedicationSearchDto } from './dto/medication-search.dto';
+import { CreateMedicationDto } from './dto/create-medication.dto';
 import { MedicationCatalog } from './model/medication.entity';
 import { Prescription } from './model/prescription.entity';
 import { PrescriptionPdfService } from './prescription-pdf.service';
 import { PrescriptionService } from './prescription.service';
+import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 
 @ApiTags('prescription')
 @Controller('prescription')
 export class PrescriptionController {
   constructor(
     private readonly prescriptionService: PrescriptionService,
-    private readonly prescriptionPdfService: PrescriptionPdfService
+    private readonly prescriptionPdfService: PrescriptionPdfService,
+    private readonly generatedDocumentService: GeneratedDocumentService
   ) {}
 
   @UseGuards(AuthGuard)
@@ -56,6 +61,39 @@ export class PrescriptionController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @Get('/medications')
+  @ApiOperation({
+    summary: 'Get all medications',
+    description: 'Retrieves all active medications from the catalog',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of medications',
+    type: [MedicationCatalog],
+  })
+  async getAllMedications() {
+    return this.prescriptionService.getAllMedications();
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/medications/commerce/:commerceId')
+  @ApiOperation({
+    summary: 'Get medications by commerce',
+    description: 'Retrieves all active medications for a specific commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of medications',
+    type: [MedicationCatalog],
+  })
+  async getMedicationsByCommerce(@Param('commerceId') commerceId: string) {
+    return this.prescriptionService.getMedicationsByCommerce(commerceId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/medications/:id')
   @ApiOperation({
     summary: 'Get medication by ID',
@@ -70,6 +108,61 @@ export class PrescriptionController {
   @ApiResponse({ status: 404, description: 'Medication not found' })
   async getMedicationById(@Param('id') id: string) {
     return this.prescriptionService.getMedicationById(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/medications')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create medication',
+    description: 'Creates a new medication in the catalog',
+  })
+  @ApiBody({ type: CreateMedicationDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Medication created successfully',
+    type: MedicationCatalog,
+  })
+  async createMedication(@User() user, @Body() createDto: CreateMedicationDto) {
+    return this.prescriptionService.createMedication(user.id || user, createDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/medications/:id')
+  @ApiOperation({
+    summary: 'Update medication',
+    description: 'Updates a medication in the catalog',
+  })
+  @ApiParam({ name: 'id', description: 'Medication ID' })
+  @ApiBody({ type: CreateMedicationDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Medication updated successfully',
+    type: MedicationCatalog,
+  })
+  async updateMedication(@User() user, @Param('id') id: string, @Body() updateDto: CreateMedicationDto) {
+    const userId = typeof user === 'object' && user?.id ? user.id : typeof user === 'string' ? user : 'system';
+    return this.prescriptionService.updateMedication(id, updateDto, userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Delete('/medications/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete medication',
+    description: 'Soft deletes a medication from the catalog',
+  })
+  @ApiParam({ name: 'id', description: 'Medication ID' })
+  @ApiResponse({
+    status: 204,
+    description: 'Medication deleted successfully',
+  })
+  async deleteMedication(@User() user, @Param('id') id: string) {
+    const userId = typeof user === 'object' && user?.id ? user.id : typeof user === 'string' ? user : 'system';
+    await this.prescriptionService.deleteMedication(id, userId);
   }
 
   @UseGuards(AuthGuard)
@@ -355,6 +448,75 @@ export class PrescriptionController {
     );
 
     return { url, expiresIn: expires };
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/send-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send prescription PDF by email',
+    description: 'Sends the prescription PDF to the specified email address',
+  })
+  @ApiParam({ name: 'id', description: 'Prescription ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        recipientEmail: { type: 'string', format: 'email' },
+        subject: { type: 'string' },
+        message: { type: 'string' },
+      },
+      required: ['recipientEmail'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email sent successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Prescription not found' })
+  async sendPrescriptionByEmail(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { recipientEmail: string; subject?: string; message?: string }
+  ): Promise<{ success: boolean; message: string }> {
+    const prescription = await this.prescriptionService.getPrescriptionById(id);
+
+    // Buscar documento por prescriptionId en metadata o por attentionId y option
+    const allDocuments = await this.generatedDocumentService['documentsService'].getDocumentsByClientWithFilters(
+      prescription.commerceId,
+      prescription.clientId,
+      {
+        attentionId: prescription.attentionId,
+      }
+    );
+
+    // Buscar documento de prescripción
+    const prescriptionDocument = allDocuments.find(
+      doc => doc.option === 'prescription_pdf' &&
+      (doc.attentionId === prescription.attentionId ||
+       (doc.documentMetadata as any)?.prescriptionId === id)
+    );
+
+    if (!prescriptionDocument) {
+      throw new HttpException('Document not found for this prescription', HttpStatus.NOT_FOUND);
+    }
+
+    await this.generatedDocumentService.sendDocumentByEmail(
+      user.id || user,
+      prescription.commerceId,
+      prescription.clientId,
+      prescription.attentionId,
+      prescriptionDocument.id,
+      body.recipientEmail,
+      body.subject,
+      body.message
+    );
+
+    return {
+      success: true,
+      message: 'Prescription sent by email successfully',
+    };
   }
 
   @UseGuards(AuthGuard)

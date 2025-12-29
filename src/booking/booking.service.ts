@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Inject, forwardRef } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, forwardRef, Optional } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
@@ -34,6 +34,7 @@ import { PackageType } from '../package/model/package-type.enum';
 import { PackageService } from '../package/package.service';
 import { QueueService } from '../queue/queue.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+import { AuditLogService } from '../shared/services/audit-log.service';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { User } from '../user/model/user.entity';
 import { UserService } from '../user/user.service';
@@ -43,7 +44,12 @@ import { WaitlistService } from '../waitlist/waitlist.service';
 import { BookingDefaultBuilder } from './builders/booking-default';
 import { BookingAvailabilityDto } from './dto/booking-availability.dto';
 import { BookingDetailsDto } from './dto/booking-details.dto';
+import BookingCreated from './events/BookingCreated';
 import BookingUpdated from './events/BookingUpdated';
+import TermsAccepted from '../shared/events/TermsAccepted';
+import { LgpdConsentService } from '../shared/services/lgpd-consent.service';
+import { ConsentType } from '../shared/model/lgpd-consent.entity';
+import { ConsentStatus } from '../shared/model/lgpd-consent.entity';
 import { BookingChannel } from './model/booking-channel.enum';
 import { BookingStatus } from './model/booking-status.enum';
 import { BookingType } from './model/booking-type.enum';
@@ -64,6 +70,7 @@ export class BookingService {
     private waitlistService: WaitlistService,
     private clientService: ClientService,
     private incomeService: IncomeService,
+    @Inject(forwardRef(() => PackageService))
     private packageService: PackageService,
     private userService: UserService,
     private documentsService: DocumentsService,
@@ -71,7 +78,9 @@ export class BookingService {
     @Inject(forwardRef(() => TelemedicineService))
     private telemedicineService: TelemedicineService,
     @Inject(GcpLoggerService)
-    private readonly logger: GcpLoggerService
+    private readonly logger: GcpLoggerService,
+    @Optional() @Inject(AuditLogService) private auditLogService?: AuditLogService,
+    @Optional() @Inject(LgpdConsentService) private lgpdConsentService?: LgpdConsentService
   ) {
     this.logger.setContext('BookingService');
   }
@@ -123,9 +132,83 @@ export class BookingService {
       );
       throw new HttpException(`Al menos un bloque horario ya fue reservado`, HttpStatus.CONFLICT);
     }
+    // Validate date format before processing
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      throw new HttpException(
+        `Formato de fecha inválido: ${date}. Debe ser YYYY-MM-DD`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
     const [year, month, day] = date.split('-');
-    const dateFormatted = new Date(+year, +month - 1, +day);
+    const yearNum = parseInt(year, 10);
+    const monthNum = parseInt(month, 10);
+    const dayNum = parseInt(day, 10);
+
+    // Validate date values
+    if (isNaN(yearNum) || isNaN(monthNum) || isNaN(dayNum) ||
+        monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31) {
+      throw new HttpException(
+        `Fecha inválida: ${date}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const dateFormatted = new Date(yearNum, monthNum - 1, dayNum);
+    // Verify date is valid (not adjusted by Date constructor)
+    if (dateFormatted.getFullYear() !== yearNum ||
+        dateFormatted.getMonth() !== monthNum - 1 ||
+        dateFormatted.getDate() !== dayNum) {
+      throw new HttpException(
+        `Fecha inválida: ${date}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
     const newDateFormatted = dateFormatted.toISOString().slice(0, 10);
+
+    // Validate queue is active and available
+    if (!queue.active) {
+      throw new HttpException(
+        `La fila ${queue.id} - ${queue.name} no está activa`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    if (!queue.available) {
+      throw new HttpException(
+        `La fila ${queue.id} - ${queue.name} no está disponible`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Validate queue limit is valid
+    if (!queue.limit || queue.limit <= 0) {
+      throw new HttpException(
+        `Límite de la fila ${queue.id} - ${queue.name} no es válido`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
+
+    // Validate services duration if servicesDetails provided
+    if (servicesDetails && Array.isArray(servicesDetails)) {
+      for (const serviceDetail of servicesDetails) {
+        if (serviceDetail && typeof serviceDetail === 'object') {
+          const serviceDetailAny = serviceDetail as any;
+          const duration = serviceDetailAny.duration || serviceDetailAny.durationMinutes;
+          if (duration !== undefined) {
+            const durationNum = typeof duration === 'number' ? duration : parseInt(String(duration), 10);
+            if (isNaN(durationNum) || durationNum <= 0 || durationNum > 1440) { // Max 24 hours
+              throw new HttpException(
+                `Duración de servicio inválida: ${duration}. Debe ser un número positivo menor a 1440 minutos`,
+                HttpStatus.BAD_REQUEST
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Re-check queue limit after validation (atomic check before creation)
     const booked = await this.getPendingBookingsByQueueAndDate(queueId, newDateFormatted);
     if (booked.length >= queue.limit) {
       throw new HttpException(
@@ -139,37 +222,69 @@ export class BookingService {
         if (block.number !== undefined) {
           bookingNumber = block.number;
         } else if (
+          block &&
           block.blocks &&
           block.blocks.length > 0 &&
           block.blocks[0].number !== undefined
         ) {
           bookingNumber = block.blocks[0].number;
-        } else if (block.blockNumbers && block.blockNumbers.length > 0) {
+        } else if (block && block.blockNumbers && block.blockNumbers.length > 0) {
           bookingNumber = block.blockNumbers[0];
         }
 
         // Only query if bookingNumber is defined
         if (bookingNumber !== undefined) {
+          // Validate blockLimit is valid
           let blockLimit = 0;
-          const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(
-            queueId,
-            date,
-            bookingNumber
-          );
-          if (queue.serviceInfo.blockLimit && queue.serviceInfo.blockLimit > 0) {
+          if (queue.serviceInfo && queue.serviceInfo.blockLimit) {
+            if (queue.serviceInfo.blockLimit <= 0) {
+              throw new HttpException(
+                `Límite de bloque no es válido para la fila ${queue.id}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+              );
+            }
             blockLimit = queue.serviceInfo.blockLimit;
           }
-          if (alreadyBooked.length > blockLimit) {
-            throw new HttpException(
-              `Ya se alcanzó el límite de reservas en este bloque: ${bookingNumber}, bookings: ${alreadyBooked.length}, limite: ${blockLimit}`,
-              HttpStatus.INTERNAL_SERVER_ERROR
+
+          // For super blocks, validate ALL block numbers, not just the first one
+          let blockNumbersToCheck = [bookingNumber];
+          if (block && block.blockNumbers && block.blockNumbers.length > 0) {
+            blockNumbersToCheck = block.blockNumbers;
+          } else if (block && block.blocks && block.blocks.length > 0) {
+            blockNumbersToCheck = block.blocks
+              .map(b => b.number)
+              .filter(num => num !== undefined);
+          }
+
+          // Check each block number
+          for (const blockNum of blockNumbersToCheck) {
+            const alreadyBooked = await this.getPendingBookingsByNumberAndQueueAndDate(
+              queueId,
+              date,
+              blockNum
             );
+            if (blockLimit > 0 && alreadyBooked.length >= blockLimit) {
+              throw new HttpException(
+                `Ya se alcanzó el límite de reservas en el bloque: ${blockNum}, bookings: ${alreadyBooked.length}, limite: ${blockLimit}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+              );
+            }
           }
         }
       } else {
+        // For SELECT_SERVICE queues, get bookings and assign number atomically
+        // Re-check to minimize race condition window
         const dateBookings = await this.getBookingsByQueueAndDate(queueId, date);
         const amountOfBookings = dateBookings.length || 0;
         bookingNumber = amountOfBookings + 1;
+
+        // Double-check queue limit hasn't been exceeded (race condition mitigation)
+        if (amountOfBookings >= queue.limit) {
+          throw new HttpException(
+            `Limite de la fila ${queue.id} - ${queue.name} (${queue.limit}) alcanzado para la fecha ${newDateFormatted}`,
+            HttpStatus.INTERNAL_SERVER_ERROR
+          );
+        }
       }
       let email = undefined;
       let phone = undefined;
@@ -177,14 +292,20 @@ export class BookingService {
       if (clientId !== undefined) {
         client = await this.clientService.getClientById(clientId);
         if (client && client.id) {
+          // Merge client data with user data, preferring more recent data
+          // Compare timestamps if available, otherwise prefer user data (more recent by default)
+          const clientUpdatedAt = client.updatedAt ? new Date(client.updatedAt).getTime() : 0;
+          const userUpdatedAt = user.updatedAt ? new Date(user.updatedAt).getTime() : Date.now();
+
           user = {
             ...user,
-            email: client.email || user.email,
-            phone: client.phone || user.phone,
-            name: client.name || user.name,
-            lastName: client.lastName || user.lastName,
-            personalInfo: client.personalInfo || user.personalInfo,
-            idNumber: client.idNumber || user.idNumber,
+            // Only overwrite if client data is more recent, otherwise keep user data
+            email: (clientUpdatedAt > userUpdatedAt && client.email) ? client.email : (user.email || client.email),
+            phone: (clientUpdatedAt > userUpdatedAt && client.phone) ? client.phone : (user.phone || client.phone),
+            name: (clientUpdatedAt > userUpdatedAt && client.name) ? client.name : (user.name || client.name),
+            lastName: (clientUpdatedAt > userUpdatedAt && client.lastName) ? client.lastName : (user.lastName || client.lastName),
+            personalInfo: (clientUpdatedAt > userUpdatedAt && client.personalInfo) ? client.personalInfo : (user.personalInfo || client.personalInfo),
+            idNumber: (clientUpdatedAt > userUpdatedAt && client.idNumber) ? client.idNumber : (user.idNumber || client.idNumber),
           };
           if (client.email) {
             email = client.email;
@@ -251,12 +372,31 @@ export class BookingService {
       if (user.phone !== undefined) {
         phone = user.phone;
       }
+      // Send notifications, but don't fail booking creation if notifications fail
       if (email !== undefined) {
-        this.bookingEmail(bookingCreated);
-        this.bookingCommerceConditionsEmail(bookingCreated);
+        try {
+          this.bookingEmail(bookingCreated);
+          this.bookingCommerceConditionsEmail(bookingCreated);
+        } catch (error) {
+          this.logger.error(
+            `Failed to send booking email for booking ${bookingCreated.id}: ${error.message}`,
+            undefined,
+            `bookingId: ${bookingCreated.id}, email: ${email}`
+          );
+          // Don't throw - booking is already created
+        }
       }
       if (phone !== undefined) {
-        this.bookingWhatsapp(bookingCreated);
+        try {
+          this.bookingWhatsapp(bookingCreated);
+        } catch (error) {
+          this.logger.error(
+            `Failed to send booking WhatsApp for booking ${bookingCreated.id}: ${error.message}`,
+            undefined,
+            `bookingId: ${bookingCreated.id}, phone: ${phone}`
+          );
+          // Don't throw - booking is already created
+        }
       }
       this.logger.info('Booking created successfully', {
         bookingId: bookingCreated.id,
@@ -269,6 +409,27 @@ export class BookingService {
         clientId,
         hasBlock: !!block,
       });
+
+      // Publish BookingCreated event
+      try {
+        const bookingCreatedEvent = new BookingCreated(new Date(), bookingCreated, { user });
+        this.logger.info(`[BookingService] Publishing BookingCreated event for booking ${bookingCreated.id} with status ${bookingCreated.status}`, {
+          bookingId: bookingCreated.id,
+          eventType: 'ett.booking.1.event.booking.created',
+          status: bookingCreated.status,
+          queueId: bookingCreated.queueId,
+          commerceId: bookingCreated.commerceId,
+        });
+        publish(bookingCreatedEvent);
+        this.logger.info(`[BookingService] ✅ BookingCreated event published successfully for booking ${bookingCreated.id}`);
+      } catch (error) {
+        this.logger.error(
+          `[BookingService] ❌ Failed to publish BookingCreated event for booking ${bookingCreated.id}: ${error.message}`,
+          error.stack,
+          `bookingId: ${bookingCreated.id}, error: ${error.message}`
+        );
+        // Don't throw - booking is already created, event publishing failure shouldn't break the flow
+      }
     }
     return bookingCreated;
   }
@@ -284,9 +445,9 @@ export class BookingService {
     if (queue && queue.id && queue.serviceInfo && queue.serviceInfo.blockLimit) {
       queueLimit = queue.serviceInfo.blockLimit || 1;
     }
-    if (block.blocks && block.blocks.length > 0) {
+    if (block && block.blocks && block.blocks.length > 0) {
       blocks = block.blocks;
-    } else {
+    } else if (block) {
       blocks.push(block);
     }
     const takenBlocks = await this.bookingBlockNumbersUsedService.getTakenBookingsBlocksByDate(
@@ -300,25 +461,30 @@ export class BookingService {
         .map(block => block.hourFrom);
       const requestedHoursFrom = blocks.map(block => block.hourFrom);
       if (queueLimit === 1) {
-        if (takenBlocks.length === 1) {
-          return true;
-        } else {
-          const includesAll = requestedHoursFrom.every(hour => {
-            const count = takenHoursFrom.filter(hr => hr === hour).length;
-            if (count < queueLimit) {
+      if (takenBlocks.length === 1) {
+        // Check if the single taken block is from the same session
+        const isSameSession = takenBlocks[0].sessionId === sessionId;
+        // If same session, allow; if different session, block is taken
+        return isSameSession;
+      } else {
+        const includesAll = requestedHoursFrom.every(hour => {
+          const count = takenHoursFrom.filter(hr => hr === hour).length;
+          if (count < queueLimit) {
+            return true;
+          }
+          // Explicitly return false if limit reached
+          return false;
+        });
+        if (includesAll === false) {
+          if (requestedHoursFrom.length > 1) {
+            const pos = takenBlocks.findIndex(block => block.sessionId === sessionId);
+            if (pos <= requestedHoursFrom.length - 1) {
               return true;
             }
-          });
-          if (includesAll === false) {
-            if (requestedHoursFrom.length > 1) {
-              const pos = takenBlocks.findIndex(block => block.sessionId === sessionId);
-              if (pos <= requestedHoursFrom.length - 1) {
-                return true;
-              }
-            }
           }
-          return includesAll;
         }
+        return includesAll;
+      }
       } else {
         const checkedHours = requestedHoursFrom.every(hour => {
           const count = takenHoursFrom.filter(hr => hr === hour).length;
@@ -339,9 +505,9 @@ export class BookingService {
     if (queue && queue.id && queue.serviceInfo && queue.serviceInfo.blockLimit) {
       queueLimit = queue.serviceInfo.blockLimit || 1;
     }
-    if (block.blocks && block.blocks.length > 0) {
+    if (block && block.blocks && block.blocks.length > 0) {
       blocks = block.blocks;
-    } else {
+    } else if (block) {
       blocks.push(block);
     }
     const takenBlocks = await this.bookingBlockNumbersUsedService.getTakenBookingsBlocksByDate(
@@ -364,6 +530,8 @@ export class BookingService {
           if (count < queueLimit) {
             return true;
           }
+          // Explicitly return false if limit reached
+          return false;
         });
         return checkedHours;
       }
@@ -634,7 +802,21 @@ export class BookingService {
           const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
           const bookingNumber = booking.number;
           const bookingDate = booking.date;
-          const bookingblock = `${booking.block.hourFrom} - ${booking.block.hourTo}`;
+          // Handle block - it can be undefined or have different structures
+          let bookingblock = '';
+          if (booking.block) {
+            // If block has direct hourFrom/hourTo
+            if (booking.block.hourFrom && booking.block.hourTo) {
+              bookingblock = `${booking.block.hourFrom} - ${booking.block.hourTo}`;
+            }
+            // If block has nested blocks array, use the first one
+            else if (booking.block.blocks && booking.block.blocks.length > 0) {
+              const firstBlock = booking.block.blocks[0];
+              if (firstBlock.hourFrom && firstBlock.hourTo) {
+                bookingblock = `${firstBlock.hourFrom} - ${firstBlock.hourTo}`;
+              }
+            }
+          }
           const commerce = bookingCommerce.name;
           await this.notificationService.createBookingEmailNotification(
             booking.user.email,
@@ -959,6 +1141,10 @@ export class BookingService {
       const booking = await this.getBookingById(id);
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
+      // Debug: Log booking block
+      console.log('[BookingService.getBookingDetails] Booking ID:', id);
+      console.log('[BookingService.getBookingDetails] Booking block from repository:', JSON.stringify(booking.block, null, 2));
+
       bookingDetailsDto.id = booking.id;
       bookingDetailsDto.commerceId = booking.commerceId;
       bookingDetailsDto.createdAt = booking.createdAt;
@@ -976,7 +1162,15 @@ export class BookingService {
       bookingDetailsDto.cancelledAt = booking.cancelledAt;
       bookingDetailsDto.cancelled = booking.cancelled;
       bookingDetailsDto.attentionId = booking.attentionId;
-      bookingDetailsDto.block = booking.block;
+
+      // Explicitly assign block - ensure it's included even if undefined
+      bookingDetailsDto.block = booking.block || undefined;
+
+      console.log('[BookingService.getBookingDetails] Booking object keys:', Object.keys(booking));
+      console.log('[BookingService.getBookingDetails] Booking has block property:', 'block' in booking);
+      console.log('[BookingService.getBookingDetails] Booking.block value:', booking.block);
+      console.log('[BookingService.getBookingDetails] Booking.block type:', typeof booking.block);
+      console.log('[BookingService.getBookingDetails] DTO block assigned:', JSON.stringify(bookingDetailsDto.block, null, 2));
       bookingDetailsDto.telemedicineSessionId = booking.telemedicineSessionId;
       bookingDetailsDto.telemedicineConfig = booking.telemedicineConfig;
       if (booking.queueId) {
@@ -994,6 +1188,12 @@ export class BookingService {
       if (booked) {
         bookingDetailsDto.beforeYou = booked.length || 0;
       }
+      console.log('[BookingService.getBookingDetails] Final DTO block:', JSON.stringify(bookingDetailsDto.block, null, 2));
+      console.log('[BookingService.getBookingDetails] Final DTO (full):', JSON.stringify({
+        id: bookingDetailsDto.id,
+        block: bookingDetailsDto.block,
+        date: bookingDetailsDto.date
+      }, null, 2));
       return bookingDetailsDto;
     } catch (error) {
       throw new HttpException(
@@ -1006,6 +1206,7 @@ export class BookingService {
   public async update(user: string, booking: Booking): Promise<Booking> {
     const bookingUpdated = await this.bookingRepository.update(booking);
     const bookingUpdatedEvent = new BookingUpdated(new Date(), bookingUpdated, { user });
+    this.logger.log(`[BookingService] Publishing BookingUpdated event for booking ${bookingUpdated.id} with status ${bookingUpdated.status}`);
     publish(bookingUpdatedEvent);
     return bookingUpdated;
   }
@@ -1284,6 +1485,32 @@ export class BookingService {
   }
 
   private async createAttention(userIn: string, booking: Booking): Promise<Attention> {
+    // Check if booking was already processed
+    if (booking.processed) {
+      throw new HttpException(
+        `El booking ${booking.id} ya fue procesado`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    if (booking.attentionId) {
+      throw new HttpException(
+        `El booking ${booking.id} ya tiene una atención asociada: ${booking.attentionId}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    // Validate booking date is today
+    const commerce = await this.commerceService.getCommerceById(booking.commerceId);
+    const timezone = commerce?.localeInfo?.timezone || 'America/Sao_Paulo';
+    const todayTimezone = new Date()
+      .toLocaleString('en-US', { timeZone: timezone })
+      .slice(0, 10);
+    const today = new Date(todayTimezone).toISOString().slice(0, 10);
+    if (booking.date !== today) {
+      throw new HttpException(
+        `El booking ${booking.id} no puede procesarse porque la fecha (${booking.date}) no es hoy (${today})`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
     const {
       id,
       queueId,
@@ -1351,19 +1578,34 @@ export class BookingService {
       throw new HttpException(`Error procesando Reservas: Fecha inválida`, HttpStatus.BAD_REQUEST);
     }
     const bookings = await this.getConfirmedBookingsByDate(date, 25);
+    // Filter out already processed bookings to avoid processing same booking multiple times
+    const bookingsToProcess = bookings.filter(booking =>
+      !booking.processed && !booking.attentionId
+    );
     const limiter = new Bottleneck({
       minTime: 1000,
       maxConcurrent: 10,
     });
-    const toProcess = bookings.length;
+    const toProcess = bookingsToProcess.length;
     const responses = [];
     const errors = [];
-    if (bookings && bookings.length > 0) {
-      for (let i = 0; i < bookings.length; i++) {
-        const booking = bookings[i];
+    const processedBookingIds = new Set<string>(); // Track processed bookings to avoid duplicates
+    if (bookingsToProcess && bookingsToProcess.length > 0) {
+      for (let i = 0; i < bookingsToProcess.length; i++) {
+        const booking = bookingsToProcess[i];
+        // Skip if already being processed or already processed
+        if (processedBookingIds.has(booking.id) || booking.processed || booking.attentionId) {
+          continue;
+        }
+        processedBookingIds.add(booking.id);
         limiter.schedule(async () => {
           try {
-            const attention = await this.createAttention('ett', booking);
+            // Double-check booking hasn't been processed by another concurrent request
+            const currentBooking = await this.getBookingById(booking.id);
+            if (currentBooking.processed || currentBooking.attentionId) {
+              return; // Skip if already processed
+            }
+            const attention = await this.createAttention('ett', currentBooking);
             responses.push(attention);
           } catch (error) {
             errors.push(error);
@@ -1392,6 +1634,39 @@ export class BookingService {
     const responses = [];
     const errors = [];
     if (booking && booking.id) {
+      // Validate booking is not already processed
+      if (booking.processed) {
+        throw new HttpException(
+          `El booking ${booking.id} ya fue procesado`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      if (booking.attentionId) {
+        throw new HttpException(
+          `El booking ${booking.id} ya tiene una atención asociada: ${booking.attentionId}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      // Validate booking date is today
+      let timezone = 'America/Sao_Paulo';
+      try {
+        const commerce = await this.commerceService.getCommerceById(booking.commerceId);
+        if (commerce?.localeInfo?.timezone) {
+          timezone = commerce.localeInfo.timezone;
+        }
+      } catch (error) {
+        // Use default timezone if commerce not found
+      }
+      const todayTimezone = new Date()
+        .toLocaleString('en-US', { timeZone: timezone })
+        .slice(0, 10);
+      const today = new Date(todayTimezone).toISOString().slice(0, 10);
+      if (booking.date !== today) {
+        throw new HttpException(
+          `El booking ${booking.id} no puede procesarse porque la fecha (${booking.date}) no es hoy (${today})`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
       try {
         const attention = await this.createAttention(user, booking);
         responses.push(attention);
@@ -1510,9 +1785,22 @@ export class BookingService {
     if (waitlistId) {
       waitlist = await this.waitlistService.getWaitlistById(waitlistId);
       if (waitlist) {
+        // Check if waitlist was already processed
         if (waitlist.status !== WaitlistStatus.PENDING) {
           throw new HttpException(
             `Error procesando Waitlist: Ya fue procesada`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+        if (waitlist.processed) {
+          throw new HttpException(
+            `Error procesando Waitlist: Ya fue procesada`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+        if (waitlist.bookingId) {
+          throw new HttpException(
+            `Error procesando Waitlist: Ya tiene un booking asociado: ${waitlist.bookingId}`,
             HttpStatus.BAD_REQUEST
           );
         }
@@ -1524,12 +1812,40 @@ export class BookingService {
             return block.number.toString() === blockNumber.toString();
           })[0];
         }
+        if (!block) {
+          throw new HttpException(
+            `Bloque ${blockNumber} no encontrado en la fila`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+
+        // Validate block availability before creating booking
+        // This will check if the block is already taken
+        const sessionId = `waitlist-${waitlistId}`;
+        const validateBlocks = await this.validateBookingBlocksToCreate(
+          sessionId,
+          queue,
+          waitlist.date,
+          block
+        );
+        if (!validateBlocks) {
+          throw new HttpException(
+            `El bloque ${blockNumber} ya está reservado`,
+            HttpStatus.CONFLICT
+          );
+        }
+
         booking = await this.createBooking(
           waitlist.queueId,
           waitlist.channel,
           waitlist.date,
           waitlist.user,
-          block
+          block,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          sessionId
         );
         if (booking && booking.id) {
           waitlist.bookingId = booking.id;
@@ -1724,6 +2040,34 @@ export class BookingService {
       const queueToTransfer = await this.queueService.getQueueById(queueId);
       if (booking && booking.id) {
         if (queueToTransfer && queueToTransfer.id) {
+          // Validate queue is active and available
+          if (!queueToTransfer.active) {
+            throw new HttpException(
+              `La fila ${queueToTransfer.id} - ${queueToTransfer.name} no está activa`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+          if (!queueToTransfer.available) {
+            throw new HttpException(
+              `La fila ${queueToTransfer.id} - ${queueToTransfer.name} no está disponible`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+          // Validate queue limit is valid
+          if (!queueToTransfer.limit || queueToTransfer.limit <= 0) {
+            throw new HttpException(
+              `Límite de la fila ${queueToTransfer.id} - ${queueToTransfer.name} no es válido`,
+              HttpStatus.INTERNAL_SERVER_ERROR
+            );
+          }
+          // Check if target queue has available space
+          const booked = await this.getPendingBookingsByQueueAndDate(queueId, booking.date);
+          if (booked.length >= queueToTransfer.limit) {
+            throw new HttpException(
+              `Limite de la fila ${queueToTransfer.id} - ${queueToTransfer.name} (${queueToTransfer.limit}) alcanzado para la fecha ${booking.date}`,
+              HttpStatus.INTERNAL_SERVER_ERROR
+            );
+          }
           const validateBookingBlocks = await this.validateBookingBlocks(
             queueToTransfer,
             booking.date,
@@ -1755,6 +2099,9 @@ export class BookingService {
         throw new HttpException(`Reserva no existe: ${id}`, HttpStatus.NOT_FOUND);
       }
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
         `Hubo un problema al transferir la reserva: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -1780,6 +2127,51 @@ export class BookingService {
       booking = await this.getBookingById(id);
       if (booking && booking.id) {
         if (date && block) {
+          // Validate date format
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (!dateRegex.test(date)) {
+            throw new HttpException(
+              `Formato de fecha inválido: ${date}. Debe ser YYYY-MM-DD`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+          const [year, month, day] = date.split('-');
+          const yearNum = parseInt(year, 10);
+          const monthNum = parseInt(month, 10);
+          const dayNum = parseInt(day, 10);
+
+          // Validate date values
+          if (isNaN(yearNum) || isNaN(monthNum) || isNaN(dayNum) ||
+              monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31) {
+            throw new HttpException(
+              `Fecha inválida: ${date}`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+
+          const dateFormatted = new Date(yearNum, monthNum - 1, dayNum);
+          // Verify date is valid (not adjusted by Date constructor)
+          if (dateFormatted.getFullYear() !== yearNum ||
+              dateFormatted.getMonth() !== monthNum - 1 ||
+              dateFormatted.getDate() !== dayNum) {
+            throw new HttpException(
+              `Fecha inválida: ${date}`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+
+          // Validate date is not in the past
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const bookingDate = new Date(dateFormatted);
+          bookingDate.setHours(0, 0, 0, 0);
+          if (bookingDate < today) {
+            throw new HttpException(
+              `No se puede editar la reserva a una fecha pasada: ${date}`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+
           const queue = await this.queueService.getQueueById(booking.queueId);
           const validateBookingBlocks = await this.validateBookingBlocks(queue, date, block);
           if (validateBookingBlocks === false) {
@@ -1797,19 +2189,29 @@ export class BookingService {
           booking.editedDateOrigin = booking.date;
           booking.editedBlockOrigin = booking.block;
           booking.date = date;
-          const [year, month, day] = date.split('-');
-          booking.dateFormatted = new Date(+year, +month - 1, +day);
+          booking.dateFormatted = dateFormatted;
           booking.block = block;
 
           // Update telemedicine config if provided
           if (telemedicineConfig) {
             // Convert type to lowercase to match entity format
             const configType = telemedicineConfig.type?.toLowerCase() as 'video' | 'chat' | 'both';
+            const scheduledAt = telemedicineConfig.scheduledAt
+              ? new Date(telemedicineConfig.scheduledAt)
+              : new Date();
+
+            // Validate scheduledAt is in the future
+            const now = new Date();
+            if (scheduledAt <= now) {
+              throw new HttpException(
+                `La fecha de telemedicina debe ser en el futuro. Fecha proporcionada: ${scheduledAt.toISOString()}`,
+                HttpStatus.BAD_REQUEST
+              );
+            }
+
             booking.telemedicineConfig = {
               type: configType || 'video',
-              scheduledAt: telemedicineConfig.scheduledAt
-                ? new Date(telemedicineConfig.scheduledAt)
-                : new Date(),
+              scheduledAt: scheduledAt,
               recordingEnabled: telemedicineConfig.recordingEnabled || false,
               notes: telemedicineConfig.notes || '',
             };
@@ -1824,6 +2226,14 @@ export class BookingService {
               const dateStr =
                 typeof date === 'string' ? date : new Date(date).toISOString().slice(0, 10);
               const scheduledDateTime = new Date(dateStr + 'T' + block.hourFrom + ':00');
+              // Validate scheduledAt is in the future
+              const now = new Date();
+              if (scheduledDateTime <= now) {
+                throw new HttpException(
+                  `La fecha de telemedicina debe ser en el futuro. Fecha calculada: ${scheduledDateTime.toISOString()}`,
+                  HttpStatus.BAD_REQUEST
+                );
+              }
               booking.telemedicineConfig.scheduledAt = scheduledDateTime;
             }
           }
@@ -1848,6 +2258,9 @@ export class BookingService {
         throw new HttpException(`Reserva no existe: ${id}`, HttpStatus.NOT_FOUND);
       }
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
         `Hubo un problema al editar la reserva: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -1869,6 +2282,65 @@ export class BookingService {
           booking.termsConditionsAcceptedCode = code;
           booking.termsConditionsToAcceptedAt = new Date();
           booking = await this.update(user, booking);
+
+          // Publicar evento de aceptación de términos
+          const termsAcceptedEvent = new TermsAccepted(new Date(), {
+            bookingId: booking.id,
+            clientId: booking.clientId,
+            commerceId: booking.commerceId,
+            acceptedAt: booking.termsConditionsToAcceptedAt,
+            acceptedCode: code,
+          }, { user });
+          publish(termsAcceptedEvent);
+
+          // Crear consentimiento LGPD automáticamente
+          if (this.lgpdConsentService && booking.clientId && booking.commerceId) {
+            try {
+              await this.lgpdConsentService.createOrUpdateConsent(
+                user,
+                {
+                  clientId: booking.clientId,
+                  commerceId: booking.commerceId,
+                  consentType: ConsentType.TERMS_ACCEPTANCE,
+                  purpose: 'Aceptación de términos y condiciones de servicio',
+                  legalBasis: 'CONSENT',
+                  status: ConsentStatus.GRANTED,
+                  notes: `Consentimiento otorgado al aceptar términos y condiciones para booking ${booking.id}`,
+                  ipAddress: undefined, // TODO: Obtener IP del request
+                  consentMethod: 'WEB',
+                }
+              );
+            } catch (error) {
+              // Log error but don't fail the booking update
+              this.logger.error(`Error creating LGPD consent for booking ${booking.id}:`, error);
+            }
+          }
+
+          // Registrar auditoría específica
+          if (this.auditLogService) {
+            await this.auditLogService.logAction(
+              user,
+              'UPDATE',
+              'booking_terms',
+              booking.id,
+              {
+                entityName: `Aceptación Términos - Booking ${booking.id}`,
+                result: 'SUCCESS',
+                metadata: {
+                  bookingId: booking.id,
+                  clientId: booking.clientId,
+                  commerceId: booking.commerceId,
+                  acceptedCode: code,
+                  acceptedAt: booking.termsConditionsToAcceptedAt,
+                },
+                complianceFlags: {
+                  lgpdConsent: true,
+                },
+              }
+            );
+          }
+
+          this.logger.log(`Terms accepted for booking ${booking.id} by user ${user}`);
         } else {
           throw new HttpException(
             `Código para aceptar condiciones es incorrecto`,

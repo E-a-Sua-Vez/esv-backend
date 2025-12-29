@@ -84,4 +84,46 @@ export class RolService {
     }
     return rolesCreated;
   }
+
+  public async syncRoles(user: string): Promise<Rol[]> {
+    const rolesSynced = [];
+    // roles is imported as an array (same as initRol)
+    const rolesToSync = roles;
+
+    for (let i = 0; i < rolesToSync.length; i++) {
+      const rolFromJson = rolesToSync[i];
+
+      // Buscar el rol existente por nombre
+      const existingRol = await this.getRolByName(rolFromJson.name);
+
+      if (existingRol) {
+        // Si el rol existe, actualizar sus permisos
+        // Fusionar permisos: mantener los existentes y agregar/actualizar los de rol.json
+        const mergedPermissions = {
+          ...existingRol.permissions,
+          ...rolFromJson.permissions,
+        };
+
+        existingRol.permissions = mergedPermissions;
+        existingRol.modifiedAt = new Date();
+
+        const rolUpdated = await this.update(user, existingRol);
+        rolesSynced.push(rolUpdated);
+      } else {
+        // Si el rol no existe, crearlo
+        const rol = new Rol();
+        rol.name = rolFromJson.name;
+        rol.description = rolFromJson.description;
+        rol.permissions = rolFromJson.permissions;
+        rol.active = true;
+        rol.createdAt = new Date();
+        const rolCreated = await this.rolRepository.create(rol);
+        rolesSynced.push(rolCreated);
+        const rolCreatedEvent = new RolCreated(new Date(), rolCreated, { user });
+        publish(rolCreatedEvent);
+      }
+    }
+
+    return rolesSynced;
+  }
 }

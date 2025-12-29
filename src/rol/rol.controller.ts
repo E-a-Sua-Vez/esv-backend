@@ -73,6 +73,18 @@ export class RolController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @Post('/sync')
+  @ApiOperation({
+    summary: 'Sync roles from JSON',
+    description: 'Synchronizes roles permissions from rol.json file to database. Updates existing roles and creates new ones if needed.',
+  })
+  @ApiResponse({ status: 200, description: 'Roles synchronized successfully', type: [Rol] })
+  public async syncRoles(@User() user): Promise<Rol[]> {
+    return this.rolService.syncRoles(user);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

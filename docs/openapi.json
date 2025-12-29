@@ -1235,6 +1235,68 @@
         ]
       }
     },
+    "/collaborator/{id}/digital-signature": {
+      "post": {
+        "description": "Permite subir o actualizar la firma digital del colaborador",
+        "operationId": "CollaboratorController_updateDigitalSignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "digitalSignature": {
+                    "type": "string",
+                    "description": "URL o base64 de la imagen de firma"
+                  },
+                  "crm": {
+                    "type": "string",
+                    "description": "Número de registro médico (CRM)"
+                  },
+                  "crmState": {
+                    "type": "string",
+                    "description": "Estado del CRM (ej: SP, RJ, MG)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Firma digital actualizada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Collaborator"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualizar firma digital del colaborador",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
     "/collaborator/desactivate/{id}": {
       "patch": {
         "operationId": "CollaboratorController_desactivate",
@@ -1294,6 +1356,20 @@
     "/collaborator/{id}/permission": {
       "patch": {
         "operationId": "CollaboratorController_updateCollaboratorPermission",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/module": {
+      "patch": {
+        "operationId": "CollaboratorController_updateModule",
         "parameters": [],
         "responses": {
           "200": {
@@ -2232,47 +2308,6 @@
         ]
       }
     },
-    "/notification/{id}": {
-      "get": {
-        "description": "Retrieves a notification by its unique identifier",
-        "operationId": "NotificationController_getNotificationById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Notification ID",
-            "schema": {
-              "example": "notification-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Notification found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Notification"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Notification not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get notification by ID",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
     "/notification": {
       "get": {
         "description": "Retrieves a list of all notifications",
@@ -2339,6 +2374,177 @@
           }
         },
         "summary": "Third-party notification webhook",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/whatsapp/preprontuario": {
+      "post": {
+        "description": "Sends a WhatsApp message to remind client to complete preprontuario",
+        "operationId": "NotificationController_sendPreprontuarioWhatsapp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Preprontuario reminder data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string",
+                    "description": "Client ID"
+                  },
+                  "commerceId": {
+                    "type": "string",
+                    "description": "Commerce ID"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Client email for attention"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Client phone number"
+                  },
+                  "attentionLink": {
+                    "type": "string",
+                    "description": "Optional: Direct link to attention form. If not provided, will be generated from attentionId"
+                  },
+                  "attentionId": {
+                    "type": "string",
+                    "description": "Optional: Attention ID. Required if attentionLink is not provided"
+                  },
+                  "queueId": {
+                    "type": "string",
+                    "description": "Optional: Queue ID"
+                  }
+                },
+                "required": [
+                  "clientId",
+                  "commerceId",
+                  "email",
+                  "phone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "WhatsApp message sent successfully"
+          },
+          "400": {
+            "description": "Invalid request data"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send preprontuario WhatsApp reminder",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/whatsapp/agreement": {
+      "post": {
+        "description": "Sends a WhatsApp message to remind client to complete agreement",
+        "operationId": "NotificationController_sendAgreementWhatsapp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Agreement reminder data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string",
+                    "description": "Client ID"
+                  },
+                  "commerceId": {
+                    "type": "string",
+                    "description": "Commerce ID"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Client email for agreement"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Client phone number"
+                  }
+                },
+                "required": [
+                  "clientId",
+                  "commerceId",
+                  "email",
+                  "phone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "WhatsApp message sent successfully"
+          },
+          "400": {
+            "description": "Invalid request data"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send agreement WhatsApp reminder",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/{id}": {
+      "get": {
+        "description": "Retrieves a notification by its unique identifier",
+        "operationId": "NotificationController_getNotificationById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Notification ID",
+            "schema": {
+              "example": "notification-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get notification by ID",
         "tags": [
           "notification"
         ]
@@ -2812,6 +3018,37 @@
           }
         },
         "summary": "Initialize roles",
+        "tags": [
+          "rol"
+        ]
+      }
+    },
+    "/rol/sync": {
+      "post": {
+        "description": "Synchronizes roles permissions from rol.json file to database. Updates existing roles and creates new ones if needed.",
+        "operationId": "RolController_syncRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Roles synchronized successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rol"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Sync roles from JSON",
         "tags": [
           "rol"
         ]
@@ -3617,6 +3854,9 @@
               }
             }
           },
+          "403": {
+            "description": "Access forbidden"
+          },
           "404": {
             "description": "Attention not found"
           }
@@ -3774,13 +4014,74 @@
     },
     "/attention/finish/{id}": {
       "patch": {
+        "description": "Finishes an attention. If checkout is enabled, advances to CHECKOUT stage, otherwise terminates directly.",
         "operationId": "AttentionController_finishAttention",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Attention finished",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attention not found"
           }
         },
+        "summary": "Finish attention",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
+    "/attention/checkout/{id}/finish": {
+      "patch": {
+        "description": "Finishes checkout and advances attention to TERMINATED stage. Requires attention-stages-enabled and attention-checkout-enabled feature flags.",
+        "operationId": "AttentionController_finishCheckout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout finished, attention terminated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Checkout not enabled or attention not in CHECKOUT stage"
+          },
+          "404": {
+            "description": "Attention not found"
+          }
+        },
+        "summary": "Finish checkout",
         "tags": [
           "attention"
         ]
@@ -3893,6 +4194,123 @@
             "description": ""
           }
         },
+        "tags": [
+          "attention"
+        ]
+      }
+    },
+    "/attention/stage/{id}/advance": {
+      "patch": {
+        "description": "Advances an attention to a new stage (requires attention-stages-enabled feature)",
+        "operationId": "AttentionController_advanceStage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stage advanced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Feature not enabled or invalid transition"
+          },
+          "404": {
+            "description": "Attention not found"
+          }
+        },
+        "summary": "Advance attention stage",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
+    "/attention/stage/queue/{queueId}/stage/{stage}": {
+      "get": {
+        "description": "Retrieves attentions filtered by stage for a specific queue",
+        "operationId": "AttentionController_getAttentionsByStage",
+        "parameters": [
+          {
+            "name": "stage",
+            "required": true,
+            "in": "path",
+            "description": "Attention stage",
+            "schema": {
+              "example": "CHECK_IN"
+            }
+          },
+          {
+            "name": "queueId",
+            "required": true,
+            "in": "path",
+            "description": "Queue ID",
+            "schema": {
+              "example": "queue-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attentions found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Attention"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get attentions by stage",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
+    "/attention/track-access/{id}": {
+      "patch": {
+        "description": "Tracks that a collaborator is accessing/managing an attention (optional tracking)",
+        "operationId": "AttentionController_trackAttentionAccess",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access tracked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Track attention access",
         "tags": [
           "attention"
         ]
@@ -4299,6 +4717,62 @@
           }
         ],
         "summary": "Contact client",
+        "tags": [
+          "client"
+        ]
+      }
+    },
+    "/client/agreement/status/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Checks if client has accepted the agreement for the commerce",
+        "operationId": "ClientController_getAgreementStatus",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agreement status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "completedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Check agreement completion status",
         "tags": [
           "client"
         ]
@@ -5004,6 +5478,506 @@
         ]
       }
     },
+    "/package/commerce/{commerceId}/active": {
+      "get": {
+        "description": "Retrieves all active packages for a specific commerce with sessions remaining",
+        "operationId": "PackageController_getActivePackagesByCommerce",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active packages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Package"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get active packages by commerce",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/commerce/{commerceId}/client/{clientId}/all": {
+      "get": {
+        "description": "Retrieves all packages for a client grouped by status",
+        "operationId": "PackageController_getPackagesByClient",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Packages grouped by status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "active": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Package"
+                      }
+                    },
+                    "completed": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Package"
+                      }
+                    },
+                    "expired": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Package"
+                      }
+                    },
+                    "cancelled": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Package"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all packages by client",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/commerce/{commerceId}/client/{clientId}/active": {
+      "get": {
+        "description": "Retrieves active packages for a specific client",
+        "operationId": "PackageController_getActivePackagesByClient",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active packages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Package"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get active packages by client",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/commerce/{commerceId}/service/{serviceId}/client/{clientId}/available": {
+      "get": {
+        "description": "Retrieves available packages for a specific service that can be used for booking",
+        "operationId": "PackageController_getAvailablePackagesForService",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": true,
+            "in": "path",
+            "description": "Service ID",
+            "schema": {
+              "example": "service-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available packages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Package"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get available packages for service",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/analytics/{commerceId}": {
+      "get": {
+        "description": "Retrieves comprehensive analytics for packages in a commerce",
+        "operationId": "PackageController_getPackageAnalytics",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Package analytics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalPackages": {
+                      "type": "number"
+                    },
+                    "activePackages": {
+                      "type": "number"
+                    },
+                    "completedPackages": {
+                      "type": "number"
+                    },
+                    "expiredPackages": {
+                      "type": "number"
+                    },
+                    "totalSessionsSold": {
+                      "type": "number"
+                    },
+                    "totalSessionsUsed": {
+                      "type": "number"
+                    },
+                    "totalSessionsRemaining": {
+                      "type": "number"
+                    },
+                    "averageSessionsPerPackage": {
+                      "type": "number"
+                    },
+                    "averageCompletionRate": {
+                      "type": "number"
+                    },
+                    "packagesByType": {
+                      "type": "object"
+                    },
+                    "packagesByStatus": {
+                      "type": "object"
+                    },
+                    "expiringSoon": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Package"
+                      }
+                    },
+                    "lowSessions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Package"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get package analytics",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/metrics/{commerceId}": {
+      "get": {
+        "description": "Retrieves detailed metrics: most requested packages, no-show rate, completion rate, abandonment rate",
+        "operationId": "PackageController_getPackageMetricsAnalytics",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Package metrics analytics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mostRequestedPackages": {
+                      "type": "array",
+                      "description": "Top packages by creation count"
+                    },
+                    "overallNoShowRate": {
+                      "type": "number",
+                      "description": "Overall no-show rate percentage"
+                    },
+                    "overallCompletionRate": {
+                      "type": "number",
+                      "description": "Overall completion rate percentage"
+                    },
+                    "overallAbandonmentRate": {
+                      "type": "number",
+                      "description": "Overall abandonment rate percentage"
+                    },
+                    "packagesByCompletionRate": {
+                      "type": "array",
+                      "description": "Packages sorted by completion rate"
+                    },
+                    "packagesByNoShowRate": {
+                      "type": "array",
+                      "description": "Packages sorted by no-show rate"
+                    },
+                    "abandonedPackages": {
+                      "type": "array",
+                      "description": "List of abandoned packages"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get package metrics analytics",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/{id}/recommended-dates": {
+      "get": {
+        "description": "Retrieves recommended dates for next sessions based on periodicity",
+        "operationId": "PackageController_getRecommendedSessionDates",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Package ID",
+            "schema": {
+              "example": "package-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of recommended dates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get recommended session dates",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/pause/{id}": {
+      "patch": {
+        "description": "Pauses an active package temporarily",
+        "operationId": "PackageController_pausePackage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Package ID",
+            "schema": {
+              "example": "package-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Package paused successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Package"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Package not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Pause package",
+        "tags": [
+          "package"
+        ]
+      }
+    },
+    "/package/resume/{id}": {
+      "patch": {
+        "description": "Resumes a paused package",
+        "operationId": "PackageController_resumePackage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Package ID",
+            "schema": {
+              "example": "package-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Package resumed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Package"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Package not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Resume package",
+        "tags": [
+          "package"
+        ]
+      }
+    },
     "/income/{id}": {
       "get": {
         "description": "Retrieves an income record by its unique identifier",
@@ -5542,7 +6516,7 @@
     },
     "/documents/client": {
       "post": {
-        "description": "Uploads a document file for a specific client",
+        "description": "Uploads a document file for a specific client with ecosystem integration",
         "operationId": "DocumentsController_uploadClientDocument",
         "parameters": [],
         "requestBody": {
@@ -5819,6 +6793,376 @@
           }
         ],
         "summary": "Set document availability",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/attention/{attentionId}": {
+      "get": {
+        "description": "Retrieves all documents linked to a specific attention/consultation",
+        "operationId": "DocumentsController_getDocumentsByAttention",
+        "parameters": [
+          {
+            "name": "attentionId",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of attention documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Document"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get documents by attention",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/patient-history/{patientHistoryId}": {
+      "get": {
+        "description": "Retrieves all documents linked to a specific patient history record",
+        "operationId": "DocumentsController_getDocumentsByPatientHistory",
+        "parameters": [
+          {
+            "name": "patientHistoryId",
+            "required": true,
+            "in": "path",
+            "description": "Patient History ID",
+            "schema": {
+              "example": "history-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of patient history documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Document"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get documents by patient history",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/search": {
+      "post": {
+        "description": "Search documents with multiple filters and criteria",
+        "operationId": "DocumentsController_searchDocuments",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentSearchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Filtered list of documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Document"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Advanced document search",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{id}/link-attention": {
+      "patch": {
+        "description": "Links an existing document to a specific attention/consultation",
+        "operationId": "DocumentsController_linkDocumentToAttention",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "example": "document-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attentionId": {
+                    "type": "string",
+                    "example": "attention-123"
+                  }
+                },
+                "required": [
+                  "attentionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document linked successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Link document to attention",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{id}/tags": {
+      "patch": {
+        "description": "Updates the tags associated with a document",
+        "operationId": "DocumentsController_updateDocumentTags",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "example": "document-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "urgent",
+                      "cardiology"
+                    ]
+                  }
+                },
+                "required": [
+                  "tags"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document tags updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update document tags",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{id}/access-log": {
+      "post": {
+        "description": "Records document access for audit trail",
+        "operationId": "DocumentsController_logDocumentAccess",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "example": "document-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accessType": {
+                    "type": "string",
+                    "example": "view"
+                  },
+                  "userType": {
+                    "type": "string",
+                    "example": "collaborator"
+                  },
+                  "ipAddress": {
+                    "type": "string",
+                    "example": "192.168.1.1"
+                  },
+                  "userAgent": {
+                    "type": "string",
+                    "example": "Mozilla/5.0..."
+                  }
+                },
+                "required": [
+                  "accessType",
+                  "userType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access logged successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Log document access",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{id}/track-download": {
+      "post": {
+        "description": "Records document download for audit trail and CQRS events",
+        "operationId": "DocumentsController_trackDocumentDownload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "example": "document-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userType": {
+                    "type": "string",
+                    "example": "collaborator"
+                  },
+                  "ipAddress": {
+                    "type": "string",
+                    "example": "192.168.1.1"
+                  },
+                  "userAgent": {
+                    "type": "string",
+                    "example": "Mozilla/5.0..."
+                  }
+                },
+                "required": [
+                  "userType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Download logged successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Track document download",
         "tags": [
           "documents"
         ]
@@ -6645,6 +7989,1984 @@
         "summary": "Get telemedicine health metrics",
         "tags": [
           "Telemedicine"
+        ]
+      }
+    },
+    "/booking/{id}": {
+      "get": {
+        "description": "Retrieves a booking by its unique identifier",
+        "operationId": "BookingController_getBookingById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get booking by ID",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking": {
+      "post": {
+        "description": "Creates a new booking/appointment for a queue",
+        "operationId": "BookingController_createBooking",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid input data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Conflict - Block already taken or queue limit reached"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new booking",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/queue/{queueId}/date/{date}": {
+      "get": {
+        "description": "Retrieves all bookings for a specific queue on a given date",
+        "operationId": "BookingController_getBookingsByQueueAndDate",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "description": "Date in YYYY-MM-DD format",
+            "schema": {
+              "example": "2024-01-15"
+            }
+          },
+          {
+            "name": "queueId",
+            "required": true,
+            "in": "path",
+            "description": "Queue ID",
+            "schema": {
+              "example": "queue-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Booking"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get bookings by queue and date",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/details/{id}": {
+      "get": {
+        "description": "Retrieves detailed booking information including queue, commerce, and user data",
+        "operationId": "BookingController_getBookingDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get booking details",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/cancel/{id}": {
+      "patch": {
+        "description": "Cancels an existing booking",
+        "operationId": "BookingController_cancelBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Cancel a booking",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/confirm/{id}": {
+      "patch": {
+        "description": "Confirms a pending booking",
+        "operationId": "BookingController_confirmBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking confirmed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Confirm a booking",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/process": {
+      "patch": {
+        "operationId": "BookingController_processBookings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/process/booking/{id}": {
+      "patch": {
+        "operationId": "BookingController_processBooking",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/process/date/{date}": {
+      "patch": {
+        "operationId": "BookingController_processDateBookings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/waitlist/{id}/block/{number}": {
+      "post": {
+        "operationId": "BookingController_createBookingFromWaitlist",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/confirm": {
+      "post": {
+        "operationId": "BookingController_confirmNotifyBookings",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/process/past-bookings/{id}/{collaboratorId}/{commerceLanguage}": {
+      "post": {
+        "operationId": "BookingController_processPastBooking",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/pending/queue/{queueId}/from/{dateFrom}/to/{dateTo}": {
+      "get": {
+        "operationId": "BookingController_getPendingBookingsBetweenDates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/pending/commerce/{commerceId}/{date}": {
+      "get": {
+        "operationId": "BookingController_getPendingCommerceBookingsByDate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/pending/commerce/{commerceId}/from/{dateFrom}/to/{dateTo}": {
+      "get": {
+        "operationId": "BookingController_getPendingCommerceBookingsBetweenDates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/pending/cancel/all": {
+      "patch": {
+        "operationId": "BookingController_cancelBookings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/transfer/{id}": {
+      "patch": {
+        "description": "Transfers a booking from one queue to another",
+        "operationId": "BookingController_transferBookingToQueue",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking transferred successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking or queue not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Transfer booking to another queue",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/commerceId/{commerceId}/clientId/{clientId}/idNumber/{idNumber}": {
+      "get": {
+        "operationId": "BookingController_getBookingsByClient",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/edit/{id}": {
+      "patch": {
+        "description": "Updates the date and/or time block of an existing booking",
+        "operationId": "BookingController_editBookingDateAndBlock",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found"
+          },
+          "409": {
+            "description": "Conflict - New block already taken"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Edit booking date and block",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/booking/accept-terms/{id}/{code}": {
+      "patch": {
+        "operationId": "BookingController_acceptBookingTermsAndConditions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/audit-log/entity/{entityType}/{entityId}": {
+      "get": {
+        "description": "Retorna logs de auditoria para uma entidade específica",
+        "operationId": "AuditLogController_getLogsByEntity",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "path",
+            "description": "Tipo da entidade",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "description": "ID da entidade",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limite de resultados",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter logs de auditoria por entidade",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/audit-log/user/{userId}": {
+      "get": {
+        "description": "Retorna logs de auditoria para um usuário específico",
+        "operationId": "AuditLogController_getLogsByUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "ID do usuário",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter logs de auditoria por usuário",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/audit-log/action/{action}": {
+      "get": {
+        "description": "Retorna logs de auditoria para uma ação específica",
+        "operationId": "AuditLogController_getLogsByAction",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "path",
+            "description": "Tipo de ação",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter logs de auditoria por ação",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/audit-log/report": {
+      "get": {
+        "description": "Gera relatório completo de auditoria com filtros",
+        "operationId": "AuditLogController_generateAuditReport",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório de auditoria"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Gerar relatório de auditoria",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/lgpd-consent": {
+      "post": {
+        "description": "Cria um novo consentimento ou atualiza um existente",
+        "operationId": "LgpdConsentController_createOrUpdateConsent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "commerceId": {
+                    "type": "string"
+                  },
+                  "consentType": {
+                    "type": "string",
+                    "enum": [
+                      "DATA_PROCESSING",
+                      "DATA_SHARING",
+                      "MARKETING",
+                      "RESEARCH",
+                      "THIRD_PARTY",
+                      "DATA_EXPORT",
+                      "TELEMEDICINE",
+                      "BIOMETRIC",
+                      "TERMS_ACCEPTANCE"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "GRANTED",
+                      "DENIED",
+                      "REVOKED",
+                      "EXPIRED",
+                      "PENDING"
+                    ]
+                  },
+                  "purpose": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "legalBasis": {
+                    "type": "string"
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "consentMethod": {
+                    "type": "string",
+                    "enum": [
+                      "WEB",
+                      "MOBILE",
+                      "PRESENTIAL",
+                      "EMAIL",
+                      "PHONE",
+                      "OTHER"
+                    ]
+                  },
+                  "ipAddress": {
+                    "type": "string"
+                  },
+                  "userAgent": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "clientId",
+                  "commerceId",
+                  "consentType",
+                  "purpose"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Consentimento criado/atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdConsent"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Criar ou atualizar consentimento LGPD",
+        "tags": [
+          "lgpd-consent"
+        ]
+      },
+      "get": {
+        "description": "Retorna todos os consentimentos com filtros opcionais",
+        "operationId": "LgpdConsentController_getAllConsents",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "consentType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DATA_PROCESSING",
+                "DATA_SHARING",
+                "MARKETING",
+                "RESEARCH",
+                "THIRD_PARTY",
+                "DATA_EXPORT",
+                "TELEMEDICINE",
+                "BIOMETRIC",
+                "TERMS_ACCEPTANCE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "GRANTED",
+                "DENIED",
+                "REVOKED",
+                "EXPIRED",
+                "PENDING"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de consentimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LgpdConsent"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter todos os consentimentos",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/{id}/revoke": {
+      "patch": {
+        "description": "Revoga um consentimento ativo",
+        "operationId": "LgpdConsentController_revokeConsent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do consentimento",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consentimento revogado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdConsent"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Revogar consentimento LGPD",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna todos os consentimentos de um cliente específico",
+        "operationId": "LgpdConsentController_getConsentsByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "description": "Apenas consentimentos ativos",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de consentimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LgpdConsent"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter consentimentos de um cliente",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/check/{commerceId}/{clientId}/{consentType}": {
+      "get": {
+        "description": "Verifica se um cliente tem consentimento ativo para um tipo específico",
+        "operationId": "LgpdConsentController_checkActiveConsent",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "consentType",
+            "required": true,
+            "in": "path",
+            "description": "Tipo de consentimento",
+            "schema": {
+              "enum": [
+                "DATA_PROCESSING",
+                "DATA_SHARING",
+                "MARKETING",
+                "RESEARCH",
+                "THIRD_PARTY",
+                "DATA_EXPORT",
+                "TELEMEDICINE",
+                "BIOMETRIC",
+                "TERMS_ACCEPTANCE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status do consentimento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasConsent": {
+                      "type": "boolean"
+                    },
+                    "consent": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Verificar se cliente tem consentimento ativo",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/{id}": {
+      "get": {
+        "description": "Retorna um consentimento específico",
+        "operationId": "LgpdConsentController_getConsentById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do consentimento",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consentimento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdConsent"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter consentimento por ID",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-data-portability/{commerceId}/{clientId}/generate": {
+      "post": {
+        "description": "Gera um arquivo com todos os dados do paciente em formato estruturado (LGPD)",
+        "operationId": "LgpdDataPortabilityController_generateDataPortabilityFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arquivo de portabilidade gerado com sucesso"
+          },
+          "403": {
+            "description": "Cliente não possui consentimento para exportação de dados"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Gerar arquivo de portabilidade de dados",
+        "tags": [
+          "lgpd-data-portability"
+        ]
+      }
+    },
+    "/lgpd-data-portability/{commerceId}/{clientId}/download": {
+      "get": {
+        "description": "Faz download do arquivo de portabilidade de dados",
+        "operationId": "LgpdDataPortabilityController_downloadDataPortabilityFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arquivo de portabilidade"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Download do arquivo de portabilidade",
+        "tags": [
+          "lgpd-data-portability"
+        ]
+      }
+    },
+    "/lgpd-incident": {
+      "post": {
+        "description": "Cria um novo registro de incidente de segurança de dados",
+        "operationId": "LgpdIncidentController_createIncident",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LgpdIncident"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Incidente criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Criar novo incidente LGPD",
+        "tags": [
+          "lgpd-incident"
+        ]
+      },
+      "get": {
+        "description": "Retorna lista de incidentes com filtros opcionais",
+        "operationId": "LgpdIncidentController_listIncidents",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "REPORTED",
+                "UNDER_INVESTIGATION",
+                "CONTAINED",
+                "RESOLVED",
+                "CLOSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "severity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "incidentType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DATA_BREACH",
+                "UNAUTHORIZED_ACCESS",
+                "DATA_LOSS",
+                "DATA_ALTERATION",
+                "DATA_DISCLOSURE",
+                "SYSTEM_FAILURE",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportedBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de incidentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LgpdIncident"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Listar incidentes",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}": {
+      "patch": {
+        "description": "Atualiza um incidente existente",
+        "operationId": "LgpdIncidentController_updateIncident",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LgpdIncident"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Incidente atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Atualizar incidente",
+        "tags": [
+          "lgpd-incident"
+        ]
+      },
+      "get": {
+        "description": "Retorna um incidente específico",
+        "operationId": "LgpdIncidentController_getIncidentById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incidente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter incidente por ID",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/actions": {
+      "post": {
+        "description": "Registra uma ação tomada em relação ao incidente",
+        "operationId": "LgpdIncidentController_addAction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action",
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ação adicionada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Adicionar ação ao incidente",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/preventive-measures": {
+      "post": {
+        "description": "Registra uma medida preventiva implementada",
+        "operationId": "LgpdIncidentController_addPreventiveMeasure",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "measure": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "measure",
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Medida preventiva adicionada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Adicionar medida preventiva",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/notify-anpd": {
+      "post": {
+        "description": "Registra que o incidente foi notificado à Autoridade Nacional de Proteção de Dados",
+        "operationId": "LgpdIncidentController_markAsNotifiedToAnpd",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reference": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notificação registrada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Marcar como notificado à ANPD",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/notify-data-subjects": {
+      "post": {
+        "description": "Registra que os titulares dos dados foram notificados sobre o incidente",
+        "operationId": "LgpdIncidentController_markAsNotifiedToDataSubjects",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "EMAIL",
+                      "PHONE",
+                      "POSTAL",
+                      "PUBLIC_NOTICE",
+                      "OTHER"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notificação registrada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Marcar como notificado aos titulares",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/waitlist/{id}": {
+      "get": {
+        "description": "Retrieves a waitlist entry by its unique identifier",
+        "operationId": "WaitlistController_getWaitlistById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Waitlist ID",
+            "schema": {
+              "example": "waitlist-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Waitlist found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Waitlist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Waitlist not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get waitlist by ID",
+        "tags": [
+          "waitlist"
+        ]
+      }
+    },
+    "/waitlist": {
+      "post": {
+        "description": "Adds a client to the waitlist for a queue",
+        "operationId": "WaitlistController_createWaitlist",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "queueId": {
+                    "type": "string",
+                    "example": "queue-123"
+                  },
+                  "channel": {
+                    "type": "string",
+                    "example": "QR"
+                  },
+                  "user": {
+                    "type": "object"
+                  },
+                  "date": {
+                    "type": "string",
+                    "example": "2024-01-15"
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "example": "client-123"
+                  }
+                },
+                "required": [
+                  "queueId",
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Waitlist entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Waitlist"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new waitlist entry",
+        "tags": [
+          "waitlist"
+        ]
+      }
+    },
+    "/waitlist/queue/{queueId}/date/{date}": {
+      "get": {
+        "description": "Retrieves all waitlist entries for a specific queue on a given date",
+        "operationId": "WaitlistController_getWaitlistsByQueueAndDate",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "description": "Date in YYYY-MM-DD format",
+            "schema": {
+              "example": "2024-01-15"
+            }
+          },
+          {
+            "name": "queueId",
+            "required": true,
+            "in": "path",
+            "description": "Queue ID",
+            "schema": {
+              "example": "queue-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of waitlist entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Waitlist"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get waitlists by queue and date",
+        "tags": [
+          "waitlist"
+        ]
+      }
+    },
+    "/waitlist/details/{id}": {
+      "get": {
+        "description": "Retrieves detailed waitlist information",
+        "operationId": "WaitlistController_getWaitlistDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Waitlist ID",
+            "schema": {
+              "example": "waitlist-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Waitlist details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Waitlist not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get waitlist details",
+        "tags": [
+          "waitlist"
         ]
       }
     },
@@ -7720,751 +11042,6 @@
         ]
       }
     },
-    "/booking/{id}": {
-      "get": {
-        "description": "Retrieves a booking by its unique identifier",
-        "operationId": "BookingController_getBookingById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Booking ID",
-            "schema": {
-              "example": "booking-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Booking found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Booking"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Booking not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get booking by ID",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking": {
-      "post": {
-        "description": "Creates a new booking/appointment for a queue",
-        "operationId": "BookingController_createBooking",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBookingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Booking created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Booking"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - Invalid input data"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "409": {
-            "description": "Conflict - Block already taken or queue limit reached"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Create a new booking",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/queue/{queueId}/date/{date}": {
-      "get": {
-        "description": "Retrieves all bookings for a specific queue on a given date",
-        "operationId": "BookingController_getBookingsByQueueAndDate",
-        "parameters": [
-          {
-            "name": "date",
-            "required": true,
-            "in": "path",
-            "description": "Date in YYYY-MM-DD format",
-            "schema": {
-              "example": "2024-01-15"
-            }
-          },
-          {
-            "name": "queueId",
-            "required": true,
-            "in": "path",
-            "description": "Queue ID",
-            "schema": {
-              "example": "queue-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of bookings",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Booking"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get bookings by queue and date",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/details/{id}": {
-      "get": {
-        "description": "Retrieves detailed booking information including queue, commerce, and user data",
-        "operationId": "BookingController_getBookingDetails",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Booking ID",
-            "schema": {
-              "example": "booking-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Booking details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BookingDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Booking not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get booking details",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/cancel/{id}": {
-      "patch": {
-        "description": "Cancels an existing booking",
-        "operationId": "BookingController_cancelBooking",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Booking ID",
-            "schema": {
-              "example": "booking-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Booking cancelled successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Booking"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Booking not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Cancel a booking",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/confirm/{id}": {
-      "patch": {
-        "description": "Confirms a pending booking",
-        "operationId": "BookingController_confirmBooking",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Booking ID",
-            "schema": {
-              "example": "booking-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConfirmBookingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Booking confirmed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Booking"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Booking not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Confirm a booking",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/process": {
-      "patch": {
-        "operationId": "BookingController_processBookings",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/process/booking/{id}": {
-      "patch": {
-        "operationId": "BookingController_processBooking",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/process/date/{date}": {
-      "patch": {
-        "operationId": "BookingController_processDateBookings",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/waitlist/{id}/block/{number}": {
-      "post": {
-        "operationId": "BookingController_createBookingFromWaitlist",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/confirm": {
-      "post": {
-        "operationId": "BookingController_confirmNotifyBookings",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/process/past-bookings/{id}/{collaboratorId}/{commerceLanguage}": {
-      "post": {
-        "operationId": "BookingController_processPastBooking",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/pending/queue/{queueId}/from/{dateFrom}/to/{dateTo}": {
-      "get": {
-        "operationId": "BookingController_getPendingBookingsBetweenDates",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/pending/commerce/{commerceId}/{date}": {
-      "get": {
-        "operationId": "BookingController_getPendingCommerceBookingsByDate",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/pending/commerce/{commerceId}/from/{dateFrom}/to/{dateTo}": {
-      "get": {
-        "operationId": "BookingController_getPendingCommerceBookingsBetweenDates",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/pending/cancel/all": {
-      "patch": {
-        "operationId": "BookingController_cancelBookings",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/transfer/{id}": {
-      "patch": {
-        "description": "Transfers a booking from one queue to another",
-        "operationId": "BookingController_transferBookingToQueue",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Booking ID",
-            "schema": {
-              "example": "booking-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TransferBookingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Booking transferred successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Booking"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Booking or queue not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Transfer booking to another queue",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/commerceId/{commerceId}/clientId/{clientId}/idNumber/{idNumber}": {
-      "get": {
-        "operationId": "BookingController_getBookingsByClient",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/edit/{id}": {
-      "patch": {
-        "description": "Updates the date and/or time block of an existing booking",
-        "operationId": "BookingController_editBookingDateAndBlock",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Booking ID",
-            "schema": {
-              "example": "booking-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EditBookingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Booking updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Booking"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Booking not found"
-          },
-          "409": {
-            "description": "Conflict - New block already taken"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Edit booking date and block",
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/booking/accept-terms/{id}/{code}": {
-      "patch": {
-        "operationId": "BookingController_acceptBookingTermsAndConditions",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "booking"
-        ]
-      }
-    },
-    "/waitlist/{id}": {
-      "get": {
-        "description": "Retrieves a waitlist entry by its unique identifier",
-        "operationId": "WaitlistController_getWaitlistById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Waitlist ID",
-            "schema": {
-              "example": "waitlist-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Waitlist found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Waitlist"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Waitlist not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get waitlist by ID",
-        "tags": [
-          "waitlist"
-        ]
-      }
-    },
-    "/waitlist": {
-      "post": {
-        "description": "Adds a client to the waitlist for a queue",
-        "operationId": "WaitlistController_createWaitlist",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "queueId": {
-                    "type": "string",
-                    "example": "queue-123"
-                  },
-                  "channel": {
-                    "type": "string",
-                    "example": "QR"
-                  },
-                  "user": {
-                    "type": "object"
-                  },
-                  "date": {
-                    "type": "string",
-                    "example": "2024-01-15"
-                  },
-                  "clientId": {
-                    "type": "string",
-                    "example": "client-123"
-                  }
-                },
-                "required": [
-                  "queueId",
-                  "date"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Waitlist entry created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Waitlist"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Create a new waitlist entry",
-        "tags": [
-          "waitlist"
-        ]
-      }
-    },
-    "/waitlist/queue/{queueId}/date/{date}": {
-      "get": {
-        "description": "Retrieves all waitlist entries for a specific queue on a given date",
-        "operationId": "WaitlistController_getWaitlistsByQueueAndDate",
-        "parameters": [
-          {
-            "name": "date",
-            "required": true,
-            "in": "path",
-            "description": "Date in YYYY-MM-DD format",
-            "schema": {
-              "example": "2024-01-15"
-            }
-          },
-          {
-            "name": "queueId",
-            "required": true,
-            "in": "path",
-            "description": "Queue ID",
-            "schema": {
-              "example": "queue-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of waitlist entries",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Waitlist"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get waitlists by queue and date",
-        "tags": [
-          "waitlist"
-        ]
-      }
-    },
-    "/waitlist/details/{id}": {
-      "get": {
-        "description": "Retrieves detailed waitlist information",
-        "operationId": "WaitlistController_getWaitlistDetails",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Waitlist ID",
-            "schema": {
-              "example": "waitlist-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Waitlist details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WaitlistDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Waitlist not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get waitlist details",
-        "tags": [
-          "waitlist"
-        ]
-      }
-    },
     "/block/queueId/{queueId}": {
       "get": {
         "description": "Retrieves all time blocks for a specific queue",
@@ -8684,6 +11261,16 @@
                   "page": {
                     "type": "string",
                     "example": "https://easuavez.com/pricing"
+                  },
+                  "temperature": {
+                    "type": "string",
+                    "enum": [
+                      "QUENTE",
+                      "MORNO",
+                      "FRIO"
+                    ],
+                    "example": "MORNO",
+                    "description": "Lead priority: QUENTE (hot/red), MORNO (warm/green), FRIO (cold/blue). Defaults to MORNO."
                   }
                 },
                 "required": [
@@ -8753,6 +11340,16 @@
                   "page": {
                     "type": "string",
                     "example": "https://easuavez.com/pricing"
+                  },
+                  "temperature": {
+                    "type": "string",
+                    "enum": [
+                      "QUENTE",
+                      "MORNO",
+                      "FRIO"
+                    ],
+                    "example": "MORNO",
+                    "description": "Lead priority: QUENTE (hot/red), MORNO (warm/green), FRIO (cold/blue). Defaults to MORNO."
                   }
                 },
                 "required": [
@@ -8840,6 +11437,30 @@
             "name": "stage",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -11015,6 +13636,714 @@
         ]
       }
     },
+    "/patient-photos/{commerceId}/{clientId}": {
+      "post": {
+        "description": "Uploads a new photo for a patient",
+        "operationId": "PatientPhotoController_uploadPatientPhoto",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Patient photo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "photoType": {
+                    "type": "string",
+                    "example": "patient_profile",
+                    "description": "Type of photo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "photo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Photo uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload patient photo",
+        "tags": [
+          "patient-photos"
+        ]
+      },
+      "get": {
+        "description": "Retrieves patient photo metadata",
+        "operationId": "PatientPhotoController_getPatientPhoto",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient photo metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientPhoto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Photo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get patient photo metadata",
+        "tags": [
+          "patient-photos"
+        ]
+      },
+      "put": {
+        "description": "Replaces the existing patient photo with a new one",
+        "operationId": "PatientPhotoController_updatePatientPhoto",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New patient photo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "photoType": {
+                    "type": "string",
+                    "example": "patient_profile",
+                    "description": "Type of photo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "photo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Photo updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "404": {
+            "description": "Patient not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update patient photo",
+        "tags": [
+          "patient-photos"
+        ]
+      }
+    },
+    "/patient-photos/{commerceId}/{clientId}/{photoId}": {
+      "get": {
+        "description": "Retrieves and streams the patient photo file",
+        "operationId": "PatientPhotoController_getPatientPhotoFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "description": "Photo ID",
+            "schema": {
+              "example": "photo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient photo file stream"
+          },
+          "404": {
+            "description": "Photo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get patient photo file",
+        "tags": [
+          "patient-photos"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a patient photo and its thumbnail",
+        "operationId": "PatientPhotoController_deletePatientPhoto",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "description": "Photo ID",
+            "schema": {
+              "example": "photo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Photo deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - Not authorized"
+          },
+          "404": {
+            "description": "Photo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete patient photo",
+        "tags": [
+          "patient-photos"
+        ]
+      }
+    },
+    "/patient-photos/{commerceId}/{clientId}/{photoId}/thumbnail": {
+      "get": {
+        "description": "Retrieves and streams the patient photo thumbnail",
+        "operationId": "PatientPhotoController_getPatientPhotoThumbnail",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "description": "Photo ID",
+            "schema": {
+              "example": "photo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient photo thumbnail stream"
+          },
+          "404": {
+            "description": "Thumbnail not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get patient photo thumbnail",
+        "tags": [
+          "patient-photos"
+        ]
+      }
+    },
+    "/business-logos/{businessId}": {
+      "post": {
+        "description": "Uploads a new logo for a business",
+        "operationId": "BusinessLogoController_uploadBusinessLogo",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Business logo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "logoType": {
+                    "type": "string",
+                    "example": "business_logo",
+                    "description": "Type of logo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "logo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Logo uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLogo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload business logo",
+        "tags": [
+          "business-logos"
+        ]
+      },
+      "get": {
+        "description": "Retrieves business logo metadata",
+        "operationId": "BusinessLogoController_getBusinessLogo",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business logo metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLogo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get business logo metadata",
+        "tags": [
+          "business-logos"
+        ]
+      },
+      "put": {
+        "description": "Replaces the existing business logo with a new one",
+        "operationId": "BusinessLogoController_updateBusinessLogo",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New business logo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "logoType": {
+                    "type": "string",
+                    "example": "business_logo",
+                    "description": "Type of logo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "logo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logo updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessLogo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "404": {
+            "description": "Business not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update business logo",
+        "tags": [
+          "business-logos"
+        ]
+      }
+    },
+    "/business-logos/{businessId}/{logoId}": {
+      "get": {
+        "description": "Retrieves and streams the business logo file",
+        "operationId": "BusinessLogoController_getBusinessLogoFile",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business logo file stream"
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get business logo file",
+        "tags": [
+          "business-logos"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a business logo and its thumbnail",
+        "operationId": "BusinessLogoController_deleteBusinessLogo",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logo deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - Not authorized"
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete business logo",
+        "tags": [
+          "business-logos"
+        ]
+      }
+    },
+    "/business-logos/{businessId}/{logoId}/thumbnail": {
+      "get": {
+        "description": "Retrieves and streams the business logo thumbnail",
+        "operationId": "BusinessLogoController_getBusinessLogoThumbnail",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business logo thumbnail stream"
+          },
+          "404": {
+            "description": "Thumbnail not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get business logo thumbnail",
+        "tags": [
+          "business-logos"
+        ]
+      }
+    },
     "/prescription/medications/search": {
       "get": {
         "description": "Search for medications in the catalog",
@@ -11051,6 +14380,15 @@
             }
           },
           {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -11082,6 +14420,114 @@
           }
         ],
         "summary": "Search medications",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/medications": {
+      "get": {
+        "description": "Retrieves all active medications from the catalog",
+        "operationId": "PrescriptionController_getAllMedications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of medications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicationCatalog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all medications",
+        "tags": [
+          "prescription"
+        ]
+      },
+      "post": {
+        "description": "Creates a new medication in the catalog",
+        "operationId": "PrescriptionController_createMedication",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMedicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Medication created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicationCatalog"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create medication",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
+    "/prescription/medications/commerce/{commerceId}": {
+      "get": {
+        "description": "Retrieves all active medications for a specific commerce",
+        "operationId": "PrescriptionController_getMedicationsByCommerce",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of medications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicationCatalog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get medications by commerce",
         "tags": [
           "prescription"
         ]
@@ -11123,6 +14569,81 @@
           }
         ],
         "summary": "Get medication by ID",
+        "tags": [
+          "prescription"
+        ]
+      },
+      "patch": {
+        "description": "Updates a medication in the catalog",
+        "operationId": "PrescriptionController_updateMedication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Medication ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMedicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Medication updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicationCatalog"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update medication",
+        "tags": [
+          "prescription"
+        ]
+      },
+      "delete": {
+        "description": "Soft deletes a medication from the catalog",
+        "operationId": "PrescriptionController_deleteMedication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Medication ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Medication deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete medication",
         "tags": [
           "prescription"
         ]
@@ -11611,6 +15132,65 @@
         ]
       }
     },
+    "/prescription/{id}/send-email": {
+      "post": {
+        "description": "Sends the prescription PDF to the specified email address",
+        "operationId": "PrescriptionController_sendPrescriptionByEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Prescription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recipientEmail": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "recipientEmail"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email sent successfully"
+          },
+          "404": {
+            "description": "Prescription not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send prescription PDF by email",
+        "tags": [
+          "prescription"
+        ]
+      }
+    },
     "/prescription/suggestions/attention/{commerceId}/{clientId}/{attentionId}": {
       "get": {
         "description": "Gets active prescriptions with matching products and stock availability for an attention",
@@ -11657,6 +15237,427 @@
         "summary": "Get prescription suggestions for attention",
         "tags": [
           "prescription"
+        ]
+      }
+    },
+    "/public/prescription/verify/{id}": {
+      "get": {
+        "description": "Endpoint público para verificar la autenticidad de una prescripción médica mediante su ID. No requiere autenticación.",
+        "operationId": "PrescriptionVerificationController_verifyPrescription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la prescripción",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información de verificación de la prescripción",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPrescriptionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prescripción no encontrada"
+          }
+        },
+        "summary": "Verificar prescripción médica",
+        "tags": [
+          "public-verification"
+        ]
+      }
+    },
+    "/prescription/{id}/sign": {
+      "post": {
+        "description": "Assina uma prescrição usando certificado digital ICP-Brasil (PKCS#7). Após assinatura, o documento não pode ser alterado.",
+        "operationId": "PrescriptionSignatureController_signPrescription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da prescrição",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certificatePem": {
+                    "type": "string",
+                    "description": "Certificado em formato PEM"
+                  },
+                  "privateKeyPem": {
+                    "type": "string",
+                    "description": "Chave privada em formato PEM"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Senha do certificado (se necessário)"
+                  }
+                },
+                "required": [
+                  "certificatePem",
+                  "privateKeyPem"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prescrição assinada com sucesso"
+          },
+          "400": {
+            "description": "Prescrição já assinada ou certificado inválido"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Assinar prescrição com certificado digital ICP-Brasil",
+        "tags": [
+          "prescription-signature"
+        ]
+      }
+    },
+    "/prescription/{id}/verify-signature": {
+      "post": {
+        "description": "Verifica a autenticidade da assinatura digital ICP-Brasil",
+        "operationId": "PrescriptionSignatureController_verifySignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da prescrição",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado da verificação"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Verificar assinatura digital da prescrição",
+        "tags": [
+          "prescription-signature"
+        ]
+      }
+    },
+    "/pdf-template": {
+      "get": {
+        "description": "Obtiene una lista de templates de PDF según filtros",
+        "operationId": "PdfTemplateController_listTemplates",
+        "parameters": [
+          {
+            "name": "documentType",
+            "required": false,
+            "in": "query",
+            "description": "Tipo de documento (prescription, exam_order, reference)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "description": "ID del commerce",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Alcance (GLOBAL, COMMERCE, PERSONAL)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PdfTemplate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Listar templates de PDF",
+        "tags": [
+          "pdf-template"
+        ]
+      },
+      "post": {
+        "description": "Crea un nuevo template de PDF",
+        "operationId": "PdfTemplateController_createTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePdfTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PdfTemplate"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Crear template de PDF",
+        "tags": [
+          "pdf-template"
+        ]
+      }
+    },
+    "/pdf-template/{id}": {
+      "get": {
+        "description": "Obtiene un template de PDF por su ID",
+        "operationId": "PdfTemplateController_getTemplateById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del template",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PdfTemplate"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template no encontrado"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener template por ID",
+        "tags": [
+          "pdf-template"
+        ]
+      },
+      "patch": {
+        "description": "Actualiza un template de PDF existente",
+        "operationId": "PdfTemplateController_updateTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del template",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePdfTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template actualizado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PdfTemplate"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template no encontrado"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualizar template de PDF",
+        "tags": [
+          "pdf-template"
+        ]
+      },
+      "delete": {
+        "description": "Elimina un template de PDF (soft delete)",
+        "operationId": "PdfTemplateController_deleteTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del template",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Template eliminado exitosamente"
+          },
+          "404": {
+            "description": "Template no encontrado"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Eliminar template de PDF",
+        "tags": [
+          "pdf-template"
+        ]
+      }
+    },
+    "/pdf-template/{id}/set-default": {
+      "post": {
+        "description": "Establece un template como template por defecto para su tipo de documento",
+        "operationId": "PdfTemplateController_setAsDefault",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del template",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template establecido como por defecto"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Establecer template como por defecto",
+        "tags": [
+          "pdf-template"
+        ]
+      }
+    },
+    "/pdf-template/{id}/preview": {
+      "post": {
+        "description": "Genera un PDF de preview del template con datos de ejemplo",
+        "operationId": "PdfTemplateController_generatePreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del template",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF de preview generado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "previewUrl": {
+                      "type": "string",
+                      "description": "URL firmada de S3 del PDF generado"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Generar preview del template",
+        "tags": [
+          "pdf-template"
         ]
       }
     },
@@ -12190,6 +16191,114 @@
         ]
       }
     },
+    "/medical-exam-order/exams": {
+      "get": {
+        "description": "Retrieves all active medical exams from the catalog",
+        "operationId": "MedicalExamOrderController_getAllExams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of exams",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicalExam"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all medical exams",
+        "tags": [
+          "medical-exam-order"
+        ]
+      },
+      "post": {
+        "description": "Creates a new medical exam in the catalog",
+        "operationId": "MedicalExamOrderController_createMedicalExam",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMedicalExamDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exam created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExam"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create medical exam",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/exams/commerce/{commerceId}": {
+      "get": {
+        "description": "Retrieves all active medical exams for a specific commerce",
+        "operationId": "MedicalExamOrderController_getExamsByCommerce",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of exams",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicalExam"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get medical exams by commerce",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
     "/medical-exam-order/exams/search": {
       "get": {
         "description": "Search for medical exams in the catalog",
@@ -12215,6 +16324,15 @@
                 "procedure",
                 "other"
               ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "description": "Commerce ID",
+            "schema": {
               "type": "string"
             }
           },
@@ -12246,6 +16364,122 @@
           }
         ],
         "summary": "Search medical exams",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
+    "/medical-exam-order/exams/{id}": {
+      "get": {
+        "description": "Retrieves a medical exam from the catalog by ID",
+        "operationId": "MedicalExamOrderController_getExamById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exam found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExam"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Exam not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get exam by ID",
+        "tags": [
+          "medical-exam-order"
+        ]
+      },
+      "patch": {
+        "description": "Updates a medical exam in the catalog",
+        "operationId": "MedicalExamOrderController_updateMedicalExam",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMedicalExamDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exam updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicalExam"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update medical exam",
+        "tags": [
+          "medical-exam-order"
+        ]
+      },
+      "delete": {
+        "description": "Soft deletes a medical exam from the catalog",
+        "operationId": "MedicalExamOrderController_deleteMedicalExam",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Exam deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete medical exam",
         "tags": [
           "medical-exam-order"
         ]
@@ -12594,6 +16828,65 @@
         ]
       }
     },
+    "/medical-exam-order/{id}/send-email": {
+      "post": {
+        "description": "Sends the exam order PDF to the specified email address",
+        "operationId": "MedicalExamOrderController_sendExamOrderByEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Exam Order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recipientEmail": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "recipientEmail"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email sent successfully"
+          },
+          "404": {
+            "description": "Exam Order not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send exam order PDF by email",
+        "tags": [
+          "medical-exam-order"
+        ]
+      }
+    },
     "/exam-result": {
       "post": {
         "operationId": "ExamResultController_createStructuredResult",
@@ -12860,6 +17153,135 @@
         "summary": "Delete template",
         "tags": [
           "Exam Result Template"
+        ]
+      }
+    },
+    "/public/exam-order/verify/{id}": {
+      "get": {
+        "description": "Endpoint público para verificar la autenticidad de una orden de examen médico mediante su ID. No requiere autenticación.",
+        "operationId": "ExamOrderVerificationController_verifyExamOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la orden de examen",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información de verificación de la orden de examen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyExamOrderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Orden de examen no encontrada"
+          }
+        },
+        "summary": "Verificar orden de examen médico",
+        "tags": [
+          "public-verification"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}/sign": {
+      "post": {
+        "description": "Assina uma ordem de exame usando certificado digital ICP-Brasil (PKCS#7). Após assinatura, o documento não pode ser alterado.",
+        "operationId": "ExamOrderSignatureController_signExamOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem de exame",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certificatePem": {
+                    "type": "string",
+                    "description": "Certificado em formato PEM"
+                  },
+                  "privateKeyPem": {
+                    "type": "string",
+                    "description": "Chave privada em formato PEM"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Senha do certificado (se necessário)"
+                  }
+                },
+                "required": [
+                  "certificatePem",
+                  "privateKeyPem"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ordem de exame assinada com sucesso"
+          },
+          "400": {
+            "description": "Ordem já assinada ou certificado inválido"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Assinar ordem de exame com certificado digital ICP-Brasil",
+        "tags": [
+          "exam-order-signature"
+        ]
+      }
+    },
+    "/medical-exam-order/{id}/verify-signature": {
+      "post": {
+        "description": "Verifica a autenticidade da assinatura digital ICP-Brasil",
+        "operationId": "ExamOrderSignatureController_verifySignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem de exame",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado da verificação"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Verificar assinatura digital da ordem de exame",
+        "tags": [
+          "exam-order-signature"
         ]
       }
     },
@@ -13242,6 +17664,135 @@
         "summary": "Get medical reference PDF URL",
         "tags": [
           "medical-reference"
+        ]
+      }
+    },
+    "/public/reference/verify/{id}": {
+      "get": {
+        "description": "Endpoint público para verificar la autenticidad de una referencia médica mediante su ID. No requiere autenticación.",
+        "operationId": "ReferenceVerificationController_verifyReference",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la referencia médica",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información de verificación de la referencia médica",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyReferenceResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Referencia médica no encontrada"
+          }
+        },
+        "summary": "Verificar referencia médica",
+        "tags": [
+          "public-verification"
+        ]
+      }
+    },
+    "/medical-reference/{id}/sign": {
+      "post": {
+        "description": "Assina uma referência médica usando certificado digital ICP-Brasil (PKCS#7). Após assinatura, o documento não pode ser alterado.",
+        "operationId": "ReferenceSignatureController_signReference",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da referência médica",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certificatePem": {
+                    "type": "string",
+                    "description": "Certificado em formato PEM"
+                  },
+                  "privateKeyPem": {
+                    "type": "string",
+                    "description": "Chave privada em formato PEM"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Senha do certificado (se necessário)"
+                  }
+                },
+                "required": [
+                  "certificatePem",
+                  "privateKeyPem"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Referência médica assinada com sucesso"
+          },
+          "400": {
+            "description": "Referência já assinada ou certificado inválido"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Assinar referência médica com certificado digital ICP-Brasil",
+        "tags": [
+          "reference-signature"
+        ]
+      }
+    },
+    "/medical-reference/{id}/verify-signature": {
+      "post": {
+        "description": "Verifica a autenticidade da assinatura digital ICP-Brasil",
+        "operationId": "ReferenceSignatureController_verifySignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da referência médica",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado da verificação"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Verificar assinatura digital da referência médica",
+        "tags": [
+          "reference-signature"
         ]
       }
     },
@@ -14148,6 +18699,126 @@
         ]
       }
     },
+    "/form/preprontuario/status/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Checks if client has completed preprontuario for the commerce",
+        "operationId": "FormController_getPreprontuarioStatus",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "Client ID",
+            "schema": {
+              "example": "client-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preprontuario status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "completedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "formId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Check preprontuario completion status",
+        "tags": [
+          "form"
+        ]
+      }
+    },
+    "/form/{id}/load-to-prontuario": {
+      "patch": {
+        "description": "Marks a form as having been loaded into the patient prontuario",
+        "operationId": "FormController_markAsLoadedToProntuario",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Form ID",
+            "schema": {
+              "example": "form-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "example": "user-123"
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Form marked as loaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Form"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Form not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark form as loaded to prontuario",
+        "tags": [
+          "form"
+        ]
+      }
+    },
     "/form-personalized/{id}": {
       "get": {
         "description": "Retrieves a personalized form template by its unique identifier",
@@ -14475,6 +19146,48 @@
           "form-personalized"
         ]
       }
+    },
+    "/data-retention/check": {
+      "get": {
+        "description": "Retorna contagem de documentos que estão próximos ou passaram do prazo de retenção",
+        "operationId": "DataRetentionController_checkRetention",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Contagem de documentos para arquivamento"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Verificar documentos que precisam ser arquivados",
+        "tags": [
+          "data-retention"
+        ]
+      }
+    },
+    "/data-retention/archive": {
+      "post": {
+        "description": "Executa o processo de arquivamento de documentos que passaram do prazo de retenção",
+        "operationId": "DataRetentionController_archiveOldDocuments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Arquivamento concluído"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Arquivar documentos antigos manualmente",
+        "tags": [
+          "data-retention"
+        ]
+      }
     }
   },
   "info": {
@@ -14775,6 +19488,10 @@
         "type": "object",
         "properties": {}
       },
+      "DocumentSearchDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateTelemedicineSessionDto": {
         "type": "object",
         "properties": {
@@ -14837,38 +19554,6 @@
         "properties": {}
       },
       "TelemedicineMessage": {
-        "type": "object",
-        "properties": {}
-      },
-      "PatientHistory": {
-        "type": "object",
-        "properties": {}
-      },
-      "PatientHistoryUpdateDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "ConsultationHistory": {
-        "type": "object",
-        "properties": {}
-      },
-      "PatientJourneyDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "Survey": {
-        "type": "object",
-        "properties": {}
-      },
-      "HealthOutputDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "Suggestion": {
-        "type": "object",
-        "properties": {}
-      },
-      "Feature": {
         "type": "object",
         "properties": {}
       },
@@ -15270,11 +19955,55 @@
           "date"
         ]
       },
+      "AuditLog": {
+        "type": "object",
+        "properties": {}
+      },
+      "LgpdConsent": {
+        "type": "object",
+        "properties": {}
+      },
+      "LgpdIncident": {
+        "type": "object",
+        "properties": {}
+      },
       "Waitlist": {
         "type": "object",
         "properties": {}
       },
       "WaitlistDetailsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PatientHistory": {
+        "type": "object",
+        "properties": {}
+      },
+      "PatientHistoryUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ConsultationHistory": {
+        "type": "object",
+        "properties": {}
+      },
+      "PatientJourneyDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "Survey": {
+        "type": "object",
+        "properties": {}
+      },
+      "HealthOutputDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "Suggestion": {
+        "type": "object",
+        "properties": {}
+      },
+      "Feature": {
         "type": "object",
         "properties": {}
       },
@@ -15310,9 +20039,92 @@
         "type": "object",
         "properties": {}
       },
+      "PatientPhoto": {
+        "type": "object",
+        "properties": {}
+      },
+      "BusinessLogo": {
+        "type": "object",
+        "properties": {}
+      },
       "MedicationCatalog": {
         "type": "object",
         "properties": {}
+      },
+      "CreateMedicationDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "Commerce ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre genérico del medicamento"
+          },
+          "commercialName": {
+            "type": "string",
+            "description": "Nombre comercial"
+          },
+          "atcCode": {
+            "type": "string",
+            "description": "Código ATC"
+          },
+          "activePrinciple": {
+            "type": "string",
+            "description": "Principio activo"
+          },
+          "presentation": {
+            "type": "string",
+            "description": "Presentación (ej: \"500mg comprimidos\")"
+          },
+          "dosageForm": {
+            "type": "string",
+            "description": "Forma farmacéutica (comprimido, cápsula, etc.)"
+          },
+          "route": {
+            "type": "string",
+            "description": "Vía de administración (oral, tópica, etc.)"
+          },
+          "standardDosage": {
+            "type": "string",
+            "description": "Dosis estándar"
+          },
+          "contraindications": {
+            "description": "Contraindicaciones",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "interactions": {
+            "description": "Interacciones conocidas",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Activo",
+            "default": true
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Disponible",
+            "default": true
+          }
+        },
+        "required": [
+          "commerceId",
+          "name",
+          "activePrinciple",
+          "presentation",
+          "dosageForm",
+          "route",
+          "active",
+          "available"
+        ]
       },
       "MedicationItemDto": {
         "type": "object",
@@ -15455,6 +20267,233 @@
         "type": "object",
         "properties": {}
       },
+      "VerifyPrescriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Si el documento es válido"
+          },
+          "prescriptionId": {
+            "type": "string",
+            "description": "ID de la prescripción"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Fecha de emisión"
+          },
+          "doctorName": {
+            "type": "string",
+            "description": "Nombre del médico"
+          },
+          "doctorLicense": {
+            "type": "string",
+            "description": "CRM del médico"
+          },
+          "commerceName": {
+            "type": "string",
+            "description": "Nombre del comercio/clínica"
+          },
+          "documentHash": {
+            "type": "string",
+            "description": "Hash del documento para verificación de integridad"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje de verificación"
+          },
+          "tampered": {
+            "type": "boolean",
+            "description": "Si el documento ha sido alterado"
+          }
+        },
+        "required": [
+          "valid",
+          "prescriptionId",
+          "date",
+          "doctorName",
+          "commerceName",
+          "documentHash",
+          "message"
+        ]
+      },
+      "PdfTemplate": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePdfTemplateSectionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Tipo de sección",
+            "enum": [
+              "header",
+              "footer",
+              "content"
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Si la sección está habilitada"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML personalizado"
+          },
+          "text": {
+            "type": "string",
+            "description": "Texto simple"
+          },
+          "position": {
+            "type": "string",
+            "description": "Posición"
+          },
+          "fontSize": {
+            "type": "number",
+            "description": "Tamaño de fuente"
+          },
+          "fontFamily": {
+            "type": "string",
+            "description": "Familia de fuente"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color"
+          },
+          "alignment": {
+            "type": "string",
+            "description": "Alineación"
+          },
+          "margin": {
+            "type": "object",
+            "description": "Márgenes"
+          },
+          "includeLogo": {
+            "type": "boolean",
+            "description": "Incluir logo"
+          },
+          "includeCommerceInfo": {
+            "type": "boolean",
+            "description": "Incluir info del commerce"
+          },
+          "includeDoctorInfo": {
+            "type": "boolean",
+            "description": "Incluir info del médico"
+          },
+          "includeDate": {
+            "type": "boolean",
+            "description": "Incluir fecha"
+          },
+          "includeQrCode": {
+            "type": "boolean",
+            "description": "Incluir QR code"
+          },
+          "includeDigitalSignature": {
+            "type": "boolean",
+            "description": "Incluir firma digital"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "CreatePdfTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre del template"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripción"
+          },
+          "documentType": {
+            "type": "string",
+            "description": "Tipo de documento",
+            "enum": [
+              "prescription",
+              "exam_order",
+              "reference"
+            ]
+          },
+          "commerceId": {
+            "type": "string",
+            "description": "ID del commerce (opcional)"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Alcance",
+            "enum": [
+              "GLOBAL",
+              "COMMERCE",
+              "PERSONAL"
+            ]
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Si está activo"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Si está disponible"
+          },
+          "header": {
+            "description": "Sección header",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatePdfTemplateSectionDto"
+              }
+            ]
+          },
+          "footer": {
+            "description": "Sección footer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatePdfTemplateSectionDto"
+              }
+            ]
+          },
+          "content": {
+            "description": "Sección content",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatePdfTemplateSectionDto"
+              }
+            ]
+          },
+          "variables": {
+            "description": "Variables disponibles",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pageSize": {
+            "type": "string",
+            "description": "Tamaño de página"
+          },
+          "margins": {
+            "type": "object",
+            "description": "Márgenes"
+          },
+          "orientation": {
+            "type": "string",
+            "description": "Orientación"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Si es template por defecto"
+          }
+        },
+        "required": [
+          "name",
+          "documentType",
+          "scope"
+        ]
+      },
       "Object": {
         "type": "object",
         "properties": {}
@@ -15462,6 +20501,74 @@
       "ClinicalAlert": {
         "type": "object",
         "properties": {}
+      },
+      "MedicalExam": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateMedicalExamDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "ID del comercio al que pertenece el examen"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del examen"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código LOINC"
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de examen",
+            "enum": [
+              "laboratory",
+              "imaging",
+              "procedure",
+              "other"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripción"
+          },
+          "preparation": {
+            "type": "string",
+            "description": "Preparación requerida"
+          },
+          "estimatedDuration": {
+            "type": "number",
+            "description": "Duración estimada en minutos"
+          },
+          "cost": {
+            "type": "number",
+            "description": "Costo"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Activo",
+            "default": true
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Disponible",
+            "default": true
+          }
+        },
+        "required": [
+          "commerceId",
+          "name",
+          "type",
+          "active",
+          "available"
+        ]
       },
       "ExamItemDto": {
         "type": "object",
@@ -15796,6 +20903,53 @@
         "type": "object",
         "properties": {}
       },
+      "VerifyExamOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Si el documento es válido"
+          },
+          "examOrderId": {
+            "type": "string",
+            "description": "ID de la orden de examen"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Fecha de emisión"
+          },
+          "doctorName": {
+            "type": "string",
+            "description": "Nombre del médico"
+          },
+          "commerceName": {
+            "type": "string",
+            "description": "Nombre del comercio/clínica"
+          },
+          "documentHash": {
+            "type": "string",
+            "description": "Hash del documento para verificación de integridad"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje de verificación"
+          },
+          "tampered": {
+            "type": "boolean",
+            "description": "Si el documento ha sido alterado"
+          }
+        },
+        "required": [
+          "valid",
+          "examOrderId",
+          "date",
+          "doctorName",
+          "commerceName",
+          "documentHash",
+          "message"
+        ]
+      },
       "CreateMedicalReferenceDto": {
         "type": "object",
         "properties": {
@@ -15890,6 +21044,53 @@
       "MedicalReference": {
         "type": "object",
         "properties": {}
+      },
+      "VerifyReferenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Si el documento es válido"
+          },
+          "referenceId": {
+            "type": "string",
+            "description": "ID de la referencia médica"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Fecha de emisión"
+          },
+          "doctorOriginName": {
+            "type": "string",
+            "description": "Nombre del médico origen"
+          },
+          "commerceName": {
+            "type": "string",
+            "description": "Nombre del comercio/clínica"
+          },
+          "documentHash": {
+            "type": "string",
+            "description": "Hash del documento para verificación de integridad"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje de verificación"
+          },
+          "tampered": {
+            "type": "boolean",
+            "description": "Si el documento ha sido alterado"
+          }
+        },
+        "required": [
+          "valid",
+          "referenceId",
+          "date",
+          "doctorOriginName",
+          "commerceName",
+          "documentHash",
+          "message"
+        ]
       },
       "TemplateVariableDto": {
         "type": "object",

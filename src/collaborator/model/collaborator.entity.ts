@@ -25,4 +25,7 @@ export class Collaborator {
   permissions: Record<string, boolean | number>;
   available: boolean;
   services?: Service[];
+  digitalSignature?: string; // URL o base64 de la imagen de firma digital
+  crm?: string; // Número de registro médico (CRM)
+  crmState?: string; // Estado del CRM (ej: SP, RJ, MG)
 }

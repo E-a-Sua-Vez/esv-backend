@@ -2,6 +2,7 @@ import { Collection } from 'fireorm';
 
 export class Medication {
   id: string;
+  commerceId: string;
   name: string; // Nombre genérico
   commercialName?: string; // Nombre comercial
   atcCode?: string; // Código ATC

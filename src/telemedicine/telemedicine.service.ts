@@ -706,6 +706,14 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Get access key for a session (for notification purposes only)
+   */
+  async getAccessKeyForNotification(sessionId: string): Promise<string | null> {
+    const session = await this.getSessionByIdInternal(sessionId);
+    return session.accessKey || null;
+  }
+
+  /**
    * Excluir accessKey y accessKeyHash de la sesión para respuestas públicas
    */
   private excludeAccessKey(session: TelemedicineSession): TelemedicineSession {

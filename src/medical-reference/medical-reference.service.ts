@@ -1,10 +1,15 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+import * as crypto from 'crypto';
 
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
+import { ConsultationHistoryService } from '../patient-history/consultation-history.service';
+import { GeneratedDocumentService } from '../shared/services/generated-document.service';
+import { CollaboratorService } from '../collaborator/collaborator.service';
+import { PdfTemplateService } from '../shared/services/pdf-template.service';
 
 import { CreateMedicalReferenceDto } from './dto/create-medical-reference.dto';
 import MedicalReferenceAccepted from './events/MedicalReferenceAccepted';
@@ -25,7 +30,12 @@ export class MedicalReferenceService {
     private referenceRepository = getRepository(MedicalReference),
     private referencePdfService: MedicalReferencePdfService,
     private clientService: ClientService,
-    private commerceService: CommerceService
+    private commerceService: CommerceService,
+    @Inject(forwardRef(() => ConsultationHistoryService))
+    private consultationHistoryService?: ConsultationHistoryService,
+    private generatedDocumentService?: GeneratedDocumentService,
+    private collaboratorService?: CollaboratorService,
+    private pdfTemplateService?: PdfTemplateService
   ) {}
 
   /**
@@ -72,6 +82,16 @@ export class MedicalReferenceService {
       // No lanzar error, solo loguear para no bloquear la creación
     });
 
+    // Link to consultation history (asíncrono, no bloquea la respuesta)
+    if (this.consultationHistoryService && created.attentionId) {
+      this.consultationHistoryService
+        .linkReferenceToConsultation(created.attentionId, created.id, user)
+        .catch(error => {
+          console.warn(`Error linking reference to consultation: ${error.message}`);
+          // No lanzar error, solo loguear para no bloquear la creación
+        });
+    }
+
     return created;
   }
 
@@ -108,6 +128,14 @@ export class MedicalReferenceService {
   ): Promise<MedicalReference> {
     const reference = await this.getReferenceById(referenceId);
 
+    // Bloqueio após assinatura (conformidade CFM)
+    if (reference.isSigned) {
+      throw new HttpException(
+        'Referência assinada não pode ser alterada',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     if (reference.status !== ReferenceStatus.PENDING) {
       throw new HttpException('Only pending references can be accepted', HttpStatus.BAD_REQUEST);
     }
@@ -136,6 +164,16 @@ export class MedicalReferenceService {
     returnReport?: string
   ): Promise<MedicalReference> {
     const reference = await this.getReferenceById(referenceId);
+
+    // Bloqueio após assinatura (conformidade CFM)
+    // Nota: Relatório de retorno pode ser adicionado mesmo após assinatura
+    // Se necessário bloquear também, descomentar:
+    // if (reference.isSigned) {
+    //   throw new HttpException(
+    //     'Referência assinada não pode ser alterada',
+    //     HttpStatus.BAD_REQUEST
+    //   );
+    // }
 
     if (reference.status !== ReferenceStatus.ACCEPTED) {
       throw new HttpException(
@@ -169,6 +207,14 @@ export class MedicalReferenceService {
   ): Promise<MedicalReference> {
     const reference = await this.getReferenceById(referenceId);
 
+    // Bloqueio após assinatura (conformidade CFM)
+    if (reference.isSigned) {
+      throw new HttpException(
+        'Referência assinada não pode ser rejeitada',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     reference.status = ReferenceStatus.REJECTED;
     reference.response = reason;
     reference.updatedAt = new Date();
@@ -198,20 +244,109 @@ export class MedicalReferenceService {
       const commerceName = commerce.name || '';
       const commerceAddress = commerce.localeInfo?.address || '';
       const commercePhone = commerce.phone || '';
+      const commerceLogo = commerce.logo
+        ? `${process.env.BACKEND_URL || ''}${commerce.logo}`
+        : undefined;
+
+      // Obtener firma digital y CRM del médico (si existe)
+      let doctorSignature: string | undefined;
+      let doctorLicense: string | undefined;
+      if (reference.doctorOriginId) {
+        try {
+          const collaborator = await this.collaboratorService?.getCollaboratorById(
+            reference.doctorOriginId
+          );
+          if (collaborator) {
+            // Obtener firma digital
+            if (collaborator.digitalSignature) {
+              doctorSignature = collaborator.digitalSignature.startsWith('http')
+                ? collaborator.digitalSignature
+                : `${process.env.BACKEND_URL || ''}${collaborator.digitalSignature}`;
+            }
+            // Obtener CRM (licencia médica)
+            if (collaborator.crm) {
+              doctorLicense = collaborator.crmState
+                ? `CRM/${collaborator.crmState} ${collaborator.crm}`
+                : `CRM ${collaborator.crm}`;
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not load doctor data: ${error.message}`);
+        }
+      }
+
+      // Obtener template (si existe servicio de templates)
+      let template = null;
+      if (this.pdfTemplateService) {
+        try {
+          template = await this.pdfTemplateService.getDefaultTemplate('reference', commerce.id);
+          // Incrementar contador de uso si se encontró un template
+          if (template?.id) {
+            await this.pdfTemplateService.incrementUsageCount(template.id);
+          }
+        } catch (error) {
+          console.warn(`Could not load PDF template: ${error.message}`);
+        }
+      }
 
       // Generar PDF
-      const { pdfUrl } = await this.referencePdfService.generateReferencePdf(
+      const { pdfUrl, verificationUrl } = await this.referencePdfService.generateReferencePdf(
         reference,
         patientName,
         patientIdNumber,
         commerceName,
         commerceAddress,
-        commercePhone
+        commercePhone,
+        commerceLogo,
+        doctorSignature,
+        template,
+        doctorLicense // Pasar CRM del colaborador
       );
 
-      // Actualizar referencia con URL del PDF
+      // Calcular hash del documento para verificación de integridad
+      const hashData = JSON.stringify({
+        id: reference.id,
+        date: reference.referenceDate.toISOString(),
+        doctorOriginId: reference.doctorOriginId,
+        commerceId: reference.commerceId,
+        clientId: reference.clientId,
+        specialtyDestination: reference.specialtyDestination,
+      });
+      const documentHash = crypto.createHash('sha256').update(hashData).digest('hex');
+
+      // Actualizar referencia con URL del PDF y hash del documento
       reference.pdfUrl = pdfUrl;
+      reference.documentHash = documentHash;
       await this.referenceRepository.update(reference);
+
+      // Guardar como documento en patient history (si el servicio está disponible)
+      if (this.generatedDocumentService && reference.attentionId) {
+        try {
+          const pdfKey = `medical-references/${reference.commerceId}/${reference.id}.pdf`;
+          const documentName = `Referencia Médica - ${patientName} - ${new Date(reference.referenceDate).toLocaleDateString('pt-BR')}`;
+
+          await this.generatedDocumentService.saveGeneratedDocumentAsPatientDocument(
+            reference.createdBy || reference.doctorOriginId,
+            reference.commerceId,
+            reference.clientId,
+            reference.attentionId,
+            'reference',
+            pdfUrl,
+            pdfKey,
+            documentName,
+            {
+              referenceId: reference.id,
+              doctorName: reference.doctorOriginName,
+              doctorId: reference.doctorOriginId,
+              specialty: reference.specialtyDestination,
+              reason: reference.reason,
+            }
+          );
+        } catch (docError) {
+          console.warn(`Error saving reference as patient document: ${docError.message}`);
+          // No lanzar error, solo loguear
+        }
+      }
     } catch (error) {
       console.error('Error in generateReferencePdfAsync:', error);
       // No lanzar error para no bloquear la creación de la referencia

@@ -91,6 +91,20 @@ export class MedicalExamOrder {
 
   // PDF
   pdfUrl?: string; // URL del PDF generado
+  documentHash?: string; // Hash SHA-256 del documento para verificación de integridad
+
+  // Assinatura digital ICP-Brasil (conformidade CFM)
+  signedAt?: Date; // Data da assinatura
+  signedBy?: string; // ID do usuário que assinou
+  digitalSignature?: string; // Assinatura digital PKCS#7 (Base64)
+  certificateInfo?: {
+    issuer: string;
+    subject: string;
+    serialNumber: string;
+    validFrom: Date;
+    validTo: Date;
+  };
+  isSigned?: boolean; // Indica se o documento está assinado (bloqueado para edição)
 
   // Metadata
   active: boolean;

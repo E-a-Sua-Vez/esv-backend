@@ -5,6 +5,8 @@ import { PaymentConfirmation } from '../../payment/model/payment-confirmation';
 import { Queue } from '../../queue/model/queue.entity';
 import { User } from '../../user/model/user.entity';
 import { Block } from '../model/attention.entity';
+import { AttentionStage } from '../model/attention-stage.enum';
+import { AttentionStageHistory } from '../model/attention-stage-history.entity';
 
 export class AttentionDetailsDto {
   id: string;
@@ -58,4 +60,6 @@ export class AttentionDetailsDto {
     endedBy?: string;
     duration?: number; // Duración en minutos
   };
+  currentStage?: AttentionStage;
+  stageHistory?: AttentionStageHistory[];
 }

@@ -9,6 +9,7 @@ import { SearchTemplateDto } from './dto/search-template.dto';
 import { UpdateMedicalTemplateDto } from './dto/update-medical-template.dto';
 import MedicalTemplateCreated from './events/MedicalTemplateCreated';
 import MedicalTemplateUpdated from './events/MedicalTemplateUpdated';
+import MedicalTemplateDeleted from './events/MedicalTemplateDeleted';
 import MedicalTemplateUsed from './events/MedicalTemplateUsed';
 import { MedicalTemplate, TemplateType, TemplateScope } from './model/medical-template.entity';
 
@@ -265,10 +266,15 @@ export class MedicalTemplateService {
     }
 
     template.active = false;
+    template.available = false;
     template.updatedAt = new Date();
     template.updatedBy = user;
 
-    await this.templateRepository.update(template);
+    const deleted = await this.templateRepository.update(template);
+
+    // Publicar evento
+    const event = new MedicalTemplateDeleted(new Date(), deleted, { user });
+    publish(event);
   }
 
   /**

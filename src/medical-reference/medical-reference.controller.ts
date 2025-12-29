@@ -28,6 +28,7 @@ import { User } from 'src/auth/user.decorator';
 import { CreateMedicalReferenceDto } from './dto/create-medical-reference.dto';
 import { MedicalReferencePdfService } from './medical-reference-pdf.service';
 import { MedicalReferenceService } from './medical-reference.service';
+import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 import { MedicalReference } from './model/medical-reference.entity';
 
 @ApiTags('medical-reference')
@@ -35,7 +36,8 @@ import { MedicalReference } from './model/medical-reference.entity';
 export class MedicalReferenceController {
   constructor(
     private readonly referenceService: MedicalReferenceService,
-    private readonly referencePdfService: MedicalReferencePdfService
+    private readonly referencePdfService: MedicalReferencePdfService,
+    private readonly generatedDocumentService: GeneratedDocumentService
   ) {}
 
   @UseGuards(AuthGuard)

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
@@ -11,6 +11,7 @@ import { LeadContactResult } from './model/lead-contact-result.enum';
 import { LeadContactType } from './model/lead-contact-type.enum';
 import { LeadPipelineStage } from './model/lead-pipeline-stage.enum';
 import { LeadStatus } from './model/lead-status.enum';
+import { LeadTemperature } from './model/lead-temperature.enum';
 
 @ApiTags('lead')
 @Controller('lead')
@@ -37,6 +38,12 @@ export class LeadController {
         message: { type: 'string', example: 'Interested in your services' },
         source: { type: 'string', example: 'contact-form' },
         page: { type: 'string', example: 'https://easuavez.com/pricing' },
+        temperature: {
+          type: 'string',
+          enum: ['QUENTE', 'MORNO', 'FRIO'],
+          example: 'MORNO',
+          description: 'Lead priority: QUENTE (hot/red), MORNO (warm/green), FRIO (cold/blue). Defaults to MORNO.',
+        },
       },
       required: ['id', 'name', 'email', 'source'],
     },
@@ -54,6 +61,7 @@ export class LeadController {
       message?: string;
       source: string;
       page?: string;
+      temperature?: LeadTemperature;
     }
   ) {
     return await this.leadService.createLeadFromContactForm(contactFormData);
@@ -78,6 +86,12 @@ export class LeadController {
         message: { type: 'string', example: 'Interested in your services' },
         source: { type: 'string', example: 'contact-form' },
         page: { type: 'string', example: 'https://easuavez.com/pricing' },
+        temperature: {
+          type: 'string',
+          enum: ['QUENTE', 'MORNO', 'FRIO'],
+          example: 'MORNO',
+          description: 'Lead priority: QUENTE (hot/red), MORNO (warm/green), FRIO (cold/blue). Defaults to MORNO.',
+        },
       },
       required: ['id', 'name', 'email', 'source'],
     },
@@ -96,6 +110,7 @@ export class LeadController {
       message?: string;
       source: string;
       page?: string;
+      temperature?: LeadTemperature;
     },
     @User() user: any,
     @Request() request: any
@@ -136,16 +151,46 @@ export class LeadController {
   @ApiBearerAuth('JWT-auth')
   public async getLeadsByStage(
     @Param('stage') stage: LeadPipelineStage,
-    @User() user: any,
-    @Request() request: any
+    @Query('userId') queryUserId?: string,
+    @Query('businessId') queryBusinessId?: string,
+    @Query('commerceId') queryCommerceId?: string,
+    @User() user?: any,
+    @Request() request?: any
   ) {
-    // Get userId from user object or request
-    const userId = user?.id || user?.userId || request?.userId;
+    // Get userId from query params first, then from user object or request
+    // If queryUserId is explicitly provided (even if empty string), use it (convert empty to undefined)
+    // Empty string means "explicitly don't filter by userId" (for master users)
+    // If not provided in query params (undefined), fall back to user object
+    let userId: string | undefined;
+    if (queryUserId !== undefined) {
+      // Query param was provided (even if empty string) - use it (empty string becomes undefined)
+      userId = queryUserId && queryUserId.trim() !== '' ? queryUserId : undefined;
+    } else {
+      // Query param not provided - use value from user object (normal behavior)
+      userId = user?.id || user?.userId || request?.userId;
+    }
+
+    // Same logic for businessId and commerceId
+    // Empty string means "explicitly don't filter by this field"
+    let businessId: string | undefined;
+    if (queryBusinessId !== undefined) {
+      businessId = queryBusinessId && queryBusinessId.trim() !== '' ? queryBusinessId : undefined;
+    } else {
+      businessId = user?.businessId;
+    }
+
+    let commerceId: string | undefined;
+    if (queryCommerceId !== undefined) {
+      commerceId = queryCommerceId && queryCommerceId.trim() !== '' ? queryCommerceId : undefined;
+    } else {
+      commerceId = user?.commerceId;
+    }
+
     return await this.leadService.getLeadsByStage(
       stage,
       userId,
-      user?.businessId,
-      user?.commerceId
+      businessId,
+      commerceId
     );
   }
 

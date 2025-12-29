@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+import * as crypto from 'crypto';
 
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
@@ -9,12 +10,19 @@ import { ProductService } from '../product/product.service';
 import { MessageService } from '../message/message.service';
 import { MessageType } from '../message/model/type.enum';
 import { ConsultationHistoryService } from '../patient-history/consultation-history.service';
+import { GeneratedDocumentService } from '../shared/services/generated-document.service';
+import { CollaboratorService } from '../collaborator/collaborator.service';
+import { PdfTemplateService } from '../shared/services/pdf-template.service';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { MedicationSearchDto } from './dto/medication-search.dto';
+import { CreateMedicationDto } from './dto/create-medication.dto';
 import PrescriptionCreated from './events/PrescriptionCreated';
 import PrescriptionDispensed from './events/PrescriptionDispensed';
 import PrescriptionRefilled from './events/PrescriptionRefilled';
 import PrescriptionUpdated from './events/PrescriptionUpdated';
+import MedicationCreated from './events/MedicationCreated';
+import MedicationUpdated from './events/MedicationUpdated';
+import MedicationDeleted from './events/MedicationDeleted';
 import { MedicationCatalog } from './model/medication.entity';
 import { PrescriptionStatus } from './model/prescription-status.enum';
 import { Prescription, MedicationItem } from './model/prescription.entity';
@@ -34,7 +42,10 @@ export class PrescriptionService {
     private commerceService: CommerceService,
     private productService: ProductService,
     private messageService: MessageService,
-    private consultationHistoryService?: ConsultationHistoryService
+    private consultationHistoryService?: ConsultationHistoryService,
+    private generatedDocumentService?: GeneratedDocumentService,
+    private collaboratorService?: CollaboratorService,
+    private pdfTemplateService?: PdfTemplateService
   ) {}
 
   /**
@@ -46,11 +57,15 @@ export class PrescriptionService {
     page: number;
     limit: number;
   }> {
-    const { searchTerm, atcCode, activePrinciple, page = 1, limit = 20 } = searchDto;
+    const { searchTerm, atcCode, activePrinciple, commerceId, page = 1, limit = 20 } = searchDto;
 
     let query = this.medicationRepository
       .whereEqualTo('active', true)
       .whereEqualTo('available', true);
+
+    if (commerceId) {
+      query = query.whereEqualTo('commerceId', commerceId);
+    }
 
     if (searchTerm) {
       // Búsqueda por nombre (genérico o comercial)
@@ -211,22 +226,107 @@ export class PrescriptionService {
       const commerceAddress = commerce.localeInfo?.address || '';
       const commercePhone = commerce.phone || '';
 
-      // Generar PDF
-      const { pdfUrl, qrCode } = await this.prescriptionPdfService.generatePrescriptionPdf(
-        prescription,
-        patientName,
-        patientIdNumber,
-        commerceName,
-        commerceAddress,
-        commercePhone
-      );
+      // Obtener logo del commerce
+      const commerceLogo = commerce.logo
+        ? `${process.env.BACKEND_URL || ''}${commerce.logo}`
+        : undefined;
 
-      // Actualizar receta con URL del PDF y QR code
+      // Obtener firma digital del médico (si existe)
+      let doctorSignature: string | undefined;
+      if (prescription.doctorId) {
+        try {
+          const collaborator = await this.collaboratorService?.getCollaboratorById(
+            prescription.doctorId
+          );
+          if (collaborator?.digitalSignature) {
+            doctorSignature = collaborator.digitalSignature.startsWith('http')
+              ? collaborator.digitalSignature
+              : `${process.env.BACKEND_URL || ''}${collaborator.digitalSignature}`;
+          }
+        } catch (error) {
+          this.logger.warn(`Could not load doctor signature: ${error.message}`);
+        }
+      }
+
+      // Obtener template (si existe servicio de templates)
+      let template = null;
+      if (this.pdfTemplateService) {
+        try {
+          template = await this.pdfTemplateService.getDefaultTemplate('prescription', commerce.id);
+          // Incrementar contador de uso si se encontró un template
+          if (template?.id) {
+            await this.pdfTemplateService.incrementUsageCount(template.id);
+          }
+        } catch (error) {
+          this.logger.warn(`Could not load PDF template: ${error.message}`);
+        }
+      }
+
+      // Generar PDF
+      const { pdfUrl, qrCode, verificationUrl } =
+        await this.prescriptionPdfService.generatePrescriptionPdf(
+          prescription,
+          patientName,
+          patientIdNumber,
+          commerceName,
+          commerceAddress,
+          commercePhone,
+          commerceLogo,
+          doctorSignature,
+          template
+        );
+
+      // Calcular hash del documento para verificación de integridad
+      const hashData = JSON.stringify({
+        id: prescription.id,
+        date: prescription.date.toISOString(),
+        doctorId: prescription.doctorId,
+        doctorLicense: prescription.doctorLicense,
+        commerceId: prescription.commerceId,
+        clientId: prescription.clientId,
+        medications: prescription.medications.map((m) => ({
+          medicationId: m.medicationId,
+          dosage: m.dosage,
+          frequency: m.frequency,
+        })),
+      });
+      const documentHash = crypto.createHash('sha256').update(hashData).digest('hex');
+
+      // Actualizar receta con URL del PDF, QR code y hash del documento
       prescription.pdfUrl = pdfUrl;
       prescription.qrCode = qrCode;
+      prescription.documentHash = documentHash;
       await this.prescriptionRepository.update(prescription);
+
+      // Guardar como documento en patient history (si el servicio está disponible)
+      if (this.generatedDocumentService && prescription.attentionId) {
+        try {
+          const pdfKey = `prescriptions/${prescription.commerceId}/${prescription.id}.pdf`;
+          const documentName = `Receta Médica - ${patientName} - ${new Date(prescription.date).toLocaleDateString('pt-BR')}`;
+
+          await this.generatedDocumentService.saveGeneratedDocumentAsPatientDocument(
+            prescription.createdBy || prescription.doctorId,
+            prescription.commerceId,
+            prescription.clientId,
+            prescription.attentionId,
+            'prescription',
+            pdfUrl,
+            pdfKey,
+            documentName,
+            {
+              prescriptionId: prescription.id,
+              doctorName: prescription.doctorName,
+              doctorId: prescription.doctorId,
+              doctorLicense: prescription.doctorLicense,
+            }
+          );
+        } catch (docError) {
+          this.logger.warn(`Error saving prescription as patient document: ${docError.message}`);
+          // No lanzar error, solo loguear
+        }
+      }
     } catch (error) {
-      console.error('Error in generatePrescriptionPdfAsync:', error);
+      this.logger.error(`Error in generatePrescriptionPdfAsync: ${error.message}`, error.stack);
       // No lanzar error para no bloquear la creación de la receta
     }
   }
@@ -280,6 +380,14 @@ export class PrescriptionService {
     medicationIndex?: number // Si se especifica, solo refuerza ese medicamento
   ): Promise<Prescription> {
     const prescription = await this.getPrescriptionById(prescriptionId);
+
+    // Bloqueio após assinatura (conformidade CFM)
+    if (prescription.isSigned) {
+      throw new HttpException(
+        'Prescrição assinada não pode ser alterada',
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
     if (prescription.status !== PrescriptionStatus.ACTIVE) {
       throw new HttpException('Only active prescriptions can be refilled', HttpStatus.BAD_REQUEST);
@@ -346,6 +454,16 @@ export class PrescriptionService {
   ): Promise<Prescription> {
     const prescription = await this.getPrescriptionById(prescriptionId);
 
+    // Bloqueio após assinatura (conformidade CFM)
+    // Nota: Dispensação pode ser registrada mesmo após assinatura, mas não altera o documento
+    // Se necessário bloquear também dispensação, descomentar:
+    // if (prescription.isSigned) {
+    //   throw new HttpException(
+    //     'Prescrição assinada não pode ser alterada',
+    //     HttpStatus.BAD_REQUEST
+    //   );
+    // }
+
     const dispensation = {
       id: `disp-${Date.now()}`,
       date: new Date(),
@@ -379,6 +497,14 @@ export class PrescriptionService {
     reason?: string
   ): Promise<Prescription> {
     const prescription = await this.getPrescriptionById(prescriptionId);
+
+    // Bloqueio após assinatura (conformidade CFM)
+    if (prescription.isSigned) {
+      throw new HttpException(
+        'Prescrição assinada não pode ser cancelada',
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
     if (prescription.status === PrescriptionStatus.CANCELLED) {
       throw new HttpException('Prescription is already cancelled', HttpStatus.BAD_REQUEST);
@@ -542,5 +668,101 @@ export class PrescriptionService {
     }
 
     return suggestions;
+  }
+
+  /**
+   * Obtener todos los medicamentos
+   */
+  async getAllMedications(): Promise<MedicationCatalog[]> {
+    return await this.medicationRepository
+      .whereEqualTo('active', true)
+      .orderByAscending('name')
+      .find();
+  }
+
+  /**
+   * Obtener medicamentos por commerce
+   */
+  async getMedicationsByCommerce(commerceId: string): Promise<MedicationCatalog[]> {
+    return await this.medicationRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('name')
+      .find();
+  }
+
+  /**
+   * Crear medicamento
+   */
+  async createMedication(user: string, createDto: CreateMedicationDto): Promise<MedicationCatalog> {
+    const medication = new MedicationCatalog();
+    medication.commerceId = createDto.commerceId;
+    medication.name = createDto.name;
+    medication.commercialName = createDto.commercialName;
+    medication.atcCode = createDto.atcCode;
+    medication.activePrinciple = createDto.activePrinciple;
+    medication.presentation = createDto.presentation;
+    medication.dosageForm = createDto.dosageForm;
+    medication.route = createDto.route;
+    medication.standardDosage = createDto.standardDosage;
+    medication.contraindications = createDto.contraindications || [];
+    medication.interactions = createDto.interactions || [];
+    medication.active = createDto.active !== undefined ? createDto.active : true;
+    medication.available = createDto.available !== undefined ? createDto.available : true;
+    medication.createdAt = new Date();
+    medication.updatedAt = new Date();
+
+    const created = await this.medicationRepository.create(medication);
+
+    // Publicar evento de medicamento creado
+    const medicationCreatedEvent = new MedicationCreated(new Date(), created, { user });
+    publish(medicationCreatedEvent);
+
+    return created;
+  }
+
+  /**
+   * Actualizar medicamento
+   */
+  async updateMedication(id: string, updateDto: any, userId?: string): Promise<MedicationCatalog> {
+    const medication = await this.getMedicationById(id);
+
+    if (updateDto.name !== undefined) medication.name = updateDto.name;
+    if (updateDto.commercialName !== undefined) medication.commercialName = updateDto.commercialName;
+    if (updateDto.atcCode !== undefined) medication.atcCode = updateDto.atcCode;
+    if (updateDto.activePrinciple !== undefined) medication.activePrinciple = updateDto.activePrinciple;
+    if (updateDto.presentation !== undefined) medication.presentation = updateDto.presentation;
+    if (updateDto.dosageForm !== undefined) medication.dosageForm = updateDto.dosageForm;
+    if (updateDto.route !== undefined) medication.route = updateDto.route;
+    if (updateDto.standardDosage !== undefined) medication.standardDosage = updateDto.standardDosage;
+    if (updateDto.contraindications !== undefined) medication.contraindications = updateDto.contraindications;
+    if (updateDto.interactions !== undefined) medication.interactions = updateDto.interactions;
+    if (updateDto.active !== undefined) medication.active = updateDto.active;
+    if (updateDto.available !== undefined) medication.available = updateDto.available;
+    medication.updatedAt = new Date();
+
+    const updated = await this.medicationRepository.update(medication);
+
+    // Publicar evento de medicamento actualizado
+    const medicationUpdatedEvent = new MedicationUpdated(new Date(), updated, { user: userId || 'system' });
+    publish(medicationUpdatedEvent);
+
+    return updated;
+  }
+
+  /**
+   * Eliminar medicamento (soft delete)
+   */
+  async deleteMedication(id: string, userId?: string): Promise<void> {
+    const medication = await this.getMedicationById(id);
+    medication.active = false;
+    medication.available = false;
+    medication.updatedAt = new Date();
+    const deleted = await this.medicationRepository.update(medication);
+
+    // Publicar evento de medicamento eliminado
+    const medicationDeletedEvent = new MedicationDeleted(new Date(), deleted, { user: userId || 'system' });
+    publish(medicationDeletedEvent);
   }
 }

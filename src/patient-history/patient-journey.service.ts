@@ -69,15 +69,44 @@ export class PatientJourneyService {
       // Get all related data
       const [bookings, attentions, consultations, prescriptions, examOrders, patientHistory] =
         await Promise.all([
-          this.getBookingsByClient(commerceId, clientId).catch(() => []),
-          this.getAttentionsByClient(commerceId, clientId).catch(() => []),
+          this.getBookingsByClient(commerceId, clientId).catch(err => {
+            console.error(`[PatientJourney] Error getting bookings:`, err);
+            return [];
+          }),
+          this.getAttentionsByClient(commerceId, clientId).catch(err => {
+            console.error(`[PatientJourney] Error getting attentions:`, err);
+            return [];
+          }),
           this.consultationHistoryService
             .getConsultationsByClientId(commerceId, clientId)
-            .catch(() => []),
-          this.getPrescriptionsByClient(commerceId, clientId).catch(() => []),
-          this.getExamOrdersByClient(commerceId, clientId).catch(() => []),
-          this.getPatientHistoryByClient(commerceId, clientId).catch(() => null),
+            .catch(err => {
+              console.error(`[PatientJourney] Error getting consultations:`, err);
+              return [];
+            }),
+          this.getPrescriptionsByClient(commerceId, clientId).catch(err => {
+            console.error(`[PatientJourney] Error getting prescriptions:`, err);
+            return [];
+          }),
+          this.getExamOrdersByClient(commerceId, clientId).catch(err => {
+            console.error(`[PatientJourney] Error getting exam orders:`, err);
+            return [];
+          }),
+          this.getPatientHistoryByClient(commerceId, clientId).catch(err => {
+            console.error(`[PatientJourney] Error getting patient history:`, err);
+            return null;
+          }),
         ]);
+
+      console.log(`[PatientJourney] Data retrieved:`, {
+        commerceId,
+        clientId,
+        bookingsCount: bookings.length,
+        attentionsCount: attentions.length,
+        consultationsCount: consultations.length,
+        prescriptionsCount: prescriptions.length,
+        examOrdersCount: examOrders.length,
+        hasPatientHistory: !!patientHistory,
+      });
 
       // Extract controls from patientHistory
       const controls: Control[] = patientHistory?.control || [];
@@ -253,11 +282,26 @@ export class PatientJourneyService {
   }
 
   private async getAttentionsByClient(commerceId: string, clientId: string): Promise<Attention[]> {
-    return await this.attentionRepository
+    // Try to get attentions by clientId first
+    let attentions = await this.attentionRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('clientId', clientId)
       .orderByDescending('createdAt')
       .find();
+
+    // If no attentions found by clientId, try by userId (for backward compatibility)
+    // Some older attentions might use userId instead of clientId
+    if (attentions.length === 0) {
+      console.log(`[PatientJourney] No attentions found with clientId=${clientId}, trying userId...`);
+      attentions = await this.attentionRepository
+        .whereEqualTo('commerceId', commerceId)
+        .whereEqualTo('userId', clientId)
+        .orderByDescending('createdAt')
+        .find();
+    }
+
+    console.log(`[PatientJourney] Found ${attentions.length} attentions for commerceId=${commerceId}, clientId=${clientId}`);
+    return attentions;
   }
 
   private async getPrescriptionsByClient(

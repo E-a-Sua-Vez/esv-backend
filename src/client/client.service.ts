@@ -68,6 +68,30 @@ export class ClientService {
             response.id = client.id;
             response.idNumber = client.idNumber;
             response.name = client.name;
+            response.lastName = client.lastName;
+            response.phone = client.phone;
+            response.email = client.email;
+            // Extract phone code from phone if available (format: +XX...)
+            if (client.phone && client.phone.startsWith('+')) {
+              const phoneMatch = client.phone.match(/^\+(\d{1,3})/);
+              if (phoneMatch) {
+                response.phoneCode = phoneMatch[1];
+              }
+            }
+            // Include personalInfo if available
+            if (client.personalInfo) {
+              response.personalInfo = {
+                birthday: client.personalInfo.birthday,
+                addressText: client.personalInfo.addressText,
+                addressCode: client.personalInfo.addressCode,
+                addressComplement: client.personalInfo.addressComplement,
+                origin: client.personalInfo.origin,
+                code1: client.personalInfo.code1,
+                code2: client.personalInfo.code2,
+                code3: client.personalInfo.code3,
+                healthAgreementId: client.personalInfo.healthAgreementId,
+              };
+            }
             response.businessId = client.businessId;
             response.commerceId = client.commerceId;
             const features = this.getActiveFeatureType(commerce, FeatureToggleName.USER);
@@ -207,14 +231,25 @@ export class ClientService {
       client.counter = 0;
       const clientCreated = await this.clientRepository.create(client);
       client = clientCreated;
-      const clientCreatedEvent = new ClientCreated(new Date(), clientCreated);
+      // ✅ SOLUCIÓN: Pasar el ID del cliente explícitamente en metadata para asegurar que sea el aggregateId
+      // La librería ett-events-lib debe usar data.attributes.id como aggregateId
+      const clientCreatedEvent = new ClientCreated(
+        new Date(),
+        clientCreated,
+        { aggregateId: clientCreated.id } // Asegurar que el aggregateId sea el ID de Firebase
+      );
       publish(clientCreatedEvent);
     } else {
       client.counter = client.counter + 1;
       client.frequentCustomer = true;
       const clientUpdated = await this.update(client.email || client.idNumber, client);
       client = clientUpdated;
-      const clientUpdatedEvent = new ClientUpdated(new Date(), clientUpdated, { client });
+      // ✅ SOLUCIÓN: Pasar el ID del cliente explícitamente en metadata para asegurar que sea el aggregateId
+      const clientUpdatedEvent = new ClientUpdated(
+        new Date(),
+        clientUpdated,
+        { client, aggregateId: clientUpdated.id } // Asegurar que el aggregateId sea el ID de Firebase
+      );
       publish(clientUpdatedEvent);
     }
     return client;
@@ -333,5 +368,21 @@ export class ClientService {
       publish(clientUpdatedEvent);
     }
     return client;
+  }
+
+  public async getAgreementStatus(commerceId: string, clientId: string): Promise<any> {
+    const client = await this.getClientById(clientId);
+
+    if (client && client.conditionsAccepted === true) {
+      return {
+        completed: true,
+        completedAt: client.updatedAt || client.createdAt,
+      };
+    }
+
+    return {
+      completed: false,
+      completedAt: null,
+    };
   }
 }

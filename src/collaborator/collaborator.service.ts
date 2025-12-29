@@ -169,7 +169,10 @@ export class CollaboratorService {
     alias: string,
     servicesId: string[],
     type: CollaboratorType,
-    commercesId: string[]
+    commercesId: string[],
+    digitalSignature?: string,
+    crm?: string,
+    crmState?: string
   ): Promise<Collaborator> {
     const collaborator = await this.getCollaboratorById(id);
     if (name) {
@@ -198,9 +201,18 @@ export class CollaboratorService {
     }
     if (commercesId) {
       collaborator.commercesId = commercesId;
-      if (commercesId.length === 1) {
-        collaborator.commerceId = commercesId[0];
-      }
+    }
+    if (digitalSignature !== undefined) {
+      collaborator.digitalSignature = digitalSignature;
+    }
+    if (crm !== undefined) {
+      collaborator.crm = crm;
+    }
+    if (crmState !== undefined) {
+      collaborator.crmState = crmState;
+    }
+    if (commercesId && commercesId.length === 1) {
+      collaborator.commerceId = commercesId[0];
     }
     return await this.update(user, collaborator);
   }

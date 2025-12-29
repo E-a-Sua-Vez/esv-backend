@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -123,6 +124,68 @@ export class CollaboratorController {
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/digital-signature')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Actualizar firma digital del colaborador',
+    description: 'Permite subir o actualizar la firma digital del colaborador',
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        digitalSignature: { type: 'string', description: 'URL o base64 de la imagen de firma' },
+        crm: { type: 'string', description: 'Número de registro médico (CRM)' },
+        crmState: { type: 'string', description: 'Estado del CRM (ej: SP, RJ, MG)' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Firma digital actualizada exitosamente',
+    type: Collaborator,
+  })
+  async updateDigitalSignature(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { digitalSignature?: string; crm?: string; crmState?: string }
+  ): Promise<Collaborator> {
+    const collaborator = await this.collaboratorService.getCollaboratorById(id);
+    if (!collaborator) {
+      throw new HttpException('Collaborator not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Actualizar firma digital y CRM
+    if (body.digitalSignature !== undefined) {
+      collaborator.digitalSignature = body.digitalSignature;
+    }
+    if (body.crm !== undefined) {
+      collaborator.crm = body.crm;
+    }
+    if (body.crmState !== undefined) {
+      collaborator.crmState = body.crmState;
+    }
+
+    return this.collaboratorService.updateCollaborator(
+      user,
+      id,
+      collaborator.name,
+      collaborator.moduleId,
+      collaborator.phone,
+      collaborator.active,
+      collaborator.available,
+      collaborator.alias,
+      collaborator.servicesId,
+      collaborator.type,
+      collaborator.commercesId,
+      collaborator.digitalSignature,
+      collaborator.crm,
+      collaborator.crmState
+    );
+  }
+
   @Patch('/:id')
   public async updateCollaborator(
     @User() user,
@@ -130,7 +193,20 @@ export class CollaboratorController {
     @Body() body: any
   ): Promise<Collaborator> {
     const { id } = params;
-    const { name, type, alias, phone, moduleId, active, available, servicesId, commercesId } = body;
+    const {
+      name,
+      type,
+      alias,
+      phone,
+      moduleId,
+      active,
+      available,
+      servicesId,
+      commercesId,
+      digitalSignature,
+      crm,
+      crmState,
+    } = body;
     return this.collaboratorService.updateCollaborator(
       user,
       id,
@@ -142,7 +218,10 @@ export class CollaboratorController {
       alias,
       servicesId,
       type,
-      commercesId
+      commercesId,
+      digitalSignature,
+      crm,
+      crmState
     );
   }
 
@@ -220,5 +299,36 @@ export class CollaboratorController {
     const { id } = params;
     const { name, value } = body;
     return this.collaboratorService.updateCollaboratorPermission(user, id, name, value);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('/:id/module')
+  public async updateModule(
+    @User() user,
+    @Param() params: any,
+    @Body() body: any
+  ): Promise<Collaborator> {
+    const { id } = params;
+    const moduleId = body.module || body.moduleId;
+    const collaborator = await this.collaboratorService.getCollaboratorById(id);
+    if (!collaborator) {
+      throw new HttpException('Collaborator not found', HttpStatus.NOT_FOUND);
+    }
+    return this.collaboratorService.updateCollaborator(
+      user,
+      id,
+      collaborator.name,
+      moduleId,
+      collaborator.phone,
+      collaborator.active,
+      collaborator.available,
+      collaborator.alias,
+      collaborator.servicesId,
+      collaborator.type,
+      collaborator.commercesId,
+      collaborator.digitalSignature,
+      collaborator.crm,
+      collaborator.crmState
+    );
   }
 }

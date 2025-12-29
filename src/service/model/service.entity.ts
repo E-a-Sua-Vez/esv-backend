@@ -13,6 +13,8 @@ export class ServiceInfo {
   blockTime: number;
   estimatedTime: number;
   procedures: number;
+  daysBetweenProcedures?: number; // Minimum days between sessions
+  proceduresList?: string; // Comma-separated list of available procedure amounts (e.g., "3,10,20")
 }
 
 @Collection('service')

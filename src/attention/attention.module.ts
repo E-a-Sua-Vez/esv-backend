@@ -4,6 +4,7 @@ import { DocumentsModule } from 'src/documents/documents.module';
 import { PackageModule } from 'src/package/package.module';
 import { ServiceModule } from 'src/service/service.module';
 
+import { BookingModule } from '../booking/booking.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
 import { CommerceModule } from '../commerce/commerce.module';
 import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
@@ -13,6 +14,8 @@ import { NotificationModule } from '../notification/notification.module';
 import { QueueModule } from '../queue/queue.module';
 import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
+import { AuditLogModule } from '../shared/modules/audit-log.module';
+import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 
 import { AttentionController } from './attention.controller';
 import { AttentionService } from './attention.service';
@@ -38,6 +41,9 @@ import { Attention } from './model/attention.entity';
     forwardRef(() => IncomeModule),
     forwardRef(() => DocumentsModule),
     forwardRef(() => TelemedicineModule),
+    forwardRef(() => BookingModule),
+    AuditLogModule,
+    forwardRef(() => LgpdConsentModule),
   ],
   providers: [
     AttentionService,

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
@@ -39,9 +39,15 @@ export class AttentionController {
   @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
   @ApiResponse({ status: 200, description: 'Attention details', type: AttentionDetailsDto })
   @ApiResponse({ status: 404, description: 'Attention not found' })
-  public async getAttentionDetails(@Param() params: any): Promise<AttentionDetailsDto> {
+  @ApiResponse({ status: 403, description: 'Access forbidden' })
+  public async getAttentionDetails(
+    @Param() params: any,
+    @Query() query: any
+  ): Promise<AttentionDetailsDto> {
     const { id } = params;
-    return this.attentionService.getAttentionDetails(id);
+    const { collaboratorId } = query;
+    // Optional: Validate collaborator access if collaboratorId is provided
+    return this.attentionService.getAttentionDetails(id, collaboratorId);
   }
 
   @UseGuards(AuthGuard)
@@ -166,14 +172,45 @@ export class AttentionController {
 
   @UseGuards(AuthGuard)
   @Patch('/finish/:id')
+  @ApiOperation({
+    summary: 'Finish attention',
+    description: 'Finishes an attention. If checkout is enabled, advances to CHECKOUT stage, otherwise terminates directly.',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Attention finished', type: Attention })
+  @ApiResponse({ status: 404, description: 'Attention not found' })
   public async finishAttention(
     @User() user,
     @Param() params: any,
     @Body() body: any
   ): Promise<Attention> {
     const { id } = params;
-    const { comment } = body;
-    return this.attentionService.finishAttention(user, id, comment);
+    const { comment, skipCheckout } = body;
+    // Extract user ID from user object (user can be an object with id/userId or a string)
+    const userId = typeof user === 'string' ? user : user?.id || user?.userId;
+    return this.attentionService.finishAttention(userId, id, comment, undefined, skipCheckout);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('/checkout/:id/finish')
+  @ApiOperation({
+    summary: 'Finish checkout',
+    description: 'Finishes checkout and advances attention to TERMINATED stage. Requires attention-stages-enabled and attention-checkout-enabled feature flags.',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Checkout finished, attention terminated', type: Attention })
+  @ApiResponse({ status: 400, description: 'Checkout not enabled or attention not in CHECKOUT stage' })
+  @ApiResponse({ status: 404, description: 'Attention not found' })
+  public async finishCheckout(
+    @User() user,
+    @Param() params: any,
+    @Body() body: any
+  ): Promise<Attention> {
+    const { id } = params;
+    const { comment, collaboratorId } = body;
+    // Extract user ID from user object (user can be an object with id/userId or a string)
+    const userId = typeof user === 'string' ? user : user?.id || user?.userId;
+    return this.attentionService.finishCheckout(userId, id, comment, collaboratorId);
   }
 
   @UseGuards(AuthGuard)
@@ -283,6 +320,58 @@ export class AttentionController {
     const { id } = params;
     const { queueId } = body;
     return this.attentionService.transferAttentionToQueue(user, id, queueId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('/stage/:id/advance')
+  @ApiOperation({
+    summary: 'Advance attention stage',
+    description: 'Advances an attention to a new stage (requires attention-stages-enabled feature)',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Stage advanced successfully', type: Attention })
+  @ApiResponse({ status: 400, description: 'Feature not enabled or invalid transition' })
+  @ApiResponse({ status: 404, description: 'Attention not found' })
+  public async advanceStage(@User() user, @Param() params: any, @Body() body: any): Promise<Attention> {
+    const { id } = params;
+    const { stage, notes, collaboratorId } = body;
+    // Use collaboratorId from body if provided, otherwise fallback to user (for backward compatibility)
+    const collaboratorIdToUse = collaboratorId || user;
+    return this.attentionService.advanceStage(user, id, stage, notes, collaboratorIdToUse);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/stage/queue/:queueId/stage/:stage')
+  @ApiOperation({
+    summary: 'Get attentions by stage',
+    description: 'Retrieves attentions filtered by stage for a specific queue',
+  })
+  @ApiParam({ name: 'queueId', description: 'Queue ID', example: 'queue-123' })
+  @ApiParam({ name: 'stage', description: 'Attention stage', example: 'CHECK_IN' })
+  @ApiResponse({ status: 200, description: 'Attentions found', type: [Attention] })
+  public async getAttentionsByStage(@Param() params: any, @Query() query: any): Promise<Attention[]> {
+    const { queueId, stage } = params;
+    const { commerceId, date } = query;
+    const dateObj = date ? new Date(date) : undefined;
+    return this.attentionService.getAttentionsByStage(commerceId, queueId, stage, dateObj);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('/track-access/:id')
+  @ApiOperation({
+    summary: 'Track attention access',
+    description: 'Tracks that a collaborator is accessing/managing an attention (optional tracking)',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Access tracked', type: Attention })
+  public async trackAttentionAccess(
+    @User() user: string,
+    @Param() params: any,
+    @Body() body: any
+  ): Promise<Attention> {
+    const { id } = params;
+    const { collaboratorId } = body;
+    return this.attentionService.trackAttentionAccess(user, id, collaboratorId);
   }
 
   @UseGuards(AuthGuard)

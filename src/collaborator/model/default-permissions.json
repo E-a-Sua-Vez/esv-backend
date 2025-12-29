@@ -4,6 +4,7 @@
   "collaborator.attention.skip": true,
   "collaborator.attention.attend": true,
   "collaborator.attention.transfer": true,
+  "collaborator.attention.advance-stage": true,
   "collaborator.main-menu.dashboard": true,
   "collaborator.main-menu.queue-manage": true,
   "collaborator.main-menu.booking-manage": true,

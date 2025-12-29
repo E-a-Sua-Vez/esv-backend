@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +20,11 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
+import {
+  sanitizePatientHistoryInput,
+  validateAgeBirthdayConsistency,
+  validateCIE10Code,
+} from 'src/shared/utils/security-utils';
 
 import { ConsultationHistoryService } from './consultation-history.service';
 import { PatientHistoryUpdateDto } from './dto/patient-history-update.dto';
@@ -260,6 +266,23 @@ export class PatientHistoryController {
     @User() user,
     @Body() body: PatientHistoryUpdateDto
   ): Promise<PatientHistory> {
+    // FIX XSS: Sanitize all inputs before processing
+    const sanitizedBody = sanitizePatientHistoryInput(body);
+
+    // FIX Age/Birthday: Validate consistency
+    if (sanitizedBody.personalData?.age && sanitizedBody.personalData?.birthday) {
+      if (!validateAgeBirthdayConsistency(sanitizedBody.personalData.age, sanitizedBody.personalData.birthday)) {
+        throw new HttpException('Age does not match birthday', HttpStatus.BAD_REQUEST);
+      }
+    }
+
+    // FIX CIE10: Validate CIE10 code if provided
+    if (sanitizedBody.diagnostic?.cie10Code) {
+      if (!validateCIE10Code(sanitizedBody.diagnostic.cie10Code)) {
+        throw new HttpException('Invalid CIE10 code format', HttpStatus.BAD_REQUEST);
+      }
+    }
+
     const {
       commerceId,
       clientId,
@@ -278,7 +301,7 @@ export class PatientHistoryController {
       active,
       available,
       patientDocument,
-    } = body;
+    } = sanitizedBody;
     return this.patientHistoryService.savePatientHistory(
       user,
       commerceId,

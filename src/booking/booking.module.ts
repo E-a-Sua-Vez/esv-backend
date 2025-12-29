@@ -17,6 +17,8 @@ import { QueueModule } from '../queue/queue.module';
 import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
 import { WaitlistModule } from '../waitlist/waitlist.module';
+import { AuditLogModule } from '../shared/modules/audit-log.module';
+import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
@@ -44,6 +46,8 @@ import { Booking } from './model/booking.entity';
     forwardRef(() => DocumentsModule),
     forwardRef(() => BookingBlockNumberUsedModule),
     forwardRef(() => TelemedicineModule),
+    AuditLogModule,
+    forwardRef(() => LgpdConsentModule),
   ],
   providers: [BookingService, BookingDefaultBuilder],
   exports: [BookingService],

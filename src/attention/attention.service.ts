@@ -28,6 +28,8 @@ import { NotificationService } from '../notification/notification.service';
 import { QueueService } from '../queue/queue.service';
 import { ServiceService } from '../service/service.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+import { AuditLogService } from '../shared/services/audit-log.service';
+import TermsAccepted from '../shared/events/TermsAccepted';
 import { DateModel } from '../shared/utils/date.model';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { PersonalInfo, User } from '../user/model/user.entity';
@@ -39,8 +41,11 @@ import { AttentionReserveBuilder } from './builders/attention-reserve';
 import { AttentionSurveyBuilder } from './builders/attention-survey';
 import { AttentionTelemedicineBuilder } from './builders/attention-telemedicine';
 import { AttentionDetailsDto } from './dto/attention-details.dto';
+import AttentionStageChanged from './events/AttentionStageChanged';
 import AttentionUpdated from './events/AttentionUpdated';
 import { AttentionChannel } from './model/attention-channel.enum';
+import { AttentionStage } from './model/attention-stage.enum';
+import { AttentionStageHistory } from './model/attention-stage-history.entity';
 import { AttentionStatus } from './model/attention-status.enum';
 import { AttentionType } from './model/attention-type.enum';
 import { Attention, Block } from './model/attention.entity';
@@ -63,6 +68,7 @@ export class AttentionService {
     private attentionReserveBuilder: AttentionReserveBuilder,
     private attentionTelemedicineBuilder: AttentionTelemedicineBuilder,
     private commerceService: CommerceService,
+    @Inject(forwardRef(() => PackageService))
     private packageService: PackageService,
     private incomeService: IncomeService,
     private serviceService: ServiceService,
@@ -90,9 +96,42 @@ export class AttentionService {
     }
   }
 
-  public async getAttentionDetails(id: string): Promise<AttentionDetailsDto> {
+  public async getAttentionDetails(
+    id: string,
+    collaboratorId?: string
+  ): Promise<AttentionDetailsDto> {
     try {
       const attention = await this.getAttentionById(id);
+
+      // Optional: Validate collaborator access to commerce if collaboratorId is provided
+      if (collaboratorId) {
+        try {
+          const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
+          if (collaborator) {
+            // Check if collaborator has access to the attention's commerce
+            const hasAccess =
+              collaborator.commerceId === attention.commerceId ||
+              (collaborator.commercesId && collaborator.commercesId.includes(attention.commerceId));
+
+            if (!hasAccess) {
+              throw new HttpException(
+                'No tiene acceso a esta atención',
+                HttpStatus.FORBIDDEN
+              );
+            }
+          }
+        } catch (error) {
+          // If collaborator validation fails, throw appropriate error
+          if (error instanceof HttpException) {
+            throw error;
+          }
+          // If collaborator not found, log but don't block (for backward compatibility)
+          this.logger.log(
+            `[AttentionService] Could not validate collaborator access: ${error.message}`
+          );
+        }
+      }
+
       const attentionDetailsDto: AttentionDetailsDto = new AttentionDetailsDto();
       attentionDetailsDto.id = attention.id;
       attentionDetailsDto.commerceId = attention.commerceId;
@@ -126,6 +165,8 @@ export class AttentionService {
       attentionDetailsDto.telemedicineSessionId = attention.telemedicineSessionId;
       attentionDetailsDto.telemedicineConfig = attention.telemedicineConfig;
       attentionDetailsDto.telemedicineInfo = attention.telemedicineInfo;
+      attentionDetailsDto.currentStage = attention.currentStage;
+      attentionDetailsDto.stageHistory = attention.stageHistory;
       if (attention.queueId) {
         attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
         attentionDetailsDto.commerce = await this.commerceService.getCommerceById(
@@ -147,7 +188,7 @@ export class AttentionService {
       return attentionDetailsDto;
     } catch (error) {
       throw new HttpException(
-        `Hubo un problema al obtener detalles de la atención`,
+        `Hubo un problema al obtener detalles de la atenci?n`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -188,13 +229,16 @@ export class AttentionService {
       attentionDetailsDto.surveyPostAttentionDateScheduled =
         attention.surveyPostAttentionDateScheduled;
       attentionDetailsDto.processedAt = attention.processedAt;
+      // Include currentStage and stageHistory for consistency with getAttentionDetails
+      attentionDetailsDto.currentStage = attention.currentStage;
+      attentionDetailsDto.stageHistory = attention.stageHistory;
       if (attention.userId !== undefined) {
         attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
       return attentionDetailsDto;
     } catch (error) {
       throw new HttpException(
-        `Hubo un problema al obtener detalles de la atención`,
+        `Hubo un problema al obtener detalles de la atenci?n`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -602,7 +646,7 @@ export class AttentionService {
         operation: 'createAttention',
       });
       throw new HttpException(
-        `Hubo un problema al crear la atención: ${error.message}`,
+        `Hubo un problema al crear la atenci?n: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -672,8 +716,263 @@ export class AttentionService {
   public async update(user: string, attention: Attention): Promise<Attention> {
     const attentionUpdated = await this.attentionRepository.update(attention);
     const attentionUpdatedEvent = new AttentionUpdated(new Date(), attentionUpdated, { user });
+    this.logger.log(`[AttentionService] Publishing AttentionUpdated event for attention ${attentionUpdated.id} with status ${attentionUpdated.status}`);
     publish(attentionUpdatedEvent);
     return attentionUpdated;
+  }
+
+  /**
+   * Track that a collaborator is accessing/managing an attention
+   * This is optional tracking and does not change status or stage
+   * Only updates assistingCollaboratorId for tracking purposes
+   */
+  public async trackAttentionAccess(
+    user: string,
+    attentionId: string,
+    collaboratorId: string
+  ): Promise<Attention> {
+    const attention = await this.getAttentionById(attentionId);
+    // Only update assistingCollaboratorId, do not change status or stage
+    attention.assistingCollaboratorId = collaboratorId;
+    // Use update method to trigger events and logging
+    return await this.update(user, attention);
+  }
+
+  /**
+   * Advance an attention to a new stage
+   * Requires feature flag 'attention-stages-enabled' to be active
+   *
+   * Validates:
+   * - Attention exists
+   * - Attention is not cancelled
+   * - Feature flag is enabled
+   * - Stage transition is valid (TODO: implement transition validation)
+   * - User is valid (TODO: implement user validation)
+   */
+  public async advanceStage(
+    user: string,
+    attentionId: string,
+    newStage: AttentionStage,
+    notes?: string,
+    collaboratorId?: string
+  ): Promise<Attention> {
+    try {
+      // Validate user
+      if (!user || typeof user !== 'string' || user.trim().length === 0) {
+        throw new HttpException('Usuario inválido', HttpStatus.BAD_REQUEST);
+      }
+
+      // Validate stage
+      if (!newStage || !Object.values(AttentionStage).includes(newStage)) {
+        throw new HttpException(`Etapa inválida: ${newStage}`, HttpStatus.BAD_REQUEST);
+      }
+
+      // Get attention
+      const attention = await this.getAttentionById(attentionId);
+      if (!attention || !attention.id) {
+        throw new HttpException(`Atenci?n no existe: ${attentionId}`, HttpStatus.NOT_FOUND);
+      }
+
+      // Check if attention is cancelled FIRST (before any other validations)
+      // This is more efficient and provides clearer error messages
+      if (attention.cancelled || attention.status === AttentionStatus.CANCELLED) {
+        throw new HttpException(
+          `No se puede avanzar etapa de una atenci?n cancelada: ${attentionId}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Get commerce to check feature flag
+      const commerce = await this.commerceService.getCommerceDetails(attention.commerceId);
+      if (!commerce || !commerce.features) {
+        throw new HttpException(
+          `Feature flag no disponible para comercio: ${attention.commerceId}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Check feature flag
+      const isStagesEnabled = this.featureToggleIsActive(
+        commerce.features,
+        'attention-stages-enabled'
+      );
+      if (!isStagesEnabled) {
+        throw new HttpException(
+          `Sistema de etapas no est? habilitado para este comercio`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Initialize stage history if it doesn't exist
+      if (!attention.stageHistory) {
+        attention.stageHistory = [];
+      }
+
+      // Get current stage (if exists)
+      const previousStage = attention.currentStage;
+
+      // TODO: Validate stage transition
+      // Should validate that newStage is a valid next stage from previousStage
+      // Example: Cannot go from CHECK_IN directly to TERMINATED
+      // This validation should be configurable per commerce
+      // For now, we allow any transition (to be implemented in future)
+
+      // Use collaboratorId if provided, otherwise fallback to user (for backward compatibility)
+      const collaboratorIdToUse = collaboratorId || user;
+
+      // If there's a current stage, close it in history
+      if (previousStage) {
+        const currentHistoryEntry = attention.stageHistory.find(
+          entry => entry.stage === previousStage && !entry.exitedAt
+        );
+        if (currentHistoryEntry) {
+          currentHistoryEntry.exitedAt = new Date();
+          currentHistoryEntry.exitedBy = collaboratorIdToUse; // Track which collaborator exited the stage
+          // Calculate duration
+          if (currentHistoryEntry.enteredAt) {
+            const durationMs =
+              currentHistoryEntry.exitedAt.getTime() - currentHistoryEntry.enteredAt.getTime();
+            currentHistoryEntry.duration = durationMs / (1000 * 60); // Convert to minutes
+          }
+        }
+      }
+
+      // Create new history entry for the new stage
+      const newHistoryEntry: AttentionStageHistory = {
+        stage: newStage,
+        enteredAt: new Date(),
+        enteredBy: collaboratorIdToUse, // Track which collaborator entered the stage
+        notes: notes,
+      };
+      attention.stageHistory.push(newHistoryEntry);
+
+      // Update current stage
+      attention.currentStage = newStage;
+
+      // If advancing to TERMINATED, also update status
+      if (newStage === AttentionStage.TERMINATED) {
+        attention.status = AttentionStatus.TERMINATED;
+        if (!attention.endAt) {
+          attention.endAt = new Date();
+        }
+      }
+
+      // Update attention
+      const attentionUpdated = await this.update(user, attention);
+
+      // Publish stage changed event
+      // Get the new history entry to include timing information
+      const updatedNewHistoryEntry = attentionUpdated.stageHistory?.find(
+        entry => entry.stage === newStage && entry.enteredAt
+      );
+      const updatedPreviousHistoryEntry = previousStage
+        ? attentionUpdated.stageHistory?.find(
+            entry => entry.stage === previousStage && entry.exitedAt
+          )
+        : null;
+
+      const stageChangedEvent = new AttentionStageChanged(
+        new Date(),
+        {
+          attentionId: attentionUpdated.id,
+          commerceId: attentionUpdated.commerceId,
+          queueId: attentionUpdated.queueId,
+          previousStage: previousStage || null,
+          newStage: newStage,
+          changedBy: user,
+          notes: notes,
+          enteredAt: updatedNewHistoryEntry?.enteredAt || new Date(),
+          previousStageExitedAt: updatedPreviousHistoryEntry?.exitedAt || null,
+          previousStageDuration: updatedPreviousHistoryEntry?.duration || null,
+        },
+        { user }
+      );
+      publish(stageChangedEvent);
+
+      this.logger.info('Attention stage advanced', {
+        attentionId: attentionUpdated.id,
+        previousStage,
+        newStage,
+        user,
+        commerceId: attention.commerceId,
+      });
+
+      return attentionUpdated;
+    } catch (error) {
+      this.logger.logError(
+        error instanceof Error ? error : new Error(String(error)),
+        undefined,
+        {
+          attentionId,
+          newStage,
+          user,
+          operation: 'advanceStage',
+        }
+      );
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Hubo un problema al avanzar la etapa: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Get attentions by stage for a specific queue
+   * Optionally filter by date
+   */
+  public async getAttentionsByStage(
+    commerceId: string,
+    queueId: string,
+    stage: AttentionStage,
+    date?: Date
+  ): Promise<Attention[]> {
+    try {
+      // Validate parameters
+      if (!commerceId || typeof commerceId !== 'string' || commerceId.trim().length === 0) {
+        throw new HttpException('commerceId es requerido', HttpStatus.BAD_REQUEST);
+      }
+
+      if (!queueId || typeof queueId !== 'string' || queueId.trim().length === 0) {
+        throw new HttpException('queueId es requerido', HttpStatus.BAD_REQUEST);
+      }
+
+      if (!stage || !Object.values(AttentionStage).includes(stage)) {
+        throw new HttpException(`Etapa inválida: ${stage}`, HttpStatus.BAD_REQUEST);
+      }
+
+      let query = this.attentionRepository
+        .whereEqualTo('commerceId', commerceId)
+        .whereEqualTo('queueId', queueId)
+        .whereEqualTo('currentStage', stage);
+
+      // If date is provided, filter by date
+      if (date) {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        query = query.whereGreaterOrEqualThan('createdAt', startDate);
+      }
+
+      return await query.orderByAscending('createdAt').find();
+    } catch (error) {
+      this.logger.logError(
+        error instanceof Error ? error : new Error(String(error)),
+        undefined,
+        {
+          commerceId,
+          queueId,
+          stage,
+          date,
+          operation: 'getAttentionsByStage',
+        }
+      );
+      throw new HttpException(
+        `Hubo un problema al obtener atenciones por etapa: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   public async attend(
@@ -730,7 +1029,7 @@ export class AttentionService {
           operation: 'attend',
         });
         throw new HttpException(
-          `Hubo un problema al procesar la atención: ${error.message}`,
+          `Hubo un problema al procesar la atenci?n: ${error.message}`,
           HttpStatus.INTERNAL_SERVER_ERROR
         );
       }
@@ -771,7 +1070,7 @@ export class AttentionService {
       await this.update(user, attention);
     } else {
       throw new HttpException(
-        `Hubo un problema, esta atención no puede ser saltada: ${attention.id}`,
+        `Hubo un problema, esta atenci?n no puede ser saltada: ${attention.id}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -792,7 +1091,7 @@ export class AttentionService {
       return result;
     } catch (error) {
       throw new HttpException(
-        `Hubo un problema esta atención no está saltada: ${error.message}`,
+        `Hubo un problema esta atenci?n no est? saltada: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -802,13 +1101,38 @@ export class AttentionService {
     user: string,
     attentionId: string,
     comment: string,
-    date?: Date
+    date?: Date,
+    skipCheckout?: boolean
   ): Promise<Attention> {
     const attention = await this.getAttentionById(attentionId);
     if (
       attention.status === AttentionStatus.PROCESSING ||
       attention.status === AttentionStatus.REACTIVATED
     ) {
+      // Get commerce to check feature flags
+      const attentionCommerce = await this.commerceService.getCommerceDetails(attention.commerceId);
+
+      // Check if stages and checkout are enabled
+      const isStagesEnabled = attentionCommerce?.features
+        ? this.featureToggleIsActive(attentionCommerce.features, 'attention-stages-enabled')
+        : false;
+      const isCheckoutEnabled = attentionCommerce?.features
+        ? this.featureToggleIsActive(attentionCommerce.features, 'attention-checkout-enabled')
+        : false;
+
+      // If stages and checkout are enabled, and not skipping checkout, advance to CHECKOUT
+      if (isStagesEnabled && isCheckoutEnabled && !skipCheckout) {
+        // Use advanceStage to move to CHECKOUT stage
+        // This will handle stage history, events, etc.
+        return await this.advanceStage(
+          user,
+          attentionId,
+          AttentionStage.CHECKOUT,
+          comment
+        );
+      }
+
+      // Otherwise, terminate directly (backward compatibility)
       attention.status = AttentionStatus.TERMINATED;
       if (comment) {
         attention.comment = comment;
@@ -822,7 +1146,6 @@ export class AttentionService {
         const diff = attention.endAt.getTime() - dateAt.getTime();
         attention.duration = diff / (1000 * 60);
       }
-      const attentionCommerce = await this.commerceService.getCommerceDetails(attention.commerceId);
       const attentionDetails = await this.getAttentionDetails(attentionId);
       if (
         attentionCommerce.serviceInfo &&
@@ -837,6 +1160,35 @@ export class AttentionService {
       }
       this.postAttentionEmail(attentionDetails, attentionCommerce);
       const attentionFinished = await this.update(user, attention);
+
+      // Consume package session if this attention is part of a package
+      if (attentionFinished.packageId) {
+        try {
+          await this.packageService.consumeSession(
+            user || 'system',
+            attentionFinished.packageId,
+            attentionFinished.id,
+            attentionFinished.bookingId
+          );
+          this.logger.info('Package session consumed', {
+            packageId: attentionFinished.packageId,
+            attentionId: attentionFinished.id,
+            user,
+          });
+        } catch (error) {
+          // Log error but don't fail the attention finish process
+          this.logger.logError(
+            error instanceof Error ? error : new Error(String(error)),
+            undefined,
+            {
+              packageId: attentionFinished.packageId,
+              attentionId: attentionFinished.id,
+              operation: 'consumePackageSession',
+              user,
+            }
+          );
+        }
+      }
 
       // Automatically charge pesquisa (survey) when attention is marked as attended
       try {
@@ -883,12 +1235,12 @@ export class AttentionService {
               1, // installments
               PaymentMethod.OTHER, // Default payment method for automatic charges
               0, // commission
-              `Cobrança automática de pesquisa - Atenção ${attention.number}`,
+              `Cobran?a autom?tica de pesquisa - Aten??o ${attention.number}`,
               '', // fiscalNote
               '', // promotionalCode
               '', // transactionId
               '', // bankEntity
-              { user: user || 'system', title: 'Pesquisa Automática' } // incomeInfo
+              { user: user || 'system', title: 'Pesquisa Autom?tica' } // incomeInfo
             );
             this.logger.info('Automatic income created for survey attention', {
               attentionId,
@@ -922,11 +1274,227 @@ export class AttentionService {
         duration: attention.duration,
         hasComment: !!comment,
         hasSurveyScheduled: !!attention.surveyPostAttentionDateScheduled,
+        wentToCheckout: isStagesEnabled && isCheckoutEnabled && !skipCheckout,
         user,
       });
       return attentionFinished;
     }
     return attention;
+  }
+
+  /**
+   * Finish checkout and advance attention to TERMINATED stage
+   * Requires attention-stages-enabled and attention-checkout-enabled feature flags
+   * Attention must be in CHECKOUT stage
+   */
+  public async finishCheckout(
+    user: string,
+    attentionId: string,
+    comment?: string,
+    collaboratorId?: string
+  ): Promise<Attention> {
+    const attention = await this.getAttentionById(attentionId);
+
+    if (!attention || !attention.id) {
+      throw new HttpException(`Atención no existe: ${attentionId}`, HttpStatus.NOT_FOUND);
+    }
+
+    // Get commerce to check feature flags
+    const commerce = await this.commerceService.getCommerceDetails(attention.commerceId);
+    if (!commerce || !commerce.features) {
+      throw new HttpException(
+        `Feature flag no disponible para comercio: ${attention.commerceId}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Check if stages and checkout are enabled
+    const isStagesEnabled = this.featureToggleIsActive(
+      commerce.features,
+      'attention-stages-enabled'
+    );
+    const isCheckoutEnabled = this.featureToggleIsActive(
+      commerce.features,
+      'attention-checkout-enabled'
+    );
+
+    if (!isStagesEnabled || !isCheckoutEnabled) {
+      throw new HttpException(
+        `Checkout no está habilitado para este comercio`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Validate that attention is in CHECKOUT stage
+    if (attention.currentStage !== AttentionStage.CHECKOUT) {
+      throw new HttpException(
+        `Atención no está en etapa de checkout. Etapa actual: ${attention.currentStage}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Update comment if provided
+    if (comment) {
+      attention.comment = comment;
+    }
+
+    // Set endAt if not already set
+    if (!attention.endAt) {
+      attention.endAt = new Date();
+    }
+
+    // Calculate duration if not already calculated
+    if (!attention.reactivated && !attention.duration) {
+      let dateAt = attention.createdAt;
+      if (attention.processedAt !== undefined) {
+        dateAt = attention.processedAt;
+      }
+      const diff = attention.endAt.getTime() - dateAt.getTime();
+      attention.duration = diff / (1000 * 60);
+    }
+
+    // Get attention details for notifications
+    const attentionDetails = await this.getAttentionDetails(attentionId);
+
+    // Schedule survey or send CSAT notifications
+    if (
+      commerce.serviceInfo &&
+      commerce.serviceInfo.surveyPostAttentionDaysAfter
+    ) {
+      const daysToAdd = commerce.serviceInfo.surveyPostAttentionDaysAfter || 0;
+      const surveyPostAttentionDateScheduled = new DateModel().addDays(+daysToAdd).toString();
+      attention.surveyPostAttentionDateScheduled = surveyPostAttentionDateScheduled;
+    } else {
+      this.csatEmail(attentionDetails, commerce);
+      this.csatWhatsapp(attentionDetails, commerce);
+    }
+
+    // Send post-attention email
+    this.postAttentionEmail(attentionDetails, commerce);
+
+    // Advance to TERMINATED stage using advanceStage
+    // This will handle stage history, events, status update, etc.
+    const attentionFinished = await this.advanceStage(
+      user,
+      attentionId,
+      AttentionStage.TERMINATED,
+      comment,
+      collaboratorId
+    );
+
+    // Update status to TERMINATED (advanceStage should handle this, but ensure it)
+    attentionFinished.status = AttentionStatus.TERMINATED;
+    const attentionUpdated = await this.update(user, attentionFinished);
+
+    // Consume package session if this attention is part of a package
+    if (attentionUpdated.packageId) {
+      try {
+        await this.packageService.consumeSession(
+          user || 'system',
+          attentionUpdated.packageId,
+          attentionUpdated.id,
+          attentionUpdated.bookingId
+        );
+        this.logger.info('Package session consumed', {
+          packageId: attentionUpdated.packageId,
+          attentionId: attentionUpdated.id,
+          user,
+        });
+      } catch (error) {
+        // Log error but don't fail the checkout finish process
+        this.logger.logError(
+          error instanceof Error ? error : new Error(String(error)),
+          undefined,
+          {
+            packageId: attentionUpdated.packageId,
+            attentionId: attentionUpdated.id,
+            operation: 'consumePackageSession',
+            user,
+          }
+        );
+      }
+    }
+
+    // Automatically charge pesquisa (survey) when attention is marked as finished
+    try {
+      const hasIncome = await this.hasIncomeForAttention(attentionId);
+      const isSurveyAttention =
+        attention.type === AttentionType.SURVEY_ONLY ||
+        (attention.surveyId && attention.surveyId.trim().length > 0);
+
+      if (!hasIncome && isSurveyAttention) {
+        let totalAmount = 0;
+
+        // Try to get price from services if available
+        if (attention.servicesId && attention.servicesId.length > 0) {
+          const services = await this.serviceService.getServicesById(attention.servicesId);
+          for (const service of services) {
+            if (service && service.serviceInfo && service.serviceInfo.price) {
+              totalAmount += service.serviceInfo.price;
+            }
+          }
+        }
+
+        // If no service price found, try to get from serviceId
+        if (totalAmount === 0 && attention.serviceId) {
+          const service = await this.serviceService.getServiceById(attention.serviceId);
+          if (service && service.serviceInfo && service.serviceInfo.price) {
+            totalAmount = service.serviceInfo.price;
+          }
+        }
+
+        // Only create income if there's a price > 0
+        if (totalAmount > 0) {
+          await this.incomeService.createIncome(
+            user || 'system',
+            attention.commerceId,
+            IncomeType.UNIQUE,
+            IncomeStatus.CONFIRMED,
+            attention.bookingId,
+            attention.id,
+            attention.clientId,
+            attention.packageId,
+            totalAmount,
+            totalAmount,
+            1, // installments
+            PaymentMethod.OTHER, // Default payment method for automatic charges
+            0, // commission
+            `Cobrança automática de pesquisa - Atenção ${attention.number}`,
+            '', // fiscalNote
+            '', // promotionalCode
+            '', // transactionId
+            '', // bankEntity
+            { user: user || 'system', title: 'Pesquisa Automática' } // incomeInfo
+          );
+          this.logger.info('Automatic income created for survey attention', {
+            attentionId,
+            totalAmount,
+            attentionType: attention.type,
+            hasSurveyId: !!attention.surveyId,
+            user,
+          });
+        }
+      }
+    } catch (error) {
+      // Log error but don't fail the checkout finish process
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        attentionId,
+        operation: 'createAutomaticIncome',
+        user,
+      });
+    }
+
+    this.logger.info('Checkout finished, attention terminated', {
+      attentionId,
+      commerceId: attention.commerceId,
+      queueId: attention.queueId,
+      duration: attentionUpdated.duration,
+      hasComment: !!comment,
+      hasSurveyScheduled: !!attentionUpdated.surveyPostAttentionDateScheduled,
+      user,
+    });
+
+    return attentionUpdated;
   }
 
   public async finishCancelledAttention(user: string, attentionId: string): Promise<Attention> {
@@ -959,7 +1527,7 @@ export class AttentionService {
   }
 
   public async notify(attentionId, moduleId, commerceLanguage): Promise<Attention[]> {
-    const attention = await this.getAttentionById(attentionId); // La atención en curso
+    const attention = await this.getAttentionById(attentionId); // La atenci?n en curso
     const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
       attention.commerceId,
       FeatureToggleName.WHATSAPP
@@ -981,9 +1549,14 @@ export class AttentionService {
       const attentionToNotify = (
         await this.getAttentionByNumber(_count, AttentionStatus.PENDING, attention.queueId)
       )[0];
-      if (attentionToNotify !== undefined && attentionToNotify.type === AttentionType.STANDARD) {
+      if (
+        attentionToNotify !== undefined &&
+        (attentionToNotify.type === AttentionType.STANDARD ||
+          attentionToNotify.type === AttentionType.TELEMEDICINE)
+      ) {
         const user = await this.userService.getUserById(attentionToNotify.userId);
         if (user.notificationOn) {
+          const isTelemedicine = attentionToNotify.type === AttentionType.TELEMEDICINE;
           switch (_count - attention.number) {
             case 5:
               type = NotificationType.FALTANCINCO;
@@ -994,10 +1567,69 @@ export class AttentionService {
               message = NOTIFICATIONS.getFaltaUnoMessage(commerceLanguage, attention);
               break;
             case 0: {
-              const module = await this.moduleService.getModuleById(moduleId);
-              const moduleNumber = module.name;
               type = NotificationType.ESTUTURNO;
-              message = NOTIFICATIONS.getEsTuTunoMessage(commerceLanguage, attention, moduleNumber);
+              if (isTelemedicine && attentionToNotify.telemedicineSessionId) {
+                // Get telemedicine session details
+                try {
+                  const telemedicineSession = await this.telemedicineService.getSessionById(
+                    attentionToNotify.telemedicineSessionId
+                  );
+                  const accessLink = `${
+                    process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:5173'
+                  }/publico/telemedicina/${telemedicineSession.id}`;
+                  const scheduledDate = telemedicineSession.scheduledAt
+                    ? new Date(telemedicineSession.scheduledAt).toLocaleString(
+                        commerceLanguage === 'pt' ? 'pt-BR' : 'es-ES',
+                        {
+                          dateStyle: 'long',
+                          timeStyle: 'short',
+                        }
+                      )
+                    : null;
+                  // Get access key for notification
+                  const accessKey = await this.telemedicineService.getAccessKeyForNotification(
+                    attentionToNotify.telemedicineSessionId
+                  );
+                  const telemedicineInfo = {
+                    accessKey: accessKey || 'N/A',
+                    accessLink,
+                    scheduledDate,
+                  };
+                  message = NOTIFICATIONS.getEsTuTunoMessage(
+                    commerceLanguage,
+                    attention,
+                    null,
+                    telemedicineInfo
+                  );
+                } catch (error) {
+                  this.logger.logError(
+                    error instanceof Error ? error : new Error(String(error)),
+                    undefined,
+                    {
+                      attentionId: attentionToNotify.id,
+                      telemedicineSessionId: attentionToNotify.telemedicineSessionId,
+                      operation: 'getTelemedicineSessionForNotification',
+                    }
+                  );
+                  // Fallback to standard message if telemedicine session retrieval fails
+                  const module = await this.moduleService.getModuleById(moduleId);
+                  const moduleNumber = module.name;
+                  message = NOTIFICATIONS.getEsTuTunoMessage(
+                    commerceLanguage,
+                    attention,
+                    moduleNumber
+                  );
+                }
+              } else {
+                // Standard attention - use module
+                const module = await this.moduleService.getModuleById(moduleId);
+                const moduleNumber = module.name;
+                message = NOTIFICATIONS.getEsTuTunoMessage(
+                  commerceLanguage,
+                  attention,
+                  moduleNumber
+                );
+              }
               break;
             }
           }
@@ -1030,7 +1662,7 @@ export class AttentionService {
   }
 
   public async notifyEmail(attentionId, moduleId, commerceLanguage): Promise<Attention[]> {
-    const attention = await this.getAttentionById(attentionId); // La atención en curso
+    const attention = await this.getAttentionById(attentionId); // La atenci?n en curso
     const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
       attention.commerceId,
       FeatureToggleName.EMAIL
@@ -1089,7 +1721,7 @@ export class AttentionService {
   }
 
   public async attentionEmail(attentionId: string): Promise<Attention[]> {
-    const attention = await this.getAttentionDetails(attentionId); // La atención en curso
+    const attention = await this.getAttentionDetails(attentionId); // La atenci?n en curso
     const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
       attention.commerceId,
       FeatureToggleName.EMAIL
@@ -1363,7 +1995,12 @@ export class AttentionService {
   public async cancelAttention(user: string, attentionId: string): Promise<Attention> {
     let attention = await this.getAttentionById(attentionId);
     if (attention && attention.id) {
-      if (attention.status === AttentionStatus.PENDING) {
+      // Allow cancellation for PENDING, PROCESSING, and REACTIVATED statuses
+      if (
+        attention.status === AttentionStatus.PENDING ||
+        attention.status === AttentionStatus.PROCESSING ||
+        attention.status === AttentionStatus.REACTIVATED
+      ) {
         attention.status = AttentionStatus.USER_CANCELLED;
         attention.cancelled = true;
         attention.cancelledAt = new Date();
@@ -1512,7 +2149,7 @@ export class AttentionService {
             confirmationData.paymentAmount < 0
           ) {
             throw new HttpException(
-              `Datos insuficientes para confirmar el pago de la atención`,
+              `Datos insuficientes para confirmar el pago de la atenci?n`,
               HttpStatus.INTERNAL_SERVER_ERROR
             );
           }
@@ -1598,7 +2235,7 @@ export class AttentionService {
       }
     } catch (error) {
       throw new HttpException(
-        `Hubo un problema al pagar la atención: ${error.message}`,
+        `Hubo un problema al pagar la atenci?n: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -1624,7 +2261,7 @@ export class AttentionService {
             attention = await this.update(user, attention);
           } else {
             throw new HttpException(
-              `Atención ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`,
+              `Atenci?n ${id} no puede ser transferida pues la cola de destino no es de tipo Colaborador: ${queueId}, ${queueToTransfer.type}`,
               HttpStatus.NOT_FOUND
             );
           }
@@ -1632,11 +2269,11 @@ export class AttentionService {
           throw new HttpException(`Cola no existe: ${queueId}`, HttpStatus.NOT_FOUND);
         }
       } else {
-        throw new HttpException(`Atención no existe: ${id}`, HttpStatus.NOT_FOUND);
+        throw new HttpException(`Atenci?n no existe: ${id}`, HttpStatus.NOT_FOUND);
       }
     } catch (error) {
       throw new HttpException(
-        `Hubo un problema al cancelar la atención: ${error.message}`,
+        `Hubo un problema al cancelar la atenci?n: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

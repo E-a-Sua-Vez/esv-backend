@@ -133,4 +133,29 @@ export class ClientController {
       personalInfo
     );
   }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/agreement/status/:commerceId/:clientId')
+  @ApiOperation({
+    summary: 'Check agreement completion status',
+    description: 'Checks if client has accepted the agreement for the commerce',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'clientId', description: 'Client ID', example: 'client-123' })
+  @ApiResponse({
+    status: 200,
+    description: 'Agreement status',
+    schema: {
+      type: 'object',
+      properties: {
+        completed: { type: 'boolean' },
+        completedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  public async getAgreementStatus(@Param() params: any): Promise<any> {
+    const { commerceId, clientId } = params;
+    return this.clientService.getAgreementStatus(commerceId, clientId);
+  }
 }

@@ -308,7 +308,8 @@ export class ConsultationHistoryService {
    */
   public async linkReferenceToConsultation(
     attentionId: string,
-    referenceId: string
+    referenceId: string,
+    user?: string
   ): Promise<ConsultationHistory> {
     const consultation = await this.getConsultationHistoryByAttentionId(attentionId);
     if (consultation && consultation.id) {
@@ -318,7 +319,15 @@ export class ConsultationHistoryService {
       if (!consultation.referenceIds.includes(referenceId)) {
         consultation.referenceIds.push(referenceId);
         consultation.modifiedAt = new Date();
-        return await this.consultationHistoryRepository.update(consultation);
+        if (user) {
+          consultation.modifiedBy = user;
+        }
+        const updated = await this.consultationHistoryRepository.update(consultation);
+        const event = new ConsultationHistoryUpdated(new Date(), updated, {
+          user: user || 'system',
+        });
+        publish(event);
+        return updated;
       }
     }
     return consultation;

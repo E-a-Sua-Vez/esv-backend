@@ -11,6 +11,7 @@ import { LeadContactType } from './model/lead-contact-type.enum';
 import { LeadContact } from './model/lead-contact.entity';
 import { LeadPipelineStage } from './model/lead-pipeline-stage.enum';
 import { LeadStatus } from './model/lead-status.enum';
+import { LeadTemperature } from './model/lead-temperature.enum';
 import { Lead } from './model/lead.entity';
 
 export class LeadService {
@@ -31,6 +32,7 @@ export class LeadService {
       message?: string;
       source: string;
       page?: string;
+      temperature?: LeadTemperature;
     },
     userId?: string,
     businessId?: string,
@@ -47,6 +49,8 @@ export class LeadService {
     lead.page = contactFormData.page;
     lead.contactFormSubmissionId = contactFormData.id;
     lead.pipelineStage = LeadPipelineStage.NEW;
+    // Default temperature is MORNO (warm/green) if not provided
+    lead.temperature = contactFormData.temperature || LeadTemperature.MORNO;
     lead.assignedToUserId = userId;
     lead.businessId = businessId;
     lead.commerceId = commerceId;
@@ -344,6 +348,7 @@ export class LeadService {
     lead.id = contactFormId;
     lead.contactFormSubmissionId = contactFormId;
     lead.pipelineStage = LeadPipelineStage.NEW;
+    lead.temperature = LeadTemperature.MORNO; // Default temperature
     lead.assignedToUserId = userId;
     lead.createdAt = new Date();
     lead.updatedAt = new Date();

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { FireormModule } from 'nestjs-fireorm';
 
 import { AdministratorModule } from './administrator/administrator.module';
@@ -41,6 +42,8 @@ import { OutcomeTypeModule } from './outcome-type/outcome-type.module';
 import { PackageModule } from './package/package.module';
 import { PatientHistoryModule } from './patient-history/patient-history.module';
 import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
+import { PatientPhotoModule } from './patient-photo/patient-photo.module';
+import { BusinessLogoModule } from './business-logo/business-logo.module';
 import { PaymentModule } from './payment/payment.module';
 import { PlanModule } from './plan/plan.module';
 import { PlanActivationModule } from './plan-activation/plan-activation.module';
@@ -53,6 +56,13 @@ import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { LoggerModule } from './shared/logger/logger.module';
 import { LoggingInterceptor } from './shared/logger/logging.interceptor';
 import { SecurityModule } from './shared/security/security.module';
+import { AuditLogModule } from './shared/modules/audit-log.module';
+import { DigitalSignatureModule } from './shared/modules/digital-signature.module';
+import { CrmValidationModule } from './shared/modules/crm-validation.module';
+import { LgpdConsentModule } from './shared/modules/lgpd-consent.module';
+import { DataRetentionModule } from './shared/modules/data-retention.module';
+import { PdfTemplateModule } from './shared/modules/pdf-template.module';
+import { AuditInterceptor } from './shared/interceptors/audit.interceptor';
 import { SuggestionModule } from './suggestion/suggestion.module';
 import { SurveyModule } from './survey/survey.module';
 import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
@@ -62,6 +72,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     AuthModule,
     LoggerModule,
     SecurityModule,
@@ -107,6 +118,8 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     PatientHistoryModule,
     CompanyModule,
     PatientHistoryItemModule,
+    PatientPhotoModule,
+    BusinessLogoModule,
     PrescriptionModule,
     CIE10Module,
     ClinicalAlertsModule,
@@ -119,6 +132,12 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     FormModule,
     FormPersonalizedModule,
     MessageModule,
+    AuditLogModule,
+    DigitalSignatureModule,
+    CrmValidationModule,
+    LgpdConsentModule,
+    DataRetentionModule,
+    PdfTemplateModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
@@ -146,6 +165,10 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
     {
       provide: APP_FILTER,

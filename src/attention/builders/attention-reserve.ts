@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, forwardRef, Optional } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
@@ -8,6 +8,7 @@ import { PackageService } from 'src/package/package.service';
 import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 import { ServiceService } from 'src/service/service.service';
+import { BookingService } from 'src/booking/booking.service';
 
 import { Queue } from '../../queue/model/queue.entity';
 import { QueueService } from '../../queue/queue.service';
@@ -16,6 +17,11 @@ import AttentionCreated from '../events/AttentionCreated';
 import { AttentionStatus } from '../model/attention-status.enum';
 import { AttentionType } from '../model/attention-type.enum';
 import { Attention, Block } from '../model/attention.entity';
+import { AuditLogService } from '../../shared/services/audit-log.service';
+import { LgpdConsentService } from '../../shared/services/lgpd-consent.service';
+import TermsAccepted from '../../shared/events/TermsAccepted';
+import { ConsentType } from '../../shared/model/lgpd-consent.entity';
+import { ConsentStatus } from '../../shared/model/lgpd-consent.entity';
 
 @Injectable()
 export class AttentionReserveBuilder implements BuilderInterface {
@@ -24,7 +30,11 @@ export class AttentionReserveBuilder implements BuilderInterface {
     private attentionRepository = getRepository(Attention),
     private queueService: QueueService,
     private serviceService: ServiceService,
-    private packageService: PackageService
+    private packageService: PackageService,
+    @Inject(forwardRef(() => BookingService))
+    private bookingService: BookingService,
+    @Optional() @Inject(AuditLogService) private auditLogService?: AuditLogService,
+    @Optional() @Inject(LgpdConsentService) private lgpdConsentService?: LgpdConsentService
   ) {}
 
   async create(
@@ -84,6 +94,65 @@ export class AttentionReserveBuilder implements BuilderInterface {
     }
     if (termsConditionsToAcceptedAt !== undefined) {
       attention.termsConditionsToAcceptedAt = termsConditionsToAcceptedAt;
+
+      // Si se aceptaron términos, publicar evento
+      if (termsConditionsAcceptedCode && termsConditionsToAcceptedAt) {
+        const termsAcceptedEvent = new TermsAccepted(new Date(), {
+          attentionId: attention.id,
+          clientId: attention.clientId,
+          commerceId: attention.commerceId,
+          acceptedAt: termsConditionsToAcceptedAt,
+          acceptedCode: termsConditionsAcceptedCode,
+        }, { user: attention.userId || 'system' });
+        publish(termsAcceptedEvent);
+
+        // Crear consentimiento LGPD automáticamente
+        if (this.lgpdConsentService && attention.clientId && attention.commerceId) {
+          try {
+            await this.lgpdConsentService.createOrUpdateConsent(
+              attention.userId || 'system',
+              {
+                clientId: attention.clientId,
+                commerceId: attention.commerceId,
+                consentType: ConsentType.TERMS_ACCEPTANCE,
+                purpose: 'Aceptación de términos y condiciones de servicio',
+                legalBasis: 'CONSENT',
+                status: ConsentStatus.GRANTED,
+                notes: `Consentimiento otorgado al aceptar términos y condiciones para atención ${attention.id}`,
+                ipAddress: undefined, // TODO: Obtener IP del request
+                consentMethod: 'WEB',
+              }
+            );
+          } catch (error) {
+            // Log error but don't fail the attention creation
+            console.error(`Error creating LGPD consent for attention ${attention.id}:`, error);
+          }
+        }
+
+        // Registrar auditoría específica
+        if (this.auditLogService) {
+          await this.auditLogService.logAction(
+            attention.userId || 'system',
+            'UPDATE',
+            'attention_terms',
+            attention.id,
+            {
+              entityName: `Aceptación Términos - Atención ${attention.id}`,
+              result: 'SUCCESS',
+              metadata: {
+                attentionId: attention.id,
+                clientId: attention.clientId,
+                commerceId: attention.commerceId,
+                acceptedCode: termsConditionsAcceptedCode,
+                acceptedAt: termsConditionsToAcceptedAt,
+              },
+              complianceFlags: {
+                lgpdConsent: true,
+              },
+            }
+          );
+        }
+      }
     }
     const dateToCreate = date || new Date();
     const existingAttention = await this.getAttentionByNumberAndDate(
@@ -122,27 +191,113 @@ export class AttentionReserveBuilder implements BuilderInterface {
       attention.clientId = clientId;
     }
     const attentionCreated = await this.attentionRepository.create(attention);
+
+    // If attention is created from a booking, copy packageId from booking
+    if (bookingId) {
+      try {
+        const booking = await this.bookingService.getBookingById(bookingId);
+        if (booking && booking.packageId) {
+          attention.packageId = booking.packageId;
+          attention.packageProcedureNumber = booking.packageProcedureNumber;
+          attention.packageProceduresTotalNumber = booking.packageProceduresTotalNumber;
+          await this.attentionRepository.update(attention);
+          // Add attention to package
+          await this.packageService.addProcedureToPackage(
+            'ett',
+            booking.packageId,
+            [],
+            [attentionCreated.id]
+          );
+        }
+      } catch (error) {
+        console.error('[AttentionReserveBuilder] Error getting booking for packageId:', error);
+      }
+    }
+
     if (paymentConfirmationData && paymentConfirmationData.packageId) {
       attention.packageId = paymentConfirmationData.packageId;
       attention.packageProceduresTotalNumber = paymentConfirmationData.proceduresTotalNumber;
       attention.packageProcedureNumber = paymentConfirmationData.procedureNumber;
-    } else {
+      await this.attentionRepository.update(attention);
+    } else if (!bookingId || !attention.packageId) {
+      // Only check for/create packages if not already set from booking
       if (attentionCreated.servicesId && attentionCreated.servicesId.length === 1) {
         const service = await this.serviceService.getServiceById(attentionCreated.servicesId[0]);
-        if (
-          service &&
-          service.id &&
-          service.serviceInfo &&
-          service.serviceInfo.procedures &&
-          service.serviceInfo.procedures > 1
-        ) {
+
+        // Determine procedures amount: from servicesDetails first, then service.serviceInfo.procedures, then service.serviceInfo.proceduresList
+        let proceduresAmount = 0;
+        console.log('[AttentionReserveBuilder] Determining procedures amount:', {
+          servicesDetails: servicesDetails,
+          servicesDetailsLength: servicesDetails?.length,
+          firstServiceDetails: servicesDetails?.[0],
+          proceduresInDetails: servicesDetails?.[0]?.['procedures'],
+          serviceProcedures: service?.serviceInfo?.procedures,
+          serviceProceduresList: service?.serviceInfo?.proceduresList
+        });
+
+        if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
+          proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
+          console.log('[AttentionReserveBuilder] Using procedures from servicesDetails:', proceduresAmount);
+        } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
+          proceduresAmount = service.serviceInfo.procedures;
+          console.log('[AttentionReserveBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
+        } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
+          // Use first value from proceduresList as fallback
+          const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
+          if (proceduresList.length > 0) {
+            proceduresAmount = proceduresList[0];
+            console.log('[AttentionReserveBuilder] Using first value from proceduresList:', proceduresAmount);
+          }
+        }
+
+        console.log('[AttentionReserveBuilder] Final proceduresAmount:', proceduresAmount);
+
+        if (proceduresAmount > 1) {
           if (attentionCreated.clientId) {
             const packs = await this.packageService.getPackageByCommerceIdAndClientServices(
               attentionCreated.commerceId,
               attentionCreated.clientId,
               attentionCreated.servicesId[0]
             );
-            if (packs && packs.length === 0) {
+            if (packs && packs.length > 0) {
+              // Associate attention to existing active package with sessions remaining
+              const activePackage = packs.find(pkg => {
+                const isActive = [PackageStatus.ACTIVE, PackageStatus.CONFIRMED, PackageStatus.REQUESTED].includes(pkg.status);
+                const hasPendingSessions = (pkg.proceduresLeft || 0) > 0;
+                return isActive && hasPendingSessions;
+              });
+              if (activePackage) {
+                attention.packageId = activePackage.id;
+                await this.attentionRepository.update(attention);
+                // Add attention to package
+                await this.packageService.addProcedureToPackage(
+                  'ett',
+                  activePackage.id,
+                  [],
+                  [attentionCreated.id]
+                );
+              } else {
+                // No active package found, create new one
+                const packageName = service.tag.toLocaleUpperCase();
+                const packCreated = await this.packageService.createPackage(
+                  'ett',
+                  attentionCreated.commerceId,
+                  attentionCreated.clientId,
+                  undefined,
+                  attentionCreated.id,
+                  proceduresAmount,
+                  packageName,
+                  attentionCreated.servicesId,
+                  [],
+                  [attentionCreated.id],
+                  PackageType.STANDARD,
+                  PackageStatus.REQUESTED
+                );
+                attention.packageId = packCreated.id;
+                await this.attentionRepository.update(attention);
+              }
+            } else {
+              // No packages exist, create new one
               const packageName = service.tag.toLocaleUpperCase();
               const packCreated = await this.packageService.createPackage(
                 'ett',
@@ -150,7 +305,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
                 attentionCreated.clientId,
                 undefined,
                 attentionCreated.id,
-                service.serviceInfo.procedures,
+                proceduresAmount,
                 packageName,
                 attentionCreated.servicesId,
                 [],
