@@ -107,10 +107,6 @@ export class PrescriptionService {
       limit,
     };
   }
-      page,
-      limit,
-    };
-  }
 
   /**
    * Obtener medicamento por ID
