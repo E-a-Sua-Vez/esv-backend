@@ -21,20 +21,30 @@ export class CIE10Service {
 
   /**
    * Cargar códigos CIE-10 desde archivo JSON
-   * TODO: Cargar desde base de datos o archivo real
    */
   private loadCIE10Codes() {
     try {
-      // Por ahora usamos datos de ejemplo
-      // En producción, esto debería cargarse desde un archivo JSON o base de datos
-      this.codes = this.getDefaultCIE10Codes();
+      const filePath = path.join(__dirname, 'data', 'cie10-codes.json');
+      
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        this.codes = JSON.parse(fileContent);
+        console.log(`✅ Loaded ${this.codes.length} CIE-10 codes from file`);
+      } else {
+        console.warn('⚠️ CIE-10 codes file not found, using default codes');
+        this.codes = this.getDefaultCIE10Codes();
+      }
+      
       this.codes.forEach(code => {
         this.codesByCode.set(code.code, code);
       });
     } catch (error) {
-      console.error('Error loading CIE-10 codes:', error);
+      console.error('❌ Error loading CIE-10 codes:', error);
       // Si falla, usar códigos por defecto
       this.codes = this.getDefaultCIE10Codes();
+      this.codes.forEach(code => {
+        this.codesByCode.set(code.code, code);
+      });
     }
   }
 

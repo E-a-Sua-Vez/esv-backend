@@ -56,25 +56,32 @@ export class MedicalExamOrderService {
   }> {
     let query = this.examRepository.whereEqualTo('active', true).whereEqualTo('available', true);
 
-    if (commerceId) {
-      query = query.whereEqualTo('commerceId', commerceId);
-    }
-
     if (type) {
       query = query.whereEqualTo('type', type);
     }
 
     const allExams = await query.find();
 
+    // Filter by commerceId: include global exams (no commerceId) and commerce-specific exams
     let filtered = allExams;
-    if (searchTerm) {
+    if (commerceId) {
       filtered = allExams.filter(
+        exam => !exam.commerceId || exam.commerceId === commerceId
+      );
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
         exam =>
           exam.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           exam.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           exam.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
+    // Sort by name
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     const start = (page - 1) * limit;
     const end = start + limit;

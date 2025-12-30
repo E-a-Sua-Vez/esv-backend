@@ -59,65 +59,54 @@ export class PrescriptionService {
   }> {
     const { searchTerm, atcCode, activePrinciple, commerceId, page = 1, limit = 20 } = searchDto;
 
-    let query = this.medicationRepository
+    // Obtener todos los medicamentos activos y disponibles
+    const baseQuery = this.medicationRepository
       .whereEqualTo('active', true)
       .whereEqualTo('available', true);
 
+    const allMedications = await baseQuery.find();
+
+    // Filtrar por commerceId: incluir medicamentos globales (sin commerceId) y del comercio específico
+    let filtered = allMedications;
     if (commerceId) {
-      query = query.whereEqualTo('commerceId', commerceId);
+      filtered = allMedications.filter(
+        med => !med.commerceId || med.commerceId === commerceId
+      );
     }
 
     if (searchTerm) {
-      // Búsqueda por nombre (genérico o comercial)
-      // Nota: FireORM tiene limitaciones, esto es una aproximación
-      const allMedications = await query.find();
-      const filtered = allMedications.filter(
+      // Búsqueda por nombre (genérico o comercial) o principio activo
+      filtered = filtered.filter(
         med =>
           med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           med.commercialName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           med.activePrinciple.toLowerCase().includes(searchTerm.toLowerCase())
       );
-
-      const start = (page - 1) * limit;
-      const end = start + limit;
-
-      return {
-        medications: filtered.slice(start, end),
-        total: filtered.length,
-        page,
-        limit,
-      };
     }
 
     if (atcCode) {
-      query = query.whereEqualTo('atcCode', atcCode);
+      filtered = filtered.filter(med => med.atcCode === atcCode);
     }
 
     if (activePrinciple) {
-      const allMedications = await query.find();
-      const filtered = allMedications.filter(med =>
+      filtered = filtered.filter(med =>
         med.activePrinciple.toLowerCase().includes(activePrinciple.toLowerCase())
       );
-
-      const start = (page - 1) * limit;
-      const end = start + limit;
-
-      return {
-        medications: filtered.slice(start, end),
-        total: filtered.length,
-        page,
-        limit,
-      };
     }
 
-    const allMedications = await query.orderByAscending('name').find();
+    // Ordenar por nombre
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     const start = (page - 1) * limit;
     const end = start + limit;
 
     return {
-      medications: allMedications.slice(start, end),
-      total: allMedications.length,
+      medications: filtered.slice(start, end),
+      total: filtered.length,
+      page,
+      limit,
+    };
+  }
       page,
       limit,
     };

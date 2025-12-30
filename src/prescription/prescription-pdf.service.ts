@@ -341,6 +341,391 @@ export class PrescriptionPdfService {
   }
 
   /**
+   * Obtener altura de página según tamaño
+   */
+  private getPageHeight(pageSize: string): number {
+    const sizes = {
+      'A4': 842,
+      'LETTER': 792,
+      'A5': 595,
+      'LETTER_HALF': 612
+    };
+    return sizes[pageSize] || 842;
+  }
+
+  /**
+   * Calcular alturas de secciones del template
+   */
+  private calculateSectionHeights(template: any): {
+    headerHeight: number;
+    footerHeight: number;
+    contentAreaHeight: number;
+  } {
+    const pageHeight = this.getPageHeight(template?.pageSize || 'A4');
+    const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
+    
+    // Calcular altura del header
+    let headerHeight = 0;
+    if (template?.header?.elements && Array.isArray(template.header.elements) && template.header.elements.length > 0) {
+      const maxHeaderY = Math.max(
+        ...template.header.elements.map((e: any) => (e.y || 0) + (e.height || 0))
+      );
+      headerHeight = maxHeaderY + 20; // Padding de 20pt después del header
+    } else {
+      headerHeight = 100; // Default header height
+    }
+    
+    // Calcular altura del footer - medir desde el elemento más arriba hasta el más abajo
+    let footerHeight = 0;
+    if (template?.footer?.elements && Array.isArray(template.footer.elements) && template.footer.elements.length > 0) {
+      const minFooterY = Math.min(
+        ...template.footer.elements.map((e: any) => e.y || 0)
+      );
+      const maxFooterY = Math.max(
+        ...template.footer.elements.map((e: any) => (e.y || 0) + (e.height || 0))
+      );
+      // Altura real del footer = desde el primer elemento hasta el último + padding
+      footerHeight = (maxFooterY - minFooterY) + 30; // 30pt de padding total
+    } else {
+      footerHeight = 80; // Default footer height
+    }
+    
+    // Área de contenido disponible
+    const contentAreaHeight = pageHeight - margins.top - margins.bottom - headerHeight - footerHeight;
+    
+    return { headerHeight, footerHeight, contentAreaHeight };
+  }
+
+  /**
+   * Renderizar header en la página actual
+   */
+  private async renderHeaderOnCurrentPage(
+    doc: any,
+    template: any,
+    variables: Record<string, any>,
+    commerceLogo?: string,
+    commerceName?: string,
+    commerceAddress?: string,
+    commercePhone?: string
+  ): Promise<void> {
+    const headerSection = template?.header;
+    
+    if (headerSection?.elements && Array.isArray(headerSection.elements) && headerSection.elements.length > 0) {
+      // Renderizar elementos del canvas
+      await this.renderCanvasElements(doc, headerSection.elements, variables, 0);
+    } else if (headerSection?.enabled) {
+      // Modo legacy: usar flags y texto simple
+      if (headerSection.includeLogo && commerceLogo) {
+        try {
+          const logoBuffer = await this.loadImageFromUrl(commerceLogo);
+          if (logoBuffer) {
+            const logoSize = 40;
+            const logoX = (doc.page.width - logoSize) / 2;
+            doc.image(logoBuffer, logoX, doc.y, {
+              width: logoSize,
+              height: logoSize,
+            });
+            doc.moveDown(2);
+          }
+        } catch (error) {
+          this.logger.warn(`Could not load commerce logo in header: ${error.message}`);
+        }
+      }
+
+      if (headerSection.includeCommerceInfo) {
+        if (commerceName) {
+          doc.fontSize(12).font('Helvetica-Bold').text(commerceName, { align: 'center' });
+        }
+        if (commerceAddress) {
+          doc.fontSize(10).font('Helvetica').text(commerceAddress, { align: 'center' });
+        }
+        if (commercePhone) {
+          doc.fontSize(10).font('Helvetica').text(commercePhone, { align: 'center' });
+        }
+        doc.moveDown(1);
+      }
+
+      if (headerSection.text) {
+        const text = this.replaceVariables(headerSection.text, variables);
+        doc.fontSize(headerSection.fontSize || 14)
+          .font(headerSection.fontFamily || 'Helvetica-Bold')
+          .fillColor(headerSection.color || '#000000')
+          .text(text, {
+            align: headerSection.alignment || 'center',
+          });
+        doc.moveDown(0.5);
+      }
+    } else {
+      // Header por defecto
+      doc.fontSize(20).font('Helvetica-Bold').text('RECETA MÉDICA', { align: 'center' });
+      doc.moveDown(1);
+      
+      if (commerceName) {
+        doc.fontSize(12).font('Helvetica-Bold').text(commerceName, { align: 'center' });
+      }
+      if (commerceAddress) {
+        doc.fontSize(10).font('Helvetica').text(commerceAddress, { align: 'center' });
+      }
+      doc.moveDown(1);
+    }
+  }
+
+  /**
+   * Renderizar footer en la página actual
+   */
+  private async renderFooterOnCurrentPage(
+    doc: any,
+    template: any,
+    variables: Record<string, any>,
+    pageHeight: number,
+    prescription: Prescription,
+    doctorSignature?: string,
+    qrCodeDataUrl?: string
+  ): Promise<void> {
+    // Guardar posición actual
+    const savedY = doc.y;
+    const footerSection = template?.footer;
+    const hasCanvasFooter = footerSection?.elements && Array.isArray(footerSection.elements) && footerSection.elements.length > 0;
+    
+    if (hasCanvasFooter) {
+      // Calcular el offset Y para posicionar el footer al final de la página
+      const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
+      
+      // Calcular la altura real del footer (desde el primer hasta el último elemento)
+      const minFooterY = Math.min(
+        ...footerSection.elements.map((e: any) => e.y || 0)
+      );
+      const maxFooterY = Math.max(
+        ...footerSection.elements.map((e: any) => (e.y || 0) + (e.height || 0))
+      );
+      const footerHeight = maxFooterY - minFooterY;
+      
+      // Calcular donde debe empezar el footer en esta página
+      // Debe estar al final: pageHeight - margen inferior - altura del footer
+      const footerStartY = pageHeight - margins.bottom - footerHeight - 10; // 10pt de padding
+      
+      // El offset es la diferencia entre donde queremos que esté y donde está diseñado
+      const yOffset = footerStartY - minFooterY;
+      
+      // Renderizar elementos del canvas con el offset correcto
+      await this.renderCanvasElements(doc, footerSection.elements, variables, yOffset);
+    } else if (footerSection?.enabled) {
+      // Modo legacy: posicionar footer al final de la página
+      const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
+      const footerY = pageHeight - margins.bottom - 80;
+      doc.y = footerY;
+      
+      if (footerSection.includeDigitalSignature && doctorSignature) {
+        try {
+          const signatureBuffer = await this.loadImageFromUrl(doctorSignature);
+          if (signatureBuffer) {
+            const signatureSize = 60;
+            const signatureX = (doc.page.width - signatureSize) / 2;
+            doc.image(signatureBuffer, signatureX, doc.y, {
+              width: signatureSize,
+              height: signatureSize * 0.3,
+            });
+            doc.moveDown(0.3);
+          }
+        } catch (error) {
+          this.logger.warn(`Could not load digital signature in footer: ${error.message}`);
+          doc.fontSize(10).font('Helvetica').text('_________________________', {
+            align: 'center',
+          });
+        }
+      } else {
+        doc.fontSize(10).font('Helvetica').text('_________________________', {
+          align: 'center',
+        });
+      }
+
+      if (footerSection.includeDoctorInfo) {
+        doc.fontSize(10).font('Helvetica-Bold').text(prescription.doctorName, {
+          align: 'center',
+        });
+        if (prescription.doctorLicense) {
+          doc.fontSize(9).font('Helvetica').text(`CRM: ${prescription.doctorLicense}`, {
+            align: 'center',
+          });
+        }
+      }
+
+      if (footerSection.text) {
+        const text = this.replaceVariables(footerSection.text, variables);
+        doc.fontSize(footerSection.fontSize || 8)
+          .font(footerSection.fontFamily || 'Helvetica')
+          .fillColor(footerSection.color || '#666666')
+          .text(text, {
+            align: footerSection.alignment || 'center',
+          });
+      }
+    } else {
+      // Footer por defecto al final de la página
+      const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
+      const footerY = pageHeight - margins.bottom - 80;
+      doc.y = footerY;
+      
+      if (doctorSignature) {
+        try {
+          const signatureBuffer = await this.loadImageFromUrl(doctorSignature);
+          if (signatureBuffer) {
+            const signatureSize = 60;
+            const signatureX = (doc.page.width - signatureSize) / 2;
+            doc.image(signatureBuffer, signatureX, doc.y, {
+              width: signatureSize,
+              height: signatureSize * 0.3,
+            });
+            doc.moveDown(0.3);
+          }
+        } catch (error) {
+          this.logger.warn(`Could not load digital signature: ${error.message}`);
+          doc.fontSize(10).font('Helvetica').text('_________________________', {
+            align: 'center',
+          });
+        }
+      } else {
+        doc.fontSize(10).font('Helvetica').text('_________________________', {
+          align: 'center',
+        });
+      }
+      
+      doc.fontSize(10).font('Helvetica-Bold').text(prescription.doctorName, { align: 'center' });
+      if (prescription.doctorLicense) {
+        doc.fontSize(9).font('Helvetica').text(`CRM: ${prescription.doctorLicense}`, {
+          align: 'center',
+        });
+      }
+      
+      // Agregar QR code si está disponible
+      if (qrCodeDataUrl && !hasCanvasFooter) {
+        const qrImageBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
+        const qrSize = 60;
+        const qrX = doc.page.width - margins.right - qrSize - 10;
+        const qrY = pageHeight - margins.bottom - qrSize - 10;
+
+        doc.image(qrImageBuffer, qrX, qrY, {
+          width: qrSize,
+          height: qrSize,
+        });
+
+        doc
+          .fontSize(7)
+          .font('Helvetica')
+          .text('Código QR para verificación', qrX - 10, qrY + qrSize + 2, {
+            width: qrSize + 20,
+            align: 'center',
+          });
+      }
+    }
+    
+    // Restaurar posición
+    doc.y = savedY;
+  }
+
+  /**
+   * Calcular altura aproximada de un bloque de texto
+   */
+  private calculateTextHeight(doc: any, text: string, fontSize: number, options: any = {}): number {
+    if (!text) return 0;
+    
+    // Guardar configuración actual
+    const currentFontSize = doc._fontSize;
+    const currentFont = doc._font;
+    
+    // Aplicar la fuente para calcular
+    doc.fontSize(fontSize);
+    if (options.font) {
+      doc.font(options.font);
+    }
+    
+    const width = options.width || (doc.page.width - doc.page.margins.left - doc.page.margins.right - 40);
+    const height = doc.heightOfString(text, { ...options, width });
+    
+    // Restaurar configuración original
+    doc.fontSize(currentFontSize);
+    doc.font(currentFont);
+    
+    // Agregar un margen de seguridad del 20%
+    return Math.ceil(height * 1.2);
+  }
+
+  /**
+   * Verificar si necesitamos nueva página y agregarla si es necesario
+   */
+  private async checkAndAddNewPageIfNeeded(
+    doc: any,
+    requiredHeight: number,
+    template: any,
+    variables: Record<string, any>,
+    heights: { headerHeight: number; footerHeight: number; contentAreaHeight: number },
+    prescription: Prescription,
+    commerceName?: string,
+    commerceAddress?: string,
+    commercePhone?: string,
+    commerceLogo?: string,
+    doctorSignature?: string,
+    qrCodeDataUrl?: string
+  ): Promise<boolean> {
+    const pageHeight = this.getPageHeight(template?.pageSize || 'A4');
+    const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
+    
+    // Calcular donde debe empezar el footer usando la misma lógica que renderFooterOnCurrentPage
+    let footerStartY;
+    const footerSection = template?.footer;
+    const hasCanvasFooter = footerSection?.elements && Array.isArray(footerSection.elements) && footerSection.elements.length > 0;
+    
+    if (hasCanvasFooter) {
+      // Calcular altura real del footer
+      const minFooterY = Math.min(
+        ...footerSection.elements.map((e: any) => e.y || 0)
+      );
+      const maxFooterY = Math.max(
+        ...footerSection.elements.map((e: any) => (e.y || 0) + (e.height || 0))
+      );
+      const footerHeight = maxFooterY - minFooterY;
+      // Footer debe empezar en: pageHeight - margen inferior - altura del footer - padding
+      footerStartY = pageHeight - margins.bottom - footerHeight - 10;
+    } else {
+      // Usar altura calculada previamente para footers legacy
+      footerStartY = pageHeight - margins.bottom - heights.footerHeight;
+    }
+    
+    // Verificar si hay espacio suficiente
+    const availableSpace = footerStartY - doc.y;
+    
+    // Log para debug
+    this.logger.debug(`CheckPage: currentY=${doc.y}, footerStartY=${footerStartY}, availableSpace=${availableSpace}, requiredHeight=${requiredHeight}`);
+    
+    if (requiredHeight > availableSpace) {
+      this.logger.debug(`Adding new page - not enough space`);
+      // Renderizar footer en página actual
+      await this.renderFooterOnCurrentPage(doc, template, variables, pageHeight, prescription, doctorSignature, qrCodeDataUrl);
+      
+      // Agregar nueva página
+      let docSize: any = template?.pageSize || 'A4';
+      if (docSize === 'LETTER_HALF') {
+        docSize = [396, 612];
+      }
+      
+      doc.addPage({
+        size: docSize,
+        margins: margins,
+        layout: template?.orientation || 'portrait'
+      });
+      
+      // Renderizar header en nueva página
+      await this.renderHeaderOnCurrentPage(doc, template, variables, commerceLogo, commerceName, commerceAddress, commercePhone);
+      
+      // Posicionar cursor después del header
+      doc.y = margins.top + heights.headerHeight;
+      
+      return true; // Se agregó nueva página
+    }
+    
+    return false; // No se necesitó nueva página
+  }
+
+  /**
    * Generar PDF de receta médica
    */
   async generatePrescriptionPdf(
@@ -403,88 +788,15 @@ export class PrescriptionPdfService {
         doctorSignature,
       };
 
-      // HEADER - Usar template si existe, sino usar default
-      const headerSection = template?.header;
-      let headerEndY = margins.top;
-      // Si hay elementos del canvas, renderizarlos (independientemente de enabled)
-      if (headerSection?.elements && Array.isArray(headerSection.elements) && headerSection.elements.length > 0) {
-        // Header: Las coordenadas Y del canvas (0-842 para A4) ya son absolutas en la página
-        // NO se debe agregar ningún offset adicional
-        await this.renderCanvasElements(doc, headerSection.elements, templateVariables, 0);
-        // Calcular altura máxima del header para posicionar el content
-        const maxHeaderY = Math.max(...headerSection.elements.map((e: any) => (e.y || 0) + (e.height || 0)));
-        headerEndY = Math.max(headerEndY, maxHeaderY + 20); // Espacio después del header
-        doc.y = headerEndY;
-      } else if (headerSection?.enabled) {
-        // Modo legacy: usar flags y texto simple solo si está habilitado
-        if (headerSection.includeLogo && commerceLogo) {
-          try {
-            const logoBuffer = await this.loadImageFromUrl(commerceLogo);
-            if (logoBuffer) {
-              const logoSize = 80;
-              const logoX = (doc.page.width - logoSize) / 2;
-              doc.image(logoBuffer, logoX, doc.y, { width: logoSize, height: logoSize });
-              doc.moveDown(1.5);
-            }
-          } catch (error) {
-            this.logger.warn(`Could not load logo: ${error.message}`);
-          }
-        }
+      // Calcular alturas de las secciones para paginación
+      const heights = this.calculateSectionHeights(template);
+      const pageHeight = this.getPageHeight(pageSize);
 
-        if (headerSection.text) {
-          const text = this.replaceVariables(headerSection.text, templateVariables);
-          doc.fontSize(headerSection.fontSize || 20)
-            .font(headerSection.fontFamily || 'Helvetica-Bold')
-            .fillColor(headerSection.color || '#000000')
-            .text(text, {
-              align: headerSection.alignment || 'center',
-            });
-          doc.moveDown(0.5);
-        }
-
-        if (headerSection.includeCommerceInfo) {
-          if (commerceName) {
-            doc.fontSize(12).font('Helvetica-Bold').text(commerceName, { align: 'center' });
-          }
-          if (commerceAddress) {
-            doc.fontSize(10).font('Helvetica').text(commerceAddress, { align: 'center' });
-          }
-          if (commercePhone) {
-            doc.fontSize(10).font('Helvetica').text(`Tel: ${commercePhone}`, { align: 'center' });
-          }
-        }
-      } else {
-        // Header por defecto
-        doc.fontSize(20).font('Helvetica-Bold').text('RECETA MÉDICA', { align: 'center' });
-        doc.moveDown(0.5);
-
-        // Logo si está disponible
-        if (commerceLogo) {
-          try {
-            const logoBuffer = await this.loadImageFromUrl(commerceLogo);
-            if (logoBuffer) {
-              const logoSize = 60;
-              const logoX = (doc.page.width - logoSize) / 2;
-              doc.image(logoBuffer, logoX, doc.y, { width: logoSize, height: logoSize });
-              doc.moveDown(1);
-            }
-          } catch (error) {
-            this.logger.warn(`Could not load logo: ${error.message}`);
-          }
-        }
-
-        // Información del comercio/clínica
-        if (commerceName) {
-          doc.fontSize(12).font('Helvetica-Bold').text(commerceName, { align: 'center' });
-        }
-        if (commerceAddress) {
-          doc.fontSize(10).font('Helvetica').text(commerceAddress, { align: 'center' });
-        }
-        if (commercePhone) {
-          doc.fontSize(10).font('Helvetica').text(`Tel: ${commercePhone}`, { align: 'center' });
-        }
-      }
-      doc.moveDown(1);
+      // HEADER - Renderizar en primera página
+      await this.renderHeaderOnCurrentPage(doc, template, templateVariables, commerceLogo, commerceName, commerceAddress, commercePhone);
+      
+      // Posicionar cursor después del header
+      doc.y = margins.top + heights.headerHeight;
 
       // CONTENT - Usar template si existe, sino usar default
       const contentSection = template?.content;
@@ -515,6 +827,9 @@ export class PrescriptionPdfService {
 
       // Solo agregar contenido hardcoded si NO hay elementos del canvas en content
       if (!hasCanvasContent) {
+        // Verificar espacio para línea separadora
+        await this.checkAndAddNewPageIfNeeded(doc, 30, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
         // Línea separadora
         doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
         doc.moveDown(1);
@@ -522,8 +837,21 @@ export class PrescriptionPdfService {
       // Información del paciente - Configurable
       const patientInfo = template?.dynamicContent?.patientInfo;
       if (patientInfo?.enabled !== false) {
+        // Calcular altura real necesaria
         const labelFontSize = patientInfo?.labelFontSize || 12;
         const valueFontSize = patientInfo?.valueFontSize || 11;
+        let requiredHeight = 0;
+        
+        if (patientInfo?.showName !== false) {
+          requiredHeight += labelFontSize + valueFontSize + 5;
+        }
+        if (patientInfo?.showId !== false) {
+          requiredHeight += 15;
+        }
+        requiredHeight += 20; // Spacing
+        
+        await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
         const spacing = patientInfo?.spacing || 0.5;
 
         if (patientInfo?.showName !== false) {
@@ -539,8 +867,21 @@ export class PrescriptionPdfService {
       // Información del médico - Configurable
       const doctorInfo = template?.dynamicContent?.doctorInfo;
       if (doctorInfo?.enabled !== false) {
+        // Calcular altura real necesaria
         const labelFontSize = doctorInfo?.labelFontSize || 12;
         const valueFontSize = doctorInfo?.valueFontSize || 11;
+        let requiredHeight = 0;
+        
+        if (doctorInfo?.showName !== false) {
+          requiredHeight += labelFontSize + valueFontSize + 5;
+        }
+        if (doctorInfo?.showLicense !== false && prescription.doctorLicense) {
+          requiredHeight += 15;
+        }
+        requiredHeight += 20; // Spacing
+        
+        await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
         const spacing = doctorInfo?.spacing || 0.5;
 
         if (doctorInfo?.showName !== false) {
@@ -559,6 +900,9 @@ export class PrescriptionPdfService {
       // Fecha - Configurable
       const dateInfo = template?.dynamicContent?.dateInfo;
       if (dateInfo?.enabled !== false) {
+        // Verificar espacio para fecha (aproximadamente 60pt)
+        await this.checkAndAddNewPageIfNeeded(doc, 60, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
         const dateStr = new Date(prescription.date).toLocaleDateString(
           dateInfo?.format || 'pt-BR',
           {
@@ -573,6 +917,9 @@ export class PrescriptionPdfService {
         doc.moveDown(1);
       }
 
+      // Verificar espacio para línea separadora
+      await this.checkAndAddNewPageIfNeeded(doc, 30, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+      
       // Línea separadora
       doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
       doc.moveDown(1);
@@ -580,6 +927,9 @@ export class PrescriptionPdfService {
       // Medicamentos - Configurable
       const medicationsConfig = template?.dynamicContent?.medications;
       if (medicationsConfig?.enabled !== false && prescription.medications && prescription.medications.length > 0) {
+        // Verificar espacio para título de medicamentos (aproximadamente 50pt)
+        await this.checkAndAddNewPageIfNeeded(doc, 50, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
         const title = medicationsConfig?.title || 'MEDICAMENTOS:';
         const titleFontSize = medicationsConfig?.titleFontSize || 14;
         const titleFontFamily = medicationsConfig?.titleFontFamily || 'Helvetica-Bold';
@@ -595,7 +945,35 @@ export class PrescriptionPdfService {
           .text(title, { underline: true });
         doc.moveDown(0.5);
 
-        prescription.medications.forEach((medication: MedicationItem, index: number) => {
+        for (let index = 0; index < prescription.medications.length; index++) {
+          const medication = prescription.medications[index];
+          
+          // Calcular altura necesaria para este medicamento
+          const itemFontSize = medicationsConfig?.itemFontSize || 12;
+          let medicationHeight = itemFontSize + 15; // Nombre del medicamento + espaciado
+          
+          if (medicationsConfig?.showCommercialName !== false && medication.commercialName) {
+            medicationHeight += 18;
+          }
+          if (medicationsConfig?.showDosage !== false) {
+            medicationHeight += 18;
+          }
+          if (medicationsConfig?.showFrequency !== false) {
+            medicationHeight += 18;
+          }
+          if (medicationsConfig?.showDuration !== false) {
+            medicationHeight += 18;
+          }
+          if (medicationsConfig?.showInstructions !== false && medication.instructions) {
+            medicationHeight += this.calculateTextHeight(doc, medication.instructions, 10, { indent: 20, font: 'Helvetica-Oblique' });
+          }
+          if (medicationsConfig?.showRefills !== false && medication.refillsAllowed > 0) {
+            medicationHeight += 18;
+          }
+          medicationHeight += 25; // Spacing adicional entre medicamentos
+          
+          await this.checkAndAddNewPageIfNeeded(doc, medicationHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+          
           const medNumber = index + 1;
 
           // Nombre del medicamento
@@ -661,7 +1039,7 @@ export class PrescriptionPdfService {
           }
 
           doc.moveDown(spacing);
-        });
+        }
 
         doc.moveDown(1);
       }
@@ -669,11 +1047,22 @@ export class PrescriptionPdfService {
       // Instrucciones generales - Configurable
       const instructionsConfig = template?.dynamicContent?.instructions;
       if (instructionsConfig?.enabled !== false && prescription.instructions) {
-        const title = instructionsConfig?.title || 'INSTRUCCIONES GENERALES:';
+        // Calcular altura real necesaria para las instrucciones
         const titleFontSize = instructionsConfig?.titleFontSize || 12;
-        const titleFontFamily = instructionsConfig?.titleFontFamily || 'Helvetica-Bold';
         const contentFontSize = instructionsConfig?.contentFontSize || 10;
         const showTitle = instructionsConfig?.showTitle !== false;
+        
+        let requiredHeight = 0;
+        if (showTitle) {
+          requiredHeight += titleFontSize + 15; // Título + espacio
+        }
+        requiredHeight += this.calculateTextHeight(doc, prescription.instructions, contentFontSize, { indent: 20, font: 'Helvetica' });
+        requiredHeight += 30; // Espacios adicionales y margen de seguridad
+        
+        await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
+        const title = instructionsConfig?.title || 'INSTRUCCIONES GENERALES:';
+        const titleFontFamily = instructionsConfig?.titleFontFamily || 'Helvetica-Bold';
 
         if (showTitle) {
           doc.fontSize(titleFontSize).font(titleFontFamily).text(title, {
@@ -688,11 +1077,22 @@ export class PrescriptionPdfService {
       // Observaciones - Configurable
       const observationsConfig = template?.dynamicContent?.observations;
       if (observationsConfig?.enabled !== false && prescription.observations) {
-        const title = observationsConfig?.title || 'OBSERVACIONES:';
+        // Calcular altura real necesaria para las observaciones
         const titleFontSize = observationsConfig?.titleFontSize || 12;
-        const titleFontFamily = observationsConfig?.titleFontFamily || 'Helvetica-Bold';
         const contentFontSize = observationsConfig?.contentFontSize || 10;
         const showTitle = observationsConfig?.showTitle !== false;
+        
+        let requiredHeight = 0;
+        if (showTitle) {
+          requiredHeight += titleFontSize + 15; // Título + espacio
+        }
+        requiredHeight += this.calculateTextHeight(doc, prescription.observations, contentFontSize, { indent: 20, font: 'Helvetica' });
+        requiredHeight += 30; // Espacios adicionales y margen de seguridad
+        
+        await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
+        const title = observationsConfig?.title || 'OBSERVACIONES:';
+        const titleFontFamily = observationsConfig?.titleFontFamily || 'Helvetica-Bold';
 
         if (showTitle) {
           doc.fontSize(titleFontSize).font(titleFontFamily).text(title, { underline: true });
@@ -705,6 +1105,9 @@ export class PrescriptionPdfService {
       // Validez - Configurable
       const validityConfig = template?.dynamicContent?.validity;
       if (validityConfig?.enabled !== false) {
+        // Verificar espacio para validez (aproximadamente 40pt)
+        await this.checkAndAddNewPageIfNeeded(doc, 40, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
+        
         const validUntilStr = new Date(prescription.validUntil).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
@@ -716,129 +1119,42 @@ export class PrescriptionPdfService {
       }
       } // Cerrar bloque if (!hasCanvasContent)
 
-      // FOOTER - Usar template si existe, sino usar default
-      const footerSection = template?.footer;
-      const hasCanvasFooter = footerSection?.elements && Array.isArray(footerSection.elements) && footerSection.elements.length > 0;
-
-      // Solo agregar QR code hardcoded si NO hay elementos del canvas en footer
-      if (!hasCanvasFooter) {
-        // Verificar si necesitamos una nueva página para la firma
-        const currentY = doc.y;
-        const pageHeight = doc.page.height;
-        const marginBottom = 50;
-        const signatureHeight = 100;
-        const qrHeight = 100;
-
-        if (currentY + signatureHeight + qrHeight > pageHeight - marginBottom) {
-          doc.addPage();
-        }
-
-        // Pie de página con QR Code (posicionado en la parte inferior derecha)
-        const qrImageBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
-        const qrSize = 80;
-        const qrX = doc.page.width - 50 - qrSize;
-        const qrY = doc.page.height - marginBottom - qrSize - 20;
-
-        doc.image(qrImageBuffer, qrX, qrY, {
-          width: qrSize,
-          height: qrSize,
-        });
-
-        doc
-          .fontSize(8)
-          .font('Helvetica')
-          .text('Código QR para verificación', qrX, qrY + qrSize + 5, {
-            width: qrSize,
-            align: 'center',
-          });
-      }
-
-      // Si hay elementos del canvas, renderizarlos (independientemente de enabled)
-      if (hasCanvasFooter) {
-        // Footer: Las coordenadas Y del canvas (0-842 para A4) ya son absolutas en la página
-        // NO se debe agregar ningún offset adicional
-        await this.renderCanvasElements(doc, footerSection.elements, templateVariables, 0);
-      } else if (footerSection?.enabled) {
-        // Modo legacy: usar flags y texto simple
-        if (footerSection.includeDigitalSignature && doctorSignature) {
-          try {
-            const signatureBuffer = await this.loadImageFromUrl(doctorSignature);
-            if (signatureBuffer) {
-              const signatureSize = 60;
-              const signatureX = (doc.page.width - signatureSize) / 2;
-              doc.image(signatureBuffer, signatureX, doc.y, {
-                width: signatureSize,
-                height: signatureSize * 0.3, // Mantener proporción
-              });
-              doc.moveDown(0.3);
-            }
-          } catch (error) {
-            this.logger.warn(`Could not load digital signature: ${error.message}`);
-            // Fallback a línea de firma
-            doc.fontSize(10).font('Helvetica').text('_________________________', {
-              align: 'center',
-            });
+      // FOOTER - Renderizar en la última página (FUERA del bloque hasCanvasContent)
+      this.logger.debug(`Rendering final footer at currentY=${doc.y}`);
+      
+      // Verificar si hay espacio para el footer, si no, crear nueva página
+      const footerSectionFinal = template?.footer;
+      const hasCanvasFooterFinal = footerSectionFinal?.elements && Array.isArray(footerSectionFinal.elements) && footerSectionFinal.elements.length > 0;
+      
+      if (hasCanvasFooterFinal) {
+        const minFooterY = Math.min(...footerSectionFinal.elements.map((e: any) => e.y || 0));
+        const maxFooterY = Math.max(...footerSectionFinal.elements.map((e: any) => (e.y || 0) + (e.height || 0)));
+        const footerHeightFinal = maxFooterY - minFooterY;
+        const marginsFinal = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
+        const footerStartYFinal = pageHeight - marginsFinal.bottom - footerHeightFinal - 10;
+        
+        // Si el cursor actual está más abajo que donde debe empezar el footer, crear nueva página
+        if (doc.y > footerStartYFinal) {
+          this.logger.debug(`Current Y (${doc.y}) > footerStartY (${footerStartYFinal}), adding new page for footer`);
+          
+          let docSize: any = template?.pageSize || 'A4';
+          if (docSize === 'LETTER_HALF') {
+            docSize = [396, 612];
           }
-        } else {
-          // Línea de firma por defecto
-          doc.fontSize(10).font('Helvetica').text('_________________________', {
-            align: 'center',
+          
+          doc.addPage({
+            size: docSize,
+            margins: marginsFinal,
+            layout: template?.orientation || 'portrait'
           });
-        }
-
-        if (footerSection.includeDoctorInfo) {
-          doc.fontSize(10).font('Helvetica-Bold').text(prescription.doctorName, {
-            align: 'center',
-          });
-          if (prescription.doctorLicense) {
-            doc.fontSize(9).font('Helvetica').text(`CRM: ${prescription.doctorLicense}`, {
-              align: 'center',
-            });
-          }
-        }
-
-        if (footerSection.text) {
-          const text = this.replaceVariables(footerSection.text, templateVariables);
-          doc.fontSize(footerSection.fontSize || 8)
-            .font(footerSection.fontFamily || 'Helvetica')
-            .fillColor(footerSection.color || '#666666')
-            .text(text, {
-              align: footerSection.alignment || 'center',
-            });
-        }
-      } else {
-        // Footer por defecto
-        // Firma digital si está disponible
-        if (doctorSignature) {
-          try {
-            const signatureBuffer = await this.loadImageFromUrl(doctorSignature);
-            if (signatureBuffer) {
-              const signatureSize = 60;
-              const signatureX = (doc.page.width - signatureSize) / 2;
-              doc.image(signatureBuffer, signatureX, doc.y, {
-                width: signatureSize,
-                height: signatureSize * 0.3,
-              });
-              doc.moveDown(0.3);
-            }
-          } catch (error) {
-            this.logger.warn(`Could not load digital signature: ${error.message}`);
-            doc.fontSize(10).font('Helvetica').text('_________________________', {
-              align: 'center',
-            });
-          }
-        } else {
-          doc.fontSize(10).font('Helvetica').text('_________________________', {
-            align: 'center',
-          });
-        }
-        doc.fontSize(10).font('Helvetica-Bold').text(prescription.doctorName, { align: 'center' });
-        if (prescription.doctorLicense) {
-          doc.fontSize(9).font('Helvetica').text(`CRM: ${prescription.doctorLicense}`, {
-            align: 'center',
-          });
+          
+          // Renderizar header en nueva página
+          await this.renderHeaderOnCurrentPage(doc, template, templateVariables, commerceLogo, commerceName, commerceAddress, commercePhone);
+          doc.y = marginsFinal.top + heights.headerHeight;
         }
       }
+      
+      await this.renderFooterOnCurrentPage(doc, template, templateVariables, pageHeight, prescription, doctorSignature, qrCodeDataUrl);
 
       // Generar buffer del PDF
       const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
