@@ -19,6 +19,7 @@ import { UserModule } from '../user/user.module';
 import { WaitlistModule } from '../waitlist/waitlist.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
 import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
+import { ConsentOrchestrationModule } from '../shared/modules/consent-orchestration.module';
 
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
@@ -48,6 +49,7 @@ import { Booking } from './model/booking.entity';
     forwardRef(() => TelemedicineModule),
     AuditLogModule,
     forwardRef(() => LgpdConsentModule),
+    forwardRef(() => ConsentOrchestrationModule),
   ],
   providers: [BookingService, BookingDefaultBuilder],
   exports: [BookingService],

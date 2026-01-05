@@ -1,4 +1,4 @@
-import { Injectable, Logger, HttpException, HttpStatus, Inject, Optional } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, Inject, Optional, forwardRef } from '@nestjs/common';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { publish } from 'ett-events-lib';
@@ -6,7 +6,12 @@ import { publish } from 'ett-events-lib';
 import { LgpdConsent, ConsentType, ConsentStatus } from '../model/lgpd-consent.entity';
 import { AuditLogService } from './audit-log.service';
 import LgpdConsentCreated from '../events/LgpdConsentCreated';
+import ConsentGranted from '../events/ConsentGranted';
+import ConsentDenied from '../events/ConsentDenied';
+import ConsentRevoked from '../events/ConsentRevoked';
+import ConsentExpired from '../events/ConsentExpired';
 import { LgpdNotificationService } from './lgpd-notification.service';
+import { ConsentValidationService } from './consent-validation.service';
 
 /**
  * Serviço de gestão de consentimentos LGPD
@@ -20,7 +25,9 @@ export class LgpdConsentService {
     @InjectRepository(LgpdConsent)
     private consentRepository = getRepository(LgpdConsent),
     @Optional() @Inject(AuditLogService) private auditLogService?: AuditLogService,
-    @Optional() @Inject(LgpdNotificationService) private lgpdNotificationService?: LgpdNotificationService
+    @Optional() @Inject(LgpdNotificationService) private lgpdNotificationService?: LgpdNotificationService,
+    @Optional() @Inject(forwardRef(() => ConsentValidationService))
+    private validationService?: ConsentValidationService
   ) {}
 
   /**
@@ -52,8 +59,13 @@ export class LgpdConsentService {
         consentEntity.updatedAt = new Date();
         consentEntity.updatedBy = user;
 
-        // Se foi revogado, atualizar data de revogação
+        // Se foi revogado, validar e atualizar data de revogação
         if (consent.status === ConsentStatus.REVOKED) {
+          // Validar se pode ser revogado
+          if (this.validationService) {
+            this.validationService.validateConsentRevocation(consentEntity);
+          }
+
           consentEntity.revokedAt = new Date();
           consentEntity.revokedBy = user;
 
@@ -82,6 +94,40 @@ export class LgpdConsentService {
         });
 
         consentEntity = await this.consentRepository.update(consentEntity);
+
+        // Publicar eventos específicos según el estado
+        if (consent.status === ConsentStatus.GRANTED) {
+          const event = new ConsentGranted(new Date(), {
+            id: consentEntity.id,
+            consentId: consentEntity.id,
+            clientId: consentEntity.clientId,
+            commerceId: consentEntity.commerceId,
+            consentType: consentEntity.consentType,
+            status: consentEntity.status,
+          }, { user });
+          publish(event);
+        } else if (consent.status === ConsentStatus.DENIED) {
+          const event = new ConsentDenied(new Date(), {
+            id: consentEntity.id,
+            consentId: consentEntity.id,
+            clientId: consentEntity.clientId,
+            commerceId: consentEntity.commerceId,
+            consentType: consentEntity.consentType,
+            status: consentEntity.status,
+          }, { user });
+          publish(event);
+        } else if (consent.status === ConsentStatus.REVOKED) {
+          const event = new ConsentRevoked(new Date(), {
+            id: consentEntity.id,
+            consentId: consentEntity.id,
+            clientId: consentEntity.clientId,
+            commerceId: consentEntity.commerceId,
+            consentType: consentEntity.consentType,
+            status: consentEntity.status,
+            revokedAt: consentEntity.revokedAt,
+          }, { user });
+          publish(event);
+        }
       } else {
         // Criar novo consentimento
         consentEntity = new LgpdConsent();
@@ -104,7 +150,7 @@ export class LgpdConsentService {
 
         consentEntity = await this.consentRepository.create(consentEntity);
 
-        // Publicar evento
+        // Publicar evento genérico
         const event = new LgpdConsentCreated(new Date(), {
           consentId: consentEntity.id,
           clientId: consentEntity.clientId,
@@ -113,6 +159,29 @@ export class LgpdConsentService {
           status: consentEntity.status,
         }, { user });
         publish(event);
+
+        // Publicar evento específico según el estado
+        if (consentEntity.status === ConsentStatus.GRANTED) {
+          const grantedEvent = new ConsentGranted(new Date(), {
+            id: consentEntity.id,
+            consentId: consentEntity.id,
+            clientId: consentEntity.clientId,
+            commerceId: consentEntity.commerceId,
+            consentType: consentEntity.consentType,
+            status: consentEntity.status,
+          }, { user });
+          publish(grantedEvent);
+        } else if (consentEntity.status === ConsentStatus.DENIED) {
+          const deniedEvent = new ConsentDenied(new Date(), {
+            id: consentEntity.id,
+            consentId: consentEntity.id,
+            clientId: consentEntity.clientId,
+            commerceId: consentEntity.commerceId,
+            consentType: consentEntity.consentType,
+            status: consentEntity.status,
+          }, { user });
+          publish(deniedEvent);
+        }
 
         // Notificar al titular si el consentimiento fue otorgado
         if (this.lgpdNotificationService && consentEntity.status === ConsentStatus.GRANTED) {
@@ -168,8 +237,9 @@ export class LgpdConsentService {
         throw new HttpException('Consentimento não encontrado', HttpStatus.NOT_FOUND);
       }
 
-      if (consent.status === ConsentStatus.REVOKED) {
-        throw new HttpException('Consentimento já foi revogado', HttpStatus.BAD_REQUEST);
+      // Validar se pode ser revogado
+      if (this.validationService) {
+        this.validationService.validateConsentRevocation(consent);
       }
 
       consent.status = ConsentStatus.REVOKED;
@@ -190,6 +260,30 @@ export class LgpdConsentService {
       });
 
       const updated = await this.consentRepository.update(consent);
+
+      // Publicar evento de revocación
+      const event = new ConsentRevoked(new Date(), {
+        id: updated.id,
+        consentId: updated.id,
+        clientId: updated.clientId,
+        commerceId: updated.commerceId,
+        consentType: updated.consentType,
+        status: updated.status,
+        revokedAt: updated.revokedAt,
+        reason,
+      }, { user });
+      publish(event);
+
+      // Notificar al titular sobre revocación
+      if (this.lgpdNotificationService) {
+        await this.lgpdNotificationService.notifyConsentRevoked(
+          updated.clientId,
+          updated.commerceId,
+          updated.consentType,
+          updated.purpose || '',
+          reason || ''
+        );
+      }
 
       // Registrar auditoria
       if (this.auditLogService) {
@@ -278,7 +372,21 @@ export class LgpdConsentService {
       if (consent.expiresAt && new Date(consent.expiresAt) < new Date()) {
         // Marcar como expirado
         consent.status = ConsentStatus.EXPIRED;
-        await this.consentRepository.update(consent);
+        const updated = await this.consentRepository.update(consent);
+
+        // Publicar evento de expiración
+        const event = new ConsentExpired(new Date(), {
+          id: updated.id,
+          consentId: updated.id,
+          clientId: updated.clientId,
+          commerceId: updated.commerceId,
+          consentType: updated.consentType,
+          status: updated.status,
+          expiredAt: new Date(),
+          originalExpiresAt: consent.expiresAt,
+        }, {});
+        publish(event);
+
         return false;
       }
 

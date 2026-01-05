@@ -230,5 +230,17 @@
   {
     "name": "attention-checkout-enabled",
     "type": "PRODUCT"
+  },
+  {
+    "name": "email-consent-request",
+    "type": "EMAIL"
+  },
+  {
+    "name": "whatsapp-consent-request",
+    "type": "WHATSAPP"
+  },
+  {
+    "name": "sms-consent-request",
+    "type": "SMS"
   }
 ]

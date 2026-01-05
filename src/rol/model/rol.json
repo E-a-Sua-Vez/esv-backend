@@ -46,6 +46,7 @@
       "business.main-menu.marketing": true,
       "business.main-menu.outcome-types-admin": true,
       "business.main-menu.forms-admin": true,
+      "business.main-menu.lgpd-consent-admin": true,
       "business.main-menu.company-admin": true,
       "business.main-menu.patient-history-item-admin": true,
       "business.main-menu.medical-management": true,
@@ -358,7 +359,15 @@
       "forms.admin.unavailable": true,
       "forms.admin.edit": true,
       "forms.admin.update": true,
-      "forms.admin.limit": 5
+      "forms.admin.limit": 5,
+
+      "lgpd.admin.view": true,
+      "lgpd.admin.read": true,
+      "lgpd.admin.edit": true,
+      "lgpd.admin.update": true,
+      "lgpd.admin.add": true,
+      "lgpd.admin.delete": true,
+      "lgpd.admin.limit": 100
     }
   },
   {
@@ -408,6 +417,7 @@
       "business.main-menu.marketing": true,
       "business.main-menu.outcome-types-admin": true,
       "business.main-menu.forms-admin": true,
+      "business.main-menu.lgpd-consent-admin": true,
       "business.main-menu.company-admin": true,
       "business.main-menu.patient-history-item-admin": true,
       "business.main-menu.medical-management": true,
@@ -727,7 +737,15 @@
       "forms.admin.unavailable": true,
       "forms.admin.edit": true,
       "forms.admin.update": true,
-      "forms.admin.limit": 5
+      "forms.admin.limit": 5,
+
+      "lgpd.admin.view": true,
+      "lgpd.admin.read": true,
+      "lgpd.admin.edit": true,
+      "lgpd.admin.update": true,
+      "lgpd.admin.add": true,
+      "lgpd.admin.delete": true,
+      "lgpd.admin.limit": 100
     }
   },
   {

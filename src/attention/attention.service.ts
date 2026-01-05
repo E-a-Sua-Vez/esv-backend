@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Inject, forwardRef } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, Optional, forwardRef } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
@@ -29,6 +29,9 @@ import { QueueService } from '../queue/queue.service';
 import { ServiceService } from '../service/service.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 import { AuditLogService } from '../shared/services/audit-log.service';
+import { ConsentOrchestrationService } from '../shared/services/consent-orchestration.service';
+import { ConsentTriggersService } from '../shared/services/consent-triggers.service';
+import { ConsentRequestTiming } from '../shared/model/consent-requirement.entity';
 import TermsAccepted from '../shared/events/TermsAccepted';
 import { DateModel } from '../shared/utils/date.model';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
@@ -76,7 +79,11 @@ export class AttentionService {
     @Inject(forwardRef(() => TelemedicineService))
     private telemedicineService: TelemedicineService,
     @Inject(GcpLoggerService)
-    private readonly logger: GcpLoggerService
+    private readonly logger: GcpLoggerService,
+    @Inject(forwardRef(() => ConsentOrchestrationService))
+    private consentOrchestrationService?: ConsentOrchestrationService,
+    @Optional() @Inject(forwardRef(() => ConsentTriggersService))
+    private consentTriggersService?: ConsentTriggersService
   ) {
     this.logger.setContext('AttentionService');
   }
@@ -470,6 +477,21 @@ export class AttentionService {
       );
       clientId = clientId ? clientId : user.clientId;
       const userId = user.id;
+
+      // Trigger BEFORE_SERVICE consent request
+      if (this.consentTriggersService && clientId && queue.commerceId) {
+        try {
+          await this.consentTriggersService.triggerBeforeService(
+            queue.commerceId,
+            clientId,
+            servicesId?.[0] || 'unknown'
+          );
+        } catch (error) {
+          // Log error but don't fail attention creation
+          this.logger.warn(`Error triggering BEFORE_SERVICE consent: ${error.message}`);
+        }
+      }
+
       const onlySurvey = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(
         queue.commerceId,
         'only-survey'
@@ -635,6 +657,45 @@ export class AttentionService {
         hasBooking: !!bookingId,
         hasPayment: !!paymentConfirmationData,
       });
+
+      // Hook: Solicitar consentimientos pendientes automáticamente
+      if (
+        this.consentOrchestrationService &&
+        clientId &&
+        queue.commerceId
+      ) {
+        try {
+          // Verificar si es la primera atención del cliente
+          const existingAttentions = await this.attentionRepository
+            .whereEqualTo('commerceId', queue.commerceId)
+            .whereEqualTo('clientId', clientId)
+            .whereNotEqualTo('id', attentionCreated.id)
+            .find();
+
+          const isFirstAttention = existingAttentions.length === 0;
+          const timing = isFirstAttention
+            ? ConsentRequestTiming.FIRST_ATTENTION
+            : ConsentRequestTiming.CHECK_IN;
+
+          const requestedBy = collaboratorId || userId || 'system';
+          await this.consentOrchestrationService.requestAllPendingConsents(
+            queue.commerceId,
+            clientId,
+            timing,
+            requestedBy
+          );
+          this.logger.log(
+            `[AttentionService] Consent request sent for attention ${attentionCreated.id} (timing: ${timing})`
+          );
+        } catch (error) {
+          this.logger.error(
+            `[AttentionService] Failed to request consents for attention ${attentionCreated.id}: ${error.message}`,
+            error.stack
+          );
+          // Don't throw - consent request failure shouldn't break attention creation
+        }
+      }
+
       return attentionCreated;
     } catch (error) {
       this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
@@ -801,6 +862,20 @@ export class AttentionService {
           `Sistema de etapas no est? habilitado para este comercio`,
           HttpStatus.BAD_REQUEST
         );
+      }
+
+      // Validar consentimientos bloqueantes antes de avanzar etapa
+      if (this.consentTriggersService && attention.clientId && attention.commerceId) {
+        const blockingCheck = await this.consentTriggersService.checkBlockingConsents(
+          attention.clientId,
+          attention.commerceId
+        );
+        if (blockingCheck.blocked) {
+          throw new HttpException(
+            `No se puede avanzar etapa: faltan consentimientos obligatorios: ${blockingCheck.missingConsents.join(', ')}`,
+            HttpStatus.PRECONDITION_FAILED
+          );
+        }
       }
 
       // Initialize stage history if it doesn't exist
@@ -988,6 +1063,20 @@ export class AttentionService {
       const queue = await this.queueService.getQueueById(attention.queueId);
       try {
         if (attention.status === AttentionStatus.PENDING) {
+          // Validar consentimientos bloqueantes antes de avanzar a PROCESSING
+          if (this.consentTriggersService && attention.clientId && attention.commerceId) {
+            const blockingCheck = await this.consentTriggersService.checkBlockingConsents(
+              attention.clientId,
+              attention.commerceId
+            );
+            if (blockingCheck.blocked) {
+              throw new HttpException(
+                `No se puede atender la atención: faltan consentimientos obligatorios: ${blockingCheck.missingConsents.join(', ')}`,
+                HttpStatus.PRECONDITION_FAILED
+              );
+            }
+          }
+
           const collaborator = await this.collaboratorService.getCollaboratorById(collaboratorId);
           attention.collaboratorId = collaborator.id;
           attention.moduleId = collaborator.moduleId;
@@ -1160,6 +1249,20 @@ export class AttentionService {
       }
       this.postAttentionEmail(attentionDetails, attentionCommerce);
       const attentionFinished = await this.update(user, attention);
+
+      // Trigger AFTER_ATTENTION consent request
+      if (this.consentTriggersService && attentionFinished.clientId && attentionFinished.commerceId) {
+        try {
+          await this.consentTriggersService.triggerAfterAttention(
+            attentionFinished.commerceId,
+            attentionFinished.clientId,
+            attentionFinished.id
+          );
+        } catch (error) {
+          // Log error but don't fail attention finish
+          this.logger.warn(`Error triggering AFTER_ATTENTION consent: ${error.message}`);
+        }
+      }
 
       // Consume package session if this attention is part of a package
       if (attentionFinished.packageId) {

@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   Inject,
+  Optional,
   forwardRef,
   OnModuleInit,
   OnModuleDestroy,
@@ -20,6 +21,7 @@ import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
+import { ClientPortalService } from '../client-portal/client-portal.service';
 
 import { CreateTelemedicineSessionDto } from './dto/create-telemedicine-session.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -69,7 +71,10 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
     @Inject(forwardRef(() => CommerceService))
     private commerceService: CommerceService,
     @Inject(forwardRef(() => NotificationService))
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    @Inject(forwardRef(() => ClientPortalService))
+    @Optional()
+    private clientPortalService?: ClientPortalService
   ) {
     // Initialize AWS S3
     AWS.config.update({
@@ -692,6 +697,72 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
       commerceId: updated.commerceId,
     });
     publish(event);
+
+    // Retornar sesión sin accessKey por seguridad
+    return this.excludeAccessKey(updated);
+  }
+
+  /**
+   * Validar sesión usando token del portal del cliente
+   * Permite acceso automático si el cliente tiene sesión del portal activa
+   */
+  async validateWithPortalSession(
+    sessionId: string,
+    portalToken: string
+  ): Promise<TelemedicineSession> {
+    if (!this.clientPortalService) {
+      throw new HttpException(
+        'Portal session validation not available',
+        HttpStatus.SERVICE_UNAVAILABLE
+      );
+    }
+
+    const session = await this.getSessionByIdInternal(sessionId);
+
+    // Verificar que la sesión existe y está activa
+    if (!session || !session.active) {
+      throw new HttpException('Session not found or inactive', HttpStatus.NOT_FOUND);
+    }
+
+    // Verificar que la sesión no esté completada o cancelada
+    if (session.status === 'completed' || session.status === 'cancelled') {
+      throw new HttpException('Session is no longer available', HttpStatus.BAD_REQUEST);
+    }
+
+    // Validar token del portal
+    const portalSession = await this.clientPortalService.validateSession(portalToken);
+    if (!portalSession.valid || portalSession.expired) {
+      throw new HttpException('Invalid or expired portal session', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Verificar que el cliente de la sesión del portal coincide con el de telemedicina
+    if (
+      portalSession.client?.id !== session.clientId ||
+      portalSession.commerce?.id !== session.commerceId
+    ) {
+      throw new HttpException(
+        'Portal session client does not match telemedicine session client',
+        HttpStatus.FORBIDDEN
+      );
+    }
+
+    // Marcar como validada (similar a validateAccessKey pero sin código)
+    session.accessKeyValidated = true;
+    session.accessKeyValidatedAt = new Date();
+    session.updatedAt = new Date();
+
+    const updated = await this.sessionRepository.update(session);
+
+    // Publish event
+    const event = new TelemedicineAccessKeyValidated(new Date(), updated, {
+      commerceId: updated.commerceId,
+      validatedVia: 'portal-session',
+    });
+    publish(event);
+
+    this.logger.log(
+      `Telemedicine session ${sessionId} validated via portal session for client ${session.clientId}`
+    );
 
     // Retornar sesión sin accessKey por seguridad
     return this.excludeAccessKey(updated);

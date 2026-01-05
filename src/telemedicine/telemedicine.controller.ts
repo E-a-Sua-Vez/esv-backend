@@ -252,6 +252,26 @@ export class TelemedicineController {
     return this.telemedicineService.getSessionByIdPublic(id);
   }
 
+  @Post('sessions/:id/validate-portal-session')
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute per IP
+  @UseGuards(ThrottlerGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Validate session using portal session token (public)',
+    description:
+      'Validates telemedicine session access using an active client portal session token. Allows automatic access without access key.',
+  })
+  @ApiResponse({ status: 200, description: 'Session validated', type: TelemedicineSession })
+  @ApiResponse({ status: 401, description: 'Invalid portal session' })
+  @ApiResponse({ status: 403, description: 'Client mismatch' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async validateWithPortalSession(
+    @Param('id') id: string,
+    @Body() body: { portalToken: string }
+  ): Promise<TelemedicineSession> {
+    return this.telemedicineService.validateWithPortalSession(id, body.portalToken);
+  }
+
   // Internal endpoint for scheduler
   @Post('sessions/send-access-keys')
   @UseGuards(AuthGuard)

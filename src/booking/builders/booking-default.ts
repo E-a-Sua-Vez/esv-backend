@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { Commerce } from 'src/commerce/model/commerce.entity';
@@ -21,6 +21,7 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     @InjectRepository(Booking)
     private bookingRepository = getRepository(Booking),
     private serviceService: ServiceService,
+    @Inject(forwardRef(() => PackageService))
     private packageService: PackageService
   ) {}
 

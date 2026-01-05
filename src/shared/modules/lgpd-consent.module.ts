@@ -12,6 +12,7 @@ import { PatientHistory } from '../../patient-history/model/patient-history.enti
 import { LgpdConsentService } from '../services/lgpd-consent.service';
 import { LgpdDataPortabilityService } from '../services/lgpd-data-portability.service';
 import { LgpdIncidentService } from '../services/lgpd-incident.service';
+import { ConsentValidationService } from '../services/consent-validation.service';
 import { LgpdConsentController } from '../controllers/lgpd-consent.controller';
 import { LgpdDataPortabilityController } from '../controllers/lgpd-data-portability.controller';
 import { LgpdIncidentController } from '../controllers/lgpd-incident.controller';
@@ -38,12 +39,23 @@ import { LgpdNotificationService } from '../services/lgpd-notification.service';
     forwardRef(() => ClientModule),
     forwardRef(() => CommerceModule),
   ],
-  providers: [LgpdConsentService, LgpdDataPortabilityService, LgpdIncidentService, LgpdNotificationService],
+  providers: [
+    LgpdConsentService,
+    LgpdDataPortabilityService,
+    LgpdIncidentService,
+    LgpdNotificationService,
+    ConsentValidationService,
+  ],
   controllers: [
     LgpdConsentController,
     LgpdDataPortabilityController,
     LgpdIncidentController,
   ],
-  exports: [LgpdConsentService, LgpdDataPortabilityService, LgpdIncidentService],
+  exports: [
+    LgpdConsentService,
+    LgpdDataPortabilityService,
+    LgpdIncidentService,
+    ConsentValidationService,
+  ],
 })
 export class LgpdConsentModule {}

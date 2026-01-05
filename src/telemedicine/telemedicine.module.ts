@@ -3,6 +3,7 @@ import { FireormModule } from 'nestjs-fireorm';
 
 import { AttentionModule } from '../attention/attention.module';
 import { ClientModule } from '../client/client.module';
+import { ClientPortalModule } from '../client-portal/client-portal.module';
 import { CommerceModule } from '../commerce/commerce.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PatientHistoryModule } from '../patient-history/patient-history.module';
@@ -21,6 +22,7 @@ import { TelemedicineService } from './telemedicine.service';
     forwardRef(() => AttentionModule),
     forwardRef(() => PatientHistoryModule),
     forwardRef(() => ClientModule),
+    forwardRef(() => ClientPortalModule),
     forwardRef(() => CommerceModule),
     forwardRef(() => NotificationModule),
   ],

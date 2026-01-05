@@ -60,6 +60,7 @@ import { AuditLogModule } from './shared/modules/audit-log.module';
 import { DigitalSignatureModule } from './shared/modules/digital-signature.module';
 import { CrmValidationModule } from './shared/modules/crm-validation.module';
 import { LgpdConsentModule } from './shared/modules/lgpd-consent.module';
+import { ConsentOrchestrationModule } from './shared/modules/consent-orchestration.module';
 import { DataRetentionModule } from './shared/modules/data-retention.module';
 import { PdfTemplateModule } from './shared/modules/pdf-template.module';
 import { AuditInterceptor } from './shared/interceptors/audit.interceptor';
@@ -69,6 +70,7 @@ import { SurveyPersonalizedModule } from './survey-personalized/survey-personali
 import { TelemedicineModule } from './telemedicine/telemedicine.module';
 import { UserModule } from './user/user.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
+import { ClientPortalModule } from './client-portal/client-portal.module';
 
 @Module({
   imports: [
@@ -136,8 +138,10 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     DigitalSignatureModule,
     CrmValidationModule,
     LgpdConsentModule,
+    ConsentOrchestrationModule,
     DataRetentionModule,
     PdfTemplateModule,
+    ClientPortalModule,
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,

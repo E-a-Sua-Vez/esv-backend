@@ -18,3 +18,9 @@ export default class LgpdIncidentReported extends DomainEvent {
 
 
 
+
+
+
+
+
+

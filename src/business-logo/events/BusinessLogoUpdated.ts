@@ -17,3 +17,9 @@ export default class BusinessLogoUpdated extends DomainEvent {
 
 
 
+
+
+
+
+
+

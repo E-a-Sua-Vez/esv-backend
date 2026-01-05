@@ -64,7 +64,7 @@ export class LgpdConsent {
   // Histórico de alterações
   history?: Array<{
     timestamp: Date;
-    action: 'GRANTED' | 'DENIED' | 'REVOKED' | 'UPDATED';
+    action: 'GRANTED' | 'DENIED' | 'REVOKED' | 'UPDATED' | 'EXPIRED';
     performedBy: string;
     reason?: string;
     ipAddress?: string;

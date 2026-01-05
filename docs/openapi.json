@@ -4778,6 +4778,2216 @@
         ]
       }
     },
+    "/consent-orchestration/requests/validate-token/{token}": {
+      "get": {
+        "description": "Valida un token de solicitud de consentimiento. Endpoint público para el formulario web. Rate limited: 20 requests per minute per IP.",
+        "operationId": "ConsentOrchestrationController_validateToken",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Token de la solicitud",
+            "schema": {
+              "example": "abc123def456",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "expired": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "request": {
+                      "type": "object"
+                    },
+                    "commerce": {
+                      "type": "object"
+                    },
+                    "client": {
+                      "type": "object"
+                    },
+                    "requirements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - Rate limit exceeded"
+          }
+        },
+        "summary": "Validar token de consentimiento (Público)",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requests/process-response/{token}": {
+      "post": {
+        "description": "Procesa las respuestas del cliente desde el formulario web. Endpoint público. Rate limited: 10 requests per minute per IP.",
+        "operationId": "ConsentOrchestrationController_processResponse",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Token de la solicitud",
+            "schema": {
+              "example": "abc123def456",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "responses": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "consentType": {
+                          "type": "string",
+                          "enum": [
+                            "DATA_PROCESSING",
+                            "DATA_SHARING",
+                            "MARKETING",
+                            "RESEARCH",
+                            "THIRD_PARTY",
+                            "DATA_EXPORT",
+                            "TELEMEDICINE",
+                            "BIOMETRIC",
+                            "TERMS_ACCEPTANCE"
+                          ],
+                          "example": "DATA_PROCESSING"
+                        },
+                        "granted": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "notes": {
+                          "type": "string",
+                          "example": "Cliente acepta el procesamiento de datos"
+                        }
+                      },
+                      "required": [
+                        "consentType",
+                        "granted"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "responses"
+                ],
+                "example": {
+                  "responses": [
+                    {
+                      "consentType": "DATA_PROCESSING",
+                      "granted": true
+                    },
+                    {
+                      "consentType": "MARKETING",
+                      "granted": false,
+                      "notes": "Cliente no desea recibir marketing"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta procesada con éxito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Token inválido o respuestas mal formadas"
+          },
+          "429": {
+            "description": "Too Many Requests - Rate limit exceeded"
+          }
+        },
+        "summary": "Procesar respuesta de consentimiento (Público)",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requirements/{commerceId}": {
+      "get": {
+        "description": "Retorna todos los requisitos de consentimiento activos para un comercio",
+        "operationId": "ConsentOrchestrationController_getRequirements",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del comercio",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de requisitos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentRequirement"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener requisitos de consentimiento de un comercio",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requirements": {
+      "post": {
+        "description": "Crea un nuevo requisito de consentimiento para un comercio",
+        "operationId": "ConsentOrchestrationController_createRequirement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequirement"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Requisito creado con éxito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRequirement"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Crear requisito de consentimiento",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requirements/{id}": {
+      "patch": {
+        "description": "Actualiza un requisito de consentimiento existente",
+        "operationId": "ConsentOrchestrationController_updateRequirement",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del requisito",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requisito actualizado con éxito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRequirement"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualizar requisito de consentimiento",
+        "tags": [
+          "consent-orchestration"
+        ]
+      },
+      "delete": {
+        "description": "Elimina (desactiva) un requisito de consentimiento",
+        "operationId": "ConsentOrchestrationController_deleteRequirement",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del requisito",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Requisito eliminado con éxito"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Eliminar requisito de consentimiento",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/missing/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna los consentimientos que faltan para un cliente",
+        "operationId": "ConsentOrchestrationController_getMissingConsents",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del comercio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID del cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de consentimientos faltantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentRequirement"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener consentimientos faltantes",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requests/request-all": {
+      "post": {
+        "description": "Crea una solicitud para todos los consentimientos pendientes de un cliente",
+        "operationId": "ConsentOrchestrationController_requestAllPending",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commerceId": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "timing": {
+                    "type": "string",
+                    "enum": [
+                      "BOOKING",
+                      "PRE_ATTENTION",
+                      "CHECK_IN",
+                      "FIRST_ATTENTION",
+                      "ON_REGISTRATION",
+                      "ON_LOGIN",
+                      "PERIODIC_RENEWAL",
+                      "BEFORE_SERVICE",
+                      "AFTER_ATTENTION"
+                    ]
+                  }
+                },
+                "required": [
+                  "commerceId",
+                  "clientId",
+                  "timing"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Solicitud creada con éxito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRequest"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Solicitar todos los consentimientos pendientes",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requests/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna todas las solicitudes de consentimiento para un cliente",
+        "operationId": "ConsentOrchestrationController_getRequests",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del comercio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID del cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentRequest"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener solicitudes de consentimiento de un cliente",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/status/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna el estado completo de consentimientos para un cliente",
+        "operationId": "ConsentOrchestrationController_getConsentStatus",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del comercio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID del cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado consolidado de consentimientos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clientId": {
+                      "type": "string"
+                    },
+                    "commerceId": {
+                      "type": "string"
+                    },
+                    "consents": {
+                      "type": "array"
+                    },
+                    "requirements": {
+                      "type": "array"
+                    },
+                    "missing": {
+                      "type": "array"
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "granted": {
+                          "type": "number"
+                        },
+                        "pending": {
+                          "type": "number"
+                        },
+                        "denied": {
+                          "type": "number"
+                        },
+                        "expired": {
+                          "type": "number"
+                        },
+                        "revoked": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener estado consolidado de consentimientos",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requests/{requestId}/qrcode": {
+      "get": {
+        "description": "Retorna el QR Code (base64) de una solicitud de consentimiento. Si no existe, lo genera.",
+        "operationId": "ConsentOrchestrationController_getRequestQRCode",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "description": "ID de la solicitud",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "QR Code generado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "qrCodeUrl": {
+                      "type": "string",
+                      "description": "Data URL completo (data:image/png;base64,...)"
+                    },
+                    "qrCodeBase64": {
+                      "type": "string",
+                      "description": "Base64 sin prefijo"
+                    },
+                    "link": {
+                      "type": "string",
+                      "description": "Link codificado no QR Code"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener QR Code de una solicitud de consentimiento",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/compliance-metrics/{commerceId}": {
+      "get": {
+        "description": "Retorna métricas agregadas de compliance para un comercio",
+        "operationId": "ConsentOrchestrationController_getComplianceMetrics",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del comercio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Fecha de inicio (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Fecha de fin (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas de compliance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalClients": {
+                      "type": "number"
+                    },
+                    "clientsWithAllConsents": {
+                      "type": "number"
+                    },
+                    "clientsWithPendingConsents": {
+                      "type": "number"
+                    },
+                    "clientsWithExpiredConsents": {
+                      "type": "number"
+                    },
+                    "totalConsents": {
+                      "type": "number"
+                    },
+                    "grantedConsents": {
+                      "type": "number"
+                    },
+                    "pendingConsents": {
+                      "type": "number"
+                    },
+                    "deniedConsents": {
+                      "type": "number"
+                    },
+                    "expiredConsents": {
+                      "type": "number"
+                    },
+                    "revokedConsents": {
+                      "type": "number"
+                    },
+                    "complianceScore": {
+                      "type": "number"
+                    },
+                    "blockingConsents": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener métricas agregadas de compliance LGPD",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/notification-metrics/{commerceId}": {
+      "get": {
+        "description": "Retorna métricas agregadas de notificaciones enviadas para solicitudes de consentimiento",
+        "operationId": "ConsentOrchestrationController_getNotificationMetrics",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del comercio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Fecha de inicio (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Fecha de fin (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas de notificaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalSent": {
+                      "type": "number"
+                    },
+                    "byChannel": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": "number"
+                        },
+                        "whatsapp": {
+                          "type": "number"
+                        },
+                        "sms": {
+                          "type": "number"
+                        },
+                        "push": {
+                          "type": "number"
+                        },
+                        "inApp": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "byStatus": {
+                      "type": "object",
+                      "properties": {
+                        "sent": {
+                          "type": "number"
+                        },
+                        "delivered": {
+                          "type": "number"
+                        },
+                        "failed": {
+                          "type": "number"
+                        },
+                        "pending": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "successRate": {
+                      "type": "number"
+                    },
+                    "dailyBreakdown": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener métricas de notificaciones de consentimiento LGPD",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requirements/{requirementId}/versions": {
+      "get": {
+        "description": "Retorna todas as versões de um requisito de consentimento",
+        "operationId": "ConsentOrchestrationController_getRequirementVersions",
+        "parameters": [
+          {
+            "name": "requirementId",
+            "required": true,
+            "in": "path",
+            "description": "ID do requisito",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de versões",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "requirementId": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "number"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "CREATE",
+                          "UPDATE",
+                          "DELETE"
+                        ]
+                      },
+                      "changedBy": {
+                        "type": "string"
+                      },
+                      "changedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "changedFields": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "changeDescription": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter histórico de versões de um requisito",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/consent-orchestration/requirements/{requirementId}/versions/{version}": {
+      "get": {
+        "description": "Retorna o snapshot completo de uma versão específica",
+        "operationId": "ConsentOrchestrationController_getRequirementVersion",
+        "parameters": [
+          {
+            "name": "requirementId",
+            "required": true,
+            "in": "path",
+            "description": "ID do requisito",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "description": "Número da versão",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versão do requisito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "requirementId": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "number"
+                    },
+                    "snapshot": {
+                      "type": "object"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "changedBy": {
+                      "type": "string"
+                    },
+                    "changedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "changedFields": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter uma versão específica de um requisito",
+        "tags": [
+          "consent-orchestration"
+        ]
+      }
+    },
+    "/lgpd-consent": {
+      "post": {
+        "description": "Cria um novo consentimento ou atualiza um existente",
+        "operationId": "LgpdConsentController_createOrUpdateConsent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "commerceId": {
+                    "type": "string"
+                  },
+                  "consentType": {
+                    "type": "string",
+                    "enum": [
+                      "DATA_PROCESSING",
+                      "DATA_SHARING",
+                      "MARKETING",
+                      "RESEARCH",
+                      "THIRD_PARTY",
+                      "DATA_EXPORT",
+                      "TELEMEDICINE",
+                      "BIOMETRIC",
+                      "TERMS_ACCEPTANCE"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "GRANTED",
+                      "DENIED",
+                      "REVOKED",
+                      "EXPIRED",
+                      "PENDING"
+                    ]
+                  },
+                  "purpose": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "legalBasis": {
+                    "type": "string"
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "consentMethod": {
+                    "type": "string",
+                    "enum": [
+                      "WEB",
+                      "MOBILE",
+                      "PRESENTIAL",
+                      "EMAIL",
+                      "PHONE",
+                      "OTHER"
+                    ]
+                  },
+                  "ipAddress": {
+                    "type": "string"
+                  },
+                  "userAgent": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "clientId",
+                  "commerceId",
+                  "consentType",
+                  "purpose"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Consentimento criado/atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdConsent"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Criar ou atualizar consentimento LGPD",
+        "tags": [
+          "lgpd-consent"
+        ]
+      },
+      "get": {
+        "description": "Retorna todos os consentimentos com filtros opcionais",
+        "operationId": "LgpdConsentController_getAllConsents",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "consentType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DATA_PROCESSING",
+                "DATA_SHARING",
+                "MARKETING",
+                "RESEARCH",
+                "THIRD_PARTY",
+                "DATA_EXPORT",
+                "TELEMEDICINE",
+                "BIOMETRIC",
+                "TERMS_ACCEPTANCE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "GRANTED",
+                "DENIED",
+                "REVOKED",
+                "EXPIRED",
+                "PENDING"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de consentimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LgpdConsent"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter todos os consentimentos",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/{id}/revoke": {
+      "patch": {
+        "description": "Revoga um consentimento ativo",
+        "operationId": "LgpdConsentController_revokeConsent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do consentimento",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consentimento revogado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdConsent"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Revogar consentimento LGPD",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/client/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna todos os consentimentos de um cliente específico",
+        "operationId": "LgpdConsentController_getConsentsByClient",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "description": "Apenas consentimentos ativos",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de consentimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LgpdConsent"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter consentimentos de um cliente",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/check/{commerceId}/{clientId}/{consentType}": {
+      "get": {
+        "description": "Verifica se um cliente tem consentimento ativo para um tipo específico",
+        "operationId": "LgpdConsentController_checkActiveConsent",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "consentType",
+            "required": true,
+            "in": "path",
+            "description": "Tipo de consentimento",
+            "schema": {
+              "enum": [
+                "DATA_PROCESSING",
+                "DATA_SHARING",
+                "MARKETING",
+                "RESEARCH",
+                "THIRD_PARTY",
+                "DATA_EXPORT",
+                "TELEMEDICINE",
+                "BIOMETRIC",
+                "TERMS_ACCEPTANCE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status do consentimento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasConsent": {
+                      "type": "boolean"
+                    },
+                    "consent": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Verificar se cliente tem consentimento ativo",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-consent/{id}": {
+      "get": {
+        "description": "Retorna um consentimento específico",
+        "operationId": "LgpdConsentController_getConsentById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do consentimento",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consentimento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdConsent"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter consentimento por ID",
+        "tags": [
+          "lgpd-consent"
+        ]
+      }
+    },
+    "/lgpd-data-portability/{commerceId}/{clientId}/generate": {
+      "post": {
+        "description": "Gera um arquivo com todos os dados do paciente em formato estruturado (LGPD)",
+        "operationId": "LgpdDataPortabilityController_generateDataPortabilityFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arquivo de portabilidade gerado com sucesso"
+          },
+          "403": {
+            "description": "Cliente não possui consentimento para exportação de dados"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Gerar arquivo de portabilidade de dados",
+        "tags": [
+          "lgpd-data-portability"
+        ]
+      }
+    },
+    "/lgpd-data-portability/{commerceId}/{clientId}/download": {
+      "get": {
+        "description": "Faz download do arquivo de portabilidade de dados",
+        "operationId": "LgpdDataPortabilityController_downloadDataPortabilityFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arquivo de portabilidade"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Download do arquivo de portabilidade",
+        "tags": [
+          "lgpd-data-portability"
+        ]
+      }
+    },
+    "/lgpd-incident": {
+      "post": {
+        "description": "Cria um novo registro de incidente de segurança de dados",
+        "operationId": "LgpdIncidentController_createIncident",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LgpdIncident"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Incidente criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Criar novo incidente LGPD",
+        "tags": [
+          "lgpd-incident"
+        ]
+      },
+      "get": {
+        "description": "Retorna lista de incidentes com filtros opcionais",
+        "operationId": "LgpdIncidentController_listIncidents",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "REPORTED",
+                "UNDER_INVESTIGATION",
+                "CONTAINED",
+                "RESOLVED",
+                "CLOSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "severity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "incidentType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DATA_BREACH",
+                "UNAUTHORIZED_ACCESS",
+                "DATA_LOSS",
+                "DATA_ALTERATION",
+                "DATA_DISCLOSURE",
+                "SYSTEM_FAILURE",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportedBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de incidentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LgpdIncident"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Listar incidentes",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}": {
+      "patch": {
+        "description": "Atualiza um incidente existente",
+        "operationId": "LgpdIncidentController_updateIncident",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LgpdIncident"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Incidente atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Atualizar incidente",
+        "tags": [
+          "lgpd-incident"
+        ]
+      },
+      "get": {
+        "description": "Retorna um incidente específico",
+        "operationId": "LgpdIncidentController_getIncidentById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incidente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter incidente por ID",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/actions": {
+      "post": {
+        "description": "Registra uma ação tomada em relação ao incidente",
+        "operationId": "LgpdIncidentController_addAction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action",
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ação adicionada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Adicionar ação ao incidente",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/preventive-measures": {
+      "post": {
+        "description": "Registra uma medida preventiva implementada",
+        "operationId": "LgpdIncidentController_addPreventiveMeasure",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "measure": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "measure",
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Medida preventiva adicionada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Adicionar medida preventiva",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/notify-anpd": {
+      "post": {
+        "description": "Registra que o incidente foi notificado à Autoridade Nacional de Proteção de Dados",
+        "operationId": "LgpdIncidentController_markAsNotifiedToAnpd",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reference": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notificação registrada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Marcar como notificado à ANPD",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/lgpd-incident/{id}/notify-data-subjects": {
+      "post": {
+        "description": "Registra que os titulares dos dados foram notificados sobre o incidente",
+        "operationId": "LgpdIncidentController_markAsNotifiedToDataSubjects",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do incidente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "EMAIL",
+                      "PHONE",
+                      "POSTAL",
+                      "PUBLIC_NOTICE",
+                      "OTHER"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notificação registrada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LgpdIncident"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Marcar como notificado aos titulares",
+        "tags": [
+          "lgpd-incident"
+        ]
+      }
+    },
+    "/audit-log/entity/{entityType}/{entityId}": {
+      "get": {
+        "description": "Retorna logs de auditoria para uma entidade específica",
+        "operationId": "AuditLogController_getLogsByEntity",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "path",
+            "description": "Tipo da entidade",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "description": "ID da entidade",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limite de resultados",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter logs de auditoria por entidade",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/audit-log/user/{userId}": {
+      "get": {
+        "description": "Retorna logs de auditoria para um usuário específico",
+        "operationId": "AuditLogController_getLogsByUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "ID do usuário",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter logs de auditoria por usuário",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/audit-log/action/{action}": {
+      "get": {
+        "description": "Retorna logs de auditoria para uma ação específica",
+        "operationId": "AuditLogController_getLogsByAction",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "path",
+            "description": "Tipo de ação",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLog"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obter logs de auditoria por ação",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
+    "/audit-log/report": {
+      "get": {
+        "description": "Gera relatório completo de auditoria com filtros",
+        "operationId": "AuditLogController_generateAuditReport",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório de auditoria"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Gerar relatório de auditoria",
+        "tags": [
+          "audit-log"
+        ]
+      }
+    },
     "/module/{id}": {
       "get": {
         "description": "Retrieves a module by its unique identifier",
@@ -7772,6 +9982,47 @@
         ]
       }
     },
+    "/telemedicine/sessions/{id}/validate-portal-session": {
+      "post": {
+        "description": "Validates telemedicine session access using an active client portal session token. Allows automatic access without access key.",
+        "operationId": "TelemedicineController_validateWithPortalSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session validated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemedicineSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid portal session"
+          },
+          "403": {
+            "description": "Client mismatch"
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        },
+        "summary": "Validate session using portal session token (public)",
+        "tags": [
+          "Telemedicine"
+        ]
+      }
+    },
     "/telemedicine/sessions/send-access-keys": {
       "post": {
         "operationId": "TelemedicineController_sendAccessKeysForUpcomingSessions",
@@ -8539,1239 +10790,6 @@
         ]
       }
     },
-    "/audit-log/entity/{entityType}/{entityId}": {
-      "get": {
-        "description": "Retorna logs de auditoria para uma entidade específica",
-        "operationId": "AuditLogController_getLogsByEntity",
-        "parameters": [
-          {
-            "name": "entityType",
-            "required": true,
-            "in": "path",
-            "description": "Tipo da entidade",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "entityId",
-            "required": true,
-            "in": "path",
-            "description": "ID da entidade",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Limite de resultados",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Logs de auditoria",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuditLog"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter logs de auditoria por entidade",
-        "tags": [
-          "audit-log"
-        ]
-      }
-    },
-    "/audit-log/user/{userId}": {
-      "get": {
-        "description": "Retorna logs de auditoria para um usuário específico",
-        "operationId": "AuditLogController_getLogsByUser",
-        "parameters": [
-          {
-            "name": "userId",
-            "required": true,
-            "in": "path",
-            "description": "ID do usuário",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Logs de auditoria",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuditLog"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter logs de auditoria por usuário",
-        "tags": [
-          "audit-log"
-        ]
-      }
-    },
-    "/audit-log/action/{action}": {
-      "get": {
-        "description": "Retorna logs de auditoria para uma ação específica",
-        "operationId": "AuditLogController_getLogsByAction",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "action",
-            "required": true,
-            "in": "path",
-            "description": "Tipo de ação",
-            "schema": {}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Logs de auditoria",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuditLog"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter logs de auditoria por ação",
-        "tags": [
-          "audit-log"
-        ]
-      }
-    },
-    "/audit-log/report": {
-      "get": {
-        "description": "Gera relatório completo de auditoria com filtros",
-        "operationId": "AuditLogController_generateAuditReport",
-        "parameters": [
-          {
-            "name": "businessId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "commerceId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "userId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "entityType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "entityId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "startDate",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "action",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Relatório de auditoria"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Gerar relatório de auditoria",
-        "tags": [
-          "audit-log"
-        ]
-      }
-    },
-    "/lgpd-consent": {
-      "post": {
-        "description": "Cria um novo consentimento ou atualiza um existente",
-        "operationId": "LgpdConsentController_createOrUpdateConsent",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "clientId": {
-                    "type": "string"
-                  },
-                  "commerceId": {
-                    "type": "string"
-                  },
-                  "consentType": {
-                    "type": "string",
-                    "enum": [
-                      "DATA_PROCESSING",
-                      "DATA_SHARING",
-                      "MARKETING",
-                      "RESEARCH",
-                      "THIRD_PARTY",
-                      "DATA_EXPORT",
-                      "TELEMEDICINE",
-                      "BIOMETRIC",
-                      "TERMS_ACCEPTANCE"
-                    ]
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "GRANTED",
-                      "DENIED",
-                      "REVOKED",
-                      "EXPIRED",
-                      "PENDING"
-                    ]
-                  },
-                  "purpose": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "legalBasis": {
-                    "type": "string"
-                  },
-                  "expiresAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "consentMethod": {
-                    "type": "string",
-                    "enum": [
-                      "WEB",
-                      "MOBILE",
-                      "PRESENTIAL",
-                      "EMAIL",
-                      "PHONE",
-                      "OTHER"
-                    ]
-                  },
-                  "ipAddress": {
-                    "type": "string"
-                  },
-                  "userAgent": {
-                    "type": "string"
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "clientId",
-                  "commerceId",
-                  "consentType",
-                  "purpose"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Consentimento criado/atualizado com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdConsent"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Criar ou atualizar consentimento LGPD",
-        "tags": [
-          "lgpd-consent"
-        ]
-      },
-      "get": {
-        "description": "Retorna todos os consentimentos com filtros opcionais",
-        "operationId": "LgpdConsentController_getAllConsents",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "clientId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "consentType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "DATA_PROCESSING",
-                "DATA_SHARING",
-                "MARKETING",
-                "RESEARCH",
-                "THIRD_PARTY",
-                "DATA_EXPORT",
-                "TELEMEDICINE",
-                "BIOMETRIC",
-                "TERMS_ACCEPTANCE"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "GRANTED",
-                "DENIED",
-                "REVOKED",
-                "EXPIRED",
-                "PENDING"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "startDate",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de consentimentos",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LgpdConsent"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter todos os consentimentos",
-        "tags": [
-          "lgpd-consent"
-        ]
-      }
-    },
-    "/lgpd-consent/{id}/revoke": {
-      "patch": {
-        "description": "Revoga um consentimento ativo",
-        "operationId": "LgpdConsentController_revokeConsent",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do consentimento",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "reason": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Consentimento revogado com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdConsent"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Revogar consentimento LGPD",
-        "tags": [
-          "lgpd-consent"
-        ]
-      }
-    },
-    "/lgpd-consent/client/{commerceId}/{clientId}": {
-      "get": {
-        "description": "Retorna todos os consentimentos de um cliente específico",
-        "operationId": "LgpdConsentController_getConsentsByClient",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "ID do comércio",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "activeOnly",
-            "required": false,
-            "in": "query",
-            "description": "Apenas consentimentos ativos",
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de consentimentos",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LgpdConsent"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter consentimentos de um cliente",
-        "tags": [
-          "lgpd-consent"
-        ]
-      }
-    },
-    "/lgpd-consent/check/{commerceId}/{clientId}/{consentType}": {
-      "get": {
-        "description": "Verifica se um cliente tem consentimento ativo para um tipo específico",
-        "operationId": "LgpdConsentController_checkActiveConsent",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "ID do comércio",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "consentType",
-            "required": true,
-            "in": "path",
-            "description": "Tipo de consentimento",
-            "schema": {
-              "enum": [
-                "DATA_PROCESSING",
-                "DATA_SHARING",
-                "MARKETING",
-                "RESEARCH",
-                "THIRD_PARTY",
-                "DATA_EXPORT",
-                "TELEMEDICINE",
-                "BIOMETRIC",
-                "TERMS_ACCEPTANCE"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Status do consentimento",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "hasConsent": {
-                      "type": "boolean"
-                    },
-                    "consent": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Verificar se cliente tem consentimento ativo",
-        "tags": [
-          "lgpd-consent"
-        ]
-      }
-    },
-    "/lgpd-consent/{id}": {
-      "get": {
-        "description": "Retorna um consentimento específico",
-        "operationId": "LgpdConsentController_getConsentById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do consentimento",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Consentimento",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdConsent"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter consentimento por ID",
-        "tags": [
-          "lgpd-consent"
-        ]
-      }
-    },
-    "/lgpd-data-portability/{commerceId}/{clientId}/generate": {
-      "post": {
-        "description": "Gera um arquivo com todos os dados do paciente em formato estruturado (LGPD)",
-        "operationId": "LgpdDataPortabilityController_generateDataPortabilityFile",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "ID do comércio",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Arquivo de portabilidade gerado com sucesso"
-          },
-          "403": {
-            "description": "Cliente não possui consentimento para exportação de dados"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Gerar arquivo de portabilidade de dados",
-        "tags": [
-          "lgpd-data-portability"
-        ]
-      }
-    },
-    "/lgpd-data-portability/{commerceId}/{clientId}/download": {
-      "get": {
-        "description": "Faz download do arquivo de portabilidade de dados",
-        "operationId": "LgpdDataPortabilityController_downloadDataPortabilityFile",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "ID do comércio",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Arquivo de portabilidade"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Download do arquivo de portabilidade",
-        "tags": [
-          "lgpd-data-portability"
-        ]
-      }
-    },
-    "/lgpd-incident": {
-      "post": {
-        "description": "Cria um novo registro de incidente de segurança de dados",
-        "operationId": "LgpdIncidentController_createIncident",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LgpdIncident"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Incidente criado com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Criar novo incidente LGPD",
-        "tags": [
-          "lgpd-incident"
-        ]
-      },
-      "get": {
-        "description": "Retorna lista de incidentes com filtros opcionais",
-        "operationId": "LgpdIncidentController_listIncidents",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "REPORTED",
-                "UNDER_INVESTIGATION",
-                "CONTAINED",
-                "RESOLVED",
-                "CLOSED"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "severity",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "LOW",
-                "MEDIUM",
-                "HIGH",
-                "CRITICAL"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "incidentType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "DATA_BREACH",
-                "UNAUTHORIZED_ACCESS",
-                "DATA_LOSS",
-                "DATA_ALTERATION",
-                "DATA_DISCLOSURE",
-                "SYSTEM_FAILURE",
-                "OTHER"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "startDate",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "reportedBy",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de incidentes",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LgpdIncident"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Listar incidentes",
-        "tags": [
-          "lgpd-incident"
-        ]
-      }
-    },
-    "/lgpd-incident/{id}": {
-      "patch": {
-        "description": "Atualiza um incidente existente",
-        "operationId": "LgpdIncidentController_updateIncident",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do incidente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LgpdIncident"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Incidente atualizado com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Atualizar incidente",
-        "tags": [
-          "lgpd-incident"
-        ]
-      },
-      "get": {
-        "description": "Retorna um incidente específico",
-        "operationId": "LgpdIncidentController_getIncidentById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do incidente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Incidente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obter incidente por ID",
-        "tags": [
-          "lgpd-incident"
-        ]
-      }
-    },
-    "/lgpd-incident/{id}/actions": {
-      "post": {
-        "description": "Registra uma ação tomada em relação ao incidente",
-        "operationId": "LgpdIncidentController_addAction",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do incidente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "action": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "action",
-                  "description"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Ação adicionada com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Adicionar ação ao incidente",
-        "tags": [
-          "lgpd-incident"
-        ]
-      }
-    },
-    "/lgpd-incident/{id}/preventive-measures": {
-      "post": {
-        "description": "Registra uma medida preventiva implementada",
-        "operationId": "LgpdIncidentController_addPreventiveMeasure",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do incidente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "measure": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "measure",
-                  "description"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Medida preventiva adicionada com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Adicionar medida preventiva",
-        "tags": [
-          "lgpd-incident"
-        ]
-      }
-    },
-    "/lgpd-incident/{id}/notify-anpd": {
-      "post": {
-        "description": "Registra que o incidente foi notificado à Autoridade Nacional de Proteção de Dados",
-        "operationId": "LgpdIncidentController_markAsNotifiedToAnpd",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do incidente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "reference": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Notificação registrada com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Marcar como notificado à ANPD",
-        "tags": [
-          "lgpd-incident"
-        ]
-      }
-    },
-    "/lgpd-incident/{id}/notify-data-subjects": {
-      "post": {
-        "description": "Registra que os titulares dos dados foram notificados sobre o incidente",
-        "operationId": "LgpdIncidentController_markAsNotifiedToDataSubjects",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID do incidente",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "type": "string",
-                    "enum": [
-                      "EMAIL",
-                      "PHONE",
-                      "POSTAL",
-                      "PUBLIC_NOTICE",
-                      "OTHER"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Notificação registrada com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LgpdIncident"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Marcar como notificado aos titulares",
-        "tags": [
-          "lgpd-incident"
-        ]
-      }
-    },
     "/waitlist/{id}": {
       "get": {
         "description": "Retrieves a waitlist entry by its unique identifier",
@@ -10521,6 +11539,554 @@
         "summary": "Get patient journey by attention ID",
         "tags": [
           "patient-history"
+        ]
+      }
+    },
+    "/client-portal/request-access": {
+      "post": {
+        "description": "Solicita um código de acesso ao portal do cliente. O código é enviado por email/WhatsApp/SMS. Rate limited: 5 requests per minute per IP.",
+        "operationId": "ClientPortalController_requestAccess",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commerceId": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "idNumber": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "commerceId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Código enviado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "Código gerado (apenas para debug)"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "sentVia": {
+                      "type": "string",
+                      "enum": [
+                        "EMAIL",
+                        "WHATSAPP",
+                        "SMS"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - Rate limit exceeded"
+          }
+        },
+        "summary": "Solicitar código de acesso ao portal (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/validate-code": {
+      "post": {
+        "description": "Valida o código de acesso e retorna token de sessão. Rate limited: 10 requests per minute per IP.",
+        "operationId": "ClientPortalController_validateCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "commerceId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "commerceId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Código válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "sessionToken": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "client": {
+                      "type": "object"
+                    },
+                    "commerce": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - Rate limit exceeded"
+          }
+        },
+        "summary": "Validar código de acesso (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/session/{token}": {
+      "get": {
+        "description": "Valida um token de sessão e retorna informações do cliente e comércio.",
+        "operationId": "ClientPortalController_validateSession",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Token de sessão",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "expired": {
+                      "type": "boolean"
+                    },
+                    "session": {
+                      "type": "object"
+                    },
+                    "client": {
+                      "type": "object"
+                    },
+                    "commerce": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Validar token de sessão (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/session/{token}/renew": {
+      "post": {
+        "description": "Renova uma sessão expirada ou próxima de expirar.",
+        "operationId": "ClientPortalController_renewSession",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Token de sessão atual",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessão renovada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "newToken": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Renovar sessão (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/consents/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna todos os consentimentos do cliente para o portal. Valida sessão via token.",
+        "operationId": "ClientPortalController_getClientConsents",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status dos consentimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "consents": {
+                      "type": "array"
+                    },
+                    "summary": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obter consentimentos do cliente (Público via sessão)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/consents/{consentId}/revoke": {
+      "patch": {
+        "description": "Revoga um consentimento do cliente. Valida sessão via token.",
+        "operationId": "ClientPortalController_revokeConsent",
+        "parameters": [
+          {
+            "name": "consentId",
+            "required": true,
+            "in": "path",
+            "description": "ID do consentimento",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consentimento revogado com sucesso"
+          }
+        },
+        "summary": "Revogar consentimento (Público via sessão)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/telemedicine/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna as sessões de telemedicina do cliente. Valida sessão via token.",
+        "operationId": "ClientPortalController_getTelemedicineSessions",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de sessões de telemedicina",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obter sessões de telemedicina do cliente (Público via sessão)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/profile/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna o perfil completo do cliente. Valida sessão via token.",
+        "operationId": "ClientPortalController_getClientProfile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil do cliente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obter perfil do cliente (Público via sessão)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/documents/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna os documentos do cliente. Valida sessão via token.",
+        "operationId": "ClientPortalController_getClientDocuments",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de documentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obter documentos do cliente (Público via sessão)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/attentions/{commerceId}/{clientId}": {
+      "get": {
+        "description": "Retorna o histórico de atenções do cliente. Valida sessão via token.",
+        "operationId": "ClientPortalController_getClientAttentions",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID do comércio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de atenções",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obter histórico de atenções do cliente (Público via sessão)",
+        "tags": [
+          "client-portal"
         ]
       }
     },
@@ -19464,6 +21030,26 @@
         "type": "object",
         "properties": {}
       },
+      "ConsentRequest": {
+        "type": "object",
+        "properties": {}
+      },
+      "ConsentRequirement": {
+        "type": "object",
+        "properties": {}
+      },
+      "LgpdConsent": {
+        "type": "object",
+        "properties": {}
+      },
+      "LgpdIncident": {
+        "type": "object",
+        "properties": {}
+      },
+      "AuditLog": {
+        "type": "object",
+        "properties": {}
+      },
       "Module": {
         "type": "object",
         "properties": {}
@@ -19954,18 +21540,6 @@
         "required": [
           "date"
         ]
-      },
-      "AuditLog": {
-        "type": "object",
-        "properties": {}
-      },
-      "LgpdConsent": {
-        "type": "object",
-        "properties": {}
-      },
-      "LgpdIncident": {
-        "type": "object",
-        "properties": {}
       },
       "Waitlist": {
         "type": "object",

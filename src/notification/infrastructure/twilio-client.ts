@@ -22,6 +22,22 @@ export class TwilioClient implements NotificationClient {
         return message;
       });
   }
+
+  public async sendSms(message: string, phone: string, notificationId?: string): Promise<any> {
+    // Normalize phone number (remove + if present, Twilio will add it)
+    const normalizedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+
+    return this.client.messages
+      .create({
+        body: message,
+        to: normalizedPhone,
+        from: process.env.TWILIO_PHONE_NUMBER || process.env.TWILIO_MESSAGING_SID,
+        messagingServiceSid: process.env.TWILIO_MESSAGING_SID,
+      })
+      .then(message => {
+        return message;
+      });
+  }
   sendEmail(email: EmailInputDto): Promise<any> {
     throw new Error('Method not implemented.');
   }

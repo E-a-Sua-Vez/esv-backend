@@ -9,3 +9,9 @@ export default class MedicalTemplateDeleted extends DomainEvent {
 }
 
 
+
+
+
+
+
+

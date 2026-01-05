@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Optional, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
@@ -11,6 +11,7 @@ import { ClientContactService } from '../client-contact/client-contact.service';
 import { ClientContactResult } from '../client-contact/model/client-contact-result.enum';
 import { CommerceService } from '../commerce/commerce.service';
 import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
+import { ConsentTriggersService } from '../shared/services/consent-triggers.service';
 
 import { ClientSearchDto } from './dto/client-search.dto';
 import ClientCreated from './events/ClientCreated';
@@ -22,7 +23,9 @@ export class ClientService {
     @InjectRepository(Client)
     private clientRepository = getRepository(Client),
     private clientContactService: ClientContactService,
-    private commerceService: CommerceService
+    private commerceService: CommerceService,
+    @Optional() @Inject(forwardRef(() => ConsentTriggersService))
+    private consentTriggersService?: ConsentTriggersService
   ) {}
 
   public async getClientById(id: string): Promise<Client> {

@@ -29,6 +29,8 @@ export class NotificationService {
     private whatsappNotificationClient: NotificationClient,
     @Inject(forwardRef(() => clientStrategy(NotificationChannel.EMAIL)))
     private emailNotificationClient: NotificationClient,
+    @Inject(forwardRef(() => clientStrategy(NotificationChannel.SMS)))
+    private smsNotificationClient: NotificationClient,
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService
   ) {
@@ -37,6 +39,7 @@ export class NotificationService {
 
   private readonly whatsappProvider = process.env.WHATSAPP_NOTIFICATION_PROVIDER || 'N/I';
   private readonly emailProvider = process.env.EMAIL_NOTIFICATION_PROVIDER || 'N/I';
+  private readonly smsProvider = process.env.SMS_NOTIFICATION_PROVIDER || 'TWILIO';
 
   public async getNotificationById(id: string): Promise<Notification> {
     return await this.notificationRepository.findById(id);
@@ -1072,5 +1075,151 @@ ${agreementLink}
     }
 
     return await this.update(notificationCreated);
+  }
+
+  /**
+   * Cria e envia notificação SMS
+   */
+  public async createSmsNotification(
+    phone: string,
+    userId: string,
+    message: string,
+    type: NotificationType,
+    commerceId: string,
+    attentionId?: string,
+    queueId?: string
+  ): Promise<Notification> {
+    // Validate and normalize phone number before processing
+    if (!phone || (typeof phone !== 'string' && typeof phone !== 'number')) {
+      this.logger.logError(
+        new Error(`Invalid phone number provided: ${phone} (type: ${typeof phone})`),
+        undefined,
+        { userId, attentionId, commerceId, type, operation: 'createSmsNotification' }
+      );
+      throw new Error(`Invalid phone number: ${phone}`);
+    }
+
+    const notification = new Notification();
+    notification.createdAt = new Date();
+    notification.channel = NotificationChannel.SMS;
+    notification.type = type;
+    notification.receiver = userId;
+    notification.attentionId = attentionId;
+    notification.commerceId = commerceId;
+    notification.queueId = queueId;
+    notification.provider = this.smsProvider;
+    const notificationCreated = await this.notificationRepository.create(notification);
+    const notificationCreatedEvent = new NotificationCreated(new Date(), notificationCreated);
+    publish(notificationCreatedEvent);
+    let metadata;
+    try {
+      this.logger.log(`[NotificationService] createSmsNotification called:`, {
+        notificationId: notificationCreated.id,
+        to: phone,
+        phoneType: typeof phone,
+        provider: this.smsProvider,
+        commerceId,
+        type,
+      });
+      metadata = await this.smsNotify(
+        String(phone), // Ensure it's a string
+        message,
+        notificationCreated.id
+      );
+      this.logger.log(`[NotificationService] SMS metadata received:`, {
+        notificationId: notificationCreated.id,
+        metadata: JSON.stringify(metadata),
+        provider: this.smsProvider,
+      });
+      if (this.smsProvider === 'TWILIO') {
+        notificationCreated.twilioId = metadata['sid'];
+        notificationCreated.providerId = metadata['sid'];
+      }
+    } catch (error) {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        notificationId: notificationCreated.id,
+        to: phone,
+        operation: 'createSmsNotification',
+      });
+      notificationCreated.comment = error.message;
+    }
+    return await this.update(notificationCreated);
+  }
+
+  /**
+   * Envia SMS usando o cliente de notificação
+   */
+  public async smsNotify(
+    phone: string,
+    message: string,
+    notificationId: string
+  ): Promise<string> {
+    // Normalize phone number: ensure it's a string and remove any non-digit characters except +
+    let normalizedPhone: string;
+    if (typeof phone === 'number') {
+      normalizedPhone = String(phone);
+    } else if (typeof phone === 'string') {
+      normalizedPhone = phone.trim();
+    } else {
+      this.logger.logError(
+        new Error(`Invalid phone number type: ${typeof phone}, value: ${phone}`),
+        undefined,
+        { notificationId, operation: 'smsNotify' }
+      );
+      throw new Error(`Invalid phone number: ${phone}`);
+    }
+
+    // Remove any non-digit characters except + at the start
+    normalizedPhone = normalizedPhone.replace(/[^\d+]/g, '');
+    // Ensure + is only at the start if present
+    if (normalizedPhone.startsWith('+')) {
+      normalizedPhone = '+' + normalizedPhone.slice(1).replace(/[^\d]/g, '');
+    } else {
+      normalizedPhone = normalizedPhone.replace(/[^\d]/g, '');
+    }
+
+    // Final validation: phone should be between 8 and 15 digits (international standard)
+    const phoneDigits = normalizedPhone.replace(/^\+/, '');
+    if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+      this.logger.logError(
+        new Error(`Phone number has invalid length: ${phoneDigits.length} digits. Phone: ${normalizedPhone}`),
+        undefined,
+        { originalPhone: phone, normalizedPhone, notificationId, operation: 'smsNotify' }
+      );
+      // Don't throw, but log the issue - let the API handle the validation
+    }
+
+    this.logger.log(`[NotificationService] Sending SMS notification:`, {
+      originalPhone: phone,
+      normalizedPhone: normalizedPhone,
+      phoneType: typeof phone,
+      notificationId,
+      messageLength: message.length,
+    });
+    try {
+      // Check if SMS client has sendSms method
+      if (this.smsNotificationClient && typeof this.smsNotificationClient.sendSms === 'function') {
+        const response = await this.smsNotificationClient.sendSms(
+          message,
+          normalizedPhone,
+          notificationId
+        );
+        this.logger.log(`[NotificationService] SMS notification sent successfully:`, {
+          notificationId,
+          response: JSON.stringify(response),
+        });
+        return response;
+      } else {
+        throw new Error('SMS client does not support sendSms method');
+      }
+    } catch (error) {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        notificationId,
+        originalPhone: phone,
+        normalizedPhone: normalizedPhone,
+        operation: 'smsNotify',
+      });
+      throw error;
+    }
   }
 }

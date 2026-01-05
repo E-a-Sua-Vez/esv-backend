@@ -50,6 +50,8 @@ import TermsAccepted from '../shared/events/TermsAccepted';
 import { LgpdConsentService } from '../shared/services/lgpd-consent.service';
 import { ConsentType } from '../shared/model/lgpd-consent.entity';
 import { ConsentStatus } from '../shared/model/lgpd-consent.entity';
+import { ConsentOrchestrationService } from '../shared/services/consent-orchestration.service';
+import { ConsentRequestTiming } from '../shared/model/consent-requirement.entity';
 import { BookingChannel } from './model/booking-channel.enum';
 import { BookingStatus } from './model/booking-status.enum';
 import { BookingType } from './model/booking-type.enum';
@@ -66,6 +68,7 @@ export class BookingService {
     private featureToggleService: FeatureToggleService,
     private commerceService: CommerceService,
     private bookingDefaultBuilder: BookingDefaultBuilder,
+    @Inject(forwardRef(() => AttentionService))
     private attentionService: AttentionService,
     private waitlistService: WaitlistService,
     private clientService: ClientService,
@@ -80,7 +83,9 @@ export class BookingService {
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService,
     @Optional() @Inject(AuditLogService) private auditLogService?: AuditLogService,
-    @Optional() @Inject(LgpdConsentService) private lgpdConsentService?: LgpdConsentService
+    @Optional() @Inject(LgpdConsentService) private lgpdConsentService?: LgpdConsentService,
+    @Optional() @Inject(forwardRef(() => ConsentOrchestrationService))
+    private consentOrchestrationService?: ConsentOrchestrationService
   ) {
     this.logger.setContext('BookingService');
   }
@@ -429,6 +434,32 @@ export class BookingService {
           `bookingId: ${bookingCreated.id}, error: ${error.message}`
         );
         // Don't throw - booking is already created, event publishing failure shouldn't break the flow
+      }
+
+      // Hook: Solicitar consentimientos pendientes automáticamente
+      if (
+        this.consentOrchestrationService &&
+        bookingCreated.clientId &&
+        bookingCreated.commerceId
+      ) {
+        try {
+          const userId: string = typeof user === 'string' ? user : (user?.id || 'system');
+          await this.consentOrchestrationService.requestAllPendingConsents(
+            bookingCreated.commerceId,
+            bookingCreated.clientId,
+            ConsentRequestTiming.BOOKING,
+            userId
+          );
+          this.logger.log(
+            `[BookingService] Consent request sent for booking ${bookingCreated.id}`
+          );
+        } catch (error) {
+          this.logger.error(
+            `[BookingService] Failed to request consents for booking ${bookingCreated.id}: ${error.message}`,
+            error.stack
+          );
+          // Don't throw - consent request failure shouldn't break booking creation
+        }
       }
     }
     return bookingCreated;

@@ -3,6 +3,7 @@ import { FireormModule } from 'nestjs-fireorm';
 
 import { ClientContactModule } from '../client-contact/client-contact.module';
 import { CommerceModule } from '../commerce/commerce.module';
+import { ConsentOrchestrationModule } from '../shared/modules/consent-orchestration.module';
 
 import { ClientController } from './client.controller';
 import { ClientService } from './client.service';
@@ -13,6 +14,7 @@ import { Client } from './model/client.entity';
     FireormModule.forFeature([Client]),
     forwardRef(() => ClientContactModule),
     forwardRef(() => CommerceModule),
+    forwardRef(() => ConsentOrchestrationModule),
   ],
   providers: [ClientService],
   exports: [ClientService],

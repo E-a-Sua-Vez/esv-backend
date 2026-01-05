@@ -81,6 +81,7 @@ export default {
   'business.main-menu.marketing': true,
   'business.main-menu.outcome-types-admin': true,
   'business.main-menu.forms-admin': true,
+  'business.main-menu.lgpd-consent-admin': true,
   'business.main-menu.company-admin': true,
   'collaborator.main-menu.dashboard': true,
   'collaborator.main-menu.queue-manage': true,
@@ -137,5 +138,19 @@ export default {
   'audit-log.admin.view': true,
   'audit-log.admin.read': true,
   'audit-log.admin.export': true,
-  'audit-log.admin.limit': 1000
+  'audit-log.admin.limit': 1000,
+  'forms.admin.view': true,
+  'forms.admin.read': true,
+  'forms.admin.edit': true,
+  'forms.admin.update': true,
+  'forms.admin.add': true,
+  'forms.admin.unavailable': true,
+  'forms.admin.limit': 5,
+  'lgpd.admin.view': true,
+  'lgpd.admin.read': true,
+  'lgpd.admin.edit': true,
+  'lgpd.admin.update': true,
+  'lgpd.admin.add': true,
+  'lgpd.admin.delete': true,
+  'lgpd.admin.limit': 100
 };

@@ -24,4 +24,8 @@ export function clientStrategy(channel: NotificationChannel) {
     }
     return AwsClient;
   }
+  if (channel === NotificationChannel.SMS) {
+    // SMS uses Twilio by default
+    return TwilioClient;
+  }
 }

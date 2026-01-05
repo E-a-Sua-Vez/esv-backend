@@ -15,3 +15,9 @@ export default class MedicalExamDeleted extends DomainEvent {
 }
 
 
+
+
+
+
+
+
