@@ -22,7 +22,10 @@ import {
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AuthGuard } from '../auth/auth.guard';
+import { ClientPortalAuthGuard } from './client-portal-auth.guard';
 import { ClientPortalService } from './client-portal.service';
+import { CommerceService } from '../commerce/commerce.service';
+import { PermissionService } from '../permission/permission.service';
 
 /**
  * Controlador do portal do cliente
@@ -31,9 +34,188 @@ import { ClientPortalService } from './client-portal.service';
 @ApiTags('client-portal')
 @Controller('client-portal')
 export class ClientPortalController {
-  constructor(private readonly portalService: ClientPortalService) {}
+  constructor(
+    private readonly portalService: ClientPortalService,
+    private readonly commerceService: CommerceService,
+    private readonly permissionService: PermissionService
+  ) {}
 
   // ========== ENDPOINTS PÚBLICOS ==========
+
+  @Get('/commerce/:slug')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obtener información del comercio por slug (Público)',
+    description: 'Obtiene la información pública del comercio usando su slug/keyName para el portal de clientes.',
+  })
+  @ApiParam({ name: 'slug', description: 'Slug/keyName del comercio', example: 'sempre-bela-morumbi' })
+  @ApiResponse({
+    status: 200,
+    description: 'Información del comercio',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        keyName: { type: 'string' },
+        tag: { type: 'string' },
+        logo: { type: 'string' },
+        email: { type: 'string' },
+        active: { type: 'boolean' },
+        available: { type: 'boolean' },
+        category: { type: 'string' },
+        localeInfo: { type: 'object' },
+        contactInfo: { type: 'object' },
+        serviceInfo: { type: 'object' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Comercio no encontrado',
+  })
+  async getCommerceBySlug(@Param('slug') slug: string) {
+    const commerce = await this.commerceService.getCommerceByKeyName(slug);
+
+    if (!commerce) {
+      throw new HttpException('Comércio não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    // Retornar solo información pública del comercio
+    return {
+      id: commerce.id,
+      name: commerce.name,
+      keyName: commerce.keyName,
+      tag: commerce.tag,
+      logo: commerce.logo,
+      email: commerce.email,
+      active: commerce.active,
+      available: commerce.available,
+      category: commerce.category,
+      localeInfo: commerce.localeInfo,
+      contactInfo: commerce.contactInfo,
+      serviceInfo: commerce.serviceInfo,
+    };
+  }
+
+  @Post('/:slug/request-access')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UseGuards(ThrottlerGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Solicitar código de acceso usando slug (Público)',
+    description: 'Solicita un código de acceso al portal usando el slug del comercio. El código se envía por email/WhatsApp/SMS. Rate limited: 5 requests per minute per IP.',
+  })
+  @ApiParam({ name: 'slug', description: 'Slug/keyName del comercio', example: 'sempre-bela-morumbi' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string' },
+        phone: { type: 'string' },
+        idNumber: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Código enviado con éxito',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Comercio no encontrado',
+  })
+  async requestAccessBySlug(
+    @Param('slug') slug: string,
+    @Body() body: { email?: string; phone?: string; idNumber?: string }
+  ) {
+    // Log para debugging
+    console.log('🔵 requestAccessBySlug called with:', { slug, body });
+
+    // Buscar comercio por slug
+    const commerce = await this.commerceService.getCommerceByKeyName(slug);
+
+    if (!commerce) {
+      throw new HttpException('Comércio não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    console.log('✅ Commerce found:', commerce.id);
+
+    // Filtrar valores vacíos y pasar undefined en lugar de strings vacías
+    const email = body.email && body.email.trim() !== '' ? body.email : undefined;
+    const phone = body.phone && body.phone.trim() !== '' ? body.phone : undefined;
+    const idNumber = body.idNumber && body.idNumber.trim() !== '' ? body.idNumber : undefined;
+
+    console.log('📤 Calling portalService.requestAccess with:', {
+      commerceId: commerce.id,
+      email,
+      phone,
+      idNumber
+    });
+
+    // Usar el commerceId para el método existente
+    return this.portalService.requestAccess(
+      commerce.id,
+      email,
+      phone,
+      idNumber
+    );
+  }
+
+  @Post('/:slug/validate-code')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UseGuards(ThrottlerGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Validar código de acceso usando slug (Público)',
+    description: 'Valida el código de acceso y retorna token de sesión usando el slug del comercio. Rate limited: 10 requests per minute per IP.',
+  })
+  @ApiParam({ name: 'slug', description: 'Slug/keyName del comercio', example: 'sempre-bela-morumbi' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        code: { type: 'string' },
+      },
+      required: ['code'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Código válido',
+    schema: {
+      type: 'object',
+      properties: {
+        valid: { type: 'boolean' },
+        sessionToken: { type: 'string' },
+        expiresAt: { type: 'string', format: 'date-time' },
+        client: { type: 'object' },
+        commerce: { type: 'object' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Comercio no encontrado',
+  })
+  async validateCodeBySlug(
+    @Param('slug') slug: string,
+    @Body() body: { code: string },
+    @Req() req: any
+  ) {
+    // Buscar comercio por slug
+    const commerce = await this.commerceService.getCommerceByKeyName(slug);
+
+    if (!commerce) {
+      throw new HttpException('Comércio não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const ipAddress = req.ip || req.connection?.remoteAddress || req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
+    const userAgent = req.headers['user-agent'];
+
+    // Usar el commerceId para el método existente
+    return this.portalService.validateCode(body.code, commerce.id, ipAddress, userAgent);
+  }
 
   @Post('/request-access')
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute per IP
@@ -67,7 +249,7 @@ export class ClientPortalController {
       properties: {
         code: { type: 'string', description: 'Código gerado (apenas para debug)' },
         expiresAt: { type: 'string', format: 'date-time' },
-        sentVia: { type: 'string', enum: ['EMAIL', 'WHATSAPP', 'SMS'] },
+        sentVia: { type: 'string', enum: ['EMAIL', 'WHATSAPP', 'SMS', 'EMAIL+WHATSAPP', 'EMAIL+SMS'] },
       },
     },
   })
@@ -152,6 +334,46 @@ export class ClientPortalController {
     return this.portalService.validateSession(token);
   }
 
+  @Get('/permissions/:token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obtener permisos del cliente (Protegido)',
+    description: 'Obtiene los permisos del cliente basados en su rol, plan y configuraciones específicas. Valida el JWT directamente.',
+  })
+  @ApiParam({ name: 'token', description: 'Token JWT del cliente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Permisos del cliente',
+    schema: {
+      type: 'object',
+      additionalProperties: {
+        oneOf: [{ type: 'boolean' }, { type: 'number' }],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token inválido o expirado',
+  })
+  async getClientPermissions(@Param('token') token: string) {
+    const jwt = require('jsonwebtoken');
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.CLIENT_PORTAL_JWT_SECRET || 'client_portal_secret');
+    } catch (err) {
+      throw new HttpException('Token inválido o expirado', HttpStatus.UNAUTHORIZED);
+    }
+    // Obtener permisos usando el commerceId del payload
+    const commerceId = payload.commerceId;
+    // Si tienes permisos específicos del cliente, puedes obtenerlos aquí
+    const clientPermissions = {};
+    const permissions = await this.permissionService.getPermissionsForClient(
+      commerceId,
+      clientPermissions
+    );
+    return permissions;
+  }
+
   @Post('/session/:token/renew')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -176,56 +398,46 @@ export class ClientPortalController {
 
   // ========== ENDPOINTS PROTEGIDOS (para uso futuro) ==========
 
-  @Get('/consents/:commerceId/:clientId')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Obter consentimentos do cliente (Público via sessão)',
-    description: 'Retorna todos os consentimentos do cliente para o portal. Valida sessão via token.',
-  })
-  @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
-  @ApiParam({ name: 'clientId', description: 'ID do cliente' })
-  @ApiResponse({
-    status: 200,
-    description: 'Status dos consentimentos',
-    schema: {
-      type: 'object',
-      properties: {
-        consents: { type: 'array' },
-        summary: { type: 'object' },
+    @UseGuards(ClientPortalAuthGuard)
+    @Get('/consents/:commerceId/:clientId')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+      summary: 'Obter consentimentos do cliente (Protegido)',
+      description: 'Retorna todos os consentimentos do cliente para o portal. Requiere token JWT.',
+    })
+    @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
+    @ApiParam({ name: 'clientId', description: 'ID do cliente' })
+    @ApiResponse({
+      status: 200,
+      description: 'Status dos consentimentos',
+      schema: {
+        type: 'object',
+        properties: {
+          consents: { type: 'array' },
+          summary: { type: 'object' },
+        },
       },
-    },
-  })
-  async getClientConsents(
-    @Param('commerceId') commerceId: string,
-    @Param('clientId') clientId: string,
-    @Query('token') token?: string,
-    @Req() req?: any
-  ) {
-    // Validar token de sessão do header ou query
-    const sessionToken = token || req?.headers?.['x-portal-token'] || req?.query?.token;
-    if (!sessionToken) {
-      throw new HttpException('Token de sessão requerido', HttpStatus.UNAUTHORIZED);
+    })
+    async getClientConsents(
+      @Param('commerceId') commerceId: string,
+      @Param('clientId') clientId: string,
+      @Req() req: any
+    ) {
+      // El guard ya valida el token y pone el payload en req.clientPortal
+      // Verificar que el cliente y comercio coincidan
+      if (req.clientPortal.clientId !== clientId || req.clientPortal.commerceId !== commerceId) {
+        throw new HttpException('Acesso negado', HttpStatus.FORBIDDEN);
+      }
+      return this.portalService.getClientConsents(commerceId, clientId);
     }
 
-    const session = await this.portalService.validateSession(sessionToken);
-    if (!session.valid || session.expired) {
-      throw new HttpException('Sessão inválida ou expirada', HttpStatus.UNAUTHORIZED);
-    }
 
-    // Verificar se o cliente da sessão corresponde ao solicitado
-    if (session.client?.id !== clientId || session.commerce?.id !== commerceId) {
-      throw new HttpException('Acesso negado', HttpStatus.FORBIDDEN);
-    }
-
-    // Buscar status dos consentimentos via ConsentOrchestrationService
-    return this.portalService.getClientConsents(commerceId, clientId);
-  }
-
+  @UseGuards(ClientPortalAuthGuard)
   @Patch('/consents/:consentId/revoke')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Revogar consentimento (Público via sessão)',
-    description: 'Revoga um consentimento do cliente. Valida sessão via token.',
+    summary: 'Revogar consentimento (Protegido)',
+    description: 'Revoga um consentimento do cliente. Requiere token JWT.',
   })
   @ApiParam({ name: 'consentId', description: 'ID do consentimento' })
   @ApiBody({
@@ -233,7 +445,6 @@ export class ClientPortalController {
       type: 'object',
       properties: {
         reason: { type: 'string' },
-        token: { type: 'string' },
       },
     },
   })
@@ -243,30 +454,20 @@ export class ClientPortalController {
   })
   async revokeConsent(
     @Param('consentId') consentId: string,
-    @Body() body: { reason?: string; token?: string },
-    @Query('token') queryToken?: string,
-    @Req() req?: any
+    @Body() body: { reason?: string },
+    @Req() req: any
   ) {
-    // Validar token de sessão
-    const sessionToken = body.token || queryToken || req?.headers?.['x-portal-token'] || req?.query?.token;
-    if (!sessionToken) {
-      throw new HttpException('Token de sessão requerido', HttpStatus.UNAUTHORIZED);
-    }
-
-    const session = await this.portalService.validateSession(sessionToken);
-    if (!session.valid || session.expired) {
-      throw new HttpException('Sessão inválida ou expirada', HttpStatus.UNAUTHORIZED);
-    }
-
-    // Revogar consentimento via ClientPortalService
-    return this.portalService.revokeConsent(consentId, session.client.id, body.reason);
+    // El guard ya valida el token y pone el payload en req.clientPortal
+    return this.portalService.revokeConsent(consentId, req.clientPortal.clientId, body.reason);
   }
 
+
+  @UseGuards(ClientPortalAuthGuard)
   @Get('/telemedicine/:commerceId/:clientId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Obter sessões de telemedicina do cliente (Público via sessão)',
-    description: 'Retorna as sessões de telemedicina do cliente. Valida sessão via token.',
+    summary: 'Obter sessões de telemedicina do cliente (Protegido)',
+    description: 'Retorna as sessões de telemedicina do cliente. Requiere token JWT.',
   })
   @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
   @ApiParam({ name: 'clientId', description: 'ID do cliente' })
@@ -283,34 +484,21 @@ export class ClientPortalController {
   async getTelemedicineSessions(
     @Param('commerceId') commerceId: string,
     @Param('clientId') clientId: string,
-    @Query('token') token?: string,
-    @Req() req?: any
+    @Req() req: any
   ) {
-    // Validar token de sessão
-    const sessionToken = token || req?.headers?.['x-portal-token'] || req?.query?.token;
-    if (!sessionToken) {
-      throw new HttpException('Token de sessão requerido', HttpStatus.UNAUTHORIZED);
-    }
-
-    const session = await this.portalService.validateSession(sessionToken);
-    if (!session.valid || session.expired) {
-      throw new HttpException('Sessão inválida ou expirada', HttpStatus.UNAUTHORIZED);
-    }
-
-    // Verificar se o cliente da sessão corresponde ao solicitado
-    if (session.client?.id !== clientId || session.commerce?.id !== commerceId) {
+    if (req.clientPortal.clientId !== clientId || req.clientPortal.commerceId !== commerceId) {
       throw new HttpException('Acesso negado', HttpStatus.FORBIDDEN);
     }
-
-    // Buscar sessões de telemedicina
     return this.portalService.getClientTelemedicineSessions(commerceId, clientId);
   }
 
+
+  @UseGuards(ClientPortalAuthGuard)
   @Get('/profile/:commerceId/:clientId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Obter perfil do cliente (Público via sessão)',
-    description: 'Retorna o perfil completo do cliente. Valida sessão via token.',
+    summary: 'Obter perfil do cliente (Protegido)',
+    description: 'Retorna o perfil completo do cliente. Requiere token JWT.',
   })
   @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
   @ApiParam({ name: 'clientId', description: 'ID do cliente' })
@@ -324,34 +512,21 @@ export class ClientPortalController {
   async getClientProfile(
     @Param('commerceId') commerceId: string,
     @Param('clientId') clientId: string,
-    @Query('token') token?: string,
-    @Req() req?: any
+    @Req() req: any
   ) {
-    // Validar token de sessão
-    const sessionToken = token || req?.headers?.['x-portal-token'] || req?.query?.token;
-    if (!sessionToken) {
-      throw new HttpException('Token de sessão requerido', HttpStatus.UNAUTHORIZED);
-    }
-
-    const session = await this.portalService.validateSession(sessionToken);
-    if (!session.valid || session.expired) {
-      throw new HttpException('Sessão inválida ou expirada', HttpStatus.UNAUTHORIZED);
-    }
-
-    // Verificar se o cliente da sessão corresponde ao solicitado
-    if (session.client?.id !== clientId || session.commerce?.id !== commerceId) {
+    if (req.clientPortal.clientId !== clientId || req.clientPortal.commerceId !== commerceId) {
       throw new HttpException('Acesso negado', HttpStatus.FORBIDDEN);
     }
-
-    // Buscar perfil do cliente
     return this.portalService.getClientProfile(clientId);
   }
 
+
+  @UseGuards(ClientPortalAuthGuard)
   @Get('/documents/:commerceId/:clientId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Obter documentos do cliente (Público via sessão)',
-    description: 'Retorna os documentos do cliente. Valida sessão via token.',
+    summary: 'Obter documentos do cliente (Protegido)',
+    description: 'Retorna os documentos do cliente. Requiere token JWT.',
   })
   @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
   @ApiParam({ name: 'clientId', description: 'ID do cliente' })
@@ -368,34 +543,21 @@ export class ClientPortalController {
   async getClientDocuments(
     @Param('commerceId') commerceId: string,
     @Param('clientId') clientId: string,
-    @Query('token') token?: string,
-    @Req() req?: any
+    @Req() req: any
   ) {
-    // Validar token de sessão
-    const sessionToken = token || req?.headers?.['x-portal-token'] || req?.query?.token;
-    if (!sessionToken) {
-      throw new HttpException('Token de sessão requerido', HttpStatus.UNAUTHORIZED);
-    }
-
-    const session = await this.portalService.validateSession(sessionToken);
-    if (!session.valid || session.expired) {
-      throw new HttpException('Sessão inválida ou expirada', HttpStatus.UNAUTHORIZED);
-    }
-
-    // Verificar se o cliente da sessão corresponde ao solicitado
-    if (session.client?.id !== clientId || session.commerce?.id !== commerceId) {
+    if (req.clientPortal.clientId !== clientId || req.clientPortal.commerceId !== commerceId) {
       throw new HttpException('Acesso negado', HttpStatus.FORBIDDEN);
     }
-
-    // Buscar documentos do cliente
     return this.portalService.getClientDocuments(commerceId, clientId);
   }
 
+
+  @UseGuards(ClientPortalAuthGuard)
   @Get('/attentions/:commerceId/:clientId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Obter histórico de atenções do cliente (Público via sessão)',
-    description: 'Retorna o histórico de atenções do cliente. Valida sessão via token.',
+    summary: 'Obter histórico de atenções do cliente (Protegido)',
+    description: 'Retorna o histórico de atenções do cliente. Requiere token JWT.',
   })
   @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
   @ApiParam({ name: 'clientId', description: 'ID do cliente' })
@@ -412,26 +574,11 @@ export class ClientPortalController {
   async getClientAttentions(
     @Param('commerceId') commerceId: string,
     @Param('clientId') clientId: string,
-    @Query('token') token?: string,
-    @Req() req?: any
+    @Req() req: any
   ) {
-    // Validar token de sessão
-    const sessionToken = token || req?.headers?.['x-portal-token'] || req?.query?.token;
-    if (!sessionToken) {
-      throw new HttpException('Token de sessão requerido', HttpStatus.UNAUTHORIZED);
-    }
-
-    const session = await this.portalService.validateSession(sessionToken);
-    if (!session.valid || session.expired) {
-      throw new HttpException('Sessão inválida ou expirada', HttpStatus.UNAUTHORIZED);
-    }
-
-    // Verificar se o cliente da sessão corresponde ao solicitado
-    if (session.client?.id !== clientId || session.commerce?.id !== commerceId) {
+    if (req.clientPortal.clientId !== clientId || req.clientPortal.commerceId !== commerceId) {
       throw new HttpException('Acesso negado', HttpStatus.FORBIDDEN);
     }
-
-    // Buscar histórico de atenções
     return this.portalService.getClientAttentions(commerceId, clientId);
   }
 }

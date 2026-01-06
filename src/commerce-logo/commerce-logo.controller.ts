@@ -27,25 +27,25 @@ import {
 
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from '../auth/user.decorator';
-import { BusinessLogoService } from './business-logo.service';
-import { BusinessLogo, BusinessLogoUploadDto } from './model/business-logo.entity';
+import { CommerceLogoService } from './commerce-logo.service';
+import { CommerceLogo, CommerceLogoUploadDto } from './model/commerce-logo.entity';
 
-@ApiTags('business-logos')
-@Controller('business-logos')
-export class BusinessLogoController {
-  constructor(private readonly businessLogoService: BusinessLogoService) {}
+@ApiTags('commerce-logos')
+@Controller('commerce-logos')
+export class CommerceLogoController {
+  constructor(private readonly commerceLogoService: CommerceLogoService) {}
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('logo'))
-  @Post(':businessId')
+  @Post(':commerceId')
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Upload business logo',
-    description: 'Uploads a new logo for a business',
+    summary: 'Upload commerce logo',
+    description: 'Uploads a new logo for a commerce',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -53,11 +53,16 @@ export class BusinessLogoController {
         logo: {
           type: 'string',
           format: 'binary',
-          description: 'Business logo file (JPG, PNG, WebP, max 5MB)',
+          description: 'Commerce logo file (JPG, PNG, WebP, max 5MB)',
+        },
+        businessId: {
+          type: 'string',
+          example: 'business-123',
+          description: 'Business ID that owns this commerce',
         },
         logoType: {
           type: 'string',
-          example: 'business_logo',
+          example: 'commerce_logo',
           description: 'Type of logo',
         },
         uploadDate: {
@@ -66,29 +71,30 @@ export class BusinessLogoController {
           description: 'Upload date',
         },
       },
-      required: ['logo'],
+      required: ['logo', 'businessId'],
     },
   })
   @ApiResponse({
     status: 201,
     description: 'Logo uploaded successfully',
-    type: BusinessLogo,
+    type: CommerceLogo,
   })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid file' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async uploadBusinessLogo(
+  async uploadCommerceLogo(
     @User() user: any,
-    @Param('businessId') businessId: string,
+    @Param('commerceId') commerceId: string,
     @UploadedFile() file: any,
-    @Body() body: BusinessLogoUploadDto
-  ): Promise<BusinessLogo> {
+    @Body() body: CommerceLogoUploadDto
+  ): Promise<CommerceLogo> {
     const metadata = {
       uploadDate: body.uploadDate,
     };
 
-    return this.businessLogoService.uploadBusinessLogo(
+    return this.commerceLogoService.uploadCommerceLogo(
       user.id || user.email,
-      businessId,
+      commerceId,
+      body.businessId,
       file,
       metadata
     );
@@ -96,42 +102,42 @@ export class BusinessLogoController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @Get(':businessId')
+  @Get(':commerceId')
   @ApiOperation({
-    summary: 'Get business logo metadata',
-    description: 'Retrieves business logo metadata',
+    summary: 'Get commerce logo metadata',
+    description: 'Retrieves commerce logo metadata',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiResponse({
     status: 200,
-    description: 'Business logo metadata',
-    type: BusinessLogo,
+    description: 'Commerce logo metadata',
+    type: CommerceLogo,
   })
   @ApiResponse({ status: 404, description: 'Logo not found' })
-  async getBusinessLogo(
-    @Param('businessId') businessId: string
-  ): Promise<BusinessLogo | null> {
-    return this.businessLogoService.getBusinessLogo(businessId);
+  async getCommerceLogo(
+    @Param('commerceId') commerceId: string
+  ): Promise<CommerceLogo | null> {
+    return this.commerceLogoService.getCommerceLogo(commerceId);
   }
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @Get(':businessId/:logoId')
+  @Get(':commerceId/:logoId')
   @ApiOperation({
-    summary: 'Get business logo file',
-    description: 'Retrieves and streams the business logo file',
+    summary: 'Get commerce logo file',
+    description: 'Retrieves and streams the commerce logo file',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiParam({ name: 'logoId', description: 'Logo ID', example: 'logo-123' })
-  @ApiResponse({ status: 200, description: 'Business logo file stream' })
+  @ApiResponse({ status: 200, description: 'Commerce logo file stream' })
   @ApiResponse({ status: 404, description: 'Logo not found' })
-  async getBusinessLogoFile(
-    @Param('businessId') businessId: string,
+  async getCommerceLogoFile(
+    @Param('commerceId') commerceId: string,
     @Param('logoId') logoId: string,
     @Res() response: any
   ): Promise<Readable> {
-    const readable = await this.businessLogoService.getBusinessLogoStream(
-      businessId,
+    const readable = await this.commerceLogoService.getCommerceLogoStream(
+      commerceId,
       logoId
     );
     response.set({
@@ -143,22 +149,22 @@ export class BusinessLogoController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @Get(':businessId/:logoId/thumbnail')
+  @Get(':commerceId/:logoId/thumbnail')
   @ApiOperation({
-    summary: 'Get business logo thumbnail',
-    description: 'Retrieves and streams the business logo thumbnail',
+    summary: 'Get commerce logo thumbnail',
+    description: 'Retrieves and streams the commerce logo thumbnail',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiParam({ name: 'logoId', description: 'Logo ID', example: 'logo-123' })
-  @ApiResponse({ status: 200, description: 'Business logo thumbnail stream' })
+  @ApiResponse({ status: 200, description: 'Commerce logo thumbnail stream' })
   @ApiResponse({ status: 404, description: 'Thumbnail not found' })
-  async getBusinessLogoThumbnail(
-    @Param('businessId') businessId: string,
+  async getCommerceLogoThumbnail(
+    @Param('commerceId') commerceId: string,
     @Param('logoId') logoId: string,
     @Res() response: any
   ): Promise<Readable> {
-    const readable = await this.businessLogoService.getBusinessLogoThumbnailStream(
-      businessId,
+    const readable = await this.commerceLogoService.getCommerceLogoThumbnailStream(
+      commerceId,
       logoId
     );
     response.set({
@@ -171,13 +177,13 @@ export class BusinessLogoController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('logo'))
-  @Put(':businessId')
+  @Put(':commerceId')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Update business logo',
-    description: 'Replaces the existing business logo with a new one',
+    summary: 'Update commerce logo',
+    description: 'Replaces the existing commerce logo with a new one',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -185,11 +191,16 @@ export class BusinessLogoController {
         logo: {
           type: 'string',
           format: 'binary',
-          description: 'New business logo file (JPG, PNG, WebP, max 5MB)',
+          description: 'New commerce logo file (JPG, PNG, WebP, max 5MB)',
+        },
+        businessId: {
+          type: 'string',
+          example: 'business-123',
+          description: 'Business ID that owns this commerce',
         },
         logoType: {
           type: 'string',
-          example: 'business_logo',
+          example: 'commerce_logo',
           description: 'Type of logo',
         },
         uploadDate: {
@@ -198,29 +209,30 @@ export class BusinessLogoController {
           description: 'Upload date',
         },
       },
-      required: ['logo'],
+      required: ['logo', 'businessId'],
     },
   })
   @ApiResponse({
     status: 200,
     description: 'Logo updated successfully',
-    type: BusinessLogo,
+    type: CommerceLogo,
   })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid file' })
-  @ApiResponse({ status: 404, description: 'Business not found' })
-  async updateBusinessLogo(
+  @ApiResponse({ status: 404, description: 'Commerce not found' })
+  async updateCommerceLogo(
     @User() user: any,
-    @Param('businessId') businessId: string,
+    @Param('commerceId') commerceId: string,
     @UploadedFile() file: any,
-    @Body() body: BusinessLogoUploadDto
-  ): Promise<BusinessLogo> {
+    @Body() body: CommerceLogoUploadDto
+  ): Promise<CommerceLogo> {
     const metadata = {
       uploadDate: body.uploadDate,
     };
 
-    return this.businessLogoService.updateBusinessLogo(
+    return this.commerceLogoService.updateCommerceLogo(
       user.id || user.email,
-      businessId,
+      commerceId,
+      body.businessId,
       file,
       metadata
     );
@@ -228,38 +240,26 @@ export class BusinessLogoController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @Delete(':businessId/:logoId')
+  @Delete(':commerceId/:logoId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete business logo',
-    description: 'Deletes a business logo and its thumbnail',
+    summary: 'Delete commerce logo',
+    description: 'Deletes a commerce logo and its thumbnail',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiParam({ name: 'logoId', description: 'Logo ID', example: 'logo-123' })
   @ApiResponse({ status: 204, description: 'Logo deleted successfully' })
   @ApiResponse({ status: 404, description: 'Logo not found' })
   @ApiResponse({ status: 403, description: 'Forbidden - Not authorized' })
-  async deleteBusinessLogo(
+  async deleteCommerceLogo(
     @User() user: any,
-    @Param('businessId') businessId: string,
+    @Param('commerceId') commerceId: string,
     @Param('logoId') logoId: string
   ): Promise<void> {
-    return this.businessLogoService.deleteBusinessLogo(
+    return this.commerceLogoService.deleteCommerceLogo(
       user.id || user.email,
-      businessId,
+      commerceId,
       logoId
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -44,6 +44,7 @@ import { PatientHistoryModule } from './patient-history/patient-history.module';
 import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
 import { PatientPhotoModule } from './patient-photo/patient-photo.module';
 import { BusinessLogoModule } from './business-logo/business-logo.module';
+import { CommerceLogoModule } from './commerce-logo/commerce-logo.module';
 import { PaymentModule } from './payment/payment.module';
 import { PlanModule } from './plan/plan.module';
 import { PlanActivationModule } from './plan-activation/plan-activation.module';
@@ -122,6 +123,7 @@ import { ClientPortalModule } from './client-portal/client-portal.module';
     PatientHistoryItemModule,
     PatientPhotoModule,
     BusinessLogoModule,
+    CommerceLogoModule,
     PrescriptionModule,
     CIE10Module,
     ClinicalAlertsModule,

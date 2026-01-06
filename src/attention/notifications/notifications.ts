@@ -197,3 +197,72 @@ export const getPostAttetionCommerce = (country, bookingCommerce) => {
   };
   return POST_ATTENTION[country];
 };
+
+export const getClientPortalAccessMessage = (country, code, portalUrl, commerce) => {
+  const CLIENT_PORTAL_ACCESS = {
+    pt: `🔐 *Código de Acesso - Portal do Cliente*
+
+📝 *Código:* ${code}
+
+🔗 *Acesso:* ${portalUrl}
+
+🏢 *Estabelecimento:* ${commerce.name}
+
+⏰ *O código expira em 15 minutos*
+
+Insira o código quando solicitado para acessar o portal.`,
+    es: `🔐 *Código de Acceso - Portal del Cliente*
+
+📝 *Código:* ${code}
+
+🔗 *Enlace:* ${portalUrl}
+
+🏢 *Comercio:* ${commerce.name}
+
+⏰ *El código expira en 15 minutos*
+
+Ingresa el código cuando se te solicite para acceder al portal.`,
+    en: `🔐 *Access Code - Client Portal*
+
+📝 *Code:* ${code}
+
+🔗 *Link:* ${portalUrl}
+
+🏢 *Business:* ${commerce.name}
+
+⏰ *The code expires in 15 minutes*
+
+Enter the code when prompted to access the portal.`
+  };
+  return CLIENT_PORTAL_ACCESS[country] || CLIENT_PORTAL_ACCESS.en;
+};
+
+export const getClientPortalEmailData = (country, commerce) => {
+  const CLIENT_PORTAL_EMAIL = {
+    pt: {
+      subject: `Código de Acesso - Portal do Cliente`,
+      greeting: `Olá`,
+      title: `Seu código de acesso ao Portal do Cliente é:`,
+      accessText: `Acesse:`,
+      expirationText: `Este código expira em 15 minutos.`,
+      signature: `Atenciosamente`
+    },
+    es: {
+      subject: `Código de Acceso - Portal del Cliente`,
+      greeting: `Hola`,
+      title: `Tu código de acceso al Portal del Cliente es:`,
+      accessText: `Accede en:`,
+      expirationText: `Este código expira en 15 minutos.`,
+      signature: `Atentamente`
+    },
+    en: {
+      subject: `Access Code - Client Portal`,
+      greeting: `Hello`,
+      title: `Your access code for the Client Portal is:`,
+      accessText: `Access at:`,
+      expirationText: `This code expires in 15 minutes.`,
+      signature: `Best regards`
+    }
+  };
+  return CLIENT_PORTAL_EMAIL[country] || CLIENT_PORTAL_EMAIL.en;
+};

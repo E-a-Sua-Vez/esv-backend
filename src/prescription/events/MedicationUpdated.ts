@@ -21,3 +21,5 @@ export default class MedicationUpdated extends DomainEvent {
 
 
 
+
+

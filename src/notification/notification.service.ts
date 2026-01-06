@@ -133,6 +133,8 @@ export class NotificationService {
         operation: 'createWhatsappNotification',
       });
       notificationCreated.comment = error.message;
+      // Re-throw the error so calling code can handle it properly
+      throw error;
     }
     return await this.update(notificationCreated);
   }

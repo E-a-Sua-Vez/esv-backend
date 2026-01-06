@@ -861,5 +861,30 @@
       "client.notify.email": true,
       "user.notification.add": true
     }
+  },
+  {
+    "id": "xC9kL2mPqR4sT8vW1nY6",
+    "createdAt": "2026-01-05T12:00:00.000Z",
+    "name": "client",
+    "description": "Permisos para el rol CLIENT (Portal del Cliente)",
+    "active": true,
+    "permissions": {
+      "client-portal.menu.consents": true,
+      "client-portal.menu.telemedicine": true,
+      "client-portal.menu.profile": true,
+      "client-portal.menu.documents": true,
+      "client-portal.menu.history": true,
+      "client-portal.consents.view": true,
+      "client-portal.consents.accept": true,
+      "client-portal.consents.reject": true,
+      "client-portal.telemedicine.view": true,
+      "client-portal.telemedicine.schedule": true,
+      "client-portal.profile.view": true,
+      "client-portal.profile.edit": true,
+      "client-portal.documents.view": true,
+      "client-portal.documents.download": true,
+      "client-portal.history.view": true,
+      "client-portal.history.details": true
+    }
   }
 ]

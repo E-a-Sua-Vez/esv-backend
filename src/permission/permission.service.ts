@@ -144,4 +144,61 @@ export class PermissionService {
 
     return permissions;
   }
+
+  public async getPermissionsForClient(
+    commerceId: string,
+    userPermissions: Record<string, number | boolean>
+  ): Promise<Record<string, number | boolean>> {
+    const permissions = {};
+    let rolPermissions = {};
+    let planPermissions = {};
+    let planActivatedPermissions = {};
+    const rol = await this.rolService.getRolByName(UserType.CLIENT);
+    if (rol && rol.permissions) {
+      rolPermissions = rol.permissions;
+    }
+    const commerce = await this.commerceService.getCommerceById(commerceId);
+    if (commerce && commerce.businessId) {
+      const business = await this.businessService.getBusinessById(commerce.businessId);
+      if (business && business.planId) {
+        const plan = await this.planService.getPlanById(business.planId);
+        if (plan && plan.permissions) {
+          planPermissions = plan.permissions;
+        }
+        const planActivated =
+          await this.planActivationService.getValidatedPlanActivationByBusinessId(
+            business.id,
+            'true'
+          );
+        if (planActivated && planActivated.permissions) {
+          planActivatedPermissions = planActivated.permissions;
+        }
+      }
+    }
+    if (Object.keys(rolPermissions).length > 0) {
+      Object.keys(rolPermissions).forEach(permission => {
+        permissions[permission] = rolPermissions[permission];
+      });
+    }
+    if (Object.keys(planPermissions).length > 0) {
+      Object.keys(planPermissions).forEach(permission => {
+        if (permissions[permission]) {
+          permissions[permission] = planPermissions[permission];
+        }
+      });
+    }
+    if (Object.keys(planActivatedPermissions).length > 0) {
+      Object.keys(planActivatedPermissions).forEach(permission => {
+        if (permissions[permission]) {
+          permissions[permission] = planActivatedPermissions[permission];
+        }
+      });
+    }
+    if (Object.keys(userPermissions).length > 0) {
+      Object.keys(userPermissions).forEach(permission => {
+        permissions[permission] = userPermissions[permission];
+      });
+    }
+    return permissions;
+  }
 }

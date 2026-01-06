@@ -2,9 +2,9 @@ import { DefaultEventMetadata } from '../../shared/events/default-event-metadata
 import DomainEvent from '../../shared/events/domain-event';
 import { DomainEventDataAttributes } from '../../shared/events/domain-event-data-attributes';
 
-export default class BusinessLogoCreated extends DomainEvent {
+export default class CommerceLogoCreated extends DomainEvent {
   constructor(occuredOn: Date, attributes: object, metadata?: object) {
-    super('ett.business-logo.1.event.business-logo.created', occuredOn);
+    super('ett.commerce-logo.1.event.commerce-logo.created', occuredOn);
     this.data.attributes = attributes as DomainEventDataAttributes;
     if (metadata) {
       this.metadata = { ...new DefaultEventMetadata(), ...metadata };
@@ -13,15 +13,3 @@ export default class BusinessLogoCreated extends DomainEvent {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -25,17 +25,18 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 
-import { AuthGuard } from '../auth/auth.guard';
+import { UniversalAuthGuard } from './universal-auth.guard';
 import { User } from '../auth/user.decorator';
 import { PatientPhotoService } from './patient-photo.service';
 import { PatientPhoto, PatientPhotoUploadDto } from './model/patient-photo.entity';
+import { AuthGuard } from '@/auth/auth.guard';
 
 @ApiTags('patient-photos')
 @Controller('patient-photos')
 export class PatientPhotoController {
   constructor(private readonly patientPhotoService: PatientPhotoService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(UniversalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('photo'))
   @Post(':commerceId/:clientId')
@@ -98,7 +99,7 @@ export class PatientPhotoController {
     );
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(UniversalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get(':commerceId/:clientId')
   @ApiOperation({
@@ -135,7 +136,7 @@ export class PatientPhotoController {
     return result;
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(UniversalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get(':commerceId/:clientId/:photoId')
   @ApiOperation({
@@ -165,7 +166,7 @@ export class PatientPhotoController {
     return readable.pipe(response);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(UniversalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get(':commerceId/:clientId/:photoId/thumbnail')
   @ApiOperation({

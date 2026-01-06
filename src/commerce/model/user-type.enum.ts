@@ -3,4 +3,5 @@ export enum UserType {
   BUSINESS = 'business',
   MASTER = 'master',
   INVITER = 'invited',
+  CLIENT = 'client',
 }

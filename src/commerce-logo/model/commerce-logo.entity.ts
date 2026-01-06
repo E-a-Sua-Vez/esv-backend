@@ -1,8 +1,9 @@
 import { Collection } from 'fireorm';
 
-@Collection('business-logos')
-export class BusinessLogo {
+@Collection('commerce-logos')
+export class CommerceLogo {
   id: string;
+  commerceId: string;
   businessId: string;
   filename: string;
   originalFilename: string;
@@ -23,20 +24,9 @@ export class BusinessLogo {
   };
 }
 
-export class BusinessLogoUploadDto {
+export class CommerceLogoUploadDto {
+  commerceId: string;
   businessId: string;
   logoType: string;
   uploadDate: string;
 }
-
-
-
-
-
-
-
-
-
-
-
-

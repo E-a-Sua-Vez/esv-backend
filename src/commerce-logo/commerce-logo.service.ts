@@ -11,16 +11,16 @@ import {
   validateImageContent,
 } from '../shared/utils/security-utils';
 
-import { BusinessLogo } from './model/business-logo.entity';
-import BusinessLogoCreated from './events/BusinessLogoCreated';
-import BusinessLogoUpdated from './events/BusinessLogoUpdated';
-import BusinessLogoDeleted from './events/BusinessLogoDeleted';
+import { CommerceLogo } from './model/commerce-logo.entity';
+import CommerceLogoCreated from './events/CommerceLogoCreated';
+import CommerceLogoUpdated from './events/CommerceLogoUpdated';
+import CommerceLogoDeleted from './events/CommerceLogoDeleted';
 
 @Injectable()
-export class BusinessLogoService {
+export class CommerceLogoService {
   constructor(
-    @InjectRepository(BusinessLogo)
-    private businessLogoRepository = getRepository(BusinessLogo)
+    @InjectRepository(CommerceLogo)
+    private commerceLogoRepository = getRepository(CommerceLogo)
   ) {
     AWS.config.update({
       apiVersion: '2006-03-01',
@@ -31,28 +31,28 @@ export class BusinessLogoService {
   }
 
   private readonly bucketName = process.env.AWS_S3_COMMERCE_BUCKET;
-  private readonly logoFolder = 'business-logos';
-  private readonly thumbnailFolder = 'business-logos/thumbnails';
+  private readonly logoFolder = 'commerce-logos';
+  private readonly thumbnailFolder = 'commerce-logos/thumbnails';
   private readonly allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
   private readonly maxFileSize = 5 * 1024 * 1024; // 5MB
   private readonly thumbnailSize = 150;
-  // Recommended size for business logos (similar to CommerceLogo component)
+  // Recommended size for commerce logos (similar to CommerceLogo component)
   private readonly recommendedWidth = 500;
   private readonly recommendedHeight = 460;
 
   /**
-   * Get S3 key for business logo
+   * Get S3 key for commerce logo
    */
-  private getLogoS3Key(businessId: string, filename: string): string {
-    return `${this.logoFolder}/${businessId}/${filename}`;
+  private getLogoS3Key(commerceId: string, filename: string): string {
+    return `${this.logoFolder}/${commerceId}/${filename}`;
   }
 
   /**
-   * Get S3 key for business logo thumbnail
+   * Get S3 key for commerce logo thumbnail
    */
-  private getThumbnailS3Key(businessId: string, filename: string): string {
+  private getThumbnailS3Key(commerceId: string, filename: string): string {
     const nameWithoutExt = filename.split('.')[0];
-    return `${this.thumbnailFolder}/${businessId}/${nameWithoutExt}_thumb.jpg`;
+    return `${this.thumbnailFolder}/${commerceId}/${nameWithoutExt}_thumb.jpg`;
   }
 
   /**
@@ -63,7 +63,7 @@ export class BusinessLogoService {
       throw new HttpException('No se proporcionó archivo', HttpStatus.BAD_REQUEST);
     }
 
-    // FIX File Size: Validate size limits
+    // Validate size limits
     if (file.size > this.maxFileSize) {
       throw new HttpException(
         'El archivo es muy grande. Máximo 5MB permitido.',
@@ -71,7 +71,7 @@ export class BusinessLogoService {
       );
     }
 
-    // FIX Image Validation: Validate content, not just MIME type
+    // Validate content, not just MIME type
     if (file.buffer) {
       const buffer = Buffer.from(file.buffer);
       const validation = validateImageContent(buffer);
@@ -96,22 +96,19 @@ export class BusinessLogoService {
 
   /**
    * Generate thumbnail from image buffer
-   * Optimized for business logos (maintains aspect ratio similar to CommerceLogo)
    */
   private async generateThumbnail(imageBuffer: Buffer): Promise<Buffer> {
     try {
       const metadata = await sharp(imageBuffer).metadata();
       const aspectRatio = metadata.width / metadata.height;
-      const targetAspectRatio = this.recommendedWidth / this.recommendedHeight; // ~1.087
+      const targetAspectRatio = this.recommendedWidth / this.recommendedHeight;
 
       let thumbWidth, thumbHeight;
 
       if (aspectRatio > targetAspectRatio) {
-        // Image is wider - fit to width
         thumbWidth = this.thumbnailSize;
         thumbHeight = Math.round(this.thumbnailSize / aspectRatio);
       } else {
-        // Image is taller - fit to height
         thumbHeight = this.thumbnailSize;
         thumbWidth = Math.round(this.thumbnailSize * aspectRatio);
       }
@@ -132,7 +129,7 @@ export class BusinessLogoService {
   }
 
   /**
-   * Optimize logo image for display (resize if needed)
+   * Optimize logo image for display
    */
   private async optimizeLogo(imageBuffer: Buffer): Promise<Buffer> {
     try {
@@ -146,13 +143,11 @@ export class BusinessLogoService {
       // Resize if image is too large
       if (width > this.recommendedWidth || height > this.recommendedHeight) {
         if (aspectRatio > targetAspectRatio) {
-          // Image is wider - fit to width
           if (width > this.recommendedWidth) {
             height = Math.round((height * this.recommendedWidth) / width);
             width = this.recommendedWidth;
           }
         } else {
-          // Image is taller - fit to height
           if (height > this.recommendedHeight) {
             width = Math.round((width * this.recommendedHeight) / height);
             height = this.recommendedHeight;
@@ -168,7 +163,6 @@ export class BusinessLogoService {
         .jpeg({ quality: 90 })
         .toBuffer();
     } catch (error) {
-      // If optimization fails, return original
       return imageBuffer;
     }
   }
@@ -246,35 +240,35 @@ export class BusinessLogoService {
   }
 
   /**
-   * Upload business logo
+   * Upload commerce logo
    */
-  async uploadBusinessLogo(
+  async uploadCommerceLogo(
     user: string,
+    commerceId: string,
     businessId: string,
     file: any,
     metadata?: any
-  ): Promise<BusinessLogo> {
-    // FIX Path Traversal: Validate original filename if provided
+  ): Promise<CommerceLogo> {
+    // Validate original filename if provided
     if (file.originalname && !validateFilename(file.originalname)) {
-      // Generate safe filename
       file.originalname = generateSafeFilename(file.originalname);
     }
 
     this.validateFile(file);
 
-    // Generate unique filename (already safe, but double-check)
+    // Generate unique filename
     const timestamp = Date.now();
     const extension = file.mimetype.split('/')[1];
-    const filename = `business-${businessId}-${timestamp}.${extension}`;
+    const filename = `commerce-${commerceId}-${timestamp}.${extension}`;
 
-    // FIX Path Traversal: Ensure generated filename is safe
+    // Ensure generated filename is safe
     if (!validateFilename(filename)) {
       throw new HttpException('Error generando nombre de archivo seguro', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // Generate S3 keys
-    const logoS3Key = this.getLogoS3Key(businessId, filename);
-    const thumbnailS3Key = this.getThumbnailS3Key(businessId, filename);
+    const logoS3Key = this.getLogoS3Key(commerceId, filename);
+    const thumbnailS3Key = this.getThumbnailS3Key(commerceId, filename);
 
     try {
       // Optimize logo for display
@@ -285,6 +279,7 @@ export class BusinessLogoService {
 
       // Upload optimized logo and thumbnail to S3
       const uploadMetadata = {
+        commerceId,
         businessId,
         uploadedBy: user,
         uploadDate: new Date().toISOString(),
@@ -301,8 +296,7 @@ export class BusinessLogoService {
       try {
         const imageInfo = await sharp(optimizedBuffer).metadata();
 
-        // FIX Image Dimensions: Limit dimensions to prevent DoS
-        const maxDimension = 10000; // 10k pixels max
+        const maxDimension = 10000;
         if (imageInfo.width > maxDimension || imageInfo.height > maxDimension) {
           throw new HttpException(
             `Dimensiones de imagen muy grandes. Máximo ${maxDimension}x${maxDimension} píxeles.`,
@@ -323,78 +317,79 @@ export class BusinessLogoService {
       }
 
       // Save logo metadata to database
-      const businessLogo = new BusinessLogo();
-      businessLogo.businessId = businessId;
-      businessLogo.filename = filename;
-      businessLogo.originalFilename = file.originalname || filename;
-      businessLogo.mimeType = 'image/jpeg'; // Always JPEG after optimization
-      businessLogo.size = optimizedBuffer.length;
-      businessLogo.s3Key = logoS3Key;
-      businessLogo.thumbnailS3Key = thumbnailS3Key;
-      businessLogo.uploadDate = new Date();
-      businessLogo.createdBy = user;
-      businessLogo.createdAt = new Date();
-      businessLogo.active = true;
-      businessLogo.metadata = imageMetadata;
+      const commerceLogo = new CommerceLogo();
+      commerceLogo.commerceId = commerceId;
+      commerceLogo.businessId = businessId;
+      commerceLogo.filename = filename;
+      commerceLogo.originalFilename = file.originalname || filename;
+      commerceLogo.mimeType = 'image/jpeg';
+      commerceLogo.size = optimizedBuffer.length;
+      commerceLogo.s3Key = logoS3Key;
+      commerceLogo.thumbnailS3Key = thumbnailS3Key;
+      commerceLogo.uploadDate = new Date();
+      commerceLogo.createdBy = user;
+      commerceLogo.createdAt = new Date();
+      commerceLogo.active = true;
+      commerceLogo.metadata = imageMetadata;
 
-      const savedLogo = await this.businessLogoRepository.create(businessLogo);
+      const savedLogo = await this.commerceLogoRepository.create(commerceLogo);
 
-      console.log(`✅ BusinessLogoService: Logo saved successfully - id: ${savedLogo.id}, businessId: ${businessId}, filename: ${filename}`);
+      console.log(`✅ CommerceLogoService: Logo saved successfully - id: ${savedLogo.id}, commerceId: ${commerceId}, filename: ${filename}`);
 
       // Publish event
-      const event = new BusinessLogoCreated(new Date(), savedLogo as any, { user });
+      const event = new CommerceLogoCreated(new Date(), savedLogo as any, { user });
       publish(event);
 
-      return savedLogo as BusinessLogo;
+      return savedLogo as CommerceLogo;
     } catch (error) {
       throw new HttpException(
-        `Error al subir logo del negocio: ${error.message}`,
+        `Error al subir logo del comercio: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
 
   /**
-   * Get business logo by business ID
+   * Get commerce logo by commerce ID
    */
-  async getBusinessLogo(businessId: string): Promise<BusinessLogo | null> {
+  async getCommerceLogo(commerceId: string): Promise<CommerceLogo | null> {
     try {
-      const logo = await this.businessLogoRepository
-        .whereEqualTo('businessId' as any, businessId)
+      const logo = await this.commerceLogoRepository
+        .whereEqualTo('commerceId' as any, commerceId)
         .whereEqualTo('active' as any, true)
         .orderByDescending('uploadDate' as any)
         .findOne();
 
       if (logo) {
-        return logo as BusinessLogo;
+        return logo as CommerceLogo;
       } else {
         return null;
       }
     } catch (error) {
-      console.error(`Error searching for business logo:`, error);
+      console.error(`Error searching for commerce logo:`, error);
       return null;
     }
   }
 
   /**
-   * Get business logo by ID
+   * Get commerce logo by ID
    */
-  async getBusinessLogoById(logoId: string): Promise<BusinessLogo> {
-    const logo = await this.businessLogoRepository.findById(logoId);
+  async getCommerceLogoById(logoId: string): Promise<CommerceLogo> {
+    const logo = await this.commerceLogoRepository.findById(logoId);
     if (!logo) {
       throw new HttpException('Logo no encontrado', HttpStatus.NOT_FOUND);
     }
-    return logo as BusinessLogo;
+    return logo as CommerceLogo;
   }
 
   /**
-   * Get business logo file stream
+   * Get commerce logo file stream
    */
-  async getBusinessLogoStream(businessId: string, logoId: string): Promise<Readable> {
-    const logo = await this.getBusinessLogoById(logoId);
+  async getCommerceLogoStream(commerceId: string, logoId: string): Promise<Readable> {
+    const logo = await this.getCommerceLogoById(logoId);
 
     // Verify ownership
-    if (logo.businessId !== businessId) {
+    if (logo.commerceId !== commerceId) {
       throw new HttpException('No autorizado', HttpStatus.FORBIDDEN);
     }
 
@@ -402,13 +397,13 @@ export class BusinessLogoService {
   }
 
   /**
-   * Get business logo thumbnail stream
+   * Get commerce logo thumbnail stream
    */
-  async getBusinessLogoThumbnailStream(
-    businessId: string,
+  async getCommerceLogoThumbnailStream(
+    commerceId: string,
     logoId: string
   ): Promise<Readable> {
-    const logo = await this.getBusinessLogoById(logoId);
+    const logo = await this.getCommerceLogoById(logoId);
     if (!logo.thumbnailS3Key) {
       throw new HttpException('Miniatura no encontrada', HttpStatus.NOT_FOUND);
     }
@@ -416,17 +411,17 @@ export class BusinessLogoService {
   }
 
   /**
-   * Delete business logo
+   * Delete commerce logo
    */
-  async deleteBusinessLogo(
+  async deleteCommerceLogo(
     user: string,
-    businessId: string,
+    commerceId: string,
     logoId: string
   ): Promise<void> {
-    const logo = await this.getBusinessLogoById(logoId);
+    const logo = await this.getCommerceLogoById(logoId);
 
     // Verify ownership
-    if (logo.businessId !== businessId) {
+    if (logo.commerceId !== commerceId) {
       throw new HttpException('No autorizado', HttpStatus.FORBIDDEN);
     }
 
@@ -442,48 +437,37 @@ export class BusinessLogoService {
       logo.modifiedBy = user;
       logo.modifiedAt = new Date();
 
-      await this.businessLogoRepository.update(logo as any);
+      await this.commerceLogoRepository.update(logo as any);
 
       // Publish event
-      const event = new BusinessLogoDeleted(new Date(), logo as any, { user });
+      const event = new CommerceLogoDeleted(new Date(), logo as any, { user });
       publish(event);
     } catch (error) {
       throw new HttpException(
-        `Error al eliminar logo del negocio: ${error.message}`,
+        `Error al eliminar logo del comercio: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
 
   /**
-   * Update business logo (replace existing)
+   * Update commerce logo (replace existing)
    */
-  async updateBusinessLogo(
+  async updateCommerceLogo(
     user: string,
+    commerceId: string,
     businessId: string,
     file: any,
     metadata?: any
-  ): Promise<BusinessLogo> {
+  ): Promise<CommerceLogo> {
     // Delete existing logo if it exists
-    const existingLogo = await this.getBusinessLogo(businessId);
+    const existingLogo = await this.getCommerceLogo(commerceId);
     if (existingLogo) {
-      await this.deleteBusinessLogo(user, businessId, existingLogo.id);
+      await this.deleteCommerceLogo(user, commerceId, existingLogo.id);
     }
 
     // Upload new logo
-    const newLogo = await this.uploadBusinessLogo(user, businessId, file, metadata);
+    const newLogo = await this.uploadCommerceLogo(user, commerceId, businessId, file, metadata);
     return newLogo;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,6 +9,7 @@ import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { AttentionModule } from '../attention/attention.module';
+import { PermissionModule } from '../permission/permission.module';
 
 import { ClientPortalController } from './client-portal.controller';
 import { ClientPortalService } from './client-portal.service';
@@ -23,6 +24,7 @@ import { ClientPortalSession } from './model/client-portal-session.entity';
     LoggerModule,
     ConsentOrchestrationModule,
     LgpdConsentModule,
+    PermissionModule,
     forwardRef(() => TelemedicineModule),
     forwardRef(() => DocumentsModule),
     forwardRef(() => AttentionModule),

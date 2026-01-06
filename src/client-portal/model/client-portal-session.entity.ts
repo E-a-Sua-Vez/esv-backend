@@ -33,7 +33,7 @@ export class ClientPortalSession {
   // Tracking
   ipAddress?: string; // IP do primeiro acesso
   userAgent?: string; // User agent do navegador
-  validatedVia?: 'EMAIL' | 'WHATSAPP' | 'SMS'; // Como foi validado
+  validatedVia?: 'EMAIL' | 'WHATSAPP' | 'SMS' | 'EMAIL+WHATSAPP' | 'EMAIL+SMS'; // Como foi validado
 
   // Metadata
   active: boolean;
@@ -41,5 +41,7 @@ export class ClientPortalSession {
   createdAt: Date;
   updatedAt?: Date;
 }
+
+
 
 

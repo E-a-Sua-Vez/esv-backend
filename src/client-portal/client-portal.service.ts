@@ -17,6 +17,7 @@ import { Client } from '../client/model/client.entity';
 import { CommerceService } from '../commerce/commerce.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
+import { getClientPortalAccessMessage, getClientPortalEmailData } from '../attention/notifications/notifications';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 import { ConsentOrchestrationService } from '../shared/services/consent-orchestration.service';
 import { LgpdConsentService } from '../shared/services/lgpd-consent.service';
@@ -65,7 +66,7 @@ export class ClientPortalService {
     email?: string,
     phone?: string,
     idNumber?: string
-  ): Promise<{ code: string; expiresAt: Date; sentVia: 'EMAIL' | 'WHATSAPP' | 'SMS' }> {
+  ): Promise<{ code: string; expiresAt: Date; sentVia: 'EMAIL' | 'WHATSAPP' | 'SMS' | 'EMAIL+WHATSAPP' | 'EMAIL+SMS' }> {
     try {
       // Validar que pelo menos um identificador foi fornecido
       if (!email && !phone && !idNumber) {
@@ -274,10 +275,20 @@ export class ClientPortalService {
 
       this.logger.log(`Portal access validated for client ${validSession.clientId}`);
 
+      // Generar JWT para el client portal
+      const jwt = require('jsonwebtoken');
+      const payload = {
+        clientId: client.id,
+        commerceId: commerce.id,
+        name: client.name,
+        exp: Math.floor(Date.now() / 1000) + (2 * 60 * 60), // 2 horas
+      };
+      const token = jwt.sign(payload, process.env.CLIENT_PORTAL_JWT_SECRET || 'client_portal_secret');
+
       return {
         valid: true,
-        sessionToken: validSession.sessionToken,
-        expiresAt: validSession.expiresAt,
+        sessionToken: token,
+        expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
         client: {
           id: client.id,
           name: client.name,
@@ -290,6 +301,7 @@ export class ClientPortalService {
           name: commerce.name,
           tag: commerce.tag,
           logo: commerce.logo,
+          keyName: commerce.keyName,
         },
       };
     } catch (error) {
@@ -375,6 +387,7 @@ export class ClientPortalService {
           name: commerce.name,
           tag: commerce.tag,
           logo: commerce.logo,
+          keyName: commerce.keyName,
         },
       };
     } catch (error) {
@@ -452,12 +465,21 @@ export class ClientPortalService {
     code: string,
     email?: string,
     phone?: string
-  ): Promise<'EMAIL' | 'WHATSAPP' | 'SMS'> {
+  ): Promise<'EMAIL' | 'WHATSAPP' | 'SMS' | 'EMAIL+WHATSAPP' | 'EMAIL+SMS'> {
+    console.log('🔧 sendAccessCode called with:', {
+      clientEmail: client.email,
+      clientPhone: client.phone,
+      requestEmail: email,
+      requestPhone: phone,
+      commerceId,
+      envWhatsappNumber: process.env.WHATSGW_PHONE_NUMBER,
+    });
+
     const commerce = await this.commerceService.getCommerceById(commerceId);
     const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
-    const portalUrl = `${frontendUrl}/portal/login`;
+    const portalUrl = `${frontendUrl}/public/portal/${commerce.keyName}/login`;
 
-    // Prioridade: Email > WhatsApp > SMS
+    // Si se proporcionó email específicamente en la solicitud, usar email
     if (email && client.email) {
       try {
         const subject = `Código de Acesso - Portal do Cliente`;
@@ -491,13 +513,27 @@ export class ClientPortalService {
       }
     }
 
+    // Si se proporcionó phone específicamente en la solicitud, usar WhatsApp/SMS
     if (phone && client.phone) {
       try {
-        const message = `Olá ${client.name || 'Cliente'}! Seu código de acesso ao Portal é: ${code}. Acesse: ${portalUrl}. Expira em 15min.`;
+        const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
+        const portalUrl = `${frontendUrl}/public/portal/${commerce.keyName}/login`;
+        const commerceLanguage = commerce.localeInfo?.language || 'es';
+        const message = getClientPortalAccessMessage(commerceLanguage, code, portalUrl, commerce);
 
         // Tentar WhatsApp primeiro
         try {
-          const servicePhoneNumber = commerce.whatsappConnection?.whatsapp || process.env.WHATSAPP_PHONE_NUMBER;
+          // Usar número del comercio solo si la conexión está activa, sino usar default
+          const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
+            ? commerce.whatsappConnection.whatsapp
+            : process.env.WHATSGW_PHONE_NUMBER;
+          console.log('📞 WhatsApp service number config (phone specified):', {
+            commerceWhatsapp: commerce.whatsappConnection?.whatsapp,
+            commerceConnected: commerce.whatsappConnection?.connected,
+            envWhatsapp: process.env.WHATSGW_PHONE_NUMBER,
+            selectedNumber: servicePhoneNumber,
+            commerceId: commerceId
+          });
           await this.notificationService.createWhatsappNotification(
             client.phone,
             client.id,
@@ -513,21 +549,144 @@ export class ClientPortalService {
           this.logger.warn(`Failed to send WhatsApp code: ${error.message}`);
         }
 
-        // Fallback para SMS
+        // Fallback para SMS (DESACTIVADO - no queremos conectar Twilio)
+        // try {
+        //   // Para SMS usamos versión más corta
+        //   const commerceLanguage = commerce.localeInfo?.language || 'es';
+        //   const smsMessages = {
+        //     pt: `${client.name || 'Cliente'}, seu código: ${code}. Portal: ${portalUrl}. Expira em 15min.`,
+        //     es: `${client.name || 'Cliente'}, tu código: ${code}. Portal: ${portalUrl}. Expira en 15min.`,
+        //     en: `${client.name || 'Client'}, your code: ${code}. Portal: ${portalUrl}. Expires in 15min.`
+        //   };
+        //   const smsMessage = smsMessages[commerceLanguage] || smsMessages.es;
+        //   await this.notificationService.createSmsNotification(
+        //     client.phone,
+        //     client.id,
+        //     smsMessage,
+        //     NotificationType.OTHER,
+        //     commerceId
+        //   );
+        //   return 'SMS';
+        // } catch (error) {
+        //   this.logger.warn(`Failed to send SMS code: ${error.message}`);
+        // }
+      } catch (error) {
+        this.logger.error(`Failed to send phone code: ${error.message}`);
+      }
+    }
+
+    // Si no se especificó email ni phone (solo idNumber), enviar por todos los canales disponibles
+    if (!email && !phone) {
+      console.log('🚀 Sending via multiple channels - no specific email/phone requested');
+      const sentChannels = [];
+
+      // Intentar enviar por WhatsApp si tiene phone
+      if (client.phone) {
         try {
-          await this.notificationService.createSmsNotification(
+          const commerceLanguage = commerce.localeInfo?.language || 'es';
+          const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
+          const portalUrl = `${frontendUrl}/public/portal/${commerce.keyName}/login`;
+          const message = getClientPortalAccessMessage(commerceLanguage, code, portalUrl, commerce);
+          // Usar número del comercio solo si la conexión está activa, sino usar default
+          const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
+            ? commerce.whatsappConnection.whatsapp
+            : process.env.WHATSGW_PHONE_NUMBER;
+          console.log('📞 WhatsApp service number config:', {
+            commerceWhatsapp: commerce.whatsappConnection?.whatsapp,
+            commerceConnected: commerce.whatsappConnection?.connected,
+            envWhatsapp: process.env.WHATSGW_PHONE_NUMBER,
+            selectedNumber: servicePhoneNumber,
+            commerceId: commerceId
+          });
+          await this.notificationService.createWhatsappNotification(
             client.phone,
             client.id,
             message,
             NotificationType.OTHER,
-            commerceId
+            undefined, // attentionId
+            commerceId,
+            undefined, // queueId
+            servicePhoneNumber
           );
-          return 'SMS';
+          sentChannels.push('WHATSAPP');
+          console.log('✅ WhatsApp sent successfully');
         } catch (error) {
-          this.logger.warn(`Failed to send SMS code: ${error.message}`);
+          this.logger.warn(`Failed to send WhatsApp code: ${error.message}`);
+          console.log('❌ WhatsApp failed:', error.message);
+          // Si falla WhatsApp, intentar SMS (DESACTIVADO - no queremos conectar Twilio)
+          // try {
+          //   // Para SMS usamos versión más corta
+          //   const commerceLanguage = commerce.localeInfo?.language || 'es';
+          //   const smsMessages = {
+          //     pt: `${client.name || 'Cliente'}, seu código: ${code}. Portal: ${portalUrl}. Expira em 15min.`,
+          //     es: `${client.name || 'Cliente'}, tu código: ${code}. Portal: ${portalUrl}. Expira en 15min.`,
+          //     en: `${client.name || 'Client'}, your code: ${code}. Portal: ${portalUrl}. Expires in 15min.`
+          //   };
+          //   const message = smsMessages[commerceLanguage] || smsMessages.es;
+          //   await this.notificationService.createSmsNotification(
+          //     client.phone,
+          //     client.id,
+          //     message,
+          //     NotificationType.OTHER,
+          //     commerceId
+          //   );
+          //   sentChannels.push('SMS');
+          // } catch (smsError) {
+          //   this.logger.warn(`Failed to send SMS code: ${smsError.message}`);
+          // }
         }
-      } catch (error) {
-        this.logger.error(`Failed to send phone code: ${error.message}`);
+      }
+
+      // Intentar enviar por email si tiene
+      if (client.email) {
+        try {
+          const commerceLanguage = commerce.localeInfo?.language || 'es';
+          const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
+          const portalUrl = `${frontendUrl}/public/portal/${commerce.keyName}/login`;
+          const emailData = getClientPortalEmailData(commerceLanguage, commerce);
+          const subject = emailData.subject;
+          const htmlMessage = `
+            <html>
+              <body>
+                <h2>${emailData.greeting} ${client.name || 'Cliente'}!</h2>
+                <p>${emailData.title}</p>
+                <h1 style="font-size: 2em; letter-spacing: 0.5em; color: #2563eb;">${code}</h1>
+                <p>${emailData.accessText} <a href="${portalUrl}">${portalUrl}</a></p>
+                <p><strong>${emailData.expirationText}</strong></p>
+                <p>${emailData.signature},<br>${commerce.name || 'Equipe'}</p>
+              </body>
+            </html>
+          `;
+
+          await this.notificationService.createBookingRawEmailNotification(
+            NotificationType.OTHER,
+            undefined, // bookingId (not used for portal)
+            commerceId,
+            process.env.EMAIL_SOURCE || 'noreply@estuturno.app',
+            [client.email],
+            subject,
+            [], // attachments
+            htmlMessage
+          );
+          sentChannels.push('EMAIL');
+          console.log('✅ Email sent successfully');
+        } catch (error) {
+          this.logger.warn(`Failed to send email code: ${error.message}`);
+          console.log('❌ Email failed:', error.message);
+        }
+      }
+
+      // Retornar resultado basado en qué se envió
+      if (sentChannels.length > 0) {
+        console.log('📊 Channels used:', sentChannels);
+        if (sentChannels.includes('EMAIL') && sentChannels.includes('WHATSAPP')) {
+          console.log('🎯 Returning EMAIL+WHATSAPP');
+          return 'EMAIL+WHATSAPP';
+        } else if (sentChannels.includes('WHATSAPP')) {
+          return 'WHATSAPP';
+        } else if (sentChannels.includes('EMAIL')) {
+          return 'EMAIL';
+        }
       }
     }
 

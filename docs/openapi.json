@@ -11542,6 +11542,205 @@
         ]
       }
     },
+    "/client-portal/commerce/{slug}": {
+      "get": {
+        "description": "Obtiene la información pública del comercio usando su slug/keyName para el portal de clientes.",
+        "operationId": "ClientPortalController_getCommerceBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Slug/keyName del comercio",
+            "schema": {
+              "example": "sempre-bela-morumbi",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información del comercio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "keyName": {
+                      "type": "string"
+                    },
+                    "tag": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "localeInfo": {
+                      "type": "object"
+                    },
+                    "contactInfo": {
+                      "type": "object"
+                    },
+                    "serviceInfo": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Comercio no encontrado"
+          }
+        },
+        "summary": "Obtener información del comercio por slug (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/{slug}/request-access": {
+      "post": {
+        "description": "Solicita un código de acceso al portal usando el slug del comercio. El código se envía por email/WhatsApp/SMS. Rate limited: 5 requests per minute per IP.",
+        "operationId": "ClientPortalController_requestAccessBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Slug/keyName del comercio",
+            "schema": {
+              "example": "sempre-bela-morumbi",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "idNumber": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Código enviado con éxito"
+          },
+          "404": {
+            "description": "Comercio no encontrado"
+          }
+        },
+        "summary": "Solicitar código de acceso usando slug (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
+    "/client-portal/{slug}/validate-code": {
+      "post": {
+        "description": "Valida el código de acceso y retorna token de sesión usando el slug del comercio. Rate limited: 10 requests per minute per IP.",
+        "operationId": "ClientPortalController_validateCodeBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Slug/keyName del comercio",
+            "schema": {
+              "example": "sempre-bela-morumbi",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Código válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "sessionToken": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "client": {
+                      "type": "object"
+                    },
+                    "commerce": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Comercio no encontrado"
+          }
+        },
+        "summary": "Validar código de acceso usando slug (Público)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
     "/client-portal/request-access": {
       "post": {
         "description": "Solicita um código de acesso ao portal do cliente. O código é enviado por email/WhatsApp/SMS. Rate limited: 5 requests per minute per IP.",
@@ -11595,7 +11794,9 @@
                       "enum": [
                         "EMAIL",
                         "WHATSAPP",
-                        "SMS"
+                        "SMS",
+                        "EMAIL+WHATSAPP",
+                        "EMAIL+SMS"
                       ]
                     }
                   }
@@ -11729,6 +11930,52 @@
         ]
       }
     },
+    "/client-portal/permissions/{token}": {
+      "get": {
+        "description": "Obtiene los permisos del cliente basados en su rol, plan y configuraciones específicas. Valida el JWT directamente.",
+        "operationId": "ClientPortalController_getClientPermissions",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Token JWT del cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permisos del cliente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido o expirado"
+          }
+        },
+        "summary": "Obtener permisos del cliente (Protegido)",
+        "tags": [
+          "client-portal"
+        ]
+      }
+    },
     "/client-portal/session/{token}/renew": {
       "post": {
         "description": "Renova uma sessão expirada ou próxima de expirar.",
@@ -11773,7 +12020,7 @@
     },
     "/client-portal/consents/{commerceId}/{clientId}": {
       "get": {
-        "description": "Retorna todos os consentimentos do cliente para o portal. Valida sessão via token.",
+        "description": "Retorna todos os consentimentos do cliente para o portal. Requiere token JWT.",
         "operationId": "ClientPortalController_getClientConsents",
         "parameters": [
           {
@@ -11790,14 +12037,6 @@
             "required": true,
             "in": "path",
             "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -11823,7 +12062,7 @@
             }
           }
         },
-        "summary": "Obter consentimentos do cliente (Público via sessão)",
+        "summary": "Obter consentimentos do cliente (Protegido)",
         "tags": [
           "client-portal"
         ]
@@ -11831,7 +12070,7 @@
     },
     "/client-portal/consents/{consentId}/revoke": {
       "patch": {
-        "description": "Revoga um consentimento do cliente. Valida sessão via token.",
+        "description": "Revoga um consentimento do cliente. Requiere token JWT.",
         "operationId": "ClientPortalController_revokeConsent",
         "parameters": [
           {
@@ -11839,14 +12078,6 @@
             "required": true,
             "in": "path",
             "description": "ID do consentimento",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -11861,9 +12092,6 @@
                 "properties": {
                   "reason": {
                     "type": "string"
-                  },
-                  "token": {
-                    "type": "string"
                   }
                 }
               }
@@ -11875,7 +12103,7 @@
             "description": "Consentimento revogado com sucesso"
           }
         },
-        "summary": "Revogar consentimento (Público via sessão)",
+        "summary": "Revogar consentimento (Protegido)",
         "tags": [
           "client-portal"
         ]
@@ -11883,7 +12111,7 @@
     },
     "/client-portal/telemedicine/{commerceId}/{clientId}": {
       "get": {
-        "description": "Retorna as sessões de telemedicina do cliente. Valida sessão via token.",
+        "description": "Retorna as sessões de telemedicina do cliente. Requiere token JWT.",
         "operationId": "ClientPortalController_getTelemedicineSessions",
         "parameters": [
           {
@@ -11900,14 +12128,6 @@
             "required": true,
             "in": "path",
             "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -11928,7 +12148,7 @@
             }
           }
         },
-        "summary": "Obter sessões de telemedicina do cliente (Público via sessão)",
+        "summary": "Obter sessões de telemedicina do cliente (Protegido)",
         "tags": [
           "client-portal"
         ]
@@ -11936,7 +12156,7 @@
     },
     "/client-portal/profile/{commerceId}/{clientId}": {
       "get": {
-        "description": "Retorna o perfil completo do cliente. Valida sessão via token.",
+        "description": "Retorna o perfil completo do cliente. Requiere token JWT.",
         "operationId": "ClientPortalController_getClientProfile",
         "parameters": [
           {
@@ -11956,14 +12176,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -11978,7 +12190,7 @@
             }
           }
         },
-        "summary": "Obter perfil do cliente (Público via sessão)",
+        "summary": "Obter perfil do cliente (Protegido)",
         "tags": [
           "client-portal"
         ]
@@ -11986,7 +12198,7 @@
     },
     "/client-portal/documents/{commerceId}/{clientId}": {
       "get": {
-        "description": "Retorna os documentos do cliente. Valida sessão via token.",
+        "description": "Retorna os documentos do cliente. Requiere token JWT.",
         "operationId": "ClientPortalController_getClientDocuments",
         "parameters": [
           {
@@ -12003,14 +12215,6 @@
             "required": true,
             "in": "path",
             "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -12031,7 +12235,7 @@
             }
           }
         },
-        "summary": "Obter documentos do cliente (Público via sessão)",
+        "summary": "Obter documentos do cliente (Protegido)",
         "tags": [
           "client-portal"
         ]
@@ -12039,7 +12243,7 @@
     },
     "/client-portal/attentions/{commerceId}/{clientId}": {
       "get": {
-        "description": "Retorna o histórico de atenções do cliente. Valida sessão via token.",
+        "description": "Retorna o histórico de atenções do cliente. Requiere token JWT.",
         "operationId": "ClientPortalController_getClientAttentions",
         "parameters": [
           {
@@ -12056,14 +12260,6 @@
             "required": true,
             "in": "path",
             "description": "ID do cliente",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -12084,7 +12280,7 @@
             }
           }
         },
-        "summary": "Obter histórico de atenções do cliente (Público via sessão)",
+        "summary": "Obter histórico de atenções do cliente (Protegido)",
         "tags": [
           "client-portal"
         ]
@@ -15907,6 +16103,342 @@
         "summary": "Get business logo thumbnail",
         "tags": [
           "business-logos"
+        ]
+      }
+    },
+    "/commerce-logos/{commerceId}": {
+      "post": {
+        "description": "Uploads a new logo for a commerce",
+        "operationId": "CommerceLogoController_uploadCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Commerce logo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "businessId": {
+                    "type": "string",
+                    "example": "business-123",
+                    "description": "Business ID that owns this commerce"
+                  },
+                  "logoType": {
+                    "type": "string",
+                    "example": "commerce_logo",
+                    "description": "Type of logo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "logo",
+                  "businessId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Logo uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommerceLogo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload commerce logo",
+        "tags": [
+          "commerce-logos"
+        ]
+      },
+      "get": {
+        "description": "Retrieves commerce logo metadata",
+        "operationId": "CommerceLogoController_getCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commerce logo metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommerceLogo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get commerce logo metadata",
+        "tags": [
+          "commerce-logos"
+        ]
+      },
+      "put": {
+        "description": "Replaces the existing commerce logo with a new one",
+        "operationId": "CommerceLogoController_updateCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New commerce logo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "businessId": {
+                    "type": "string",
+                    "example": "business-123",
+                    "description": "Business ID that owns this commerce"
+                  },
+                  "logoType": {
+                    "type": "string",
+                    "example": "commerce_logo",
+                    "description": "Type of logo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "logo",
+                  "businessId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logo updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommerceLogo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "404": {
+            "description": "Commerce not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update commerce logo",
+        "tags": [
+          "commerce-logos"
+        ]
+      }
+    },
+    "/commerce-logos/{commerceId}/{logoId}": {
+      "get": {
+        "description": "Retrieves and streams the commerce logo file",
+        "operationId": "CommerceLogoController_getCommerceLogoFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commerce logo file stream"
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get commerce logo file",
+        "tags": [
+          "commerce-logos"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a commerce logo and its thumbnail",
+        "operationId": "CommerceLogoController_deleteCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logo deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - Not authorized"
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete commerce logo",
+        "tags": [
+          "commerce-logos"
+        ]
+      }
+    },
+    "/commerce-logos/{commerceId}/{logoId}/thumbnail": {
+      "get": {
+        "description": "Retrieves and streams the commerce logo thumbnail",
+        "operationId": "CommerceLogoController_getCommerceLogoThumbnail",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commerce logo thumbnail stream"
+          },
+          "404": {
+            "description": "Thumbnail not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get commerce logo thumbnail",
+        "tags": [
+          "commerce-logos"
         ]
       }
     },
@@ -21618,6 +22150,10 @@
         "properties": {}
       },
       "BusinessLogo": {
+        "type": "object",
+        "properties": {}
+      },
+      "CommerceLogo": {
         "type": "object",
         "properties": {}
       },
