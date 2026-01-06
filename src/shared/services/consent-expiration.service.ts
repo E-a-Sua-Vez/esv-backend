@@ -162,8 +162,8 @@ export class ConsentExpirationService {
         try {
           const whatsappMessage = `*${commerce.name}*\n\nSeu consentimento LGPD para *${consentTypeLabel}* expirou em *${expirationDate}*.\n\nPor favor, acesse o portal do cliente para renovar seu consentimento.`;
           // Usar número del comercio solo si la conexión está activa, sino usar default
-          const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp) 
-            ? commerce.whatsappConnection.whatsapp 
+          const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
+            ? commerce.whatsappConnection.whatsapp
             : process.env.WHATSGW_PHONE_NUMBER;
           await this.notificationService.createWhatsappNotification(
             client.phone,
@@ -291,8 +291,8 @@ export class ConsentExpirationService {
           daysUntilExpiration
         );
         // Usar número del comercio solo si la conexión está activa, sino usar default
-        const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp) 
-          ? commerce.whatsappConnection.whatsapp 
+        const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
+          ? commerce.whatsappConnection.whatsapp
           : process.env.WHATSGW_PHONE_NUMBER;
         await this.notificationService.createWhatsappNotification(
           client.phone,

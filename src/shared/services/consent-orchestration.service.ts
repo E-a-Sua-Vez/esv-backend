@@ -666,8 +666,8 @@ export class ConsentOrchestrationService {
         try {
           const whatsappMessage = this.buildWhatsAppMessage(commerce, link, requirements);
           // Usar número del comercio solo si la conexión está activa, sino usar default
-          const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp) 
-            ? commerce.whatsappConnection.whatsapp 
+          const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
+            ? commerce.whatsappConnection.whatsapp
             : process.env.WHATSGW_PHONE_NUMBER;
           await this.notificationService.createWhatsappNotification(
             client.phone,
