@@ -153,7 +153,6 @@ export class CommerceLogoService {
             height = this.recommendedHeight;
           }
         }
-      }
 
       return await sharp(imageBuffer)
         .resize(width, height, {
@@ -162,9 +161,13 @@ export class CommerceLogoService {
         })
         .jpeg({ quality: 90 })
         .toBuffer();
-    } catch (error) {
+    } else {
+      // No resize needed
       return imageBuffer;
     }
+  } catch (error) {
+    return imageBuffer;
+  }
   }
 
   /**
@@ -354,6 +357,7 @@ export class CommerceLogoService {
    */
   async getCommerceLogo(commerceId: string): Promise<CommerceLogo | null> {
     try {
+      console.log('🏪 CommerceLogoService: Searching for logo with commerceId:', commerceId);
       const logo = await this.commerceLogoRepository
         .whereEqualTo('commerceId' as any, commerceId)
         .whereEqualTo('active' as any, true)
@@ -361,8 +365,10 @@ export class CommerceLogoService {
         .findOne();
 
       if (logo) {
+        console.log('🏪 CommerceLogoService: Logo found:', { id: logo.id, filename: logo.filename });
         return logo as CommerceLogo;
       } else {
+        console.log('🏪 CommerceLogoService: No logo found for commerceId:', commerceId);
         return null;
       }
     } catch (error) {
@@ -469,5 +475,23 @@ export class CommerceLogoService {
     // Upload new logo
     const newLogo = await this.uploadCommerceLogo(user, commerceId, businessId, file, metadata);
     return newLogo;
+  }
+
+  /**
+   * Get signed URL for commerce logo
+   */
+  async getCommerceLogoSignedUrl(commerceId: string): Promise<string | null> {
+    console.log('🏪 CommerceLogoService: getCommerceLogoSignedUrl called for:', commerceId);
+    const logo = await this.getCommerceLogo(commerceId);
+    if (!logo) {
+      console.log('🏪 CommerceLogoService: No logo found, returning null');
+      return null;
+    }
+
+    // Return relative path instead of absolute URL
+    // Frontend will construct full URL using its VITE_BACKEND_URL
+    const relativePath = `/commerce-logos/${commerceId}/${logo.id}`;
+    console.log('🏪 CommerceLogoService: Returning relative path:', relativePath);
+    return relativePath;
   }
 }

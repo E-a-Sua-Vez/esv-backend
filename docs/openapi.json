@@ -15857,7 +15857,7 @@
         ]
       },
       "get": {
-        "description": "Retrieves business logo metadata",
+        "description": "Retrieves business logo URL for access through backend",
         "operationId": "BusinessLogoController_getBusinessLogo",
         "parameters": [
           {
@@ -15866,18 +15866,18 @@
             "in": "path",
             "description": "Business ID",
             "schema": {
-              "example": "business-123",
+              "example": "yWwwFl5BaDmHU69mvshG",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Business logo metadata",
+            "description": "Business logo signed URL",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BusinessLogo"
+                  "type": "string"
                 }
               }
             }
@@ -15891,7 +15891,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Get business logo metadata",
+        "summary": "Get business logo URL",
         "tags": [
           "business-logos"
         ]
@@ -16187,7 +16187,7 @@
         ]
       },
       "get": {
-        "description": "Retrieves commerce logo metadata",
+        "description": "Retrieves commerce logo URL for access through backend",
         "operationId": "CommerceLogoController_getCommerceLogo",
         "parameters": [
           {
@@ -16203,11 +16203,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Commerce logo metadata",
+            "description": "Commerce logo signed URL",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommerceLogo"
+                  "type": "string"
                 }
               }
             }
@@ -16221,7 +16221,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Get commerce logo metadata",
+        "summary": "Get commerce logo URL",
         "tags": [
           "commerce-logos"
         ]

@@ -104,20 +104,20 @@ export class CommerceLogoController {
   @ApiBearerAuth('JWT-auth')
   @Get(':commerceId')
   @ApiOperation({
-    summary: 'Get commerce logo metadata',
-    description: 'Retrieves commerce logo metadata',
+    summary: 'Get commerce logo URL',
+    description: 'Retrieves commerce logo URL for access through backend',
   })
   @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
   @ApiResponse({
     status: 200,
-    description: 'Commerce logo metadata',
-    type: CommerceLogo,
+    description: 'Commerce logo signed URL',
+    type: String,
   })
   @ApiResponse({ status: 404, description: 'Logo not found' })
   async getCommerceLogo(
     @Param('commerceId') commerceId: string
-  ): Promise<CommerceLogo | null> {
-    return this.commerceLogoService.getCommerceLogo(commerceId);
+  ): Promise<string | null> {
+    return await this.commerceLogoService.getCommerceLogoSignedUrl(commerceId);
   }
 
   @UseGuards(AuthGuard)

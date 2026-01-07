@@ -158,7 +158,6 @@ export class BusinessLogoService {
             height = this.recommendedHeight;
           }
         }
-      }
 
       return await sharp(imageBuffer)
         .resize(width, height, {
@@ -167,10 +166,14 @@ export class BusinessLogoService {
         })
         .jpeg({ quality: 90 })
         .toBuffer();
-    } catch (error) {
-      // If optimization fails, return original
+    } else {
+      // No resize needed
       return imageBuffer;
     }
+  } catch (error) {
+    // If optimization fails, return original
+    return imageBuffer;
+  }
   }
 
   /**
@@ -473,6 +476,21 @@ export class BusinessLogoService {
     // Upload new logo
     const newLogo = await this.uploadBusinessLogo(user, businessId, file, metadata);
     return newLogo;
+  }
+
+  /**
+   * Get signed URL for business logo
+   */
+  async getBusinessLogoSignedUrl(businessId: string): Promise<string | null> {
+    const logo = await this.getBusinessLogo(businessId);
+    if (!logo) {
+      return null;
+    }
+
+    // Return relative path instead of absolute URL
+    // Frontend will construct full URL using its VITE_BACKEND_URL
+    const relativePath = `/business-logos/${businessId}/${logo.id}`;
+    return relativePath;
   }
 }
 

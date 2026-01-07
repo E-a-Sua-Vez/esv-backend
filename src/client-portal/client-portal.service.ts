@@ -466,15 +466,6 @@ export class ClientPortalService {
     email?: string,
     phone?: string
   ): Promise<'EMAIL' | 'WHATSAPP' | 'SMS' | 'EMAIL+WHATSAPP' | 'EMAIL+SMS'> {
-    console.log('🔧 sendAccessCode called with:', {
-      clientEmail: client.email,
-      clientPhone: client.phone,
-      requestEmail: email,
-      requestPhone: phone,
-      commerceId,
-      envWhatsappNumber: process.env.WHATSGW_PHONE_NUMBER,
-    });
-
     const commerce = await this.commerceService.getCommerceById(commerceId);
     const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
     const portalUrl = `${frontendUrl}/public/portal/${commerce.keyName}/login`;
@@ -527,13 +518,6 @@ export class ClientPortalService {
           const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
             ? commerce.whatsappConnection.whatsapp
             : process.env.WHATSGW_PHONE_NUMBER;
-          console.log('📞 WhatsApp service number config (phone specified):', {
-            commerceWhatsapp: commerce.whatsappConnection?.whatsapp,
-            commerceConnected: commerce.whatsappConnection?.connected,
-            envWhatsapp: process.env.WHATSGW_PHONE_NUMBER,
-            selectedNumber: servicePhoneNumber,
-            commerceId: commerceId
-          });
           await this.notificationService.createWhatsappNotification(
             client.phone,
             client.id,
@@ -577,7 +561,6 @@ export class ClientPortalService {
 
     // Si no se especificó email ni phone (solo idNumber), enviar por todos los canales disponibles
     if (!email && !phone) {
-      console.log('🚀 Sending via multiple channels - no specific email/phone requested');
       const sentChannels = [];
 
       // Intentar enviar por WhatsApp si tiene phone
@@ -591,13 +574,6 @@ export class ClientPortalService {
           const servicePhoneNumber = (commerce.whatsappConnection?.connected && commerce.whatsappConnection?.whatsapp)
             ? commerce.whatsappConnection.whatsapp
             : process.env.WHATSGW_PHONE_NUMBER;
-          console.log('📞 WhatsApp service number config:', {
-            commerceWhatsapp: commerce.whatsappConnection?.whatsapp,
-            commerceConnected: commerce.whatsappConnection?.connected,
-            envWhatsapp: process.env.WHATSGW_PHONE_NUMBER,
-            selectedNumber: servicePhoneNumber,
-            commerceId: commerceId
-          });
           await this.notificationService.createWhatsappNotification(
             client.phone,
             client.id,
@@ -609,10 +585,8 @@ export class ClientPortalService {
             servicePhoneNumber
           );
           sentChannels.push('WHATSAPP');
-          console.log('✅ WhatsApp sent successfully');
         } catch (error) {
           this.logger.warn(`Failed to send WhatsApp code: ${error.message}`);
-          console.log('❌ WhatsApp failed:', error.message);
           // Si falla WhatsApp, intentar SMS (DESACTIVADO - no queremos conectar Twilio)
           // try {
           //   // Para SMS usamos versión más corta
@@ -669,18 +643,14 @@ export class ClientPortalService {
             htmlMessage
           );
           sentChannels.push('EMAIL');
-          console.log('✅ Email sent successfully');
         } catch (error) {
           this.logger.warn(`Failed to send email code: ${error.message}`);
-          console.log('❌ Email failed:', error.message);
         }
       }
 
       // Retornar resultado basado en qué se envió
       if (sentChannels.length > 0) {
-        console.log('📊 Channels used:', sentChannels);
         if (sentChannels.includes('EMAIL') && sentChannels.includes('WHATSAPP')) {
-          console.log('🎯 Returning EMAIL+WHATSAPP');
           return 'EMAIL+WHATSAPP';
         } else if (sentChannels.includes('WHATSAPP')) {
           return 'WHATSAPP';

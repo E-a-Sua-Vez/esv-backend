@@ -299,10 +299,6 @@ export class PatientPhotoService {
    */
   async getPatientPhoto(commerceId: string, clientId: string): Promise<PatientPhoto | null> {
     try {
-      // Use both console.log and console.error to ensure it shows up in logs
-      console.log(`🔍 PHOTO_DEBUG: Service searching for photo - commerceId: ${commerceId}, clientId: ${clientId}`);
-      console.error(`🔍 PHOTO_DEBUG: Service searching for photo - commerceId: ${commerceId}, clientId: ${clientId}`);
-
       // First, let's try to get all photos for this client to debug
       const allPhotos = await this.patientPhotoRepository
         .whereEqualTo('clientId' as any, clientId)
@@ -403,9 +399,7 @@ export class PatientPhotoService {
       photo.modifiedBy = user;
       photo.modifiedAt = new Date();
 
-      console.log(`🗑️ PatientPhotoService: Marking photo as inactive: ${photo.id}`);
       await this.patientPhotoRepository.update(photo as any);
-      console.log(`✅ PatientPhotoService: Photo marked as inactive successfully`);
 
       // Publish event
       const event = new PatientPhotoDeleted(new Date(), photo as any, { user });
@@ -428,20 +422,14 @@ export class PatientPhotoService {
     file: any,
     metadata?: any
   ): Promise<PatientPhoto> {
-    console.log(`🔄 PatientPhotoService: Updating photo for commerceId: ${commerceId}, clientId: ${clientId}`);
-
     // Delete existing photo if it exists
     const existingPhoto = await this.getPatientPhoto(commerceId, clientId);
     if (existingPhoto) {
-      console.log(`🗑️ PatientPhotoService: Deleting existing photo: ${existingPhoto.id}`);
       await this.deletePatientPhoto(user, commerceId, clientId, existingPhoto.id);
-    } else {
-      console.log(`🔄 PatientPhotoService: No existing photo found, creating new one`);
     }
 
     // Upload new photo
     const newPhoto = await this.uploadPatientPhoto(user, commerceId, clientId, file, metadata);
-    console.log(`✅ PatientPhotoService: Update completed, new photo id: ${newPhoto.id}`);
     return newPhoto;
   }
 }

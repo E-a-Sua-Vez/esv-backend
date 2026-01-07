@@ -118,14 +118,7 @@ export class PatientPhotoController {
     @Param('commerceId') commerceId: string,
     @Param('clientId') clientId: string
   ): Promise<PatientPhoto | null> {
-    // Use console.log to ensure it shows up in logs
-    console.log(`🔍 PHOTO_DEBUG: Controller GET request for commerceId: ${commerceId}, clientId: ${clientId}`);
-    console.error(`🔍 PHOTO_DEBUG: Controller GET request for commerceId: ${commerceId}, clientId: ${clientId}`);
-
     const result = await this.patientPhotoService.getPatientPhoto(commerceId, clientId);
-
-    console.log(`🔍 PHOTO_DEBUG: Service returned:`, result ? `Photo with id: ${result.id}, filename: ${result.filename}` : 'NULL RESULT');
-    console.error(`🔍 PHOTO_DEBUG: Service returned:`, result ? `Photo with id: ${result.id}, filename: ${result.filename}` : 'NULL RESULT');
 
     if (!result) {
       console.log(`🔍 PHOTO_DEBUG: Returning null/404 for no photo found`);
@@ -258,7 +251,7 @@ export class PatientPhotoController {
     );
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(UniversalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Delete(':commerceId/:clientId/:photoId')
   @HttpCode(HttpStatus.NO_CONTENT)

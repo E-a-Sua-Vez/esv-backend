@@ -98,20 +98,20 @@ export class BusinessLogoController {
   @ApiBearerAuth('JWT-auth')
   @Get(':businessId')
   @ApiOperation({
-    summary: 'Get business logo metadata',
-    description: 'Retrieves business logo metadata',
+    summary: 'Get business logo URL',
+    description: 'Retrieves business logo URL for access through backend',
   })
-  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'business-123' })
+  @ApiParam({ name: 'businessId', description: 'Business ID', example: 'yWwwFl5BaDmHU69mvshG' })
   @ApiResponse({
     status: 200,
-    description: 'Business logo metadata',
-    type: BusinessLogo,
+    description: 'Business logo signed URL',
+    type: String,
   })
   @ApiResponse({ status: 404, description: 'Logo not found' })
   async getBusinessLogo(
     @Param('businessId') businessId: string
-  ): Promise<BusinessLogo | null> {
-    return this.businessLogoService.getBusinessLogo(businessId);
+  ): Promise<string | null> {
+    return await this.businessLogoService.getBusinessLogoSignedUrl(businessId);
   }
 
   @UseGuards(AuthGuard)

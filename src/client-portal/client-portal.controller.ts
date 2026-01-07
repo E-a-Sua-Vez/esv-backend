@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   Req,
-  Query,
   HttpCode,
   HttpStatus,
   HttpException,
@@ -21,9 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
-import { AuthGuard } from '../auth/auth.guard';
-import { ClientPortalAuthGuard } from './client-portal-auth.guard';
 import { ClientPortalService } from './client-portal.service';
+import { ClientPortalAuthGuard } from './client-portal-auth.guard';
 import { CommerceService } from '../commerce/commerce.service';
 import { PermissionService } from '../permission/permission.service';
 
@@ -129,9 +127,6 @@ export class ClientPortalController {
     @Param('slug') slug: string,
     @Body() body: { email?: string; phone?: string; idNumber?: string }
   ) {
-    // Log para debugging
-    console.log('🔵 requestAccessBySlug called with:', { slug, body });
-
     // Buscar comercio por slug
     const commerce = await this.commerceService.getCommerceByKeyName(slug);
 
@@ -139,19 +134,10 @@ export class ClientPortalController {
       throw new HttpException('Comércio não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    console.log('✅ Commerce found:', commerce.id);
-
     // Filtrar valores vacíos y pasar undefined en lugar de strings vacías
     const email = body.email && body.email.trim() !== '' ? body.email : undefined;
     const phone = body.phone && body.phone.trim() !== '' ? body.phone : undefined;
     const idNumber = body.idNumber && body.idNumber.trim() !== '' ? body.idNumber : undefined;
-
-    console.log('📤 Calling portalService.requestAccess with:', {
-      commerceId: commerce.id,
-      email,
-      phone,
-      idNumber
-    });
 
     // Usar el commerceId para el método existente
     return this.portalService.requestAccess(
@@ -398,8 +384,8 @@ export class ClientPortalController {
 
   // ========== ENDPOINTS PROTEGIDOS (para uso futuro) ==========
 
-    @UseGuards(ClientPortalAuthGuard)
     @Get('/consents/:commerceId/:clientId')
+    @UseGuards(ClientPortalAuthGuard)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
       summary: 'Obter consentimentos do cliente (Protegido)',
@@ -432,8 +418,8 @@ export class ClientPortalController {
     }
 
 
-  @UseGuards(ClientPortalAuthGuard)
   @Patch('/consents/:consentId/revoke')
+  @UseGuards(ClientPortalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Revogar consentimento (Protegido)',
@@ -462,8 +448,8 @@ export class ClientPortalController {
   }
 
 
-  @UseGuards(ClientPortalAuthGuard)
   @Get('/telemedicine/:commerceId/:clientId')
+  @UseGuards(ClientPortalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter sessões de telemedicina do cliente (Protegido)',
@@ -493,8 +479,8 @@ export class ClientPortalController {
   }
 
 
-  @UseGuards(ClientPortalAuthGuard)
   @Get('/profile/:commerceId/:clientId')
+  @UseGuards(ClientPortalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter perfil do cliente (Protegido)',
@@ -521,8 +507,8 @@ export class ClientPortalController {
   }
 
 
-  @UseGuards(ClientPortalAuthGuard)
   @Get('/documents/:commerceId/:clientId')
+  @UseGuards(ClientPortalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter documentos do cliente (Protegido)',
@@ -552,8 +538,8 @@ export class ClientPortalController {
   }
 
 
-  @UseGuards(ClientPortalAuthGuard)
   @Get('/attentions/:commerceId/:clientId')
+  @UseGuards(ClientPortalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter histórico de atenções do cliente (Protegido)',
