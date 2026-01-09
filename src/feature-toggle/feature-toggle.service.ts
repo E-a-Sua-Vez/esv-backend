@@ -56,6 +56,10 @@ export class FeatureToggleService {
     commerceId: string,
     name: string
   ): Promise<FeatureToggle> {
+    if (!commerceId) {
+      // Evitar consultas inválidas contra Firestore/FireORM
+      return undefined;
+    }
     const result = await this.featureToggleRepository
       .whereEqualTo('commerceId', commerceId)
       .whereEqualTo('name', name)
@@ -82,6 +86,12 @@ export class FeatureToggleService {
     commerceId: string,
     type: string
   ): Promise<FeatureToggle> {
+    if (!name || !type || !commerceId) {
+      throw new HttpException(
+        'Bad request: "name", "type" y "commerceId" son obligatorios',
+        HttpStatus.BAD_REQUEST
+      );
+    }
     const existingFeature = await this.getFeatureToggleByNameAndCommerceId(commerceId, name);
     if (existingFeature !== undefined) {
       throw new HttpException('feature-toggle ya existe para este comercio', HttpStatus.FOUND);

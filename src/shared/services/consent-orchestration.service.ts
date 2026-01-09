@@ -37,6 +37,7 @@ import { FeatureToggleService } from '../../feature-toggle/feature-toggle.servic
 import { FeatureToggle } from '../../feature-toggle/model/feature-toggle.entity';
 import { FeatureToggleName } from '../../feature-toggle/model/feature-toggle.enum';
 import { ConsentValidationService } from './consent-validation.service';
+import { getLgpdConsentRequestWhatsappMessage } from '../messages/lgpd-messages';
 
 /**
  * Servicio de orquestación de consentimientos LGPD
@@ -594,7 +595,8 @@ export class ConsentOrchestrationService {
         return;
       }
 
-      const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
+      const frontendUrl =
+        process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:5173';
       const link = `${frontendUrl}/consent/${request.token}`;
 
       // Determinar métodos a usar (unión de todos los métodos configurados)
@@ -794,9 +796,9 @@ export class ConsentOrchestrationService {
 
     // Si no hay template configurado, usar uno por defecto
     if (!template) {
-      const consentCount = requirements.length;
-      const consentTypes = requirements.map(r => r.consentType).join(', ');
-      template = `*${commerce.name}*\n\nNecesitamos su consentimiento para ${consentCount} tratamiento(s) de datos según LGPD.\n\nTipos de consentimiento: ${consentTypes}\n\nPor favor, complete el formulario:\n${link}\n\nEste enlace expira en 72 horas.`;
+      const language = commerce?.localeInfo?.language || 'pt';
+      const consentTypesArr = requirements.map(r => r.consentType);
+      template = getLgpdConsentRequestWhatsappMessage(language, commerce?.name || '', link, consentTypesArr);
     } else {
       // Reemplazar variables en el template
       template = template
@@ -976,7 +978,8 @@ export class ConsentOrchestrationService {
         throw new HttpException('Request not found', HttpStatus.NOT_FOUND);
       }
 
-      const frontendUrl = process.env.FRONTEND_URL || 'https://interno.estuturno.app';
+      const frontendUrl =
+        process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:5173';
       const link = `${frontendUrl}/consent/${request.token}`;
 
       // Si ya existe el QR code, retornarlo

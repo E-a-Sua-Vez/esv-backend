@@ -865,7 +865,21 @@ export class AttentionService {
       }
 
       // Validar consentimientos bloqueantes antes de avanzar etapa
-      if (this.consentTriggersService && attention.clientId && attention.commerceId) {
+      // Permitir bypass si el feature toggle 'allow-attention-without-consents' está activo
+      let skipConsentBlocking = false;
+      try {
+        if (this.featureToggleService) {
+          const toggle = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(
+            attention.commerceId,
+            'allow-attention-without-consents'
+          );
+          skipConsentBlocking = !!toggle && !!toggle.active;
+        }
+      } catch (e) {
+        skipConsentBlocking = false;
+      }
+
+      if (!skipConsentBlocking && this.consentTriggersService && attention.clientId && attention.commerceId) {
         const blockingCheck = await this.consentTriggersService.checkBlockingConsents(
           attention.clientId,
           attention.commerceId
@@ -1064,7 +1078,22 @@ export class AttentionService {
       try {
         if (attention.status === AttentionStatus.PENDING) {
           // Validar consentimientos bloqueantes antes de avanzar a PROCESSING
-          if (this.consentTriggersService && attention.clientId && attention.commerceId) {
+          // Permitir bypass si el feature toggle 'allow-attention-without-consents' está activo
+          let skipConsentBlocking = false;
+          try {
+            if (this.featureToggleService) {
+              const toggle = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(
+                attention.commerceId,
+                'allow-attention-without-consents'
+              );
+              skipConsentBlocking = !!toggle && !!toggle.active;
+            }
+          } catch (e) {
+            // No bloquear si el servicio de toggles falla, continuar con la validación estándar
+            skipConsentBlocking = false;
+          }
+
+          if (!skipConsentBlocking && this.consentTriggersService && attention.clientId && attention.commerceId) {
             const blockingCheck = await this.consentTriggersService.checkBlockingConsents(
               attention.clientId,
               attention.commerceId

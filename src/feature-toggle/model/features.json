@@ -243,4 +243,9 @@
     "name": "sms-consent-request",
     "type": "SMS"
   }
+  ,
+  {
+    "name": "allow-attention-without-consents",
+    "type": "PRODUCT"
+  }
 ]

@@ -136,3 +136,57 @@ export function getLgpdInternalMessages(language: string = 'pt') {
   }
 }
 
+/**
+ * Mensaje de solicitud de consentimientos LGPD para WhatsApp, con soporte ES/PT/EN
+ */
+export function getLgpdConsentRequestWhatsappMessage(
+  language: string,
+  commerceName: string,
+  link: string,
+  consentTypes: string[]
+): string {
+  const lang = (language || 'pt').toLowerCase().substring(0, 2);
+  const typesStr = consentTypes && consentTypes.length > 0 ? consentTypes.join(', ') : '';
+  const count = consentTypes ? consentTypes.length : 0;
+  const messages = {
+    pt: `👋 *Olá!*
+
+🛡️ *${commerceName}* precisa do seu consentimento LGPD para *${count}* tratamento(s) de dados.
+
+📝 *Tipos:* ${typesStr}
+
+🔗 *Preencha o formulário aqui:*
+${link}
+
+⏳ *Válido por 72 horas.*
+
+✅ Obrigado pela colaboração! 🙏`,
+    es: `👋 *¡Hola!*
+
+🛡️ *${commerceName}* necesita tu consentimiento LGPD para *${count}* tratamiento(s) de datos.
+
+📝 *Tipos:* ${typesStr}
+
+🔗 *Completa el formulario aquí:*
+${link}
+
+⏳ *Válido por 72 horas.*
+
+✅ ¡Gracias por tu colaboración! 🙏`,
+    en: `👋 *Hello!*
+
+🛡️ *${commerceName}* needs your LGPD consent for *${count}* data processing(s).
+
+📝 *Types:* ${typesStr}
+
+🔗 *Complete the form here:*
+${link}
+
+⏳ *Valid for 72 hours.*
+
+✅ Thank you for your cooperation! 🙏`,
+  } as Record<string, string>;
+
+  return messages[lang] || messages.en;
+}
+
