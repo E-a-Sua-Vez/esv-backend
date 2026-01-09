@@ -314,6 +314,27 @@
         ]
       }
     },
+    "/business/user/permissions": {
+      "get": {
+        "description": "Retrieves permissions for the authenticated user",
+        "operationId": "BusinessController_getUserPermissions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Permissions retrieved successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get user permissions",
+        "tags": [
+          "business"
+        ]
+      }
+    },
     "/commerce/{id}": {
       "get": {
         "description": "Retrieves a commerce by its unique identifier",
@@ -1295,6 +1316,66 @@
         "tags": [
           "collaborator"
         ]
+      },
+      "get": {
+        "description": "Retorna la URL de la firma digital del colaborador; firma si es privada",
+        "operationId": "CollaboratorController_getDigitalSignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener URL de la firma digital",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/digital-signature/upload": {
+      "post": {
+        "description": "Sube una imagen de la firma digital del colaborador a S3 y actualiza su URL",
+        "operationId": "CollaboratorController_uploadDigitalSignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Subir firma digital (archivo)",
+        "tags": [
+          "collaborator"
+        ]
       }
     },
     "/collaborator/desactivate/{id}": {
@@ -1376,6 +1457,250 @@
             "description": ""
           }
         },
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/medical-data": {
+      "post": {
+        "description": "Permite actualizar la información médica específica de un colaborador (licencia, especialización, etc.)",
+        "operationId": "CollaboratorController_updateMedicalData",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualizar datos médicos del colaborador",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/role": {
+      "patch": {
+        "description": "Cambia el rol específico del colaborador (médico, enfermero, secretaria, etc.)",
+        "operationId": "CollaboratorController_updateCollaboratorRole",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualizar rol del colaborador",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/medical/commerce/{commerceId}": {
+      "get": {
+        "description": "Retorna solo los colaboradores que son médicos o especialistas con licencia médica",
+        "operationId": "CollaboratorController_getMedicalCollaboratorsByCommerceId",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "ID del commerce",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener colaboradores médicos de un commerce",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/for-documents": {
+      "get": {
+        "description": "Retorna los datos completos del colaborador necesarios para generar documentos médicos",
+        "operationId": "CollaboratorController_getCollaboratorForMedicalDocuments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener colaborador para documentos médicos",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/extended": {
+      "patch": {
+        "description": "Permite actualizar todos los campos del colaborador incluyendo los nuevos campos médicos",
+        "operationId": "CollaboratorController_updateCollaboratorExtended",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualización extendida del colaborador",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/profile-photo": {
+      "get": {
+        "description": "Retorna la URL de la foto de perfil del colaborador si existe",
+        "operationId": "CollaboratorController_getProfilePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener URL de la foto de perfil",
+        "tags": [
+          "collaborator"
+        ]
+      },
+      "post": {
+        "description": "Permite subir una nueva foto de perfil para el colaborador",
+        "operationId": "CollaboratorController_uploadProfilePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Subir foto de perfil del colaborador",
+        "tags": [
+          "collaborator"
+        ]
+      },
+      "patch": {
+        "description": "Permite actualizar la URL de la foto de perfil del colaborador",
+        "operationId": "CollaboratorController_updateProfilePhotoUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Actualizar URL de la foto de perfil",
         "tags": [
           "collaborator"
         ]
@@ -13840,34 +14165,285 @@
         ]
       }
     },
-    "/message/{id}": {
+    "/internal-message/system-notification": {
+      "post": {
+        "operationId": "InternalMessageController_sendSystemNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSystemNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notification sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send system notification",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/send": {
+      "post": {
+        "operationId": "InternalMessageController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send message (chat)",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/inbox": {
       "get": {
-        "description": "Retrieves a message by its unique identifier",
-        "operationId": "MessageController_getMessageById",
+        "operationId": "InternalMessageController_getInbox",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Inbox retrieved"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get user inbox",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/{id}/read": {
+      "patch": {
+        "operationId": "InternalMessageController_markAsRead",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Message ID",
             "schema": {
-              "example": "message-123"
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Message found",
+            "description": "Message marked as read",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Message"
+                  "$ref": "#/components/schemas/InternalMessage"
                 }
               }
             }
-          },
-          "404": {
-            "description": "Message not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark message as read",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/bulk/read": {
+      "post": {
+        "operationId": "InternalMessageController_bulkMarkAsRead",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Messages marked as read"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark multiple messages as read",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/bulk/archive": {
+      "post": {
+        "operationId": "InternalMessageController_bulkArchive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Messages archived"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Archive multiple messages",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/{id}/archive": {
+      "patch": {
+        "operationId": "InternalMessageController_archiveMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Archive message",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/conversation": {
+      "post": {
+        "operationId": "InternalMessageController_getOrCreateConversation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conversation retrieved or created"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get or create conversation",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/{id}": {
+      "get": {
+        "operationId": "InternalMessageController_getMessageById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -13877,153 +14453,27 @@
         ],
         "summary": "Get message by ID",
         "tags": [
-          "message"
-        ]
-      },
-      "patch": {
-        "description": "Updates message status (read, active, available)",
-        "operationId": "MessageController_updateMessageConfigurations",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Message ID",
-            "schema": {
-              "example": "message-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Message"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Message updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Message"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Message not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Update message configurations",
-        "tags": [
-          "message"
+          "internal-message"
         ]
       }
     },
-    "/message": {
-      "get": {
-        "description": "Retrieves a list of all messages",
-        "operationId": "MessageController_getMessages",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of messages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Message"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get all messages",
-        "tags": [
-          "message"
-        ]
-      },
+    "/internal-message/mass/send": {
       "post": {
-        "description": "Creates a new notification message",
-        "operationId": "MessageController_createMessage",
+        "operationId": "InternalMessageController_sendMassMessage",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "type": "string",
-                    "example": "NOTIFICATION"
-                  },
-                  "commerceId": {
-                    "type": "string",
-                    "example": "commerce-123"
-                  },
-                  "administratorId": {
-                    "type": "string"
-                  },
-                  "collaboratorId": {
-                    "type": "string"
-                  },
-                  "clientId": {
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string",
-                    "example": "New notification"
-                  },
-                  "content": {
-                    "type": "string",
-                    "example": "Message content"
-                  },
-                  "link": {
-                    "type": "string"
-                  },
-                  "icon": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "type",
-                  "commerceId"
-                ]
+                "$ref": "#/components/schemas/SendMassMessageDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Message created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Message"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
+            "description": "Mass messages sent"
           }
         },
         "security": [
@@ -14031,201 +14481,29 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Create a new message",
+        "summary": "Send mass message (MASTER only)",
         "tags": [
-          "message"
+          "internal-message"
         ]
       }
     },
-    "/message/commerceId/{commerceId}/clientId/{clientId}": {
-      "get": {
-        "description": "Retrieves all messages for a specific client",
-        "operationId": "MessageController_getMessagesByClient",
-        "parameters": [
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "description": "Client ID",
-            "schema": {
-              "example": "client-123"
-            }
-          },
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of messages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Message"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get messages by client",
-        "tags": [
-          "message"
-        ]
-      }
-    },
-    "/message/commerceId/{commerceId}/administratorId/{clientId}": {
-      "get": {
-        "description": "Retrieves all messages for a specific administrator",
-        "operationId": "MessageController_getMessagesByAdministrator",
-        "parameters": [
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "description": "Administrator ID (note: param name is clientId but represents administratorId)",
-            "schema": {
-              "example": "admin-123"
-            }
-          },
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of messages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Message"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get messages by administrator",
-        "tags": [
-          "message"
-        ]
-      }
-    },
-    "/message/commerceId/{commerceId}/collaboratorId/{collaboratorId}": {
-      "get": {
-        "description": "Retrieves all messages for a specific collaborator",
-        "operationId": "MessageController_getMessagesByCollaborator",
-        "parameters": [
-          {
-            "name": "collaboratorId",
-            "required": true,
-            "in": "path",
-            "description": "Collaborator ID",
-            "schema": {
-              "example": "collaborator-123"
-            }
-          },
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of messages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Message"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get messages by collaborator",
-        "tags": [
-          "message"
-        ]
-      }
-    },
-    "/message/all/read": {
-      "patch": {
-        "description": "Marks all messages as read for a user (administrator, collaborator, or client)",
-        "operationId": "MessageController_markAllAsRead",
+    "/internal-message/conversation/cross-business": {
+      "post": {
+        "operationId": "InternalMessageController_createCrossBusinessConversation",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "administratorId": {
-                    "type": "string"
-                  },
-                  "collaboratorId": {
-                    "type": "string"
-                  },
-                  "clientId": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/CreateCrossBusinessConversationDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Messages marked as read",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Message"
-                  }
-                }
-              }
-            }
+            "description": "Cross-business conversation created"
           }
         },
         "security": [
@@ -14233,9 +14511,9 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Mark all messages as read",
+        "summary": "Create cross-business conversation (MASTER only)",
         "tags": [
-          "message"
+          "internal-message"
         ]
       }
     },
@@ -22125,9 +22403,144 @@
         "type": "object",
         "properties": {}
       },
-      "Message": {
+      "SendSystemNotificationDto": {
         "type": "object",
         "properties": {}
+      },
+      "InternalMessage": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "BulkReadDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateConversationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendMassMessageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "direct_message",
+              "announcement",
+              "attention_reminder",
+              "booking_reminder",
+              "booking_confirmed",
+              "booking_cancelled",
+              "stock",
+              "low_stock",
+              "out_of_stock",
+              "payment_received",
+              "payment_pending",
+              "payment_overdue",
+              "plan_expiring",
+              "plan_expired",
+              "plan_upgraded",
+              "survey_pending",
+              "document_available",
+              "form_pending",
+              "system_update",
+              "feature_announcement",
+              "maintenance",
+              "task_assigned",
+              "task_completed",
+              "task_overdue"
+            ],
+            "default": "announcement"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "normal",
+              "low"
+            ],
+            "default": "normal"
+          },
+          "targetUserTypes": {
+            "description": "Target user types",
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "targetBusinessIds": {
+            "description": "Target business IDs (empty = all businesses)",
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "targetCommerceIds": {
+            "description": "Target commerce IDs (empty = all commerces)",
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "actionLink": {
+            "type": "string"
+          },
+          "actionLabel": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "targetUserTypes"
+        ]
+      },
+      "CreateCrossBusinessConversationDto": {
+        "type": "object",
+        "properties": {
+          "recipientId": {
+            "type": "string",
+            "description": "Target user ID (admin or collaborator from any business)"
+          },
+          "recipientType": {
+            "type": "string",
+            "description": "Target user type"
+          },
+          "targetBusinessId": {
+            "type": "string",
+            "description": "Target business ID"
+          },
+          "targetCommerceId": {
+            "type": "string",
+            "description": "Target commerce ID"
+          },
+          "initialMessage": {
+            "type": "string",
+            "description": "Initial message content"
+          }
+        },
+        "required": [
+          "recipientId",
+          "recipientType"
+        ]
       },
       "OutcomeType": {
         "type": "object",

@@ -25,6 +25,7 @@ export class MedicalReference {
   // Médico origen
   doctorOriginId: string;
   doctorOriginName: string;
+  collaboratorId?: string; // ID del colaborador que emite la referencia
 
   // Médico destino (opcional si se especifica especialidad)
   doctorDestinationId?: string;

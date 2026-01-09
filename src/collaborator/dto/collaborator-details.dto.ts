@@ -15,4 +15,12 @@ export class CollaboratorDetailsDto {
   servicesId: string[];
   available: boolean;
   services?: Service[];
+  // Campos extendidos
+  role?: string;
+  profilePhoto?: string;
+  digitalSignature?: string;
+  crm?: string;
+  crmState?: string;
+  canSignDocuments?: boolean;
+  medicalData?: any;
 }

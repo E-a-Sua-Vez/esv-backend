@@ -1,9 +1,6 @@
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-
-import { MessageService } from '../message/message.service';
-import { MessageType } from '../message/model/type.enum';
 
 import * as MESSAGES from './messages/messages.js';
 import { Product } from './model/product.entity';
@@ -33,9 +30,7 @@ export class ProductAlertService {
 
   constructor(
     @InjectRepository(Product)
-    private productRepository = getRepository(Product),
-    @Inject(forwardRef(() => MessageService))
-    private messageService: MessageService
+    private productRepository = getRepository(Product)
   ) {}
 
   /**
@@ -202,61 +197,12 @@ export class ProductAlertService {
     alert: ProductAlert
   ): Promise<void> {
     try {
-      const messageType = MessageType.STOCK_PRODUCT_RECHARGE;
-      const baseMessage = MESSAGES.getMessage(
-        MessageType.STOCK_PRODUCT_RECHARGE,
-        undefined,
-        product.name
-      );
-      let message: any = baseMessage;
-
-      // Personalizar mensaje según nivel de alerta
-      if (alert.level === AlertLevel.CRITICAL) {
-        if (alert.daysUntilStockout !== undefined) {
-          if (
-            typeof baseMessage === 'object' &&
-            baseMessage !== null &&
-            !Array.isArray(baseMessage)
-          ) {
-            const baseMessageObj = baseMessage as Record<string, any>;
-            message = {
-              ...baseMessageObj,
-              content: `⚠️ CRÍTICO: ${product.name} se agotará en ${alert.daysUntilStockout} días. Stock actual: ${alert.currentStock}. Acción requerida inmediatamente.`,
-            };
-          } else {
-            message = {
-              content: `⚠️ CRÍTICO: ${product.name} se agotará en ${alert.daysUntilStockout} días. Stock actual: ${alert.currentStock}. Acción requerida inmediatamente.`,
-            };
-          }
-        }
-      } else if (alert.level === AlertLevel.EXPIRATION) {
-        if (alert.daysUntilExpiration !== undefined) {
-          if (
-            typeof baseMessage === 'object' &&
-            baseMessage !== null &&
-            !Array.isArray(baseMessage)
-          ) {
-            const baseMessageObj = baseMessage as Record<string, any>;
-            message = {
-              ...baseMessageObj,
-              content: `⏰ ${product.name} expira en ${alert.daysUntilExpiration} días. Se recomienda usar primero.`,
-            };
-          } else {
-            message = {
-              content: `⏰ ${product.name} expira en ${alert.daysUntilExpiration} días. Se recomienda usar primero.`,
-            };
-          }
-        }
-      }
-
-      await this.messageService.sendMessageToAdministrator(
-        user,
-        product.commerceId,
-        messageType,
-        message
+      // Sistema antiguo eliminado - usar InternalMessageService si necesario
+      this.logger.warn(
+        `Alert for product ${product.name}: ${alert.level} - ${alert.message}`
       );
     } catch (error) {
-      this.logger.error(`Error sending alert notification: ${error.message}`);
+      this.logger.error(`Error logging alert: ${error.message}`);
     }
   }
 

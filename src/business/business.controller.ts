@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
+import { PermissionService } from '../permission/permission.service';
 
 import { BusinessService } from './business.service';
 import { BusinessKeyNameDetailsDto } from './dto/business-keyname-details.dto';
@@ -27,7 +28,10 @@ import { Business, WhatsappConnection } from './model/business.entity';
 @ApiTags('business')
 @Controller('business')
 export class BusinessController {
-  constructor(private readonly businessService: BusinessService) {}
+  constructor(
+    private readonly businessService: BusinessService,
+    private readonly permissionService: PermissionService
+  ) {}
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -195,5 +199,77 @@ export class BusinessController {
   ): Promise<WhatsappConnection> {
     const { id } = params;
     return this.businessService.statusWhatsappConnectionById(user, id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/user/permissions')
+  @ApiOperation({
+    summary: 'Get user permissions',
+    description: 'Retrieves permissions for the authenticated user'
+  })
+  @ApiResponse({ status: 200, description: 'Permissions retrieved successfully' })
+  public async getUserPermissions(@User() user: any): Promise<Record<string, boolean | number>> {
+    console.log('🔐 [CONTROLLER] getUserPermissions - Usuario completo:', JSON.stringify(user, null, 2));
+
+    const userId = typeof user === 'string' ? user : (user.id || user.userId || user.uid);
+    const userType = user.userType || user.type;
+
+    console.log('🔐 [CONTROLLER] Detected userType:', userType);
+    console.log('🔐 [CONTROLLER] UserId:', userId);
+    console.log('🔐 [CONTROLLER] User.businessId:', user.businessId);
+    console.log('🔐 [CONTROLLER] User.commerceId:', user.commerceId);
+    console.log('🔐 [CONTROLLER] User.permissions:', JSON.stringify(user.permissions || {}, null, 2));
+
+    let result;
+
+    // Obtener permisos según el tipo de usuario
+    if (userType === 'master') {
+      console.log('🔐 [CONTROLLER] Processing as MASTER user');
+      result = await this.permissionService.getPermissionsForMaster();
+    } else if (userType === 'administrator' || userType === 'business') {
+      console.log('🔐 [CONTROLLER] Processing as BUSINESS/ADMINISTRATOR user');
+      // Para administrators, necesitamos el businessId
+      const businessId = user.businessId;
+      console.log('🔐 [CONTROLLER] BusinessId para administrator:', businessId);
+      if (businessId) {
+        const userPermissions = user.permissions || {};
+        result = await this.permissionService.getPermissionsForBusiness(businessId, userPermissions);
+      }
+    } else if (userType === 'collaborator') {
+      console.log('🔐 [CONTROLLER] Processing as COLLABORATOR user');
+      // Para collaborators, necesitamos el commerceId y usamos getPermissionsForCollaborator
+      const commerceId = user.commerceId;
+      console.log('🔐 [CONTROLLER] CommerceId para collaborator:', commerceId);
+      if (commerceId) {
+        const userPermissions = user.permissions || {};
+        result = await this.permissionService.getPermissionsForCollaborator(commerceId, userPermissions);
+      }
+    } else if (userType === 'client') {
+      console.log('🔐 [CONTROLLER] Processing as CLIENT user');
+      // Para clients, necesitamos el commerceId
+      const commerceId = user.commerceId;
+      console.log('🔐 [CONTROLLER] CommerceId para client:', commerceId);
+      if (commerceId) {
+        const userPermissions = user.permissions || {};
+        result = await this.permissionService.getPermissionsForClient(commerceId, userPermissions);
+      }
+    }
+
+    // Fallback - retornar permisos básicos
+    if (!result) {
+      console.log('🔐 [CONTROLLER] No se pudieron obtener permisos, usando fallback');
+      result = {
+        'messages.admin.send': false,
+        'messages.admin.view': false,
+        'chats.admin.start': false,
+        'chats.admin.view': false
+      };
+    }
+
+    console.log('🔐 [CONTROLLER] RESULTADO FINAL enviado al frontend:', JSON.stringify(result, null, 2));
+    console.log('🔐 [CONTROLLER] Total de permisos en resultado:', Object.keys(result).length);
+
+    return result;
   }
 }

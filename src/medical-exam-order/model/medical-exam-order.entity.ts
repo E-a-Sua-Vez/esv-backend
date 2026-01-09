@@ -60,6 +60,7 @@ export class MedicalExamOrder {
   // Información del médico
   doctorId: string;
   doctorName: string;
+  collaboratorId?: string; // ID del colaborador que emite la orden
 
   // Exámenes solicitados
   exams: ExamItem[];

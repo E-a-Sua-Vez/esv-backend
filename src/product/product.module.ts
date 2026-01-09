@@ -1,7 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 
-import { MessageModule } from '../message/message.module';
+import { InternalMessageModule } from '../internal-message/internal-message.module';
 
 import { Product, ProductReplacement, ProductConsumption } from './model/product.entity';
 import { ProductAlertService } from './product-alert.service';
@@ -11,7 +11,7 @@ import { ProductService } from './product.service';
 @Module({
   imports: [
     FireormModule.forFeature([Product, ProductReplacement, ProductConsumption]),
-    forwardRef(() => MessageModule),
+    forwardRef(() => InternalMessageModule),
   ],
   providers: [ProductService, ProductAlertService],
   exports: [ProductService, ProductAlertService],

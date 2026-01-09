@@ -2,9 +2,10 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
-import { MessageType } from 'src/message/model/type.enum';
 
-import { MessageService } from '../message/message.service';
+import { InternalMessageService } from '../internal-message/internal-message.service';
+import { MessageCategory } from '../internal-message/model/message-category.enum';
+import { MessagePriority } from '../internal-message/model/message-priority.enum';
 
 import ProductConsumed from './events/ProductConsumed';
 import ProductCreated from './events/ProductCreated';
@@ -29,7 +30,7 @@ export class ProductService {
     private productReplacementRepository = getRepository(ProductReplacement),
     @InjectRepository(ProductConsumption)
     private productConsumptionRepository = getRepository(ProductConsumption),
-    private messageService: MessageService
+    private internalMessageService: InternalMessageService,
   ) {}
 
   public async getProductById(id: string): Promise<Product> {
@@ -312,16 +313,31 @@ export class ProductService {
     }
   }
 
-  public async sendMessage(user: string, product: Product, type: MessageType) {
-    if (product.actualLevel <= product.replacementLevel) {
-      const message = MESSAGES.getMessage(type, undefined, product.name);
-      await this.messageService.sendMessageToAdministrator(
-        user,
-        product.commerceId,
-        MessageType.STOCK_PRODUCT_RECHARGE,
-        message
-      );
-    }
+  public async sendMessage(user: string, product: Product) {
+    // Sistema de mensajería interna
+    const category =
+      product.actualLevel === 0 ? MessageCategory.OUT_OF_STOCK : MessageCategory.LOW_STOCK;
+    const priority = product.actualLevel === 0 ? MessagePriority.HIGH : MessagePriority.NORMAL;
+
+    await this.internalMessageService.sendSystemNotification({
+      category,
+      priority,
+      title:
+        product.actualLevel === 0
+          ? `Sin Stock - ${product.name}`
+          : `Stock Bajo - ${product.name}`,
+      content:
+        product.actualLevel === 0
+          ? `El producto ${product.name} está sin stock. Reabastecer urgentemente.`
+          : `Solo quedan ${product.actualLevel} unidades de ${product.name}. Considera reabastecer.`,
+      icon: '📦',
+      actionLink: `/productos/${product.id}`,
+      actionLabel: 'Ver Producto',
+      recipientId: user,
+      recipientType: 'business',
+      commerceId: product.commerceId,
+      productId: product.id,
+    });
   }
 
   public async createProductConsumption(
@@ -372,8 +388,10 @@ export class ProductService {
           product.actualLevel = actualLevel;
           await this.updateProduct(user, product);
 
-          // Mantener alerta básica para compatibilidad
-          this.sendMessage(user, product, MessageType.STOCK_PRODUCT_RECHARGE);
+          // Enviar alerta si el nivel es bajo
+          if (product.actualLevel <= product.replacementLevel) {
+            this.sendMessage(user, product);
+          }
           return productConsumptionCreated;
         } else {
           throw new HttpException(

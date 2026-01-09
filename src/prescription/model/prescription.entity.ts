@@ -37,6 +37,7 @@ export class Prescription {
   doctorId: string;
   doctorName: string;
   doctorLicense?: string; // Número de licencia médica
+  collaboratorId?: string; // ID del colaborador que emite la prescripción
 
   // Medicamentos
   medications: MedicationItem[];

@@ -367,7 +367,15 @@
       "lgpd.admin.update": true,
       "lgpd.admin.add": true,
       "lgpd.admin.delete": true,
-      "lgpd.admin.limit": 100
+      "lgpd.admin.limit": 100,
+
+      "messages.admin.send": true,
+      "messages.admin.view": true,
+      "messages.admin.read": true,
+
+      "chats.admin.start": true,
+      "chats.admin.view": true,
+      "chats.admin.participate": true
     }
   },
   {
@@ -745,7 +753,20 @@
       "lgpd.admin.update": true,
       "lgpd.admin.add": true,
       "lgpd.admin.delete": true,
-      "lgpd.admin.limit": 100
+      "lgpd.admin.limit": 100,
+
+      "messages.admin.send": true,
+      "messages.admin.send-mass": true,
+      "messages.admin.send-cross-business": true,
+      "messages.admin.view": true,
+      "messages.admin.read": true,
+      "messages.admin.delete": true,
+
+      "chats.admin.start": true,
+      "chats.admin.start-cross-business": true,
+      "chats.admin.view": true,
+      "chats.admin.participate": true,
+      "chats.admin.moderate": true
     }
   },
   {
@@ -844,7 +865,16 @@
       "document-client.admin.edit": true,
 
       "client.admin.edit": true,
-      "client.admin.add": true
+      "client.admin.add": true,
+
+      "messages.admin.send": true,
+      "messages.admin.view": true,
+      "messages.admin.read": true,
+      "messages.admin.delete": true,
+
+      "chats.admin.start": true,
+      "chats.admin.view": true,
+      "chats.admin.participate": true
     },
     "name": "collaborator",
     "description": "Permisos para el rol COLLABORATOR",
@@ -884,7 +914,16 @@
       "client-portal.documents.view": true,
       "client-portal.documents.download": true,
       "client-portal.history.view": true,
-      "client-portal.history.details": true
+      "client-portal.history.details": true,
+
+      "messages.admin.send": true,
+      "messages.admin.view": true,
+      "messages.admin.read": true,
+      "messages.admin.delete": true,
+
+      "chats.admin.start": true,
+      "chats.admin.view": true,
+      "chats.admin.participate": true
     }
   }
 ]

@@ -1,4 +1,0 @@
-export enum MessageType {
-  STANDARD = 'STANDARD',
-  STOCK_PRODUCT_RECHARGE = 'STOCK_PRODUCT_RECHARGE',
-}

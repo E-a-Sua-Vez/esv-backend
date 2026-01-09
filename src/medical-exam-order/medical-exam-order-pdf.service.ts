@@ -8,13 +8,16 @@ import * as https from 'https';
 import * as http from 'http';
 
 import { MedicalExamOrder } from './model/medical-exam-order.entity';
+import { CollaboratorService } from '../collaborator/collaborator.service';
 
 @Injectable()
 export class MedicalExamOrderPdfService {
   private s3: AWS.S3;
   private readonly logger = new Logger(MedicalExamOrderPdfService.name);
 
-  constructor() {
+  constructor(
+    private collaboratorService: CollaboratorService
+  ) {
     this.s3 = new AWS.S3({
       apiVersion: '2006-03-01',
       region: process.env.AWS_DEFAULT_REGION,
@@ -24,7 +27,48 @@ export class MedicalExamOrderPdfService {
   }
 
   /**
+   * Obtener variables médicas extendidas de un colaborador
+   */
+  private async getDoctorVariables(collaboratorId: string): Promise<{
+    doctorName?: string;
+    doctorTitle?: string;
+    doctorLicense?: string;
+    doctorSpecialization?: string;
+    doctorClinicName?: string;
+    doctorClinicAddress?: string;
+    doctorProfessionalPhone?: string;
+    doctorProfessionalEmail?: string;
+    doctorSignature?: string;
+  }> {
+    try {
+      const collaborator = await this.collaboratorService.getCollaboratorForMedicalDocuments(collaboratorId);
+
+      const variables: any = {
+        doctorName: collaborator.name || '',
+        doctorTitle: collaborator.professionalTitle || 'Dr.',
+        doctorLicense: collaborator.crm || collaborator.medicalData?.medicalLicense || '',
+        doctorSignature: collaborator.digitalSignature || '',
+      };
+
+      // Datos médicos extendidos si están disponibles
+      if (collaborator.medicalData) {
+        variables.doctorSpecialization = collaborator.medicalData.specialization || '';
+        variables.doctorClinicName = collaborator.medicalData.clinicName || '';
+        variables.doctorClinicAddress = collaborator.medicalData.clinicAddress || collaborator.medicalData.professionalAddress || '';
+        variables.doctorProfessionalPhone = collaborator.medicalData.professionalPhone || collaborator.medicalData.clinicPhone || '';
+        variables.doctorProfessionalEmail = collaborator.medicalData.professionalEmail || '';
+      }
+
+      return variables;
+    } catch (error) {
+      this.logger.warn(`Could not fetch extended doctor data for collaborator ${collaboratorId}: ${error.message}`);
+      return {};
+    }
+  }
+
+  /**
    * Reemplazar variables en texto (ej: {{verificationUrl}}, {{patientName}}, etc.)
+   * EXTENDIDO: Ahora incluye variables de datos médicos del colaborador
    */
   private replaceVariables(
     text: string,
@@ -37,6 +81,12 @@ export class MedicalExamOrderPdfService {
       commercePhone?: string;
       doctorName?: string;
       doctorLicense?: string;
+      doctorSpecialization?: string;
+      doctorClinicName?: string;
+      doctorClinicAddress?: string;
+      doctorProfessionalPhone?: string;
+      doctorProfessionalEmail?: string;
+      doctorTitle?: string;
       date?: string;
       [key: string]: any;
     }
@@ -104,7 +154,7 @@ export class MedicalExamOrderPdfService {
               const fontSize = element.fontSize || 12;
               const color = element.color || '#000000';
               const align = element.align || 'left';
-              
+
               // Seleccionar fuente según estilos
               let fontFamily = 'Helvetica';
               if (element.bold && element.italic) fontFamily = 'Helvetica-BoldOblique';
@@ -132,14 +182,14 @@ export class MedicalExamOrderPdfService {
               if (element.underline) {
                 const textWidth = doc.widthOfString(displayText);
                 const textY = y + fontSize + 2;
-                
+
                 let underlineX = x;
                 if (align === 'center') {
                   underlineX = x + (width / 2) - (textWidth / 2);
                 } else if (align === 'right') {
                   underlineX = x + width - textWidth;
                 }
-                
+
                 doc.moveTo(underlineX, textY)
                   .lineTo(underlineX + textWidth, textY)
                   .stroke();
@@ -377,7 +427,12 @@ export class MedicalExamOrderPdfService {
         width: 200,
       });
 
-      // Variables disponibles para templates
+      // Obtener variables médicas extendidas del colaborador
+      const extendedDoctorVariables = examOrder.collaboratorId
+        ? await this.getDoctorVariables(examOrder.collaboratorId)
+        : {};
+
+      // Variables disponibles para templates (EXTENDIDAS con datos médicos)
       const templateVariables = {
         verificationUrl,
         patientName,
@@ -394,6 +449,8 @@ export class MedicalExamOrderPdfService {
         }),
         commerceLogo,
         doctorSignature,
+        // Variables médicas extendidas
+        ...extendedDoctorVariables,
       };
 
       // HEADER - Usar template si existe, sino usar default

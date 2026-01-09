@@ -7,8 +7,6 @@ import * as crypto from 'crypto';
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { ProductService } from '../product/product.service';
-import { MessageService } from '../message/message.service';
-import { MessageType } from '../message/model/type.enum';
 import { ConsultationHistoryService } from '../patient-history/consultation-history.service';
 import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 import { CollaboratorService } from '../collaborator/collaborator.service';
@@ -41,7 +39,6 @@ export class PrescriptionService {
     private clientService: ClientService,
     private commerceService: CommerceService,
     private productService: ProductService,
-    private messageService: MessageService,
     private consultationHistoryService?: ConsultationHistoryService,
     private generatedDocumentService?: GeneratedDocumentService,
     private collaboratorService?: CollaboratorService,
@@ -561,10 +558,8 @@ export class PrescriptionService {
               product.replacementLevel !== undefined &&
               product.actualLevel <= product.replacementLevel
             ) {
-              await this.messageService.sendMessageToAdministrator(
-                user,
-                createDto.commerceId,
-                MessageType.STOCK_PRODUCT_RECHARGE,
+              // Sistema antiguo eliminado - usar nuevo sistema si es necesario
+              this.logger.warn(
                 `Producto ${product.name} tiene stock bajo (${product.actualLevel} unidades) y se ha prescrito en una receta.`
               );
             }

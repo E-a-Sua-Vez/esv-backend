@@ -9,13 +9,16 @@ import * as http from 'http';
 import * as crypto from 'crypto';
 
 import { Prescription, MedicationItem } from './model/prescription.entity';
+import { CollaboratorService } from '../collaborator/collaborator.service';
 
 @Injectable()
 export class PrescriptionPdfService {
   private s3: AWS.S3;
   private readonly logger = new Logger(PrescriptionPdfService.name);
 
-  constructor() {
+  constructor(
+    private collaboratorService: CollaboratorService
+  ) {
     this.s3 = new AWS.S3({
       apiVersion: '2006-03-01',
       region: process.env.AWS_DEFAULT_REGION,
@@ -25,7 +28,48 @@ export class PrescriptionPdfService {
   }
 
   /**
+   * Obtener variables médicas extendidas de un colaborador
+   */
+  private async getDoctorVariables(collaboratorId: string): Promise<{
+    doctorName?: string;
+    doctorTitle?: string;
+    doctorLicense?: string;
+    doctorSpecialization?: string;
+    doctorClinicName?: string;
+    doctorClinicAddress?: string;
+    doctorProfessionalPhone?: string;
+    doctorProfessionalEmail?: string;
+    doctorSignature?: string;
+  }> {
+    try {
+      const collaborator = await this.collaboratorService.getCollaboratorForMedicalDocuments(collaboratorId);
+
+      const variables: any = {
+        doctorName: collaborator.name || '',
+        doctorTitle: collaborator.professionalTitle || 'Dr.',
+        doctorLicense: collaborator.crm || collaborator.medicalData?.medicalLicense || '',
+        doctorSignature: collaborator.digitalSignature || '',
+      };
+
+      // Datos médicos extendidos si están disponibles
+      if (collaborator.medicalData) {
+        variables.doctorSpecialization = collaborator.medicalData.specialization || '';
+        variables.doctorClinicName = collaborator.medicalData.clinicName || '';
+        variables.doctorClinicAddress = collaborator.medicalData.clinicAddress || collaborator.medicalData.professionalAddress || '';
+        variables.doctorProfessionalPhone = collaborator.medicalData.professionalPhone || collaborator.medicalData.clinicPhone || '';
+        variables.doctorProfessionalEmail = collaborator.medicalData.professionalEmail || '';
+      }
+
+      return variables;
+    } catch (error) {
+      this.logger.warn(`Could not fetch extended doctor data for collaborator ${collaboratorId}: ${error.message}`);
+      return {};
+    }
+  }
+
+  /**
    * Reemplazar variables en texto (ej: {{verificationUrl}}, {{patientName}}, etc.)
+   * EXTENDIDO: Ahora incluye variables de datos médicos del colaborador
    */
   private replaceVariables(
     text: string,
@@ -38,6 +82,12 @@ export class PrescriptionPdfService {
       commercePhone?: string;
       doctorName?: string;
       doctorLicense?: string;
+      doctorSpecialization?: string;
+      doctorClinicName?: string;
+      doctorClinicAddress?: string;
+      doctorProfessionalPhone?: string;
+      doctorProfessionalEmail?: string;
+      doctorTitle?: string;
       date?: string;
       [key: string]: any;
     }
@@ -106,7 +156,7 @@ export class PrescriptionPdfService {
               const fontSize = element.fontSize || 12;
               const color = element.color || '#000000';
               const align = element.align || 'left';
-              
+
               // Seleccionar fuente según estilos
               let fontFamily = 'Helvetica';
               if (element.bold && element.italic) fontFamily = 'Helvetica-BoldOblique';
@@ -134,14 +184,14 @@ export class PrescriptionPdfService {
               if (element.underline) {
                 const textWidth = doc.widthOfString(displayText);
                 const textY = y + fontSize + 2;
-                
+
                 let underlineX = x;
                 if (align === 'center') {
                   underlineX = x + (width / 2) - (textWidth / 2);
                 } else if (align === 'right') {
                   underlineX = x + width - textWidth;
                 }
-                
+
                 doc.moveTo(underlineX, textY)
                   .lineTo(underlineX + textWidth, textY)
                   .stroke();
@@ -363,7 +413,7 @@ export class PrescriptionPdfService {
   } {
     const pageHeight = this.getPageHeight(template?.pageSize || 'A4');
     const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
-    
+
     // Calcular altura del header
     let headerHeight = 0;
     if (template?.header?.elements && Array.isArray(template.header.elements) && template.header.elements.length > 0) {
@@ -374,7 +424,7 @@ export class PrescriptionPdfService {
     } else {
       headerHeight = 100; // Default header height
     }
-    
+
     // Calcular altura del footer - medir desde el elemento más arriba hasta el más abajo
     let footerHeight = 0;
     if (template?.footer?.elements && Array.isArray(template.footer.elements) && template.footer.elements.length > 0) {
@@ -389,10 +439,10 @@ export class PrescriptionPdfService {
     } else {
       footerHeight = 80; // Default footer height
     }
-    
+
     // Área de contenido disponible
     const contentAreaHeight = pageHeight - margins.top - margins.bottom - headerHeight - footerHeight;
-    
+
     return { headerHeight, footerHeight, contentAreaHeight };
   }
 
@@ -409,7 +459,7 @@ export class PrescriptionPdfService {
     commercePhone?: string
   ): Promise<void> {
     const headerSection = template?.header;
-    
+
     if (headerSection?.elements && Array.isArray(headerSection.elements) && headerSection.elements.length > 0) {
       // Renderizar elementos del canvas
       await this.renderCanvasElements(doc, headerSection.elements, variables, 0);
@@ -459,7 +509,7 @@ export class PrescriptionPdfService {
       // Header por defecto
       doc.fontSize(20).font('Helvetica-Bold').text('RECETA MÉDICA', { align: 'center' });
       doc.moveDown(1);
-      
+
       if (commerceName) {
         doc.fontSize(12).font('Helvetica-Bold').text(commerceName, { align: 'center' });
       }
@@ -486,11 +536,11 @@ export class PrescriptionPdfService {
     const savedY = doc.y;
     const footerSection = template?.footer;
     const hasCanvasFooter = footerSection?.elements && Array.isArray(footerSection.elements) && footerSection.elements.length > 0;
-    
+
     if (hasCanvasFooter) {
       // Calcular el offset Y para posicionar el footer al final de la página
       const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
-      
+
       // Calcular la altura real del footer (desde el primer hasta el último elemento)
       const minFooterY = Math.min(
         ...footerSection.elements.map((e: any) => e.y || 0)
@@ -499,14 +549,14 @@ export class PrescriptionPdfService {
         ...footerSection.elements.map((e: any) => (e.y || 0) + (e.height || 0))
       );
       const footerHeight = maxFooterY - minFooterY;
-      
+
       // Calcular donde debe empezar el footer en esta página
       // Debe estar al final: pageHeight - margen inferior - altura del footer
       const footerStartY = pageHeight - margins.bottom - footerHeight - 10; // 10pt de padding
-      
+
       // El offset es la diferencia entre donde queremos que esté y donde está diseñado
       const yOffset = footerStartY - minFooterY;
-      
+
       // Renderizar elementos del canvas con el offset correcto
       await this.renderCanvasElements(doc, footerSection.elements, variables, yOffset);
     } else if (footerSection?.enabled) {
@@ -514,7 +564,7 @@ export class PrescriptionPdfService {
       const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
       const footerY = pageHeight - margins.bottom - 80;
       doc.y = footerY;
-      
+
       if (footerSection.includeDigitalSignature && doctorSignature) {
         try {
           const signatureBuffer = await this.loadImageFromUrl(doctorSignature);
@@ -564,7 +614,7 @@ export class PrescriptionPdfService {
       const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
       const footerY = pageHeight - margins.bottom - 80;
       doc.y = footerY;
-      
+
       if (doctorSignature) {
         try {
           const signatureBuffer = await this.loadImageFromUrl(doctorSignature);
@@ -588,14 +638,14 @@ export class PrescriptionPdfService {
           align: 'center',
         });
       }
-      
+
       doc.fontSize(10).font('Helvetica-Bold').text(prescription.doctorName, { align: 'center' });
       if (prescription.doctorLicense) {
         doc.fontSize(9).font('Helvetica').text(`CRM: ${prescription.doctorLicense}`, {
           align: 'center',
         });
       }
-      
+
       // Agregar QR code si está disponible
       if (qrCodeDataUrl && !hasCanvasFooter) {
         const qrImageBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
@@ -617,7 +667,7 @@ export class PrescriptionPdfService {
           });
       }
     }
-    
+
     // Restaurar posición
     doc.y = savedY;
   }
@@ -627,24 +677,24 @@ export class PrescriptionPdfService {
    */
   private calculateTextHeight(doc: any, text: string, fontSize: number, options: any = {}): number {
     if (!text) return 0;
-    
+
     // Guardar configuración actual
     const currentFontSize = doc._fontSize;
     const currentFont = doc._font;
-    
+
     // Aplicar la fuente para calcular
     doc.fontSize(fontSize);
     if (options.font) {
       doc.font(options.font);
     }
-    
+
     const width = options.width || (doc.page.width - doc.page.margins.left - doc.page.margins.right - 40);
     const height = doc.heightOfString(text, { ...options, width });
-    
+
     // Restaurar configuración original
     doc.fontSize(currentFontSize);
     doc.font(currentFont);
-    
+
     // Agregar un margen de seguridad del 20%
     return Math.ceil(height * 1.2);
   }
@@ -668,12 +718,12 @@ export class PrescriptionPdfService {
   ): Promise<boolean> {
     const pageHeight = this.getPageHeight(template?.pageSize || 'A4');
     const margins = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
-    
+
     // Calcular donde debe empezar el footer usando la misma lógica que renderFooterOnCurrentPage
     let footerStartY;
     const footerSection = template?.footer;
     const hasCanvasFooter = footerSection?.elements && Array.isArray(footerSection.elements) && footerSection.elements.length > 0;
-    
+
     if (hasCanvasFooter) {
       // Calcular altura real del footer
       const minFooterY = Math.min(
@@ -689,39 +739,39 @@ export class PrescriptionPdfService {
       // Usar altura calculada previamente para footers legacy
       footerStartY = pageHeight - margins.bottom - heights.footerHeight;
     }
-    
+
     // Verificar si hay espacio suficiente
     const availableSpace = footerStartY - doc.y;
-    
+
     // Log para debug
     this.logger.debug(`CheckPage: currentY=${doc.y}, footerStartY=${footerStartY}, availableSpace=${availableSpace}, requiredHeight=${requiredHeight}`);
-    
+
     if (requiredHeight > availableSpace) {
       this.logger.debug(`Adding new page - not enough space`);
       // Renderizar footer en página actual
       await this.renderFooterOnCurrentPage(doc, template, variables, pageHeight, prescription, doctorSignature, qrCodeDataUrl);
-      
+
       // Agregar nueva página
       let docSize: any = template?.pageSize || 'A4';
       if (docSize === 'LETTER_HALF') {
         docSize = [396, 612];
       }
-      
+
       doc.addPage({
         size: docSize,
         margins: margins,
         layout: template?.orientation || 'portrait'
       });
-      
+
       // Renderizar header en nueva página
       await this.renderHeaderOnCurrentPage(doc, template, variables, commerceLogo, commerceName, commerceAddress, commercePhone);
-      
+
       // Posicionar cursor después del header
       doc.y = margins.top + heights.headerHeight;
-      
+
       return true; // Se agregó nueva página
     }
-    
+
     return false; // No se necesitó nueva página
   }
 
@@ -769,7 +819,12 @@ export class PrescriptionPdfService {
         width: 200,
       });
 
-      // Variables disponibles para templates
+      // Obtener variables médicas extendidas del colaborador
+      const extendedDoctorVariables = prescription.collaboratorId
+        ? await this.getDoctorVariables(prescription.collaboratorId)
+        : {};
+
+      // Variables disponibles para templates (EXTENDIDAS con datos médicos)
       const templateVariables = {
         verificationUrl,
         patientName,
@@ -786,6 +841,8 @@ export class PrescriptionPdfService {
         }),
         commerceLogo,
         doctorSignature,
+        // Variables médicas extendidas
+        ...extendedDoctorVariables,
       };
 
       // Calcular alturas de las secciones para paginación
@@ -794,7 +851,7 @@ export class PrescriptionPdfService {
 
       // HEADER - Renderizar en primera página
       await this.renderHeaderOnCurrentPage(doc, template, templateVariables, commerceLogo, commerceName, commerceAddress, commercePhone);
-      
+
       // Posicionar cursor después del header
       doc.y = margins.top + heights.headerHeight;
 
@@ -829,7 +886,7 @@ export class PrescriptionPdfService {
       if (!hasCanvasContent) {
         // Verificar espacio para línea separadora
         await this.checkAndAddNewPageIfNeeded(doc, 30, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         // Línea separadora
         doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
         doc.moveDown(1);
@@ -841,7 +898,7 @@ export class PrescriptionPdfService {
         const labelFontSize = patientInfo?.labelFontSize || 12;
         const valueFontSize = patientInfo?.valueFontSize || 11;
         let requiredHeight = 0;
-        
+
         if (patientInfo?.showName !== false) {
           requiredHeight += labelFontSize + valueFontSize + 5;
         }
@@ -849,9 +906,9 @@ export class PrescriptionPdfService {
           requiredHeight += 15;
         }
         requiredHeight += 20; // Spacing
-        
+
         await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const spacing = patientInfo?.spacing || 0.5;
 
         if (patientInfo?.showName !== false) {
@@ -871,7 +928,7 @@ export class PrescriptionPdfService {
         const labelFontSize = doctorInfo?.labelFontSize || 12;
         const valueFontSize = doctorInfo?.valueFontSize || 11;
         let requiredHeight = 0;
-        
+
         if (doctorInfo?.showName !== false) {
           requiredHeight += labelFontSize + valueFontSize + 5;
         }
@@ -879,9 +936,9 @@ export class PrescriptionPdfService {
           requiredHeight += 15;
         }
         requiredHeight += 20; // Spacing
-        
+
         await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const spacing = doctorInfo?.spacing || 0.5;
 
         if (doctorInfo?.showName !== false) {
@@ -902,7 +959,7 @@ export class PrescriptionPdfService {
       if (dateInfo?.enabled !== false) {
         // Verificar espacio para fecha (aproximadamente 60pt)
         await this.checkAndAddNewPageIfNeeded(doc, 60, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const dateStr = new Date(prescription.date).toLocaleDateString(
           dateInfo?.format || 'pt-BR',
           {
@@ -919,7 +976,7 @@ export class PrescriptionPdfService {
 
       // Verificar espacio para línea separadora
       await this.checkAndAddNewPageIfNeeded(doc, 30, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-      
+
       // Línea separadora
       doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
       doc.moveDown(1);
@@ -929,7 +986,7 @@ export class PrescriptionPdfService {
       if (medicationsConfig?.enabled !== false && prescription.medications && prescription.medications.length > 0) {
         // Verificar espacio para título de medicamentos (aproximadamente 50pt)
         await this.checkAndAddNewPageIfNeeded(doc, 50, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const title = medicationsConfig?.title || 'MEDICAMENTOS:';
         const titleFontSize = medicationsConfig?.titleFontSize || 14;
         const titleFontFamily = medicationsConfig?.titleFontFamily || 'Helvetica-Bold';
@@ -947,11 +1004,11 @@ export class PrescriptionPdfService {
 
         for (let index = 0; index < prescription.medications.length; index++) {
           const medication = prescription.medications[index];
-          
+
           // Calcular altura necesaria para este medicamento
           const itemFontSize = medicationsConfig?.itemFontSize || 12;
           let medicationHeight = itemFontSize + 15; // Nombre del medicamento + espaciado
-          
+
           if (medicationsConfig?.showCommercialName !== false && medication.commercialName) {
             medicationHeight += 18;
           }
@@ -971,9 +1028,9 @@ export class PrescriptionPdfService {
             medicationHeight += 18;
           }
           medicationHeight += 25; // Spacing adicional entre medicamentos
-          
+
           await this.checkAndAddNewPageIfNeeded(doc, medicationHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-          
+
           const medNumber = index + 1;
 
           // Nombre del medicamento
@@ -1051,16 +1108,16 @@ export class PrescriptionPdfService {
         const titleFontSize = instructionsConfig?.titleFontSize || 12;
         const contentFontSize = instructionsConfig?.contentFontSize || 10;
         const showTitle = instructionsConfig?.showTitle !== false;
-        
+
         let requiredHeight = 0;
         if (showTitle) {
           requiredHeight += titleFontSize + 15; // Título + espacio
         }
         requiredHeight += this.calculateTextHeight(doc, prescription.instructions, contentFontSize, { indent: 20, font: 'Helvetica' });
         requiredHeight += 30; // Espacios adicionales y margen de seguridad
-        
+
         await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const title = instructionsConfig?.title || 'INSTRUCCIONES GENERALES:';
         const titleFontFamily = instructionsConfig?.titleFontFamily || 'Helvetica-Bold';
 
@@ -1081,16 +1138,16 @@ export class PrescriptionPdfService {
         const titleFontSize = observationsConfig?.titleFontSize || 12;
         const contentFontSize = observationsConfig?.contentFontSize || 10;
         const showTitle = observationsConfig?.showTitle !== false;
-        
+
         let requiredHeight = 0;
         if (showTitle) {
           requiredHeight += titleFontSize + 15; // Título + espacio
         }
         requiredHeight += this.calculateTextHeight(doc, prescription.observations, contentFontSize, { indent: 20, font: 'Helvetica' });
         requiredHeight += 30; // Espacios adicionales y margen de seguridad
-        
+
         await this.checkAndAddNewPageIfNeeded(doc, requiredHeight, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const title = observationsConfig?.title || 'OBSERVACIONES:';
         const titleFontFamily = observationsConfig?.titleFontFamily || 'Helvetica-Bold';
 
@@ -1107,7 +1164,7 @@ export class PrescriptionPdfService {
       if (validityConfig?.enabled !== false) {
         // Verificar espacio para validez (aproximadamente 40pt)
         await this.checkAndAddNewPageIfNeeded(doc, 40, template, templateVariables, heights, prescription, commerceName, commerceAddress, commercePhone, commerceLogo, doctorSignature, qrCodeDataUrl);
-        
+
         const validUntilStr = new Date(prescription.validUntil).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
@@ -1121,39 +1178,39 @@ export class PrescriptionPdfService {
 
       // FOOTER - Renderizar en la última página (FUERA del bloque hasCanvasContent)
       this.logger.debug(`Rendering final footer at currentY=${doc.y}`);
-      
+
       // Verificar si hay espacio para el footer, si no, crear nueva página
       const footerSectionFinal = template?.footer;
       const hasCanvasFooterFinal = footerSectionFinal?.elements && Array.isArray(footerSectionFinal.elements) && footerSectionFinal.elements.length > 0;
-      
+
       if (hasCanvasFooterFinal) {
         const minFooterY = Math.min(...footerSectionFinal.elements.map((e: any) => e.y || 0));
         const maxFooterY = Math.max(...footerSectionFinal.elements.map((e: any) => (e.y || 0) + (e.height || 0)));
         const footerHeightFinal = maxFooterY - minFooterY;
         const marginsFinal = template?.margins || { top: 50, bottom: 50, left: 50, right: 50 };
         const footerStartYFinal = pageHeight - marginsFinal.bottom - footerHeightFinal - 10;
-        
+
         // Si el cursor actual está más abajo que donde debe empezar el footer, crear nueva página
         if (doc.y > footerStartYFinal) {
           this.logger.debug(`Current Y (${doc.y}) > footerStartY (${footerStartYFinal}), adding new page for footer`);
-          
+
           let docSize: any = template?.pageSize || 'A4';
           if (docSize === 'LETTER_HALF') {
             docSize = [396, 612];
           }
-          
+
           doc.addPage({
             size: docSize,
             margins: marginsFinal,
             layout: template?.orientation || 'portrait'
           });
-          
+
           // Renderizar header en nueva página
           await this.renderHeaderOnCurrentPage(doc, template, templateVariables, commerceLogo, commerceName, commerceAddress, commercePhone);
           doc.y = marginsFinal.top + heights.headerHeight;
         }
       }
-      
+
       await this.renderFooterOnCurrentPage(doc, template, templateVariables, pageHeight, prescription, doctorSignature, qrCodeDataUrl);
 
       // Generar buffer del PDF

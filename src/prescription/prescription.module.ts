@@ -3,7 +3,6 @@ import { FireormModule } from 'nestjs-fireorm';
 
 import { ClientModule } from '../client/client.module';
 import { CommerceModule } from '../commerce/commerce.module';
-import { MessageModule } from '../message/message.module';
 import { PatientHistoryModule } from '../patient-history/patient-history.module';
 import { ProductModule } from '../product/product.module';
 import { DocumentsModule } from '../documents/documents.module';
@@ -36,7 +35,6 @@ import { CrmValidationModule } from '../shared/modules/crm-validation.module';
     AuditLogModule,
     DigitalSignatureModule,
     CrmValidationModule,
-    forwardRef(() => MessageModule),
     forwardRef(() => PatientHistoryModule),
   ],
   providers: [PrescriptionService, PrescriptionPdfService, GeneratedDocumentService],

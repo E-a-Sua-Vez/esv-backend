@@ -29,12 +29,12 @@ import { FormPersonalizedModule } from './form-personalized/form-personalized.mo
 import { HealthModule } from './health/health.module';
 import { HL7Module } from './hl7/hl7.module';
 import { IncomeModule } from './income/income.module';
+import { InternalMessageModule } from './internal-message/internal-message.module';
 import { LaboratoryModule } from './laboratory/laboratory.module';
 import { LeadModule } from './lead/lead.module';
 import { MedicalExamOrderModule } from './medical-exam-order/medical-exam-order.module';
 import { MedicalReferenceModule } from './medical-reference/medical-reference.module';
 import { MedicalTemplateModule } from './medical-template/medical-template.module';
-import { MessageModule } from './message/message.module';
 import { ModuleModule } from './module/module.module';
 import { NotificationModule } from './notification/notification.module';
 import { OutcomeModule } from './outcome/outcome.module';
@@ -135,7 +135,7 @@ import { ClientPortalModule } from './client-portal/client-portal.module';
     TelemedicineModule,
     FormModule,
     FormPersonalizedModule,
-    MessageModule,
+    InternalMessageModule,
     AuditLogModule,
     DigitalSignatureModule,
     CrmValidationModule,

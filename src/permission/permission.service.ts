@@ -74,21 +74,33 @@ export class PermissionService {
     commerceId: string,
     userPermissions: Record<string, number | boolean>
   ): Promise<Record<string, number | boolean>> {
+    console.log('🔐 [PERMISSION SERVICE] getPermissionsForCollaborator iniciado');
+    console.log('🔐 [PERMISSION SERVICE] commerceId:', commerceId);
+    console.log('🔐 [PERMISSION SERVICE] userPermissions input:', JSON.stringify(userPermissions, null, 2));
+
     const permissions = {};
     let rolPermissions = {};
     let planPermissions = {};
     let planActivatedPermissions = {};
+
     const rol = await this.rolService.getRolByName(UserType.COLLABORATOR);
     if (rol && rol.permissions) {
       rolPermissions = rol.permissions;
+      console.log('🔐 [PERMISSION SERVICE] rolPermissions (COLLABORATOR):', JSON.stringify(rolPermissions, null, 2));
+    } else {
+      console.log('🔐 [PERMISSION SERVICE] No se encontró rol COLLABORATOR o no tiene permisos');
     }
+
     const commerce = await this.commerceService.getCommerceById(commerceId);
     if (commerce && commerce.businessId) {
+      console.log('🔐 [PERMISSION SERVICE] Commerce encontrado, businessId:', commerce.businessId);
       const business = await this.businessService.getBusinessById(commerce.businessId);
       if (business && business.planId) {
+        console.log('🔐 [PERMISSION SERVICE] Business encontrado, planId:', business.planId);
         const plan = await this.planService.getPlanById(business.planId);
         if (plan && plan.permissions) {
           planPermissions = plan.permissions;
+          console.log('🔐 [PERMISSION SERVICE] planPermissions:', JSON.stringify(planPermissions, null, 2));
         }
         const planActivated =
           await this.planActivationService.getValidatedPlanActivationByBusinessId(
@@ -97,43 +109,70 @@ export class PermissionService {
           );
         if (planActivated && planActivated.permissions) {
           planActivatedPermissions = planActivated.permissions;
+          console.log('🔐 [PERMISSION SERVICE] planActivatedPermissions:', JSON.stringify(planActivatedPermissions, null, 2));
         }
+      } else {
+        console.log('🔐 [PERMISSION SERVICE] Business no encontrado o sin planId');
       }
+    } else {
+      console.log('🔐 [PERMISSION SERVICE] Commerce no encontrado o sin businessId');
     }
+
+    // Aplicar permisos de rol
     if (Object.keys(rolPermissions).length > 0) {
       Object.keys(rolPermissions).forEach(permission => {
         permissions[permission] = rolPermissions[permission];
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar rol:', JSON.stringify(permissions, null, 2));
     }
+
+    // Aplicar permisos de plan
     if (Object.keys(planPermissions).length > 0) {
       Object.keys(planPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planPermissions[permission];
         }
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar plan:', JSON.stringify(permissions, null, 2));
     }
+
+    // Aplicar permisos de plan activado
     if (Object.keys(planActivatedPermissions).length > 0) {
       Object.keys(planActivatedPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planActivatedPermissions[permission];
         }
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar plan activado:', JSON.stringify(permissions, null, 2));
     }
+
+    // Aplicar permisos del usuario
     if (Object.keys(userPermissions).length > 0) {
       Object.keys(userPermissions).forEach(permission => {
         permissions[permission] = userPermissions[permission];
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar usuario:', JSON.stringify(permissions, null, 2));
     }
+
+    console.log('🔐 [PERMISSION SERVICE] RESULTADO FINAL - Permisos para colaborador:', JSON.stringify(permissions, null, 2));
+    console.log('🔐 [PERMISSION SERVICE] Total de permisos retornados:', Object.keys(permissions).length);
+
     return permissions;
   }
 
   public async getPermissionsForMaster(): Promise<Record<string, number | boolean>> {
+    console.log('🔐 [PERMISSION SERVICE] getPermissionsForMaster iniciado');
+
     const permissions = {};
     let rolPermissions = {};
 
     const rol = await this.rolService.getRolByName(UserType.MASTER);
+
     if (rol && rol.permissions) {
       rolPermissions = rol.permissions;
+      console.log('🔐 [PERMISSION SERVICE] rolPermissions (MASTER):', JSON.stringify(rolPermissions, null, 2));
+    } else {
+      console.log('🔐 [PERMISSION SERVICE] No se encontró rol MASTER o no tiene permisos');
     }
 
     if (Object.keys(rolPermissions).length > 0) {
@@ -141,6 +180,9 @@ export class PermissionService {
         permissions[permission] = rolPermissions[permission];
       });
     }
+
+    console.log('🔐 [PERMISSION SERVICE] RESULTADO FINAL - Permisos para MASTER:', JSON.stringify(permissions, null, 2));
+    console.log('🔐 [PERMISSION SERVICE] Total de permisos retornados:', Object.keys(permissions).length);
 
     return permissions;
   }
@@ -149,21 +191,33 @@ export class PermissionService {
     commerceId: string,
     userPermissions: Record<string, number | boolean>
   ): Promise<Record<string, number | boolean>> {
+    console.log('🔐 [PERMISSION SERVICE] getPermissionsForClient iniciado');
+    console.log('🔐 [PERMISSION SERVICE] commerceId:', commerceId);
+    console.log('🔐 [PERMISSION SERVICE] userPermissions input:', JSON.stringify(userPermissions, null, 2));
+
     const permissions = {};
     let rolPermissions = {};
     let planPermissions = {};
     let planActivatedPermissions = {};
+
     const rol = await this.rolService.getRolByName(UserType.CLIENT);
     if (rol && rol.permissions) {
       rolPermissions = rol.permissions;
+      console.log('🔐 [PERMISSION SERVICE] rolPermissions (CLIENT):', JSON.stringify(rolPermissions, null, 2));
+    } else {
+      console.log('🔐 [PERMISSION SERVICE] No se encontró rol CLIENT o no tiene permisos');
     }
+
     const commerce = await this.commerceService.getCommerceById(commerceId);
     if (commerce && commerce.businessId) {
+      console.log('🔐 [PERMISSION SERVICE] Commerce encontrado, businessId:', commerce.businessId);
       const business = await this.businessService.getBusinessById(commerce.businessId);
       if (business && business.planId) {
+        console.log('🔐 [PERMISSION SERVICE] Business encontrado, planId:', business.planId);
         const plan = await this.planService.getPlanById(business.planId);
         if (plan && plan.permissions) {
           planPermissions = plan.permissions;
+          console.log('🔐 [PERMISSION SERVICE] planPermissions:', JSON.stringify(planPermissions, null, 2));
         }
         const planActivated =
           await this.planActivationService.getValidatedPlanActivationByBusinessId(
@@ -172,33 +226,54 @@ export class PermissionService {
           );
         if (planActivated && planActivated.permissions) {
           planActivatedPermissions = planActivated.permissions;
+          console.log('🔐 [PERMISSION SERVICE] planActivatedPermissions:', JSON.stringify(planActivatedPermissions, null, 2));
         }
+      } else {
+        console.log('🔐 [PERMISSION SERVICE] Business no encontrado o sin planId');
       }
+    } else {
+      console.log('🔐 [PERMISSION SERVICE] Commerce no encontrado o sin businessId');
     }
+
+    // Aplicar permisos de rol
     if (Object.keys(rolPermissions).length > 0) {
       Object.keys(rolPermissions).forEach(permission => {
         permissions[permission] = rolPermissions[permission];
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar rol:', JSON.stringify(permissions, null, 2));
     }
+
+    // Aplicar permisos de plan
     if (Object.keys(planPermissions).length > 0) {
       Object.keys(planPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planPermissions[permission];
         }
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar plan:', JSON.stringify(permissions, null, 2));
     }
+
+    // Aplicar permisos de plan activado
     if (Object.keys(planActivatedPermissions).length > 0) {
       Object.keys(planActivatedPermissions).forEach(permission => {
         if (permissions[permission]) {
           permissions[permission] = planActivatedPermissions[permission];
         }
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar plan activado:', JSON.stringify(permissions, null, 2));
     }
+
+    // Aplicar permisos del usuario
     if (Object.keys(userPermissions).length > 0) {
       Object.keys(userPermissions).forEach(permission => {
         permissions[permission] = userPermissions[permission];
       });
+      console.log('🔐 [PERMISSION SERVICE] Permisos después de aplicar usuario:', JSON.stringify(permissions, null, 2));
     }
+
+    console.log('🔐 [PERMISSION SERVICE] RESULTADO FINAL - Permisos para cliente:', JSON.stringify(permissions, null, 2));
+    console.log('🔐 [PERMISSION SERVICE] Total de permisos retornados:', Object.keys(permissions).length);
+
     return permissions;
   }
 }

@@ -3,6 +3,7 @@ import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 
 import { PdfTemplate } from '../model/pdf-template.entity';
+import { CollaboratorService } from '../../collaborator/collaborator.service';
 
 @Injectable()
 export class PdfTemplateService {
@@ -10,7 +11,8 @@ export class PdfTemplateService {
 
   constructor(
     @InjectRepository(PdfTemplate)
-    private pdfTemplateRepository = getRepository(PdfTemplate)
+    private pdfTemplateRepository = getRepository(PdfTemplate),
+    private collaboratorService: CollaboratorService
   ) {}
 
   /**
@@ -201,11 +203,11 @@ export class PdfTemplateService {
   async generatePreview(template: PdfTemplate): Promise<string> {
     try {
       this.logger.log(`Generating preview for template ${template.id} of type ${template.documentType}`);
-      
+
       // Importar servicios de PDF dinámicamente según el tipo
       if (template.documentType === 'prescription') {
         const { PrescriptionPdfService } = await import('../../prescription/prescription-pdf.service');
-        const pdfService = new PrescriptionPdfService();
+        const pdfService = new PrescriptionPdfService(this.collaboratorService);
 
         // Crear datos de ejemplo para preview (SOLO PARA PREVIEW, NO PARA PRODUCCIÓN)
         // Usamos 'as any' porque solo necesitamos campos mínimos para el preview
@@ -277,7 +279,7 @@ export class PdfTemplateService {
         return result.pdfUrl;
       } else if (template.documentType === 'exam_order') {
         const { MedicalExamOrderPdfService } = await import('../../medical-exam-order/medical-exam-order-pdf.service');
-        const pdfService = new MedicalExamOrderPdfService();
+        const pdfService = new MedicalExamOrderPdfService(this.collaboratorService);
 
         // Crear datos de ejemplo para preview (SOLO PARA PREVIEW, NO PARA PRODUCCIÓN)
         // Agregar timestamp para forzar regeneración y evitar cache
@@ -335,7 +337,7 @@ export class PdfTemplateService {
         return result.pdfUrl;
       } else if (template.documentType === 'reference') {
         const { MedicalReferencePdfService } = await import('../../medical-reference/medical-reference-pdf.service');
-        const pdfService = new MedicalReferencePdfService();
+        const pdfService = new MedicalReferencePdfService(this.collaboratorService);
 
         // Crear datos de ejemplo para preview (SOLO PARA PREVIEW, NO PARA PRODUCCIÓN)
         // Agregar timestamp para forzar regeneración y evitar cache

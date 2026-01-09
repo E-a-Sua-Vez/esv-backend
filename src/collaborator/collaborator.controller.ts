@@ -9,7 +9,10 @@ import {
   HttpCode,
   HttpStatus,
   HttpException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -17,6 +20,7 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'src/auth/user.decorator';
@@ -186,6 +190,24 @@ export class CollaboratorController {
     );
   }
 
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/digital-signature/upload')
+  @UseInterceptors(FileInterceptor('signature'))
+  @ApiOperation({
+    summary: 'Subir firma digital (archivo)',
+    description: 'Sube una imagen de la firma digital del colaborador a S3 y actualiza su URL'
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async uploadDigitalSignature(
+    @User() user,
+    @Param('id') id: string,
+    @UploadedFile() signature: any,
+  ): Promise<{ signatureUrl: string }> {
+    return this.collaboratorService.uploadDigitalSignature(user, id, signature);
+  }
+
   @Patch('/:id')
   public async updateCollaborator(
     @User() user,
@@ -330,5 +352,221 @@ export class CollaboratorController {
       collaborator.crm,
       collaborator.crmState
     );
+  }
+
+  // ========== NUEVOS ENDPOINTS PARA GESTIÓN MÉDICA ==========
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/medical-data')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Actualizar datos médicos del colaborador',
+    description: 'Permite actualizar la información médica específica de un colaborador (licencia, especialización, etc.)'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async updateMedicalData(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: {
+      medicalLicense?: string;
+      medicalLicenseState?: string;
+      specialization?: string;
+      subspecialization?: string;
+      medicalSchool?: string;
+      graduationYear?: number;
+      professionalAddress?: string;
+      professionalPhone?: string;
+      professionalMobile?: string;
+      professionalEmail?: string;
+      clinicName?: string;
+      clinicAddress?: string;
+      clinicPhone?: string;
+      workingHours?: string;
+      acceptsInsurance?: string[];
+      languages?: string[];
+    }
+  ): Promise<Collaborator> {
+    return this.collaboratorService.updateMedicalData(user, id, body);
+  }
+
+  // Eliminado: POST JSON para actualizar foto de perfil (duplicaba la ruta POST multipart)
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/role')
+  @ApiOperation({
+    summary: 'Actualizar rol del colaborador',
+    description: 'Cambia el rol específico del colaborador (médico, enfermero, secretaria, etc.)'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async updateCollaboratorRole(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { role: string }
+  ): Promise<Collaborator> {
+    return this.collaboratorService.updateCollaboratorRole(user, id, body.role as any);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/medical/commerce/:commerceId')
+  @ApiOperation({
+    summary: 'Obtener colaboradores médicos de un commerce',
+    description: 'Retorna solo los colaboradores que son médicos o especialistas con licencia médica'
+  })
+  @ApiParam({ name: 'commerceId', description: 'ID del commerce' })
+  public async getMedicalCollaboratorsByCommerceId(
+    @Param('commerceId') commerceId: string
+  ): Promise<Collaborator[]> {
+    return this.collaboratorService.getMedicalCollaboratorsByCommerceId(commerceId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/:id/for-documents')
+  @ApiOperation({
+    summary: 'Obtener colaborador para documentos médicos',
+    description: 'Retorna los datos completos del colaborador necesarios para generar documentos médicos'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async getCollaboratorForMedicalDocuments(
+    @Param('id') id: string
+  ): Promise<Collaborator> {
+    return this.collaboratorService.getCollaboratorForMedicalDocuments(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/extended')
+  @ApiOperation({
+    summary: 'Actualización extendida del colaborador',
+    description: 'Permite actualizar todos los campos del colaborador incluyendo los nuevos campos médicos'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async updateCollaboratorExtended(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: any
+  ): Promise<Collaborator> {
+    return this.collaboratorService.updateCollaboratorExtended(user, id, body);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/:id/digital-signature')
+  @ApiOperation({
+    summary: 'Obtener URL de la firma digital',
+    description: 'Retorna la URL de la firma digital del colaborador; firma si es privada'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async getDigitalSignature(
+    @Param('id') id: string
+  ): Promise<{ signatureUrl: string | null }> {
+    const { signatureUrl } = await this.collaboratorService.getDigitalSignatureSignedUrl(id);
+    if (signatureUrl === null) {
+      const collaborator = await this.collaboratorService.getCollaboratorById(id);
+      if (!collaborator) {
+        throw new HttpException('Colaborador no existe', HttpStatus.NOT_FOUND);
+      }
+    }
+    return { signatureUrl };
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/:id/profile-photo')
+  @ApiOperation({
+    summary: 'Obtener URL de la foto de perfil',
+    description: 'Retorna la URL de la foto de perfil del colaborador si existe'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async getProfilePhoto(
+    @Param('id') id: string
+  ): Promise<{ photoUrl: string | null }> {
+    const { photoUrl } = await this.collaboratorService.getProfilePhotoSignedUrl(id);
+    if (photoUrl === null) {
+      // Si el colaborador no existe o no tiene foto
+      const collaborator = await this.collaboratorService.getCollaboratorById(id);
+      if (!collaborator) {
+        throw new HttpException('Colaborador no existe', HttpStatus.NOT_FOUND);
+      }
+    }
+    return { photoUrl };
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/profile-photo')
+  @UseInterceptors(FileInterceptor('photo'))
+  @ApiOperation({
+    summary: 'Subir foto de perfil del colaborador',
+    description: 'Permite subir una nueva foto de perfil para el colaborador'
+  })
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async uploadProfilePhoto(
+    @User() user,
+    @Param('id') id: string,
+    @UploadedFile() photo: any,
+    @Body() body: any
+  ): Promise<{ photoUrl: string }> {
+    // Caso 1: archivo multipart
+    if (photo && photo.buffer) {
+      return this.collaboratorService.uploadProfilePhoto(user, id, photo);
+    }
+
+    // Caso 2: JSON con base64
+    const base64 = body?.photo?.image || body?.image || body?.photoBase64;
+    const filename = body?.photo?.filename || body?.filename || 'profile.jpg';
+
+    if (base64) {
+      // Permitir prefijo data URL
+      const dataUrlMatch = /^data:(.*?);base64,(.*)$/.exec(base64);
+      const mimeFromDataUrl = dataUrlMatch?.[1];
+      const base64Payload = dataUrlMatch ? dataUrlMatch[2] : base64;
+
+      let buffer: Buffer;
+      try {
+        buffer = Buffer.from(base64Payload, 'base64');
+      } catch (e) {
+        throw new HttpException('Imagen base64 inválida', HttpStatus.BAD_REQUEST);
+      }
+
+      const ext = (filename?.split('.')?.pop() || 'jpg').toLowerCase();
+      const mime = mimeFromDataUrl || (ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg');
+
+      const virtualFile = {
+        buffer,
+        originalname: filename,
+        mimetype: mime,
+      };
+      return this.collaboratorService.uploadProfilePhoto(user, id, virtualFile);
+    }
+
+    // Si no llegó ni archivo ni base64
+    throw new HttpException(
+      'Se requiere archivo multipart "photo" o JSON con { photo: { image, filename } }',
+      HttpStatus.BAD_REQUEST
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/profile-photo')
+  @ApiOperation({
+    summary: 'Actualizar URL de la foto de perfil',
+    description: 'Permite actualizar la URL de la foto de perfil del colaborador'
+  })
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async updateProfilePhotoUrl(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { photoUrl: string }
+  ): Promise<Collaborator> {
+    if (!body || !body.photoUrl) {
+      throw new HttpException('photoUrl es requerido', HttpStatus.BAD_REQUEST);
+    }
+    return this.collaboratorService.updateProfilePhoto(user, id, body.photoUrl);
   }
 }
