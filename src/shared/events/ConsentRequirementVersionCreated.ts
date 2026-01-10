@@ -17,3 +17,4 @@ export default class ConsentRequirementVersionCreated extends DomainEvent {
 
 
 
+

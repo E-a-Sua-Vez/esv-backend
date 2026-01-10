@@ -25,3 +25,4 @@ export default class BusinessLogoDeleted extends DomainEvent {
 
 
 
+

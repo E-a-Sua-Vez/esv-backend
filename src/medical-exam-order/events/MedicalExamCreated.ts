@@ -23,3 +23,4 @@ export default class MedicalExamCreated extends DomainEvent {
 
 
 
+
