@@ -4669,6 +4669,342 @@
         ]
       }
     },
+    "/commerce-logos/{commerceId}": {
+      "post": {
+        "description": "Uploads a new logo for a commerce",
+        "operationId": "CommerceLogoController_uploadCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Commerce logo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "businessId": {
+                    "type": "string",
+                    "example": "business-123",
+                    "description": "Business ID that owns this commerce"
+                  },
+                  "logoType": {
+                    "type": "string",
+                    "example": "commerce_logo",
+                    "description": "Type of logo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "logo",
+                  "businessId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Logo uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommerceLogo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload commerce logo",
+        "tags": [
+          "commerce-logos"
+        ]
+      },
+      "get": {
+        "description": "Retrieves commerce logo URL for access through backend",
+        "operationId": "CommerceLogoController_getCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commerce logo signed URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get commerce logo URL",
+        "tags": [
+          "commerce-logos"
+        ]
+      },
+      "put": {
+        "description": "Replaces the existing commerce logo with a new one",
+        "operationId": "CommerceLogoController_updateCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "New commerce logo file (JPG, PNG, WebP, max 5MB)"
+                  },
+                  "businessId": {
+                    "type": "string",
+                    "example": "business-123",
+                    "description": "Business ID that owns this commerce"
+                  },
+                  "logoType": {
+                    "type": "string",
+                    "example": "commerce_logo",
+                    "description": "Type of logo"
+                  },
+                  "uploadDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Upload date"
+                  }
+                },
+                "required": [
+                  "logo",
+                  "businessId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logo updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommerceLogo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid file"
+          },
+          "404": {
+            "description": "Commerce not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update commerce logo",
+        "tags": [
+          "commerce-logos"
+        ]
+      }
+    },
+    "/commerce-logos/{commerceId}/{logoId}": {
+      "get": {
+        "description": "Retrieves and streams the commerce logo file",
+        "operationId": "CommerceLogoController_getCommerceLogoFile",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commerce logo file stream"
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get commerce logo file",
+        "tags": [
+          "commerce-logos"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a commerce logo and its thumbnail",
+        "operationId": "CommerceLogoController_deleteCommerceLogo",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logo deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - Not authorized"
+          },
+          "404": {
+            "description": "Logo not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete commerce logo",
+        "tags": [
+          "commerce-logos"
+        ]
+      }
+    },
+    "/commerce-logos/{commerceId}/{logoId}/thumbnail": {
+      "get": {
+        "description": "Retrieves and streams the commerce logo thumbnail",
+        "operationId": "CommerceLogoController_getCommerceLogoThumbnail",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "logoId",
+            "required": true,
+            "in": "path",
+            "description": "Logo ID",
+            "schema": {
+              "example": "logo-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commerce logo thumbnail stream"
+          },
+          "404": {
+            "description": "Thumbnail not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get commerce logo thumbnail",
+        "tags": [
+          "commerce-logos"
+        ]
+      }
+    },
     "/user/{id}": {
       "get": {
         "description": "Retrieves a user by its unique identifier",
@@ -16384,342 +16720,6 @@
         ]
       }
     },
-    "/commerce-logos/{commerceId}": {
-      "post": {
-        "description": "Uploads a new logo for a commerce",
-        "operationId": "CommerceLogoController_uploadCommerceLogo",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "logo": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Commerce logo file (JPG, PNG, WebP, max 5MB)"
-                  },
-                  "businessId": {
-                    "type": "string",
-                    "example": "business-123",
-                    "description": "Business ID that owns this commerce"
-                  },
-                  "logoType": {
-                    "type": "string",
-                    "example": "commerce_logo",
-                    "description": "Type of logo"
-                  },
-                  "uploadDate": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "Upload date"
-                  }
-                },
-                "required": [
-                  "logo",
-                  "businessId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Logo uploaded successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommerceLogo"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - Invalid file"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Upload commerce logo",
-        "tags": [
-          "commerce-logos"
-        ]
-      },
-      "get": {
-        "description": "Retrieves commerce logo URL for access through backend",
-        "operationId": "CommerceLogoController_getCommerceLogo",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Commerce logo signed URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Logo not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get commerce logo URL",
-        "tags": [
-          "commerce-logos"
-        ]
-      },
-      "put": {
-        "description": "Replaces the existing commerce logo with a new one",
-        "operationId": "CommerceLogoController_updateCommerceLogo",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "logo": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "New commerce logo file (JPG, PNG, WebP, max 5MB)"
-                  },
-                  "businessId": {
-                    "type": "string",
-                    "example": "business-123",
-                    "description": "Business ID that owns this commerce"
-                  },
-                  "logoType": {
-                    "type": "string",
-                    "example": "commerce_logo",
-                    "description": "Type of logo"
-                  },
-                  "uploadDate": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "Upload date"
-                  }
-                },
-                "required": [
-                  "logo",
-                  "businessId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Logo updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommerceLogo"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - Invalid file"
-          },
-          "404": {
-            "description": "Commerce not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Update commerce logo",
-        "tags": [
-          "commerce-logos"
-        ]
-      }
-    },
-    "/commerce-logos/{commerceId}/{logoId}": {
-      "get": {
-        "description": "Retrieves and streams the commerce logo file",
-        "operationId": "CommerceLogoController_getCommerceLogoFile",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123",
-              "type": "string"
-            }
-          },
-          {
-            "name": "logoId",
-            "required": true,
-            "in": "path",
-            "description": "Logo ID",
-            "schema": {
-              "example": "logo-123",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Commerce logo file stream"
-          },
-          "404": {
-            "description": "Logo not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get commerce logo file",
-        "tags": [
-          "commerce-logos"
-        ]
-      },
-      "delete": {
-        "description": "Deletes a commerce logo and its thumbnail",
-        "operationId": "CommerceLogoController_deleteCommerceLogo",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123",
-              "type": "string"
-            }
-          },
-          {
-            "name": "logoId",
-            "required": true,
-            "in": "path",
-            "description": "Logo ID",
-            "schema": {
-              "example": "logo-123",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Logo deleted successfully"
-          },
-          "403": {
-            "description": "Forbidden - Not authorized"
-          },
-          "404": {
-            "description": "Logo not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Delete commerce logo",
-        "tags": [
-          "commerce-logos"
-        ]
-      }
-    },
-    "/commerce-logos/{commerceId}/{logoId}/thumbnail": {
-      "get": {
-        "description": "Retrieves and streams the commerce logo thumbnail",
-        "operationId": "CommerceLogoController_getCommerceLogoThumbnail",
-        "parameters": [
-          {
-            "name": "commerceId",
-            "required": true,
-            "in": "path",
-            "description": "Commerce ID",
-            "schema": {
-              "example": "commerce-123",
-              "type": "string"
-            }
-          },
-          {
-            "name": "logoId",
-            "required": true,
-            "in": "path",
-            "description": "Logo ID",
-            "schema": {
-              "example": "logo-123",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Commerce logo thumbnail stream"
-          },
-          "404": {
-            "description": "Thumbnail not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get commerce logo thumbnail",
-        "tags": [
-          "commerce-logos"
-        ]
-      }
-    },
     "/prescription/medications/search": {
       "get": {
         "description": "Search for medications in the catalog",
@@ -21824,6 +21824,10 @@
         "type": "object",
         "properties": {}
       },
+      "CommerceLogo": {
+        "type": "object",
+        "properties": {}
+      },
       "User": {
         "type": "object",
         "properties": {}
@@ -22563,10 +22567,6 @@
         "properties": {}
       },
       "BusinessLogo": {
-        "type": "object",
-        "properties": {}
-      },
-      "CommerceLogo": {
         "type": "object",
         "properties": {}
       },

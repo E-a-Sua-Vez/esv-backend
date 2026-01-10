@@ -481,17 +481,45 @@ export class CommerceLogoService {
    * Get signed URL for commerce logo
    */
   async getCommerceLogoSignedUrl(commerceId: string): Promise<string | null> {
-    console.log('🏪 CommerceLogoService: getCommerceLogoSignedUrl called for:', commerceId);
     const logo = await this.getCommerceLogo(commerceId);
     if (!logo) {
-      console.log('🏪 CommerceLogoService: No logo found, returning null');
       return null;
     }
 
     // Return relative path instead of absolute URL
     // Frontend will construct full URL using its VITE_BACKEND_URL
     const relativePath = `/commerce-logos/${commerceId}/${logo.id}`;
-    console.log('🏪 CommerceLogoService: Returning relative path:', relativePath);
     return relativePath;
+  }
+
+  /**
+   * Get signed URL from S3 for commerce logo (for emails and external use)
+   */
+  async getCommerceLogoS3SignedUrl(commerceId: string, expiresInSeconds: number = 3600): Promise<string | null> {
+    const logo = await this.getCommerceLogo(commerceId);
+    if (!logo) {
+      return null;
+    }
+
+    const s3 = new AWS.S3();
+    try {
+      const signedUrl = await new Promise<string>((resolve, reject) => {
+        s3.getSignedUrl(
+          'getObject',
+          {
+            Bucket: this.bucketName,
+            Key: logo.s3Key,
+            Expires: expiresInSeconds,
+          },
+          (err, url) => {
+            if (err) reject(err);
+            else resolve(url);
+          }
+        );
+      });
+      return signedUrl;
+    } catch (error) {
+      return null;
+    }
   }
 }

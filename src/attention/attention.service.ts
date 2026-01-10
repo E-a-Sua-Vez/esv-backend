@@ -19,6 +19,7 @@ import { QueueType } from 'src/queue/model/queue-type.enum';
 
 import { CollaboratorService } from '../collaborator/collaborator.service';
 import { CommerceService } from '../commerce/commerce.service';
+import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
 import { FeatureToggleDetailsDto } from '../feature-toggle/dto/feature-toggle-details.dto';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
@@ -71,6 +72,7 @@ export class AttentionService {
     private attentionReserveBuilder: AttentionReserveBuilder,
     private attentionTelemedicineBuilder: AttentionTelemedicineBuilder,
     private commerceService: CommerceService,
+    private commerceLogoService: CommerceLogoService,
     @Inject(forwardRef(() => PackageService))
     private packageService: PackageService,
     private incomeService: IncomeService,
@@ -86,6 +88,24 @@ export class AttentionService {
     private consentTriggersService?: ConsentTriggersService
   ) {
     this.logger.setContext('AttentionService');
+  }
+
+  /**
+   * Get commerce logo S3 signed URL for email use
+   */
+  private async getCommerceLogoForEmail(commerceId: string): Promise<string> {
+    try {
+      // Try to get S3 signed URL (expires in 7 days for emails)
+      const signedUrl = await this.commerceLogoService.getCommerceLogoS3SignedUrl(commerceId, 60 * 60 * 24 * 7);
+      if (signedUrl) {
+        return signedUrl;
+      }
+      // Fallback to default logo if no logo exists
+      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+    } catch (error) {
+      this.logger.error(`Error getting commerce logo for email: commerceId=${commerceId}, error=${error}`);
+      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+    }
   }
 
   public async getAttentionById(id: string): Promise<Attention> {
@@ -693,6 +713,62 @@ export class AttentionService {
             error.stack
           );
           // Don't throw - consent request failure shouldn't break attention creation
+        }
+      }
+
+      // Hook: Enviar WhatsApp de confirmación automáticamente si el feature está activo
+      if (user && user.phone) {
+        try {
+          const featureToggle = await this.featureToggleService.getFeatureToggleByCommerceAndType(
+            queue.commerceId,
+            FeatureToggleName.WHATSAPP
+          );
+          if (this.featureToggleIsActive(featureToggle, 'whatsapp-confirm-creation')) {
+            const commerce = await this.commerceService.getCommerceById(queue.commerceId);
+            const commerceLanguage = commerce.localeInfo?.language || 'es';
+            const link = `${process.env.BACKEND_URL}/interno/fila/${queue.id}/atencion/${attentionCreated.id}`;
+            const message = NOTIFICATIONS.getAtencionCreadaMessage(
+              commerceLanguage,
+              { ...attentionCreated, commerce },
+              link
+            );
+
+            let servicePhoneNumber = undefined;
+            const whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(
+              queue.commerceId
+            );
+            if (
+              whatsappConnection &&
+              whatsappConnection.connected === true &&
+              whatsappConnection.whatsapp
+            ) {
+              servicePhoneNumber = whatsappConnection.whatsapp;
+            }
+            if (!servicePhoneNumber) {
+              servicePhoneNumber = process.env.WHATSGW_PHONE_NUMBER;
+            }
+
+            await this.notificationService.createWhatsappNotification(
+              user.phone,
+              userId,
+              message,
+              NotificationType.CONFIRMACION,
+              attentionCreated.id,
+              queue.commerceId,
+              queue.id,
+              servicePhoneNumber
+            );
+
+            this.logger.log(
+              `[AttentionService] WhatsApp confirmation sent for attention ${attentionCreated.id}`
+            );
+          }
+        } catch (error) {
+          this.logger.error(
+            `[AttentionService] Failed to send WhatsApp confirmation for attention ${attentionCreated.id}: ${error.message}`,
+            error.stack
+          );
+          // Don't throw - WhatsApp failure shouldn't break attention creation
         }
       }
 
@@ -1709,9 +1785,14 @@ export class AttentionService {
                   const accessLink = `${
                     process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:5173'
                   }/publico/telemedicina/${telemedicineSession.id}`;
+                  // Normalize language for locale formatting
+                  const langVariant =
+                    commerceLanguage && commerceLanguage.toLowerCase() === 'br'
+                      ? 'pt'
+                      : (commerceLanguage || 'es');
                   const scheduledDate = telemedicineSession.scheduledAt
                     ? new Date(telemedicineSession.scheduledAt).toLocaleString(
-                        commerceLanguage === 'pt' ? 'pt-BR' : 'es-ES',
+                        langVariant === 'pt' ? 'pt-BR' : 'es-ES',
                         {
                           dateStyle: 'long',
                           timeStyle: 'short',
@@ -1776,6 +1857,10 @@ export class AttentionService {
           ) {
             servicePhoneNumber = whatsappConnection.whatsapp;
           }
+          // Fallback to global WhatsApp number if commerce doesn't have one configured or connected
+          if (!servicePhoneNumber) {
+            servicePhoneNumber = process.env.WHATSGW_PHONE_NUMBER;
+          }
           await this.notificationService.createWhatsappNotification(
             user.phone,
             attentionToNotify.userId,
@@ -1827,7 +1912,7 @@ export class AttentionService {
           }
           const template = `${templateType}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/fila/${attention.queueId}/atencion/${attention.id}`;
-          const logo = `${process.env.BACKEND_URL}/${attentionToNotify.commerce.logo}`;
+          const logo = await this.getCommerceLogoForEmail(attention.commerceId);
           const attentionNumber = attention.number;
           const commerce = attentionToNotify.commerce.name;
           await this.notificationService.createEmailNotification(
@@ -1869,7 +1954,7 @@ export class AttentionService {
         if (attention.user.email) {
           const template = `${NotificationTemplate.YOURTURN}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/fila/${attention.queueId}/atencion/${attention.id}`;
-          const logo = `${process.env.BACKEND_URL}/${attention.commerce.logo}`;
+          const logo = await this.getCommerceLogoForEmail(attention.commerceId);
           const attentionNumber = attention.number;
           const commerce = attention.commerce.name;
           await this.notificationService.createAttentionEmailNotification(
@@ -1911,7 +1996,7 @@ export class AttentionService {
         if (attention.user.email) {
           const template = `${NotificationTemplate.CSAT}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/fila/${attention.queueId}/atencion/${attention.id}`;
-          const logo = `${process.env.BACKEND_URL}/${attention.commerce.logo}`;
+          const logo = await this.getCommerceLogoForEmail(attention.commerceId);
           const attentionNumber = attention.number;
           const commerce = attention.commerce.name;
           await this.notificationService.createAttentionEmailNotification(
@@ -1975,11 +2060,11 @@ export class AttentionService {
               const subject = emailData.subject;
               const htmlTemplate = emailData.html;
               const attachments = [documentAttachament];
-              const logo = `${process.env.BACKEND_URL}/${attentionCommerce.logo}`;
+              const logo = await this.getCommerceLogoForEmail(attentionCommerce.id);
               const commerce = attentionCommerce.name;
               const html = htmlTemplate
-                .replaceAll('{{logo}}', logo)
-                .replaceAll('{{commerce}}', commerce);
+                .replace(/\{\{logo\}\}/g, logo)
+                .replace(/\{\{commerce\}\}/g, commerce);
               await this.notificationService.createAttentionRawEmailNotification(
                 NotificationType.POST_ATTENTION,
                 attention.id,
@@ -2029,6 +2114,10 @@ export class AttentionService {
               whatsappConnection.whatsapp
             ) {
               servicePhoneNumber = whatsappConnection.whatsapp;
+            }
+            // Fallback to global WhatsApp number if commerce doesn't have one configured or connected
+            if (!servicePhoneNumber) {
+              servicePhoneNumber = process.env.WHATSGW_PHONE_NUMBER;
             }
             await this.notificationService.createWhatsappNotification(
               attention.user.phone,
@@ -2083,6 +2172,10 @@ export class AttentionService {
               whatsappConnection.whatsapp
             ) {
               servicePhoneNumber = whatsappConnection.whatsapp;
+            }
+            // Fallback to global WhatsApp number if commerce doesn't have one configured or connected
+            if (!servicePhoneNumber) {
+              servicePhoneNumber = process.env.WHATSGW_PHONE_NUMBER;
             }
             await this.notificationService.createWhatsappNotification(
               attention.user.phone,

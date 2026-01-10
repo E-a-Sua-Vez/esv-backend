@@ -84,6 +84,10 @@
     "type": "WHATSAPP"
   },
   {
+    "name": "whatsapp-confirm-creation",
+    "type": "WHATSAPP"
+  },
+  {
     "name": "email-monthly-commerce-statistics",
     "type": "EMAIL"
   },

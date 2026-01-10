@@ -23,6 +23,7 @@ import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 import { Block } from '../booking/model/booking.entity';
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
+import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
 import { DocumentsService } from '../documents/documents.service';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
@@ -67,6 +68,7 @@ export class BookingService {
     private notificationService: NotificationService,
     private featureToggleService: FeatureToggleService,
     private commerceService: CommerceService,
+    private commerceLogoService: CommerceLogoService,
     private bookingDefaultBuilder: BookingDefaultBuilder,
     @Inject(forwardRef(() => AttentionService))
     private attentionService: AttentionService,
@@ -88,6 +90,24 @@ export class BookingService {
     private consentOrchestrationService?: ConsentOrchestrationService
   ) {
     this.logger.setContext('BookingService');
+  }
+
+  /**
+   * Get commerce logo S3 signed URL for email use
+   */
+  private async getCommerceLogoForEmail(commerceId: string): Promise<string> {
+    try {
+      // Try to get S3 signed URL (expires in 7 days for emails)
+      const signedUrl = await this.commerceLogoService.getCommerceLogoS3SignedUrl(commerceId, 60 * 60 * 24 * 7);
+      if (signedUrl) {
+        return signedUrl;
+      }
+      // Fallback to default logo if no logo exists
+      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+    } catch (error) {
+      this.logger.error(`Error getting commerce logo for email: commerceId=${commerceId}, error=${error}`);
+      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+    }
   }
 
   public async getBookingById(id: string): Promise<Booking> {
@@ -830,7 +850,7 @@ export class BookingService {
         if (booking.user.email) {
           const template = `${NotificationTemplate.BOOKING}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
-          const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
+          const logo = await this.getCommerceLogoForEmail(booking.commerceId);
           const bookingNumber = booking.number;
           const bookingDate = booking.date;
           // Handle block - it can be undefined or have different structures
@@ -912,7 +932,7 @@ export class BookingService {
               const subject = emailData.subject;
               const htmlTemplate = emailData.html;
               const attachments = [documentAttachament];
-              const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
+              const logo = await this.getCommerceLogoForEmail(booking.commerceId);
               const commerce = bookingCommerce.name;
               const link = `${process.env.BACKEND_URL}/interno/acceptterms/booking/${booking.id}/${booking.termsConditionsToAcceptCode}`;
               const html = htmlTemplate
@@ -954,7 +974,7 @@ export class BookingService {
         if (booking.user && booking.user.email) {
           const template = `${NotificationTemplate.BOOKING_CONFIRM}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/booking/${booking.id}`;
-          const logo = `${process.env.BACKEND_URL}/${bookingCommerce.logo}`;
+          const logo = await this.getCommerceLogoForEmail(booking.commerceId);
           const bookingNumber = booking.number;
           const bookingDate = booking.date;
           const bookingblock = `${booking.block.hourFrom} - ${booking.block.hourTo}`;

@@ -33,16 +33,74 @@ export class WhatsGwClient implements NotificationClient {
       message_body: message,
       check_status: 1,
     };
-    console.log(`[WhatsGwClient] Sending WhatsApp message:`, {
-      from: fromNumber,
-      to: phone,
-      notificationId,
-      messageLength: message.length,
-      url,
-    });
-    const response = (await firstValueFrom(this.httpService.post(url, body))).data;
-    console.log(`[WhatsGwClient] WhatsApp response:`, response);
-    return response;
+
+    try {
+      const response = (await firstValueFrom(this.httpService.post(url, body))).data;
+      return response;
+    } catch (error) {
+      // Handle different types of errors
+      if (error.response) {
+        const { status, data } = error.response;
+        let errorMessage = 'WhatsApp API error';
+
+        switch (status) {
+          case 404:
+            // Phone not connected or instance not found
+            errorMessage = `WhatsApp phone not connected [${data?.result_message || 'Phone not found'}] [${fromNumber}] [${phone}]`;
+            break;
+          case 401:
+            errorMessage = 'WhatsApp API authentication failed - invalid API key';
+            break;
+          case 400:
+            errorMessage = `WhatsApp API bad request: ${data?.result_message || 'Invalid parameters'}`;
+            break;
+          case 429:
+            errorMessage = 'WhatsApp API rate limit exceeded';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = `WhatsApp API server error (${status}): ${data?.result_message || 'Service temporarily unavailable'}`;
+            break;
+          default:
+            errorMessage = `WhatsApp API error (${status}): ${data?.result_message || error.response.statusText || 'Unknown error'}`;
+        }
+
+        // Create a structured error with the response data for better debugging
+        const structuredError = new Error(errorMessage);
+        (structuredError as any).whatsappError = {
+          status,
+          statusText: error.response.statusText,
+          data,
+          notificationId,
+          fromNumber,
+          toPhone: phone,
+        };
+        throw structuredError;
+      } else if (error.request) {
+        // Network or connection error
+        const networkError = new Error(`WhatsApp API network error: Unable to connect to ${url}`);
+        (networkError as any).whatsappError = {
+          type: 'network',
+          notificationId,
+          fromNumber,
+          toPhone: phone,
+          originalError: error.message,
+        };
+        throw networkError;
+      } else {
+        // Configuration or other error
+        const configError = new Error(`WhatsApp API configuration error: ${error.message}`);
+        (configError as any).whatsappError = {
+          type: 'configuration',
+          notificationId,
+          fromNumber,
+          toPhone: phone,
+          originalError: error.message,
+        };
+        throw configError;
+      }
+    }
   }
 
   public async requestConnection(): Promise<any> {
@@ -50,7 +108,17 @@ export class WhatsGwClient implements NotificationClient {
     const params = new URLSearchParams();
     params.append('apikey', this.whatsGwApiKey);
     params.append('type', '1');
-    return (await firstValueFrom(this.httpService.post(url, params))).data;
+
+    try {
+      return (await firstValueFrom(this.httpService.post(url, params))).data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        throw new Error('WhatsApp connection service not available (404)');
+      }
+
+      // Re-throw with enhanced error message
+      throw new Error(error.response?.data?.message || error.message || 'Unknown connection error');
+    }
   }
 
   public async requestEvent(): Promise<any> {
@@ -58,9 +126,19 @@ export class WhatsGwClient implements NotificationClient {
     const body = {
       apikey: this.whatsGwApiKey,
     };
-    const result = (await firstValueFrom(this.httpService.post(url, body))).data;
-    const response = JSON.parse(JSON.stringify(result));
-    return response;
+
+    try {
+      const result = (await firstValueFrom(this.httpService.post(url, body))).data;
+      const response = JSON.parse(JSON.stringify(result));
+      return response;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        throw new Error('WhatsApp events service not available (404)');
+      }
+
+      // Re-throw with enhanced error message
+      throw new Error(error.response?.data?.message || error.message || 'Unknown events error');
+    }
   }
 
   public async requestServiceStatus(serviceId: string): Promise<any> {
@@ -85,7 +163,17 @@ export class WhatsGwClient implements NotificationClient {
     const params = new URLSearchParams();
     params.append('apikey', this.whatsGwApiKey);
     params.append('w_instancia_id', serviceId);
-    return (await firstValueFrom(this.httpService.post(url, params))).data;
+
+    try {
+      return (await firstValueFrom(this.httpService.post(url, params))).data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        throw new Error(`WhatsApp service instance not found: ${serviceId}`);
+      }
+
+      // Re-throw with enhanced error message
+      throw new Error(error.response?.data?.message || error.message || 'Unknown disconnect error');
+    }
   }
 
   sendEmail(email: EmailInputDto): Promise<any> {

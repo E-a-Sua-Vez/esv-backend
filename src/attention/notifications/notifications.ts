@@ -1,7 +1,17 @@
 import { htmlTemplate as POST_ATTENTION_ES } from '../templates/post_attention_es';
 import { htmlTemplate as POST_ATTENTION_PT } from '../templates/post_attention_pt';
 
+// Normalize incoming language codes to variants we support in templates
+function normalizeCountry(country: string): 'pt' | 'es' {
+  if (!country) return 'es';
+  const lc = country.toLowerCase();
+  if (lc === 'pt' || lc === 'pt-br' || lc === 'br' || lc === 'pt_br') return 'pt';
+  if (lc === 'es' || lc === 'es-es' || lc === 'es_es') return 'es';
+  return 'es';
+}
+
 export const getFaltanCincoMessage = (country, attention) => {
+  const variant = normalizeCountry(country);
   const FALTANCINCO = {
     pt: `👋 *Olá!*
 
@@ -26,10 +36,11 @@ export const getFaltanCincoMessage = (country, attention) => {
 
 ✅ *¡Gracias por tu paciencia!* 🙏`,
   };
-  return FALTANCINCO[country];
+  return FALTANCINCO[variant];
 };
 
 export const getFaltaUnoMessage = (country, attention) => {
+  const variant = normalizeCountry(country);
   const FALTAUNO = {
     pt: `👋 *Olá!*
 
@@ -54,10 +65,11 @@ export const getFaltaUnoMessage = (country, attention) => {
 
 ⚡ *¡Ya casi!* 🙏`,
   };
-  return FALTAUNO[country];
+  return FALTAUNO[variant];
 };
 
 export const getEsTuTunoMessage = (country, attention, moduleNumber, telemedicineInfo = null) => {
+  const variant = normalizeCountry(country);
   // If telemedicine, use different message format
   if (telemedicineInfo) {
     const { accessKey, accessLink, scheduledDate } = telemedicineInfo;
@@ -93,7 +105,7 @@ ${scheduledDate ? `📅 *Fecha programada:* ${scheduledDate}\n\n` : ''}⚡ Haz c
 
 ✅ *¡Gracias!* 🙏`,
     };
-    return ESTUTURNO_TELEMEDICINE[country];
+    return ESTUTURNO_TELEMEDICINE[variant];
   }
 
   // Standard message with module
@@ -121,10 +133,11 @@ ${scheduledDate ? `📅 *Fecha programada:* ${scheduledDate}\n\n` : ''}⚡ Haz c
 
 ✅ *¡Gracias!* 🙏`,
   };
-  return ESTUTURNO[country];
+  return ESTUTURNO[variant];
 };
 
 export const getEncuestaMessage = (country, attention, link) => {
+  const variant = normalizeCountry(country);
   const ENCUESTA = {
     pt: `🙏 *Obrigado!*
 
@@ -155,10 +168,11 @@ ${link}
 
 🤝 *¡Vuelve pronto!* Estamos aquí para ti.`,
   };
-  return ENCUESTA[country];
+  return ENCUESTA[variant];
 };
 
 export const getAtencionCanceladaMessage = (country, attention, link) => {
+  const variant = normalizeCountry(country);
   const ATTENTION_CANCELLED = {
     pt: `⚠️ *Informação importante*
 
@@ -181,10 +195,54 @@ ${link}
 
 🤝 *¡Gracias!* 🙏`,
   };
-  return ATTENTION_CANCELLED[country];
+  return ATTENTION_CANCELLED[variant];
+};
+
+export const getAtencionCreadaMessage = (country, attention, link) => {
+  const variant = normalizeCountry(country);
+  const ATENCION_CREADA = {
+    pt: `✅ *Atendimento confirmado!*
+
+🎉 Seu atendimento em *${attention.commerce.name}* foi registrado com sucesso!
+
+🎫 *Seu número de atendimento:* ${attention.number}
+
+📍 *Local:* ${attention.commerce.name}
+
+👥 *Pessoas na frente:* Verifique sua posição na fila no link abaixo
+
+🔗 *Acompanhe seu atendimento:*
+${link}
+
+⏰ Recomendamos que chegue com *15 minutos de antecedência*.
+
+📲 Você receberá notificações quando estiver próximo de ser atendido.
+
+🤝 *Obrigado pela preferência!* 🙏`,
+    es: `✅ *¡Atención confirmada!*
+
+🎉 Tu atención en *${attention.commerce.name}* fue registrada exitosamente!
+
+🎫 *Tu número de atención:* ${attention.number}
+
+📍 *Lugar:* ${attention.commerce.name}
+
+👥 *Personas delante:* Verifica tu posición en la fila en el enlace
+
+🔗 *Sigue tu atención:*
+${link}
+
+⏰ Recomendamos llegar con *15 minutos de anticipación*.
+
+📲 Recibirás notificaciones cuando estés cerca de ser atendido.
+
+🤝 *¡Gracias por elegirnos!* 🙏`,
+  };
+  return ATENCION_CREADA[variant];
 };
 
 export const getPostAttetionCommerce = (country, bookingCommerce) => {
+  const variant = normalizeCountry(country);
   const POST_ATTENTION = {
     pt: {
       subject: `Pos Atendimento de ${bookingCommerce.name}`,
@@ -195,7 +253,7 @@ export const getPostAttetionCommerce = (country, bookingCommerce) => {
       html: POST_ATTENTION_ES,
     },
   };
-  return POST_ATTENTION[country];
+  return POST_ATTENTION[variant];
 };
 
 export const getClientPortalAccessMessage = (country, code, portalUrl, commerce) => {
@@ -265,4 +323,67 @@ export const getClientPortalEmailData = (country, commerce) => {
     }
   };
   return CLIENT_PORTAL_EMAIL[country] || CLIENT_PORTAL_EMAIL.en;
+};
+
+export const getTelemedicineAccessKeyEmail = (country, accessKey, accessLink, scheduledDate) => {
+  const variant = normalizeCountry(country);
+  const TELEMEDICINE_EMAIL = {
+    pt: {
+      subject: `Chave de acesso - Consulta de telemedicina`,
+      title: `🔐 Chave de acesso para sua consulta de telemedicina`,
+      codeLabel: `📋 Código:`,
+      linkLabel: `🔗 Link:`,
+      dateLabel: `📅 Data programada:`,
+      instructionsTitle: `Instruções:`,
+      instructions: [
+        `Clique no link acima ou copie-o no seu navegador`,
+        `Digite o código quando solicitado`,
+        `Certifique-se de ter uma boa conexão com a internet`,
+        `Tenha sua câmera e microfone prontos para a consulta`
+      ],
+      footer: `Se tiver problemas para acessar, entre em contato conosco.`
+    },
+    es: {
+      subject: `Clave de acceso - Consulta de telemedicina`,
+      title: `🔐 Clave de acceso para tu consulta de telemedicina`,
+      codeLabel: `📋 Código:`,
+      linkLabel: `🔗 Enlace:`,
+      dateLabel: `📅 Fecha programada:`,
+      instructionsTitle: `Instrucciones:`,
+      instructions: [
+        `Haz clic en el enlace de arriba o cópialo en tu navegador`,
+        `Ingresa el código cuando se te solicite`,
+        `Asegúrate de tener buena conexión a internet`,
+        `Ten tu cámara y micrófono listos para la consulta`
+      ],
+      footer: `Si tienes problemas para acceder, contacta con nosotros.`
+    }
+  };
+
+  const texts = TELEMEDICINE_EMAIL[variant];
+  const instructionsList = texts.instructions.map((instruction, index) =>
+    `<li>${instruction}</li>`
+  ).join('');
+
+  return {
+    subject: texts.subject,
+    html: `
+      <h2>${texts.title}</h2>
+
+      <p><strong>${texts.codeLabel}</strong> <span style="font-size: 1.2em; font-weight: bold; color: #007bff;">${accessKey}</span></p>
+
+      <p><strong>${texts.linkLabel}</strong> <a href="${accessLink}" target="_blank">${accessLink}</a></p>
+
+      <p><strong>${texts.dateLabel}</strong> ${scheduledDate}</p>
+
+      <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;">
+        <p><strong>${texts.instructionsTitle}</strong></p>
+        <ol>
+          ${instructionsList}
+        </ol>
+      </div>
+
+      <p style="color: #6c757d; font-size: 0.9em;">${texts.footer}</p>
+    `
+  };
 };

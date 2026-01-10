@@ -7,6 +7,7 @@ import { ServiceModule } from 'src/service/service.module';
 import { BookingModule } from '../booking/booking.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
 import { CommerceModule } from '../commerce/commerce.module';
+import { CommerceLogoModule } from '../commerce-logo/commerce-logo.module';
 import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
 import { IncomeModule } from '../income/income.module';
 import { ModuleModule } from '../module/module.module';
@@ -33,6 +34,7 @@ import { Attention } from './model/attention.entity';
     forwardRef(() => QueueModule),
     forwardRef(() => CollaboratorModule),
     forwardRef(() => CommerceModule),
+    forwardRef(() => CommerceLogoModule),
     forwardRef(() => NotificationModule),
     forwardRef(() => UserModule),
     forwardRef(() => ModuleModule),

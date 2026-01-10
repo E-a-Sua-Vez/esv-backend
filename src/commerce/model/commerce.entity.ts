@@ -14,6 +14,7 @@ export class LocaleInfo {
   country: Country;
   language: Laguage;
   timezone: string;
+  zip: string;
   address: string;
   addressLat: number;
   addressLng: number;

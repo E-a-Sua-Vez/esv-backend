@@ -7,6 +7,7 @@ import { NotificationTemplate } from 'src/notification/model/notification-templa
 
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
+import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
 import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
@@ -32,9 +33,27 @@ export class WaitlistService {
     private notificationService: NotificationService,
     private featureToggleService: FeatureToggleService,
     private commerceService: CommerceService,
+    private commerceLogoService: CommerceLogoService,
     private waitlistDefaultBuilder: WaitlistDefaultBuilder,
     private clientService: ClientService
   ) {}
+
+  /**
+   * Get commerce logo S3 signed URL for email use
+   */
+  private async getCommerceLogoForEmail(commerceId: string): Promise<string> {
+    try {
+      // Try to get S3 signed URL (expires in 7 days for emails)
+      const signedUrl = await this.commerceLogoService.getCommerceLogoS3SignedUrl(commerceId, 60 * 60 * 24 * 7);
+      if (signedUrl) {
+        return signedUrl;
+      }
+      // Fallback to default logo if no logo exists
+      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+    } catch (error) {
+      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+    }
+  }
 
   public async getWaitlistById(id: string): Promise<Waitlist> {
     return await this.waitlistRepository.findById(id);
@@ -148,7 +167,7 @@ export class WaitlistService {
         if (waitlist.user.email) {
           const template = `${NotificationTemplate.WAITLIST}-${commerceLanguage}`;
           const link = `${process.env.BACKEND_URL}/interno/waitlist/${waitlist.id}/${block.number}`;
-          const logo = `${process.env.BACKEND_URL}/${waitlistCommerce.logo}`;
+          const logo = await this.getCommerceLogoForEmail(waitlist.commerceId);
           const waitlistDate = waitlist.date;
           const waitlistblock = `${block.hourFrom} - ${block.hourTo}`;
           const commerce = waitlistCommerce.name;

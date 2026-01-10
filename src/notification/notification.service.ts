@@ -126,15 +126,34 @@ export class NotificationService {
         });
       }
     } catch (error) {
+      const whatsappError = (error as any)?.whatsappError;
+      const errorMessage = error.message || 'Unknown WhatsApp error';
+
       this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
         notificationId: notificationCreated.id,
         to: phone,
         from: servicePhoneNumber || 'default',
         operation: 'createWhatsappNotification',
+        whatsappErrorDetails: whatsappError,
+        httpStatus: whatsappError?.status,
       });
-      notificationCreated.comment = error.message;
-      // Re-throw the error so calling code can handle it properly
-      throw error;
+
+      // Mark the notification as failed but don't crash the entire flow
+      notificationCreated.comment = `Failed to send: ${errorMessage}`;
+      notificationCreated.providerId = 'FAILED';
+
+      // For critical system errors (config, network), we might want to throw
+      // But for API errors like 404 (phone not connected), we should gracefully handle
+      if (whatsappError?.type === 'configuration') {
+        this.logger.logError(
+          new Error('WhatsApp configuration error - this needs immediate attention'),
+          undefined,
+          { notificationId: notificationCreated.id, configError: whatsappError }
+        );
+      }
+
+      // Don't re-throw the error - let the notification be saved with error details
+      // This prevents the entire operation from failing when WhatsApp is down
     }
     return await this.update(notificationCreated);
   }
@@ -223,6 +242,15 @@ export class NotificationService {
     commerceId: string,
     servicePhoneNumber?: string
   ): Promise<string> {
+    // Validate message content before any processing/logging
+    if (!message || typeof message !== 'string') {
+      this.logger.logError(
+        new Error('Invalid or empty WhatsApp message'),
+        undefined,
+        { notificationId, commerceId, operation: 'whatsappNotify' }
+      );
+      throw new Error('Invalid or empty WhatsApp message');
+    }
     // Normalize phone number: ensure it's a string and remove any non-digit characters except +
     let normalizedPhone: string;
     if (typeof phone === 'number') {
@@ -329,6 +357,10 @@ export class NotificationService {
       // Don't throw, but log the issue - let the API handle the validation
     }
 
+    // Skip verification - trust that the phone is configured correctly
+    // The verification endpoint may have issues, so we'll let the actual send attempt handle errors
+    let usingServicePhone = !!servicePhoneNumber;
+
     this.logger.log(`[NotificationService] Sending WhatsApp notification:`, {
       originalPhone: phone,
       normalizedPhone: normalizedPhone,
@@ -336,7 +368,7 @@ export class NotificationService {
       from: servicePhoneNumber || 'default',
       notificationId,
       commerceId,
-      messageLength: message.length,
+      messageLength: message ? message.length : 0,
     });
     try {
       const response = await this.whatsappNotificationClient.sendMessage(
@@ -351,13 +383,65 @@ export class NotificationService {
       });
       return response;
     } catch (error) {
+      // Check if it's a structured WhatsGw error
+      const whatsappError = (error as any)?.whatsappError;
+      const status = whatsappError?.status || (error as any)?.response?.status;
+
+      // Enhanced logging with WhatsGw error details
       this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
         notificationId,
         originalPhone: phone,
         normalizedPhone: normalizedPhone,
         from: servicePhoneNumber || 'default',
         operation: 'whatsappNotify',
+        whatsappErrorDetails: whatsappError,
+        httpStatus: status,
       });
+
+      // If sending with a service phone returned 404, retry using global number
+      if (usingServicePhone && status === 404) {
+        this.logger.warn(
+          `[NotificationService] Send failed with 404 using service phone, retrying with global`,
+          {
+            notificationId,
+            commerceId,
+            servicePhoneNumber,
+            errorMessage: error.message,
+            whatsappError: whatsappError
+          }
+        );
+        try {
+          const fallbackResponse = await this.whatsappNotificationClient.sendMessage(
+            message,
+            normalizedPhone,
+            notificationId,
+            undefined
+          );
+          this.logger.log(
+            `[NotificationService] WhatsApp notification sent successfully on fallback`,
+            { notificationId, response: JSON.stringify(fallbackResponse) }
+          );
+          return fallbackResponse;
+        } catch (fallbackError) {
+          const fallbackWhatsappError = (fallbackError as any)?.whatsappError;
+          this.logger.logError(
+            fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError)),
+            undefined,
+            {
+              notificationId,
+              originalPhone: phone,
+              normalizedPhone: normalizedPhone,
+              from: 'default',
+              operation: 'whatsappNotifyFallback',
+              whatsappErrorDetails: fallbackWhatsappError,
+            }
+          );
+          throw fallbackError;
+        }
+      }
+
+      // For non-404 errors or when not using service phone, don't retry
+      // Just log and re-throw with enhanced context
       throw error;
     }
   }
@@ -835,7 +919,23 @@ export class NotificationService {
         notificationCreated.providerId = metadata['message_id'] || 'N/I';
       }
     } catch (error) {
-      notificationCreated.comment = error.message;
+      const whatsappError = (error as any)?.whatsappError;
+      const errorMessage = error.message || 'Unknown WhatsApp error';
+
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        notificationId: notificationCreated.id,
+        to: phone,
+        from: servicePhoneNumber || 'default',
+        operation: 'createBookingWhatsappNotification',
+        whatsappErrorDetails: whatsappError,
+        httpStatus: whatsappError?.status,
+        bookingId,
+        commerceId,
+      });
+
+      // Mark the notification as failed but don't crash the booking flow
+      notificationCreated.comment = `Failed to send: ${errorMessage}`;
+      notificationCreated.providerId = 'FAILED';
     }
     return await this.update(notificationCreated);
   }
@@ -887,7 +987,22 @@ export class NotificationService {
         notificationCreated.providerId = metadata['message_id'] || 'N/I';
       }
     } catch (error) {
-      notificationCreated.comment = error.message;
+      const whatsappError = (error as any)?.whatsappError;
+      const errorMessage = error.message || 'Unknown WhatsApp error';
+
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        notificationId: notificationCreated.id,
+        to: phone,
+        operation: 'createWaitlistWhatsappNotification',
+        whatsappErrorDetails: whatsappError,
+        httpStatus: whatsappError?.status,
+        waitlistId,
+        commerceId,
+      });
+
+      // Mark the notification as failed but don't crash the waitlist flow
+      notificationCreated.comment = `Failed to send: ${errorMessage}`;
+      notificationCreated.providerId = 'FAILED';
     }
     return await this.update(notificationCreated);
   }

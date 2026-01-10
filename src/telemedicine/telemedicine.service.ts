@@ -22,6 +22,7 @@ import { CommerceService } from '../commerce/commerce.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
 import { ClientPortalService } from '../client-portal/client-portal.service';
+import { getTelemedicineAccessKeyEmail } from '../attention/notifications/notifications';
 
 import { CreateTelemedicineSessionDto } from './dto/create-telemedicine-session.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -924,7 +925,8 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
     const message = `🔐 *Clave de acceso para tu consulta de telemedicina*\n\n📋 *Código:* ${session.accessKey}\n\n🔗 *Enlace:* ${accessLink}\n\n📅 *Fecha programada:* ${scheduledDate}\n\nIngresa el código cuando se te solicite para acceder a tu consulta.`;
 
     try {
-      let sent = false;
+      let whatsappSent = false;
+      let emailSent = false;
 
       // Send via WhatsApp if phone is available
       if (!client.phone) {
@@ -999,7 +1001,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
               to: client.phone,
               from: servicePhoneNumber,
             });
-            sent = true;
+            whatsappSent = true;
           } catch (error) {
             this.logger.error(
               `[TelemedicineService] Failed to send WhatsApp notification for session ${sessionId}:`,
@@ -1011,17 +1013,69 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
                 clientId: session.clientId,
               }
             );
-            // Continue to try email if WhatsApp fails
+            // Continue to try email even if WhatsApp fails
           }
         }
       }
 
-      // Send via Email if email is available and WhatsApp was not sent
-      if (client.email && !sent) {
-        // For now, we'll just log that email could be sent
-        // Email templates need to be configured separately
-        this.logger.log(`Email available for client but template not configured: ${client.email}`);
+      // Send via Email if email is available (ALWAYS try if email exists, not just as fallback)
+      if (client.email) {
+        try {
+          // Get commerce language for email translation
+          const commerceLanguage = commerce.localeInfo?.language || 'es';
+
+          // Get translated email content
+          const emailContent = getTelemedicineAccessKeyEmail(
+            commerceLanguage,
+            session.accessKey,
+            accessLink,
+            scheduledDate
+          );
+
+          this.logger.log(`[TelemedicineService] Attempting to send email notification:`, {
+            sessionId,
+            to: client.email,
+            clientId: session.clientId,
+            subject: emailContent.subject,
+            language: commerceLanguage,
+          });
+
+          await this.notificationService.createAttentionRawEmailNotification(
+            NotificationType.TELEMEDICINE_ACCESS_KEY,
+            session.attentionId || '',
+            session.commerceId,
+            process.env.EMAIL_SOURCE || 'noreply@easuavez.com',
+            [client.email],
+            emailContent.subject,
+            [], // attachments
+            emailContent.html
+          );
+
+          this.logger.log(`[TelemedicineService] Access key sent via email successfully:`, {
+            sessionId,
+            to: client.email,
+            language: commerceLanguage,
+          });
+          emailSent = true;
+        } catch (error) {
+          this.logger.error(
+            `[TelemedicineService] Failed to send email notification for session ${sessionId}:`,
+            {
+              error: error.message,
+              stack: error.stack,
+              to: client.email,
+              clientId: session.clientId,
+            }
+          );
+        }
+      } else {
+        this.logger.warn(
+          `[TelemedicineService] Client ${session.clientId} does not have an email for session ${sessionId}`
+        );
       }
+
+      // Check if at least one notification was sent
+      const sent = whatsappSent || emailSent;
 
       if (!sent) {
         this.logger.warn(
@@ -1029,10 +1083,19 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
             client.phone || 'N/A'
           }, Client email: ${client.email || 'N/A'}`
         );
-        // Don't mark as sent or publish event if message was not sent
+        // Don't mark as sent or publish event if no message was sent
         const updatedSession = await this.getSessionByIdInternal(sessionId);
         return this.excludeAccessKey(updatedSession);
       }
+
+      // Log summary of what was sent
+      this.logger.log(`[TelemedicineService] Access key delivery summary for session ${sessionId}:`, {
+        whatsappSent,
+        emailSent,
+        clientPhone: client.phone || 'N/A',
+        clientEmail: client.email || 'N/A',
+        bothChannelsUsed: whatsappSent && emailSent,
+      });
 
       // Mark access key as sent if not already sent
       if (!session.accessKeySent) {

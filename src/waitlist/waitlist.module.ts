@@ -5,6 +5,7 @@ import { AttentionModule } from 'src/attention/attention.module';
 import { ClientModule } from '../client/client.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
 import { CommerceModule } from '../commerce/commerce.module';
+import { CommerceLogoModule } from '../commerce-logo/commerce-logo.module';
 import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
 import { ModuleModule } from '../module/module.module';
 import { NotificationModule } from '../notification/notification.module';
@@ -22,6 +23,7 @@ import { WaitlistService } from './waitlist.service';
     forwardRef(() => QueueModule),
     forwardRef(() => CollaboratorModule),
     forwardRef(() => CommerceModule),
+    forwardRef(() => CommerceLogoModule),
     forwardRef(() => NotificationModule),
     forwardRef(() => UserModule),
     forwardRef(() => ModuleModule),

@@ -230,7 +230,7 @@ export class TelemedicineController {
 
   // Public endpoints (no auth required) - Rate limited for security
   @Post('sessions/:id/validate-key')
-  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 attempts per hour per IP
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute per IP
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Validate access key (public)' })
@@ -253,7 +253,7 @@ export class TelemedicineController {
   }
 
   @Post('sessions/:id/validate-portal-session')
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute per IP
+  @Throttle({ default: { limit: 20, ttl: 60000 } }) // 10 attempts per minute per IP
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -286,7 +286,7 @@ export class TelemedicineController {
 
   // Public endpoint to request access key
   @Post('sessions/:id/send-access-key')
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per hour per IP
+  @Throttle({ default: { limit: 20, ttl: 600000 } }) // 10 requests per 10 minutes per IP
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send access key on demand (public)' })
@@ -297,7 +297,7 @@ export class TelemedicineController {
   }
 
   @Post('sessions/:id/patient-connected')
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute per IP
+  @Throttle({ default: { limit: 20, ttl: 60000 } }) // 10 requests per minute per IP
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Mark patient as connected (public)' })

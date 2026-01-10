@@ -14,66 +14,60 @@ export const getBookingMessage = (country, bookingCommerce, booking, bookingDate
       : '';
 
   const telemedicineInfo = isTelemedicine
-    ? `\n\n*Consulta por Telemedicina*\nTipo: ${telemedicineType}${
+    ? `\n\n💻 *Consulta por Telemedicina*\n📋 Tipo: ${telemedicineType}${
         booking.telemedicineConfig?.scheduledAt
-          ? `\nFecha y Hora: ${new Date(booking.telemedicineConfig.scheduledAt).toLocaleString()}`
+          ? `\n📅 Fecha y Hora: ${new Date(booking.telemedicineConfig.scheduledAt).toLocaleString()}`
           : ''
       }`
     : '';
 
   const BOOKING = {
-    pt: `Olá, sua reserva em *${bookingCommerce.name}* foi feita com sucesso!${
+    pt: `✅ *Reserva confirmada!*
+
+🎉 Sua reserva em *${bookingCommerce.name}* foi realizada com sucesso!${
       isTelemedicine
-        ? ' Esta é uma consulta por telemedicina.'
-        : ` Você deve vir no dia *${bookingDate}* ${
-            booking.block && booking.block.hourFrom ? ` as ${booking.block.hourFrom}.` : `.`
+        ? ' 💻 Esta é uma consulta por telemedicina.'
+        : ` 📅 Você deve vir no dia *${bookingDate}*${
+            booking.block && booking.block.hourFrom ? ` às *${booking.block.hourFrom}*.` : `.`
           }`
     }${telemedicineInfo}
 
-    Lémbre-se, seu número de reserva é: *${booking.number}*.
+🎫 *Seu número de reserva:* ${booking.number}
 
-    Para detalhes e cancelamentos, acesse o link:
-
-    ${link}
-    ${
+🔗 *Para detalhes ou cancelamento:*
+${link}
+${
       linkWs !== undefined
         ? `
-
-    Duvidas? Contate-nos:
-
-    ${linkWs}
-
-    `
+💬 *Dúvidas? Entre em contato:*
+${linkWs}
+`
         : ``
     }
-    Obrigado!`,
-    es: `Hola, tu reserva en *${bookingCommerce.name}* fue generada con éxito.${
+🤝 *Obrigado pela preferência!* 🙏`,
+    es: `✅ *¡Reserva confirmada!*
+
+🎉 Tu reserva en *${bookingCommerce.name}* fue generada con éxito!${
       isTelemedicine
-        ? ' Esta es una consulta por telemedicina.'
-        : ` Debes venir el dia *${bookingDate}* ${
-            booking.block && booking.block.hourFrom ? ` a las ${booking.block.hourFrom}.` : `.`
+        ? ' 💻 Esta es una consulta por telemedicina.'
+        : ` 📅 Debes venir el día *${bookingDate}*${
+            booking.block && booking.block.hourFrom ? ` a las *${booking.block.hourFrom}*.` : `.`
           }`
     }${telemedicineInfo}
 
-    Recuerda, tu número de reserva es: *${booking.number}*.
+🎫 *Tu número de reserva:* ${booking.number}
 
-    Para detalles o cancelar, ingresa en este link:
-
-    ${link}
-    ${
+🔗 *Para detalles o cancelar:*
+${link}
+${
       linkWs !== undefined
         ? `
-
-    ¿Dudas? Contactanos:
-
-    ${linkWs}
-
-    `
+💬 *¿Dudas? Contáctanos:*
+${linkWs}
+`
         : ``
     }
-
-    ¡Muchas gracias!
-    `,
+🤝 *¡Gracias por elegirnos!* 🙏`,
   };
   return BOOKING[country];
 };
@@ -91,60 +85,72 @@ export const getBookingConfirmMessage = (country, bookingCommerce, booking, book
       : '';
 
   const telemedicineInfo = isTelemedicine
-    ? `\n\n*Consulta por Telemedicina*\nTipo: ${telemedicineType}${
+    ? `\n\n💻 *Consulta por Telemedicina*\n📋 Tipo: ${telemedicineType}${
         booking.telemedicineConfig?.scheduledAt
-          ? `\nFecha y Hora: ${new Date(booking.telemedicineConfig.scheduledAt).toLocaleString()}`
+          ? `\n📅 Fecha y Hora: ${new Date(booking.telemedicineConfig.scheduledAt).toLocaleString()}`
           : ''
       }`
     : '';
 
   const BOOKING_CONFIRM = {
-    pt: `Olá, lembre-se da sua reserva em *${bookingCommerce.name}*!${
+    pt: `📢 *Lembrete de reserva*
+
+⏰ Lembre-se da sua reserva em *${bookingCommerce.name}*!${
       isTelemedicine
-        ? ' Esta é uma consulta por telemedicina.'
-        : ` Deve vir no dia *${bookingDate}* ${
-            booking.block && booking.block.hourFrom ? `as ${booking.block.hourFrom}.` : `.`
+        ? ' 💻 Esta é uma consulta por telemedicina.'
+        : ` 📅 Você deve vir no dia *${bookingDate}*${
+            booking.block && booking.block.hourFrom ? ` às *${booking.block.hourFrom}*.` : `.`
           }`
     }${telemedicineInfo}
 
-    Poderá comparecer? Se sua resposta for *NÃO* por favor cancele sua reserva neste link:
+🎫 *Seu número de reserva:* ${booking.number}
 
-    ${link}
+❓ *Poderá comparecer?*
 
-    Obrigado!`,
-    es: `Hola, recuerda tu reserva en *${bookingCommerce.name}*.${
+❌ Se sua resposta for *NÃO*, por favor cancele sua reserva:
+${link}
+
+🤝 *Obrigado!* 🙏`,
+    es: `📢 *Recordatorio de reserva*
+
+⏰ Recuerda tu reserva en *${bookingCommerce.name}*!${
       isTelemedicine
-        ? ' Esta es una consulta por telemedicina.'
-        : ` Debes venir el dia *${bookingDate}* ${
-            booking.block && booking.block.hourFrom ? `a las ${booking.block.hourFrom}.` : `.`
+        ? ' 💻 Esta es una consulta por telemedicina.'
+        : ` 📅 Debes venir el día *${bookingDate}*${
+            booking.block && booking.block.hourFrom ? ` a las *${booking.block.hourFrom}*.` : `.`
           }`
     }${telemedicineInfo}
 
-    Podrás venir? Si tu respues es *NO* por favor cancela tu reserva en este link:
+🎫 *Tu número de reserva:* ${booking.number}
 
-    ${link}
+❓ *¿Podrás asistir?*
 
-    ¡Muchas gracias!`,
+❌ Si tu respuesta es *NO*, por favor cancela tu reserva:
+${link}
+
+🤝 *¡Gracias!* 🙏`,
   };
   return BOOKING_CONFIRM[country];
 };
 
 export const getBookingCancelledMessage = (country, bookingCommerce, bookingDate, link) => {
   const BOOKING_CANCELLED = {
-    pt: `Olá, sua reserva em *${bookingCommerce.name}* para o dia *${bookingDate}* foi cancelada.
+    pt: `⚠️ *Reserva cancelada*
 
-    Para reservar de novo, acesse neste link:
+❌ Sua reserva em *${bookingCommerce.name}* para o dia *${bookingDate}* foi cancelada.
 
-    ${link}
+📅 *Para reservar novamente:*
+${link}
 
-    Obrigado!`,
-    es: `Hola, tu reserva en *${bookingCommerce.name}* del dia *${bookingDate}* fue cancelada.
+🤝 *Obrigado!* 🙏`,
+    es: `⚠️ *Reserva cancelada*
 
-    Para reservar de nuevo, ingrese en este link:
+❌ Tu reserva en *${bookingCommerce.name}* del día *${bookingDate}* fue cancelada.
 
-    ${link}
+📅 *Para reservar nuevamente:*
+${link}
 
-    ¡Muchas gracias!`,
+🤝 *¡Gracias!* 🙏`,
   };
   return BOOKING_CANCELLED[country];
 };

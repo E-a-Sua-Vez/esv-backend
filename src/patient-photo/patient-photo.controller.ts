@@ -189,7 +189,7 @@ export class PatientPhotoController {
     return readable.pipe(response);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(UniversalAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('photo'))
   @Put(':commerceId/:clientId')

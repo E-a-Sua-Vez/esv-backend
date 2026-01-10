@@ -5,6 +5,7 @@ import { AttentionService } from '../attention/attention.service';
 import { BookingBlockNumberUsedService } from '../booking-block-number-used/booking-block-number-used.service';
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
+import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
 import { Commerce } from '../commerce/model/commerce.entity';
 import { DocumentsService } from '../documents/documents.service';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
@@ -149,6 +150,7 @@ describe('BookingService', () => {
             notificationService: NotificationService,
             featureToggleService: FeatureToggleService,
             commerceService: CommerceService,
+            commerceLogoService: CommerceLogoService,
             bookingDefaultBuilder: BookingDefaultBuilder,
             attentionService: AttentionService,
             waitlistService: WaitlistService,
@@ -167,6 +169,7 @@ describe('BookingService', () => {
               notificationService,
               featureToggleService,
               commerceService,
+              commerceLogoService,
               bookingDefaultBuilder,
               attentionService,
               waitlistService,
@@ -186,6 +189,7 @@ describe('BookingService', () => {
             NotificationService,
             FeatureToggleService,
             CommerceService,
+            CommerceLogoService,
             BookingDefaultBuilder,
             AttentionService,
             WaitlistService,
@@ -209,6 +213,12 @@ describe('BookingService', () => {
           provide: CommerceService,
           useValue: {
             getCommerceById: jest.fn(),
+          },
+        },
+        {
+          provide: CommerceLogoService,
+          useValue: {
+            getLogoUrl: jest.fn(),
           },
         },
         {
