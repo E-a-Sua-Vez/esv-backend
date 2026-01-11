@@ -665,7 +665,7 @@ export class BookingService {
   public async getConfirmedBookingsByCommerceIdDates(
     commerceId: string,
     dates: string[],
-    limit = 100
+    limit = 200
   ): Promise<Booking[]> {
     if (commerceId === undefined || dates === undefined || dates.length === 0) {
       return [];
@@ -1924,9 +1924,13 @@ export class BookingService {
           ) {
             let daysBefore = ['1'];
             if (commerce.serviceInfo && commerce.serviceInfo.confirmNotificationDaysBefore) {
-              const days = commerce.serviceInfo.confirmNotificationDaysBefore.split(',');
-              if (days && days.length > 0) {
-                daysBefore = days.sort().slice(0, 1);
+              const rawDays = commerce.serviceInfo.confirmNotificationDaysBefore.split(',');
+              const numericDays = rawDays
+                .map(day => parseInt(day, 10))
+                .filter(day => !isNaN(day) && day > 0)
+                .sort((a, b) => a - b);
+              if (numericDays && numericDays.length > 0) {
+                daysBefore = numericDays.map(day => String(day));
               }
             }
             const dates = [];
@@ -1940,7 +1944,7 @@ export class BookingService {
             const pendings = await this.getConfirmedBookingsByCommerceIdDates(
               commerce.id,
               dates,
-              10
+              200
             );
             if (pendings && pendings.length > 0) {
               bookings = [...bookings, ...pendings];
@@ -1980,6 +1984,26 @@ export class BookingService {
             if (bookingCommerces && bookingCommerces.length > 0) {
               bookingCommerce = bookingCommerces[0];
             }
+            // Calcular en cuántos días más es la reserva y el mínimo configurado
+            let minDaysBefore = 1;
+            if (
+              bookingCommerce &&
+              bookingCommerce.serviceInfo &&
+              bookingCommerce.serviceInfo.confirmNotificationDaysBefore
+            ) {
+              const rawDays =
+                bookingCommerce.serviceInfo.confirmNotificationDaysBefore.split(',');
+              const numericDays = rawDays
+                .map(day => parseInt(day, 10))
+                .filter(day => !isNaN(day) && day > 0);
+              if (numericDays && numericDays.length > 0) {
+                minDaysBefore = Math.min(...numericDays);
+              }
+            }
+            const today = new DateModel();
+            const bookingDateModel = new DateModel(booking.date);
+            const daysUntilBooking = bookingDateModel.daysDiff(today);
+
             const email = await this.bookingConfirmEmail(bookingCommerce, booking);
             const message = await this.bookingConfirmWhatsapp(bookingCommerce, booking);
             if (email && email[0] && email[0].id) {
@@ -1990,7 +2014,11 @@ export class BookingService {
               booking.confirmNotifiedWhatsapp = true;
               messages.push(message[0]);
             }
-            booking.confirmNotified = true;
+            // Solo marcar como "confirmNotified" cuando estemos en el menor
+            // número de días configurado antes de la reserva (por ejemplo, 1 día).
+            if (daysUntilBooking === minDaysBefore) {
+              booking.confirmNotified = true;
+            }
             await this.update('ett', booking);
           } catch (error) {
             errors.push(error.message);

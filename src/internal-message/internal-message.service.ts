@@ -86,27 +86,35 @@ export class InternalMessageService {
     let senderInfo = { id: userId, email: null, name: null };
 
     try {
-      // Intentar buscar en collaborator
-      let senderDoc = await db.collection('collaborator').doc(userId).get();
-      if (senderDoc.exists) {
-        const data = senderDoc.data();
-        senderInfo.email = data.email;
-        senderInfo.name = data.name || data.firstName || data.fullName;
-      } else {
-        // Buscar en administrator
-        senderDoc = await db.collection('administrator').doc(userId).get();
-        if (senderDoc.exists) {
-          const data = senderDoc.data();
-          senderInfo.email = data.email;
-          senderInfo.name = data.name || data.firstName || data.fullName;
-        } else {
-          // Buscar en business (fallback)
-          senderDoc = await db.collection('business').doc(userId).get();
-          if (senderDoc.exists) {
-            const data = senderDoc.data();
-            senderInfo.email = data.email;
-            senderInfo.name = data.name || data.businessName;
+      // Resolver remitente buscando tanto por ID de documento como por userId
+      // Esto es clave para colaboradores, donde el UID de auth suele estar en el campo userId
+      const collections = ['collaborator', 'administrator', 'business'];
+      for (const colName of collections) {
+        let senderDoc = await db.collection(colName).doc(userId).get();
+
+        if (!senderDoc.exists) {
+          // Fallback: buscar por userId (UID de autenticación)
+          const querySnap = await db
+            .collection(colName)
+            .where('userId', '==', userId)
+            .limit(1)
+            .get();
+
+          if (!querySnap.empty) {
+            senderDoc = querySnap.docs[0];
           }
+        }
+
+        if (senderDoc.exists) {
+          const data = senderDoc.data() as any;
+          senderInfo.email = data.email || senderInfo.email;
+          senderInfo.name =
+            data.name ||
+            data.firstName ||
+            data.fullName ||
+            data.businessName ||
+            senderInfo.name;
+          break;
         }
       }
     } catch (error) {
