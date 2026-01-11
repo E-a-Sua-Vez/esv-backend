@@ -19,6 +19,11 @@ async function bootstrap(): Promise<void> {
     logger.setContext('Bootstrap');
     console.log('[Bootstrap] Logger initialized');
     console.log('[Bootstrap] Setting up middleware...');
+    // Disable ETag headers to avoid 304 Not Modified responses and always
+    // return a fresh body for highly dynamic resources (prontuario, etc.).
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.set('etag', false);
+
     // Request size limits - reduced from 10mb for security
     // Consider reducing further based on actual needs
     const maxRequestSize = process.env.MAX_REQUEST_SIZE || '5mb';
@@ -138,6 +143,24 @@ async function bootstrap(): Promise<void> {
       res.setHeader('X-XSS-Protection', '1; mode=block');
       // Referrer Policy
       res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+      // For highly dynamic clinical data (patient history, prescriptions,
+      // medical orders, prontuario-related forms and templates), disable any
+      // kind of HTTP caching to ensure clients always see the latest data.
+      const noCachePrefixes = [
+        '/patient-history',
+        '/patient-history-item',
+        '/prescription',
+        '/medical-exam-order',
+        '/medical-reference',
+        '/form',
+        '/form-personalized',
+        '/survey-personalized',
+      ];
+      if (noCachePrefixes.some(prefix => req.path.startsWith(prefix))) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
       // Content Security Policy (adjust based on your needs)
       if (process.env.NODE_ENV === 'prod') {
         res.setHeader(

@@ -36,6 +36,10 @@ export class QueueService {
       this.logger.warn('Queue not found', { queueId: id });
       throw new HttpException(`No se encontro la cola`, HttpStatus.NOT_FOUND);
     }
+    // Ensure backward compatibility: if presentialEnabled is not defined, default to true
+    if (queue.presentialEnabled === undefined || queue.presentialEnabled === null) {
+      queue.presentialEnabled = true;
+    }
     return this.getQueueBlockDetails(queue);
   }
 
@@ -44,6 +48,9 @@ export class QueueService {
     const result = await this.queueRepository.find();
     if (result && result.length > 0) {
       result.forEach(queue => {
+        if (queue.presentialEnabled === undefined || queue.presentialEnabled === null) {
+          queue.presentialEnabled = true;
+        }
         queues.push(this.getQueueBlockDetails(queue));
       });
     }
@@ -59,6 +66,9 @@ export class QueueService {
       .find();
     if (result && result.length > 0) {
       result.forEach(queue => {
+        if (queue.presentialEnabled === undefined || queue.presentialEnabled === null) {
+          queue.presentialEnabled = true;
+        }
         queues.push(this.getQueueBlockDetails(queue));
       });
     }
@@ -98,6 +108,11 @@ export class QueueService {
         queueDetailsDto.servicesId = queue.servicesId;
         queueDetailsDto.services = queue.services;
         queueDetailsDto.telemedicineEnabled = queue.telemedicineEnabled || false; // Default to false for backward compatibility
+        // Default presentialEnabled to true for backward compatibility
+        queueDetailsDto.presentialEnabled =
+          queue.presentialEnabled === undefined || queue.presentialEnabled === null
+            ? true
+            : queue.presentialEnabled;
         queues.push(queueDetailsDto);
       }
       if (queues && queues.length > 0) {
@@ -130,6 +145,9 @@ export class QueueService {
             queue.services = await this.serviceService.getServicesById([queue.serviceId]);
           }
         }
+        if (queue.presentialEnabled === undefined || queue.presentialEnabled === null) {
+          queue.presentialEnabled = true;
+        }
         queues.push(this.getQueueBlockDetails(queue));
       }
     }
@@ -145,6 +163,14 @@ export class QueueService {
       .whereEqualTo('online', true)
       .orderByAscending('order')
       .find();
+    if (queues && queues.length > 0) {
+      queues = queues.map(queue => {
+        if (queue.presentialEnabled === undefined || queue.presentialEnabled === null) {
+          queue.presentialEnabled = true;
+        }
+        return queue;
+      });
+    }
     return queues;
   }
 
@@ -161,7 +187,8 @@ export class QueueService {
     serviceInfo,
     blockTime = 60,
     servicesId,
-    telemedicineEnabled?: boolean
+    telemedicineEnabled?: boolean,
+    presentialEnabled?: boolean
   ): Promise<Queue> {
     try {
       const queue = await this.queueRepository.findById(id);
@@ -198,6 +225,9 @@ export class QueueService {
       if (telemedicineEnabled !== undefined) {
         queue.telemedicineEnabled = telemedicineEnabled;
       }
+       if (presentialEnabled !== undefined) {
+         queue.presentialEnabled = presentialEnabled;
+       }
       const updatedQueue = await this.update(user, queue);
       this.logger.info('Queue configuration updated', {
         queueId: id,
@@ -249,7 +279,8 @@ export class QueueService {
     collaboratorId: string,
     serviceId: string,
     servicesId: string[],
-    telemedicineEnabled?: boolean
+    telemedicineEnabled?: boolean,
+    presentialEnabled?: boolean
   ): Promise<Queue> {
     const queue = new Queue();
     queue.commerceId = commerceId;
@@ -281,6 +312,12 @@ export class QueueService {
       queue.tag = tag;
     }
     queue.telemedicineEnabled = telemedicineEnabled || false; // Default to false for backward compatibility
+    // Default presentialEnabled to true for backward compatibility
+    if (presentialEnabled === undefined || presentialEnabled === null) {
+      queue.presentialEnabled = true;
+    } else {
+      queue.presentialEnabled = presentialEnabled;
+    }
     const queueCreated = await this.queueRepository.create(queue);
     const queueCreatedEvent = new QueueCreated(new Date(), queueCreated, { user });
     publish(queueCreatedEvent);

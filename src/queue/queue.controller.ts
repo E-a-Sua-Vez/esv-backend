@@ -109,6 +109,7 @@ export class QueueController {
       serviceId,
       servicesId,
       telemedicineEnabled,
+      presentialEnabled,
     } = body;
     return this.queueService.createQueue(
       user,
@@ -124,7 +125,8 @@ export class QueueController {
       collaboratorId,
       serviceId,
       servicesId,
-      telemedicineEnabled
+      telemedicineEnabled,
+      presentialEnabled
     );
   }
 
@@ -157,6 +159,7 @@ export class QueueController {
       blockTime,
       servicesId,
       telemedicineEnabled,
+      presentialEnabled,
     } = body;
     return this.queueService.updateQueueConfigurations(
       user,
@@ -171,7 +174,8 @@ export class QueueController {
       serviceInfo,
       blockTime,
       servicesId,
-      telemedicineEnabled
+      telemedicineEnabled,
+      presentialEnabled
     );
   }
 
