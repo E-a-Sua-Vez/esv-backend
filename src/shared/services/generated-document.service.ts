@@ -1,4 +1,11 @@
-import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  forwardRef,
+  Inject,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from 'nestjs-fireorm';
 import { getRepository } from 'fireorm';
 
@@ -254,8 +261,25 @@ export class GeneratedDocumentService {
       Key: s3Key,
     };
 
-    const result = await s3.getObject(params).promise();
-    return result.Body as Buffer;
+    try {
+      const result = await s3.getObject(params).promise();
+      return result.Body as Buffer;
+    } catch (error) {
+      const code = error?.code;
+
+      if (code === 'NoSuchKey') {
+        this.logger.warn(
+          `S3 object not found for key=${s3Key}, commerceId=${commerceId}: ${error.message}`
+        );
+        throw new NotFoundException('Documento no encontrado en almacenamiento');
+      }
+
+      this.logger.error(
+        `Error retrieving S3 object for key=${s3Key}, commerceId=${commerceId}: ${error.message}`,
+        error.stack
+      );
+      throw new InternalServerErrorException('Error recuperando documento desde almacenamiento');
+    }
   }
 
   /**
