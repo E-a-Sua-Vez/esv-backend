@@ -131,7 +131,7 @@ export class BusinessService {
     } else {
       business.serviceInfo = {} as ServiceInfo;
     }
-    business.logo = '/images/logo_horizontal_blanco.png';
+    business.logo = '/images/hub/logo/hub-color-transparente.png';
     if (logo) {
       business.logo = logo;
     }
