@@ -94,6 +94,9 @@ export class AttentionService {
    * Get commerce logo S3 signed URL for email use
    */
   private async getCommerceLogoForEmail(commerceId: string): Promise<string> {
+    const frontendBaseUrl =
+      process.env.FRONTEND_URL || process.env.BACKEND_URL || 'http://localhost:5173';
+    const defaultLogoUrl = `${frontendBaseUrl}/images/hub/logo/hub-color-transparente.png`;
     try {
       // Try to get S3 signed URL (expires in 7 days for emails)
       const signedUrl = await this.commerceLogoService.getCommerceLogoS3SignedUrl(commerceId, 60 * 60 * 24 * 7);
@@ -101,10 +104,10 @@ export class AttentionService {
         return signedUrl;
       }
       // Fallback to default logo if no logo exists
-      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+      return defaultLogoUrl;
     } catch (error) {
       this.logger.error(`Error getting commerce logo for email: commerceId=${commerceId}, error=${error}`);
-      return `${process.env.BACKEND_URL}/assets/default-logo.png`;
+      return defaultLogoUrl;
     }
   }
 
