@@ -15,6 +15,9 @@ export class CollaboratorDetailsDto {
   servicesId: string[];
   available: boolean;
   services?: Service[];
+  // Campos de contacto básicos
+  email?: string;
+  phone?: string;
   // Campos extendidos
   role?: string;
   profilePhoto?: string;
