@@ -236,7 +236,20 @@ export class CommerceLogoService {
     };
 
     try {
-      return s3.getObject(getObjectRequest).createReadStream();
+      const stream = s3.getObject(getObjectRequest).createReadStream();
+
+      // Asegura que siempre exista un handler de error para evitar que
+      // errores como NoSuchKey tumben el proceso completo.
+      stream.on('error', (error: any) => {
+        console.error('Error leyendo logo de S3', {
+          key,
+          bucket: this.bucketName,
+          code: error?.code,
+          message: error?.message,
+        });
+      });
+
+      return stream;
     } catch (error) {
       throw new HttpException('Logo no encontrado', HttpStatus.NOT_FOUND);
     }

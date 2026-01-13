@@ -385,7 +385,19 @@ export class DocumentsService {
     const key = documentKey;
     const getObjectRequest: AWS.S3.GetObjectRequest = { Bucket: bucketAndPath, Key: key };
     try {
-      return S3.getObject(getObjectRequest).createReadStream();
+      const stream = S3.getObject(getObjectRequest).createReadStream();
+
+      // Evita que un NoSuchKey sin handler tumbe el proceso
+      stream.on('error', (error: any) => {
+        console.error('Error leyendo documento de S3', {
+          key,
+          bucket: bucketAndPath,
+          code: error?.code,
+          message: error?.message,
+        });
+      });
+
+      return stream;
     } catch (error) {
       throw new HttpException('Objeto no encontrado', HttpStatus.NOT_FOUND);
     }
@@ -397,7 +409,19 @@ export class DocumentsService {
     const key = `${documentKey}/${name}`;
     const getObjectRequest: AWS.S3.GetObjectRequest = { Bucket: bucketAndPath, Key: key };
     try {
-      return S3.getObject(getObjectRequest).createReadStream();
+      const stream = S3.getObject(getObjectRequest).createReadStream();
+
+      // Manejo defensivo de errores de S3
+      stream.on('error', (error: any) => {
+        console.error('Error leyendo documento de cliente de S3', {
+          key,
+          bucket: bucketAndPath,
+          code: error?.code,
+          message: error?.message,
+        });
+      });
+
+      return stream;
     } catch (error) {
       throw new HttpException('Objeto no encontrado', HttpStatus.NOT_FOUND);
     }

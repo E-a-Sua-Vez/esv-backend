@@ -177,7 +177,19 @@ export class PatientPhotoService {
     };
 
     try {
-      return s3.getObject(getObjectRequest).createReadStream();
+      const stream = s3.getObject(getObjectRequest).createReadStream();
+
+      // Manejo defensivo: asegura que siempre haya listener de error
+      stream.on('error', (error: any) => {
+        console.error('Error leyendo foto de paciente de S3', {
+          key,
+          bucket: this.bucketName,
+          code: error?.code,
+          message: error?.message,
+        });
+      });
+
+      return stream;
     } catch (error) {
       throw new HttpException('Foto no encontrada', HttpStatus.NOT_FOUND);
     }
