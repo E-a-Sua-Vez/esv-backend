@@ -134,6 +134,15 @@ export class BusinessLogoController {
       businessId,
       logoId
     );
+    readable.on('error', (error: any) => {
+      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error?.code === 'NoSuchKey' ? 'Logo no encontrado' : 'Error al obtener el logo';
+
+      if (!response.headersSent) {
+        response.status(status).send({ message });
+      }
+    });
     response.set({
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=3600',
@@ -161,6 +170,15 @@ export class BusinessLogoController {
       businessId,
       logoId
     );
+    readable.on('error', (error: any) => {
+      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error?.code === 'NoSuchKey' ? 'Miniatura de logo no encontrada' : 'Error al obtener la miniatura de logo';
+
+      if (!response.headersSent) {
+        response.status(status).send({ message });
+      }
+    });
     response.set({
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=3600',

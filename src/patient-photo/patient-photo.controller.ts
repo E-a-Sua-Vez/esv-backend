@@ -152,6 +152,16 @@ export class PatientPhotoController {
       clientId,
       photoId
     );
+    readable.on('error', (error: any) => {
+      // Evitar que errores de S3 tumben el proceso
+      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error?.code === 'NoSuchKey' ? 'Foto no encontrada' : 'Error al obtener la foto del paciente';
+
+      if (!response.headersSent) {
+        response.status(status).send({ message });
+      }
+    });
     response.set({
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=3600',
@@ -182,6 +192,15 @@ export class PatientPhotoController {
       clientId,
       photoId
     );
+    readable.on('error', (error: any) => {
+      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error?.code === 'NoSuchKey' ? 'Miniatura no encontrada' : 'Error al obtener la miniatura';
+
+      if (!response.headersSent) {
+        response.status(status).send({ message });
+      }
+    });
     response.set({
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=3600',

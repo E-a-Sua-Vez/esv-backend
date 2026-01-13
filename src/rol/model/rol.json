@@ -38,7 +38,7 @@
       "business.main-menu.service-admin": true,
       "business.main-menu.tracing": true,
       "business.main-menu.product-admin": true,
-      "business.main-menu.product-stock": false,
+      "business.main-menu.product-stock": true,
       "business.main-menu.documents": true,
       "business.main-menu.control-admin": true,
       "business.main-menu.financial": true,
@@ -56,12 +56,12 @@
       "business.main-menu.pdf-templates-admin": true,
       "business.main-menu.audit-log": true,
 
-      "businesses.admin.add": false,
-      "businesses.admin.update": false,
-      "businesses.admin.edit": false,
-      "businesses.admin.read": false,
+      "businesses.admin.add": true,
+      "businesses.admin.update": true,
+      "businesses.admin.edit": true,
+      "businesses.admin.read": true,
       "businesses.admin.limit": 0,
-      "businesses.admin.view": false,
+      "businesses.admin.view": true,
 
       "client.notify.email": false,
       "client.notify.whatsapp": false,
@@ -190,12 +190,12 @@
       "plan.admin.add": true,
       "plan.admin.edit": true,
 
-      "plans.admin.view": false,
-      "plans.admin.update": false,
-      "plans.admin.read": false,
-      "plans.admin.add": false,
+      "plans.admin.view": true,
+      "plans.admin.update": true,
+      "plans.admin.read": true,
+      "plans.admin.add": true,
       "plans.admin.limit": 0,
-      "plans.admin.edit": false,
+      "plans.admin.edit": true,
 
       "queues.admin.edit": true,
       "queues.admin.add": true,
@@ -243,6 +243,9 @@
       "surveys.admin.limit": 5,
 
       "user.notification.add": true,
+
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
 
       "products.admin.limit": 10,
       "products.admin.read": true,
@@ -630,6 +633,9 @@
 
       "user.notification.add": true,
 
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
+
       "products.admin.limit": 10,
       "products.admin.read": true,
       "products.admin.edit": true,
@@ -867,6 +873,9 @@
       "client.admin.edit": true,
       "client.admin.add": true,
 
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
+
       "messages.admin.send": true,
       "messages.admin.view": true,
       "messages.admin.read": true,
@@ -889,7 +898,9 @@
     "permissions": {
       "client.notify.whatsapp": true,
       "client.notify.email": true,
-      "user.notification.add": true
+      "user.notification.add": true,
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true
     }
   },
   {
@@ -915,6 +926,9 @@
       "client-portal.documents.download": true,
       "client-portal.history.view": true,
       "client-portal.history.details": true,
+
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
 
       "messages.admin.send": true,
       "messages.admin.view": true,

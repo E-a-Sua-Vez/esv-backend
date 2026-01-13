@@ -197,6 +197,15 @@ export class DocumentsController {
   public getDocument(@Param() params: GetDocumentsParamsDto, @Res() response): Readable {
     const { documentKey, reportType } = params;
     const readable = this.documentsService.getDocument(documentKey, reportType);
+    readable.on('error', (error: any) => {
+      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error?.code === 'NoSuchKey' ? 'Documento no encontrado' : 'Error al obtener el documento';
+
+      if (!response.headersSent) {
+        response.status(status).send({ message });
+      }
+    });
     return readable.pipe(response);
   }
 
@@ -214,6 +223,15 @@ export class DocumentsController {
   public getDocumentById(@Param() params: GetDocumentsParamsDto, @Res() response): Readable {
     const { documentKey, reportType, name } = params;
     const readable = this.documentsService.getClientDocument(documentKey, reportType, name);
+    readable.on('error', (error: any) => {
+      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error?.code === 'NoSuchKey' ? 'Documento no encontrado' : 'Error al obtener el documento';
+
+      if (!response.headersSent) {
+        response.status(status).send({ message });
+      }
+    });
     return readable.pipe(response);
   }
 
