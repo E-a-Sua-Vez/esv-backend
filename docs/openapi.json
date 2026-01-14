@@ -3747,6 +3747,358 @@
         ]
       }
     },
+    "/internal-message/system-notification": {
+      "post": {
+        "operationId": "InternalMessageController_sendSystemNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSystemNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notification sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send system notification",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/send": {
+      "post": {
+        "operationId": "InternalMessageController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send message (chat)",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/inbox": {
+      "get": {
+        "operationId": "InternalMessageController_getInbox",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Inbox retrieved"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get user inbox",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/{id}/read": {
+      "patch": {
+        "operationId": "InternalMessageController_markAsRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark message as read",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/bulk/read": {
+      "post": {
+        "operationId": "InternalMessageController_bulkMarkAsRead",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Messages marked as read"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark multiple messages as read",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/bulk/archive": {
+      "post": {
+        "operationId": "InternalMessageController_bulkArchive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Messages archived"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Archive multiple messages",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/{id}/archive": {
+      "patch": {
+        "operationId": "InternalMessageController_archiveMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Archive message",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/conversation": {
+      "post": {
+        "operationId": "InternalMessageController_getOrCreateConversation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conversation retrieved or created"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get or create conversation",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/{id}": {
+      "get": {
+        "operationId": "InternalMessageController_getMessageById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get message by ID",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/mass/send": {
+      "post": {
+        "operationId": "InternalMessageController_sendMassMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMassMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mass messages sent"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Send mass message (MASTER only)",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
+    "/internal-message/conversation/cross-business": {
+      "post": {
+        "operationId": "InternalMessageController_createCrossBusinessConversation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCrossBusinessConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cross-business conversation created"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create cross-business conversation (MASTER only)",
+        "tags": [
+          "internal-message"
+        ]
+      }
+    },
     "/payment/{id}": {
       "get": {
         "description": "Retrieves a payment by its unique identifier",
@@ -14501,358 +14853,6 @@
         ]
       }
     },
-    "/internal-message/system-notification": {
-      "post": {
-        "operationId": "InternalMessageController_sendSystemNotification",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendSystemNotificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Notification sent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalMessage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Send system notification",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/send": {
-      "post": {
-        "operationId": "InternalMessageController_sendMessage",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Message sent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalMessage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Send message (chat)",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/inbox": {
-      "get": {
-        "operationId": "InternalMessageController_getInbox",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Inbox retrieved"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get user inbox",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/{id}/read": {
-      "patch": {
-        "operationId": "InternalMessageController_markAsRead",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Message marked as read",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalMessage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Mark message as read",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/bulk/read": {
-      "post": {
-        "operationId": "InternalMessageController_bulkMarkAsRead",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkReadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Messages marked as read"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Mark multiple messages as read",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/bulk/archive": {
-      "post": {
-        "operationId": "InternalMessageController_bulkArchive",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkReadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Messages archived"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Archive multiple messages",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/{id}/archive": {
-      "patch": {
-        "operationId": "InternalMessageController_archiveMessage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Message archived",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalMessage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Archive message",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/conversation": {
-      "post": {
-        "operationId": "InternalMessageController_getOrCreateConversation",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateConversationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Conversation retrieved or created"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get or create conversation",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/{id}": {
-      "get": {
-        "operationId": "InternalMessageController_getMessageById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Message retrieved",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternalMessage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get message by ID",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/mass/send": {
-      "post": {
-        "operationId": "InternalMessageController_sendMassMessage",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendMassMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Mass messages sent"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Send mass message (MASTER only)",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
-    "/internal-message/conversation/cross-business": {
-      "post": {
-        "operationId": "InternalMessageController_createCrossBusinessConversation",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCrossBusinessConversationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Cross-business conversation created"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Create cross-business conversation (MASTER only)",
-        "tags": [
-          "internal-message"
-        ]
-      }
-    },
     "/outcome-type/{id}": {
       "get": {
         "description": "Retrieves an outcome type by its unique identifier",
@@ -21812,6 +21812,145 @@
         "type": "object",
         "properties": {}
       },
+      "SendSystemNotificationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "InternalMessage": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "BulkReadDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateConversationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendMassMessageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "direct_message",
+              "announcement",
+              "attention_reminder",
+              "booking_reminder",
+              "booking_confirmed",
+              "booking_cancelled",
+              "stock",
+              "low_stock",
+              "out_of_stock",
+              "payment_received",
+              "payment_pending",
+              "payment_overdue",
+              "plan_expiring",
+              "plan_expired",
+              "plan_upgraded",
+              "survey_pending",
+              "document_available",
+              "form_pending",
+              "system_update",
+              "feature_announcement",
+              "maintenance",
+              "task_assigned",
+              "task_completed",
+              "task_overdue"
+            ],
+            "default": "announcement"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "normal",
+              "low"
+            ],
+            "default": "normal"
+          },
+          "targetUserTypes": {
+            "description": "Target user types",
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "targetBusinessIds": {
+            "description": "Target business IDs (empty = all businesses)",
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "targetCommerceIds": {
+            "description": "Target commerce IDs (empty = all commerces)",
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "actionLink": {
+            "type": "string"
+          },
+          "actionLabel": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "targetUserTypes"
+        ]
+      },
+      "CreateCrossBusinessConversationDto": {
+        "type": "object",
+        "properties": {
+          "recipientId": {
+            "type": "string",
+            "description": "Target user ID (admin or collaborator from any business)"
+          },
+          "recipientType": {
+            "type": "string",
+            "description": "Target user type"
+          },
+          "targetBusinessId": {
+            "type": "string",
+            "description": "Target business ID"
+          },
+          "targetCommerceId": {
+            "type": "string",
+            "description": "Target commerce ID"
+          },
+          "initialMessage": {
+            "type": "string",
+            "description": "Initial message content"
+          }
+        },
+        "required": [
+          "recipientId",
+          "recipientType"
+        ]
+      },
       "Service": {
         "type": "object",
         "properties": {}
@@ -22406,145 +22545,6 @@
       "ProductConsumption": {
         "type": "object",
         "properties": {}
-      },
-      "SendSystemNotificationDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "InternalMessage": {
-        "type": "object",
-        "properties": {}
-      },
-      "SendMessageDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "BulkReadDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateConversationDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "SendMassMessageDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string"
-          },
-          "icon": {
-            "type": "string"
-          },
-          "category": {
-            "type": "string",
-            "enum": [
-              "direct_message",
-              "announcement",
-              "attention_reminder",
-              "booking_reminder",
-              "booking_confirmed",
-              "booking_cancelled",
-              "stock",
-              "low_stock",
-              "out_of_stock",
-              "payment_received",
-              "payment_pending",
-              "payment_overdue",
-              "plan_expiring",
-              "plan_expired",
-              "plan_upgraded",
-              "survey_pending",
-              "document_available",
-              "form_pending",
-              "system_update",
-              "feature_announcement",
-              "maintenance",
-              "task_assigned",
-              "task_completed",
-              "task_overdue"
-            ],
-            "default": "announcement"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "critical",
-              "high",
-              "normal",
-              "low"
-            ],
-            "default": "normal"
-          },
-          "targetUserTypes": {
-            "description": "Target user types",
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "targetBusinessIds": {
-            "description": "Target business IDs (empty = all businesses)",
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "targetCommerceIds": {
-            "description": "Target commerce IDs (empty = all commerces)",
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "actionLink": {
-            "type": "string"
-          },
-          "actionLabel": {
-            "type": "string"
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "content",
-          "targetUserTypes"
-        ]
-      },
-      "CreateCrossBusinessConversationDto": {
-        "type": "object",
-        "properties": {
-          "recipientId": {
-            "type": "string",
-            "description": "Target user ID (admin or collaborator from any business)"
-          },
-          "recipientType": {
-            "type": "string",
-            "description": "Target user type"
-          },
-          "targetBusinessId": {
-            "type": "string",
-            "description": "Target business ID"
-          },
-          "targetCommerceId": {
-            "type": "string",
-            "description": "Target commerce ID"
-          },
-          "initialMessage": {
-            "type": "string",
-            "description": "Initial message content"
-          }
-        },
-        "required": [
-          "recipientId",
-          "recipientType"
-        ]
       },
       "OutcomeType": {
         "type": "object",
