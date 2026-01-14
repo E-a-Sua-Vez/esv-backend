@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 import { AdministratorModule } from 'src/administrator/administrator.module';
+import { InternalMessageModule } from 'src/internal-message/internal-message.module';
 import { PermissionModule } from 'src/permission/permission.module';
 import { ServiceModule } from 'src/service/service.module';
 
