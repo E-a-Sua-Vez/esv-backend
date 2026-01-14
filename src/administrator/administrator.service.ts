@@ -1,9 +1,14 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 
 import { PermissionService } from '../permission/permission.service';
+import { InternalMessageService } from '../internal-message/internal-message.service';
+import { MessageCategory } from '../internal-message/model/message-category.enum';
+import { MessagePriority } from '../internal-message/model/message-priority.enum';
+
+import { Business } from '../business/model/business.entity';
 
 import AdministratorCreated from './events/AdministratorCreated';
 import AdministratorUpdated from './events/AdministratorUpdated';
@@ -13,7 +18,9 @@ export class AdministratorService {
   constructor(
     @InjectRepository(Administrator)
     private administratorRepository = getRepository(Administrator),
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    @Inject(forwardRef(() => InternalMessageService))
+    private readonly internalMessageService: InternalMessageService
   ) {}
 
   public async getAdministratorById(id: string): Promise<Administrator> {
@@ -114,6 +121,54 @@ export class AdministratorService {
         user,
       });
       publish(administratorCreatedEvent);
+
+      // Mensaje interno de bienvenida para el nuevo administrador
+      try {
+        // Determinar idioma según el negocio asociado (es/pt/en)
+        let language: string = 'es';
+        try {
+          const businessRepository = getRepository(Business);
+          const business = await businessRepository.findById(businessId);
+          language = (business?.localeInfo?.language as any) || 'es';
+        } catch {
+          // Si falla, mantener idioma por defecto (es)
+        }
+
+        const titleByLang: Record<string, string> = {
+          es: 'Bienvenido a Hub',
+          pt: 'Bem-vindo ao Hub',
+          en: 'Welcome to Hub',
+        };
+
+        const contentByLang: Record<string, string> = {
+          es:
+            `Hola ${administratorCreated.name || ''}, tu usuario administrador en Hub ha sido creado correctamente. ` +
+            `Ya puedes ingresar al panel interno para gestionar tu negocio y colaboradores.`,
+          pt:
+            `Olá ${administratorCreated.name || ''}, seu usuário administrador no Hub foi criado com sucesso. ` +
+            `Você já pode acessar o painel interno para gerenciar seu negócio e colaboradores.`,
+          en:
+            `Hi ${administratorCreated.name || ''}, your administrator user in Hub has been created successfully. ` +
+            `You can now access the internal panel to manage your business and collaborators.`,
+        };
+
+        const languageKey = ['es', 'pt', 'en'].includes(language) ? language : 'es';
+
+        await this.internalMessageService.sendSystemNotification({
+          category: MessageCategory.FEATURE_ANNOUNCEMENT,
+          priority: MessagePriority.NORMAL,
+          title: titleByLang[languageKey],
+          content: contentByLang[languageKey],
+          icon: 'bi-person-badge',
+          actionLink: '/interno',
+          actionLabel: 'Ir al panel',
+          recipientId: administratorCreated.id,
+          recipientType: 'business',
+        } as any);
+      } catch (e) {
+        // No romper creación por fallo en mensaje interno
+      }
+
       return administratorCreated;
     } catch (error) {
       throw new HttpException(

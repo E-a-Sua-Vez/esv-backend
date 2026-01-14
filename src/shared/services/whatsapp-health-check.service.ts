@@ -130,7 +130,7 @@ export class WhatsappHealthCheckService {
               priority: MessagePriority.HIGH,
               title,
               content,
-              icon: '📣',
+              icon: 'bi-whatsapp',
               actionLink: '/interno/negocio/configuration',
               actionLabel: 'Revisar conexión WhatsApp',
               recipientId: administrator.id,

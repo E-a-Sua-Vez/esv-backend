@@ -1,10 +1,14 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, forwardRef } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 import { AdministratorService } from 'src/administrator/administrator.service';
 import { PermissionService } from 'src/permission/permission.service';
+import { InternalMessageService } from 'src/internal-message/internal-message.service';
+import { MessageCategory } from 'src/internal-message/model/message-category.enum';
+import { MessagePriority } from 'src/internal-message/model/message-priority.enum';
+import { Commerce } from 'src/commerce/model/commerce.entity';
 
 import { ServiceService } from '../service/service.service';
 
@@ -23,7 +27,9 @@ export class CollaboratorService {
     private collaboratorRepository = getRepository(Collaborator),
     private administratorService: AdministratorService,
     private permissionService: PermissionService,
-    private serviceService: ServiceService
+    private serviceService: ServiceService,
+    @Inject(forwardRef(() => InternalMessageService))
+    private readonly internalMessageService: InternalMessageService
   ) {
     AWS.config.update({
       apiVersion: '2006-03-01',
@@ -439,6 +445,56 @@ export class CollaboratorService {
         user,
       });
       publish(collaboratorCreatedEvent);
+
+      // Mensaje interno de bienvenida para el nuevo colaborador (no bot)
+      if (!collaboratorCreated.bot) {
+        try {
+          // Determinar idioma según el comercio asociado (es/pt/en)
+          let language: string = 'es';
+          try {
+            const commerceRepository = getRepository(Commerce);
+            const commerce = await commerceRepository.findById(collaboratorCreated.commerceId);
+            language = (commerce?.localeInfo?.language as any) || 'es';
+          } catch {
+            // Si falla, mantener idioma por defecto (es)
+          }
+
+          const titleByLang: Record<string, string> = {
+            es: 'Bienvenido a Hub',
+            pt: 'Bem-vindo ao Hub',
+            en: 'Welcome to Hub',
+          };
+
+          const contentByLang: Record<string, string> = {
+            es:
+              `Hola ${collaboratorCreated.name || ''}, tu usuario colaborador en Hub ha sido creado correctamente. ` +
+              `Ya puedes ingresar al panel interno para gestionar tus atenciones y reservas.`,
+            pt:
+              `Olá ${collaboratorCreated.name || ''}, seu usuário colaborador no Hub foi criado com sucesso. ` +
+              `Você já pode acessar o painel interno para gerenciar seus atendimentos e reservas.`,
+            en:
+              `Hi ${collaboratorCreated.name || ''}, your collaborator user in Hub has been created successfully. ` +
+              `You can now access the internal panel to manage your appointments and bookings.`,
+          };
+
+          const languageKey = ['es', 'pt', 'en'].includes(language) ? language : 'es';
+
+          await this.internalMessageService.sendSystemNotification({
+            category: MessageCategory.FEATURE_ANNOUNCEMENT,
+            priority: MessagePriority.NORMAL,
+            title: titleByLang[languageKey],
+            content: contentByLang[languageKey],
+            icon: 'bi-person',
+            actionLink: '/interno',
+            actionLabel: 'Ir al panel',
+            recipientId: collaboratorCreated.id,
+            recipientType: 'collaborator',
+          } as any);
+        } catch (e) {
+          // No romper creación por fallo en mensaje interno
+        }
+      }
+
       return collaboratorCreated;
     } catch (error) {
       throw new HttpException(

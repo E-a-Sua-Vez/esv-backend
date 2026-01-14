@@ -13,6 +13,7 @@ import { Collaborator } from './model/collaborator.entity';
     FireormModule.forFeature([Collaborator]),
     forwardRef(() => AdministratorModule),
     forwardRef(() => PermissionModule),
+    forwardRef(() => InternalMessageModule),
     forwardRef(() => ServiceModule),
   ],
   providers: [CollaboratorService],
