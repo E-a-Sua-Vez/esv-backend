@@ -71,6 +71,7 @@ export class Attention {
   termsConditionsToAcceptedAt?: Date;
   surveyPostAttentionDateScheduled?: string;
   notificationSurveySent = false;
+  notificationCheckInSent = false;
   telemedicineSessionId?: string; // ID de la sesión de telemedicina asociada
   telemedicineConfig?: {
     type: string;

@@ -197,6 +197,9 @@ export class AttentionService {
       attentionDetailsDto.telemedicineInfo = attention.telemedicineInfo;
       attentionDetailsDto.currentStage = attention.currentStage;
       attentionDetailsDto.stageHistory = attention.stageHistory;
+      // Propagar flag de notificación de check-in enviada (si existe)
+      (attentionDetailsDto as any).notificationCheckInSent =
+        (attention as any).notificationCheckInSent ?? false;
       if (attention.queueId) {
         attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
         attentionDetailsDto.commerce = await this.commerceService.getCommerceById(
@@ -2138,6 +2141,134 @@ export class AttentionService {
       }
     });
     return notified;
+  }
+
+  /**
+   * Enviar un mensaje de WhatsApp manual para llamar al cliente al módulo
+   * durante el Check-In de la atención. Marca el flag notificationCheckInSent
+   * en la atención para evitar envíos duplicados.
+   */
+  public async sendCheckInWhatsappCall(
+    user: string,
+    attentionId: string,
+    collaboratorId?: string,
+    commerceLanguage?: string
+  ): Promise<Attention> {
+    // Cargar atención y detalles completos
+    const attention = await this.getAttentionById(attentionId);
+
+    if (!attention || !attention.id) {
+      throw new HttpException('Atención no existe', HttpStatus.NOT_FOUND);
+    }
+
+    // Evitar llamadas duplicadas si ya fue enviada
+    if ((attention as any).notificationCheckInSent) {
+      return attention;
+    }
+
+    const attentionDetails = await this.getAttentionDetails(attentionId);
+
+    if (!attentionDetails.user || !attentionDetails.user.phone) {
+      throw new HttpException(
+        'No se puede enviar WhatsApp: usuario sin teléfono configurado',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Determinar idioma del comercio
+    const language =
+      commerceLanguage ||
+      (attentionDetails.commerce as any)?.localeInfo?.language ||
+      'es';
+
+    // Determinar módulo y nombre del colaborador si es necesario
+    let moduleNumber = attentionDetails.module?.name;
+    let collaboratorName: string | undefined;
+    try {
+      if (!moduleNumber && (collaboratorId || attentionDetails.collaboratorId)) {
+        const collaborator = await this.collaboratorService.getCollaboratorById(
+          (collaboratorId || attentionDetails.collaboratorId) as string
+        );
+        if (collaborator && collaborator.moduleId) {
+          const module = await this.moduleService.getModuleById(collaborator.moduleId);
+          moduleNumber = module?.name;
+        }
+        if (collaborator) {
+          collaboratorName = (collaborator as any).alias || collaborator.name;
+        }
+      }
+    } catch (error) {
+      // No bloquear por error de módulo, solo loguear
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        attentionId,
+        collaboratorId,
+        operation: 'sendCheckInWhatsappCall:resolveModule',
+      });
+    }
+
+    // Construir mensaje específico de check-in
+    const message = NOTIFICATIONS.getCheckInCallMessage(
+      language,
+      attentionDetails,
+      moduleNumber || attentionDetails.moduleId || '',
+      collaboratorName
+    );
+
+    // Determinar número de servicio de WhatsApp (por comercio o global)
+    let servicePhoneNumber: string | undefined = undefined;
+    try {
+      const whatsappConnection = await this.commerceService.getWhatsappConnectionCommerce(
+        attention.commerceId
+      );
+      if (
+        whatsappConnection &&
+        whatsappConnection.connected === true &&
+        whatsappConnection.whatsapp
+      ) {
+        servicePhoneNumber = whatsappConnection.whatsapp;
+      }
+    } catch (error) {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        attentionId,
+        operation: 'sendCheckInWhatsappCall:getWhatsappConnection',
+      });
+    }
+
+    // Fallback al número global si el comercio no tiene uno configurado o conectado
+    if (!servicePhoneNumber) {
+      servicePhoneNumber = process.env.WHATSGW_PHONE_NUMBER;
+    }
+
+    // Enviar notificación por WhatsApp
+    try {
+      await this.notificationService.createWhatsappNotification(
+        attentionDetails.user.phone,
+        attentionDetails.user.id,
+        message,
+        NotificationType.ATTENTION_CHECKIN_CALL,
+        attention.id,
+        attention.commerceId,
+        attention.queueId,
+        servicePhoneNumber
+      );
+    } catch (error) {
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        attentionId,
+        operation: 'sendCheckInWhatsappCall:sendNotification',
+      });
+      throw new HttpException(
+        `Hubo un problema al enviar la llamada por WhatsApp: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
+    // Marcar flag en la atención y publicar evento
+    (attention as any).notificationCheckInSent = true;
+    const updatedAttention = await this.update(user, attention);
+
+    return updatedAttention;
   }
 
   public async attentionCancelWhatsapp(attentionId: string): Promise<Attention[]> {

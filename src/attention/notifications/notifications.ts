@@ -136,6 +136,87 @@ ${scheduledDate ? `📅 *Fecha programada:* ${scheduledDate}\n\n` : ''}⚡ Haz c
   return ESTUTURNO[variant];
 };
 
+export const getCheckInCallMessage = (
+  country,
+  attention,
+  moduleNumber?: string,
+  collaboratorName?: string
+) => {
+  const variant = normalizeCountry(country);
+
+  const clientName = attention?.user?.name || attention?.user?.lastName || '';
+  const commerceName = attention?.commerce?.name || '';
+  const safeModule = moduleNumber || attention?.module?.name || attention?.moduleId || '';
+
+  const esCollaboratorLine = collaboratorName
+    ? `👩‍⚕️ *${collaboratorName}* te está esperando en el módulo *${safeModule}* para hacer tu check-in.
+
+`
+    : safeModule
+    ? `👩‍⚕️ Nuestro equipo te está esperando en el módulo *${safeModule}* para hacer tu check-in.
+
+`
+    : `👩‍⚕️ Nuestro equipo te está esperando para hacer tu check-in.
+
+`;
+
+  const ptCollaboratorLine = collaboratorName
+    ? `👩‍⚕️ *${collaboratorName}* está te esperando no módulo *${safeModule}* para fazer o seu check-in.
+
+`
+    : safeModule
+    ? `👩‍⚕️ Nossa equipe está te esperando no módulo *${safeModule}* para fazer o seu check-in.
+
+`
+    : `👩‍⚕️ Nossa equipe está te esperando para fazer o seu check-in.
+
+`;
+
+  const enCollaboratorLine = collaboratorName
+    ? `👩‍⚕️ *${collaboratorName}* is waiting for you at module *${safeModule}* to start your check-in.
+
+`
+    : safeModule
+    ? `👩‍⚕️ Our team is waiting for you at module *${safeModule}* to start your check-in.
+
+`
+    : `👩‍⚕️ Our team is waiting for you to start your check-in.
+
+`;
+
+  const CHECKIN = {
+    es: `👋 *Bienvenido${clientName ? ` ${clientName}` : ''}!* 
+
+✅ Tu atención en *${commerceName}* está lista para iniciar.
+
+${esCollaboratorLine}🎫 *Tu número de atención:* ${attention.number}
+
+⚠️ Por favor acércate al módulo lo antes posible para no perder tu turno.
+
+🙏 *¡Gracias!*`,
+    pt: `👋 *Bem-vindo${clientName ? ` ${clientName}` : ''}!* 
+
+✅ Seu atendimento em *${commerceName}* está pronto para começar.
+
+${ptCollaboratorLine}🎫 *Seu número de atendimento:* ${attention.number}
+
+⚠️ Por favor aproxime-se do módulo o quanto antes para não perder a sua vez.
+
+🙏 *Obrigado!*`,
+    en: `👋 *Welcome${clientName ? ` ${clientName}` : ''}!* 
+
+✅ Your service at *${commerceName}* is ready to start.
+
+${enCollaboratorLine}🎫 *Your ticket number:* ${attention.number}
+
+⚠️ Please come to the module as soon as possible so you don't lose your turn.
+
+🙏 *Thank you!*`,
+  };
+
+  return CHECKIN[variant];
+};
+
 export const getEncuestaMessage = (country, attention, link) => {
   const variant = normalizeCountry(country);
   const ENCUESTA = {

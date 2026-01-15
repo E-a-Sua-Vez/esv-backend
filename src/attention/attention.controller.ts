@@ -31,6 +31,33 @@ export class AttentionController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @Patch('/check-in-call/:id')
+  @ApiOperation({
+    summary: 'Enviar llamada de check-in por WhatsApp',
+    description:
+      'Envía un mensaje de WhatsApp al cliente para que se acerque al módulo del colaborador para el check-in de la atención y marca la atención como notificada.',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Llamada de check-in enviada', type: Attention })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o usuario sin teléfono' })
+  @ApiResponse({ status: 404, description: 'Atención no encontrada' })
+  public async sendCheckInWhatsappCall(
+    @User() user,
+    @Param() params: any,
+    @Body() body: any
+  ): Promise<Attention> {
+    const { id } = params;
+    const { collaboratorId, commerceLanguage } = body;
+    return this.attentionService.sendCheckInWhatsappCall(
+      typeof user === 'string' ? user : user?.id || user?.userId || 'system',
+      id,
+      collaboratorId,
+      commerceLanguage
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/details/:id')
   @ApiOperation({
     summary: 'Get attention details',

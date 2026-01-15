@@ -4505,6 +4505,50 @@
         ]
       }
     },
+    "/attention/check-in-call/{id}": {
+      "patch": {
+        "description": "Envía un mensaje de WhatsApp al cliente para que se acerque al módulo del colaborador para el check-in de la atención y marca la atención como notificada.",
+        "operationId": "AttentionController_sendCheckInWhatsappCall",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Llamada de check-in enviada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o usuario sin teléfono"
+          },
+          "404": {
+            "description": "Atención no encontrada"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Enviar llamada de check-in por WhatsApp",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
     "/attention/details/{id}": {
       "get": {
         "description": "Retrieves detailed attention information",
