@@ -98,6 +98,16 @@ export class CreatePrescriptionDto {
   @IsString()
   doctorLicense?: string;
 
+  @ApiProperty({ description: 'ID del colaborador que emite (DEPRECATED: usar professionalId)', required: false, deprecated: true })
+  @IsOptional()
+  @IsString()
+  collaboratorId?: string;
+
+  @ApiProperty({ description: 'ID del profesional que emite la prescripción', required: false })
+  @IsOptional()
+  @IsString()
+  professionalId?: string;
+
   @ApiProperty({ description: 'Lista de medicamentos', type: [MedicationItemDto] })
   @IsArray()
   @ValidateNested({ each: true })

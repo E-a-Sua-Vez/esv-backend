@@ -8,6 +8,7 @@ import { ProductModule } from '../product/product.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { NotificationModule } from '../notification/notification.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
+import { ProfessionalModule } from '../professional/professional.module';
 import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 import { PdfTemplateModule } from '../shared/modules/pdf-template.module';
 
@@ -31,6 +32,7 @@ import { CrmValidationModule } from '../shared/modules/crm-validation.module';
     DocumentsModule,
     NotificationModule,
     CollaboratorModule,
+    ProfessionalModule,
     PdfTemplateModule,
     AuditLogModule,
     DigitalSignatureModule,

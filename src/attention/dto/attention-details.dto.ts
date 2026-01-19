@@ -63,4 +63,6 @@ export class AttentionDetailsDto {
   currentStage?: AttentionStage;
   stageHistory?: AttentionStageHistory[];
   notificationCheckInSent?: boolean;
+  professionalId?: string;
+  professionalName?: string;
 }

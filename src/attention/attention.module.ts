@@ -18,6 +18,7 @@ import { UserModule } from '../user/user.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
 import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 import { ConsentOrchestrationModule } from '../shared/modules/consent-orchestration.module';
+import { ProfessionalModule } from '../professional/professional.module';
 
 import { AttentionController } from './attention.controller';
 import { AttentionService } from './attention.service';
@@ -48,6 +49,7 @@ import { Attention } from './model/attention.entity';
     AuditLogModule,
     forwardRef(() => LgpdConsentModule),
     forwardRef(() => ConsentOrchestrationModule),
+    forwardRef(() => ProfessionalModule),
   ],
   providers: [
     AttentionService,

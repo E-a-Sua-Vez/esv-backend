@@ -61,7 +61,10 @@ export class AttentionTelemedicineBuilder {
     attention.number = currentNumber + 1;
     attention.channel = channel;
 
-    if (queue.collaboratorId !== undefined) {
+    if (queue.professionalId !== undefined) {
+      attention.collaboratorId = queue.professionalId; // Attention usa collaboratorId para referirse al profesional que registra
+    } else if (queue.collaboratorId !== undefined) {
+      // Compatibilidad temporal: si aún no migrado, usar collaboratorId del queue
       attention.collaboratorId = queue.collaboratorId;
     }
     if (collaboratorId !== undefined) {
@@ -112,7 +115,7 @@ export class AttentionTelemedicineBuilder {
     const sessionDto: CreateTelemedicineSessionDto = {
       commerceId: queue.commerceId,
       clientId: clientId || attentionCreated.clientId,
-      doctorId: collaboratorId || queue.collaboratorId,
+      doctorId: collaboratorId || queue.professionalId || queue.collaboratorId,
       attentionId: attentionCreated.id,
       type: telemedicineConfig.type,
       scheduledAt: telemedicineConfig.scheduledAt,

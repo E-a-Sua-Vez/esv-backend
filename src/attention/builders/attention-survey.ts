@@ -39,7 +39,10 @@ export class AttentionSurveyBuilder implements BuilderInterface {
     attention.number = currentNumber + 1;
     attention.endAt = date || new Date();
     attention.channel = channel;
-    if (queue.collaboratorId !== undefined) {
+    if (queue.professionalId !== undefined) {
+      attention.collaboratorId = queue.professionalId; // Attention usa collaboratorId para referirse al profesional que registra
+    } else if (queue.collaboratorId !== undefined) {
+      // Compatibilidad temporal: si aún no migrado, usar collaboratorId del queue
       attention.collaboratorId = queue.collaboratorId;
     }
     if (collaboratorId !== undefined) {

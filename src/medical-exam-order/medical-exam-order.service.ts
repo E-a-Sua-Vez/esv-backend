@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
@@ -25,6 +25,8 @@ import { MedicalExam } from './model/medical-exam.entity';
 
 @Injectable()
 export class MedicalExamOrderService {
+  private readonly logger = new Logger(MedicalExamOrderService.name);
+  
   constructor(
     @InjectRepository(MedicalExamOrder)
     private examOrderRepository = getRepository(MedicalExamOrder),
@@ -109,6 +111,24 @@ export class MedicalExamOrderService {
    * Crear orden de exámenes
    */
   async createExamOrder(user: string, createDto: CreateExamOrderDto): Promise<MedicalExamOrder> {
+    // Validación: Debe tener al menos professionalId o collaboratorId
+    if (!createDto.professionalId && !createDto.collaboratorId) {
+      this.logger.warn('Creating exam order without professionalId or collaboratorId');
+    }
+
+    // Auto-resolución: Si solo tiene collaboratorId, intentar obtener professionalId vinculado
+    if (createDto.collaboratorId && !createDto.professionalId && this.collaboratorService) {
+      try {
+        const collaborator = await this.collaboratorService.getCollaboratorById(createDto.collaboratorId);
+        if (collaborator?.professionalId) {
+          createDto.professionalId = collaborator.professionalId;
+          console.log(`Auto-resolved professionalId ${createDto.professionalId} from collaboratorId ${createDto.collaboratorId}`);
+        }
+      } catch (error) {
+        console.warn(`Could not auto-resolve professionalId from collaboratorId ${createDto.collaboratorId}: ${error.message}`);
+      }
+    }
+
     // Validar que todos los exámenes existan
     for (const exam of createDto.exams) {
       try {
@@ -125,6 +145,8 @@ export class MedicalExamOrderService {
     order.patientHistoryId = createDto.patientHistoryId;
     order.doctorId = createDto.doctorId;
     order.doctorName = createDto.doctorName;
+    order.collaboratorId = createDto.collaboratorId;
+    order.professionalId = createDto.professionalId;
     order.exams = createDto.exams;
     order.type = createDto.type;
     order.priority = createDto.priority;
@@ -323,17 +345,19 @@ export class MedicalExamOrderService {
             examOrder.doctorId
           );
           if (collaborator) {
+            // Acceder a medicalData si está disponible
+            const medicalData = (collaborator as any)?.medicalData;
             // Obtener firma digital
-            if (collaborator.digitalSignature) {
-              doctorSignature = collaborator.digitalSignature.startsWith('http')
-                ? collaborator.digitalSignature
-                : `${process.env.BACKEND_URL || ''}${collaborator.digitalSignature}`;
+            if (medicalData?.digitalSignature) {
+              doctorSignature = medicalData.digitalSignature.startsWith('http')
+                ? medicalData.digitalSignature
+                : `${process.env.BACKEND_URL || ''}${medicalData.digitalSignature}`;
             }
             // Obtener CRM (licencia médica)
-            if (collaborator.crm) {
-              doctorLicense = collaborator.crmState
-                ? `CRM/${collaborator.crmState} ${collaborator.crm}`
-                : `CRM ${collaborator.crm}`;
+            if (medicalData?.medicalLicense) {
+              doctorLicense = medicalData.medicalLicenseState
+                ? `CRM/${medicalData.medicalLicenseState} ${medicalData.medicalLicense}`
+                : `CRM ${medicalData.medicalLicense}`;
             }
           }
         } catch (error) {

@@ -262,24 +262,38 @@ export class PackageService {
         pack.attentionsId = [];
       }
 
-      if (bookingsId !== undefined) {
-        if (pack.bookingsId && pack.bookingsId.length >= 0) {
-          pack.bookingsId = Array.from(new Set([...bookingsId, ...pack.bookingsId]).values());
-        } else {
-          pack.bookingsId = [...bookingsId];
-        }
+      // Ensure arrays are de-duplicated and that we don't exceed the total number of procedures
+      if (bookingsId && bookingsId.length > 0) {
+        const mergedBookings = Array.from(new Set([...pack.bookingsId, ...bookingsId]).values());
+        pack.bookingsId = mergedBookings;
       }
-      if (attentionsId !== undefined) {
-        if (pack.attentionsId && pack.attentionsId.length >= 0) {
-          pack.attentionsId = Array.from(new Set([...attentionsId, ...pack.attentionsId]).values());
-        } else {
-          pack.attentionsId = [...attentionsId];
-        }
+
+      if (attentionsId && attentionsId.length > 0) {
+        const mergedAttentions = Array.from(
+          new Set([...pack.attentionsId, ...attentionsId]).values()
+        );
+        pack.attentionsId = mergedAttentions;
+      }
+
+      // Hard limit: do not allow consuming more sessions than the package amount
+      const totalProceduresConsumed =
+        (Array.isArray(pack.bookingsId) ? pack.bookingsId.length : 0) +
+        (Array.isArray(pack.attentionsId) ? pack.attentionsId.length : 0);
+
+      if (pack.proceduresAmount && totalProceduresConsumed > pack.proceduresAmount) {
+        throw new HttpException(
+          `No hay sesiones disponibles en el paquete ${id} (proceduresAmount=${pack.proceduresAmount}, used=${totalProceduresConsumed})`,
+          HttpStatus.BAD_REQUEST
+        );
       }
       if (pack.status === PackageStatus.REQUESTED) {
         pack.status = PackageStatus.CONFIRMED;
       }
-      if (pack.bookingsId.length === pack.proceduresAmount) {
+      if (
+        pack.proceduresAmount &&
+        totalProceduresConsumed === pack.proceduresAmount &&
+        !pack.paid
+      ) {
         pack.status = PackageStatus.COMPLETED;
       }
       return await this.updatePackage(user, pack);

@@ -43,6 +43,8 @@ export class Booking {
   editedBy: string;
   user: User;
   block?: Block;
+  professionalId?: string; // ID del profesional asignado a la reserva
+  professionalName?: string; // Nombre del profesional asignado (desnormalizado para consultas rápidas)
   confirmedAt: Date;
   servicesId: string[];
   confirmed: boolean;

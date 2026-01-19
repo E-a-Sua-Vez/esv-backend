@@ -338,7 +338,15 @@ export class AttentionController {
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Patch('/transfer/:id')
+  @ApiOperation({
+    summary: 'Transfer attention to queue',
+    description: 'Transfers an attention to a collaborator queue',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Attention transferred', type: Attention })
+  @ApiResponse({ status: 404, description: 'Attention or queue not found' })
   public async transferAttentionToQueue(
     @User() user,
     @Param() params: any,
@@ -350,6 +358,33 @@ export class AttentionController {
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/assign-professional')
+  @ApiOperation({
+    summary: 'Assign professional to attention',
+    description: 'Assigns a professional to an attention and auto-suggests commission if configured',
+  })
+  @ApiParam({ name: 'id', description: 'Attention ID', example: 'attention-123' })
+  @ApiResponse({ status: 200, description: 'Professional assigned successfully', type: Attention })
+  @ApiResponse({ status: 400, description: 'Invalid professional assignment' })
+  @ApiResponse({ status: 404, description: 'Attention or professional not found' })
+  public async assignProfessional(
+    @User() user,
+    @Param() params: any,
+    @Body() body: any
+  ): Promise<Attention> {
+    const { id } = params;
+    const { professionalId, professionalName } = body;
+    return this.attentionService.assignProfessional(
+      typeof user === 'string' ? user : user?.id || user?.userId || 'system',
+      id,
+      professionalId,
+      professionalName
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Patch('/stage/:id/advance')
   @ApiOperation({
     summary: 'Advance attention stage',

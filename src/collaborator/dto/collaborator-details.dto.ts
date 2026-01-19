@@ -1,10 +1,13 @@
 import { Service } from 'src/service/model/service.entity';
+import { ProfessionalRole } from 'src/shared/enums/professional-role.enum';
 
 import { CollaboratorType } from '../model/collaborator-type.enum';
 
 export class CollaboratorDetailsDto {
   id: string;
   name: string;
+  lastName?: string;
+  idNumber: string; // Documento de identidad - OBLIGATORIO
   active: boolean;
   commerceId: string;
   commercesId: string[];
@@ -15,15 +18,18 @@ export class CollaboratorDetailsDto {
   servicesId: string[];
   available: boolean;
   services?: Service[];
+  
   // Campos de contacto básicos
   email?: string;
   phone?: string;
-  // Campos extendidos
-  role?: string;
+  
+  // Rol (unificado con Professional)
+  role: ProfessionalRole; // CAMBIO: Ahora es requerido y usa ProfessionalRole
+  
+  // Foto de perfil
   profilePhoto?: string;
-  digitalSignature?: string;
-  crm?: string;
-  crmState?: string;
-  canSignDocuments?: boolean;
-  medicalData?: any;
+  
+  // Relación con Professional (NUEVO)
+  isProfessional?: boolean; // Indica si tiene Professional asociado
+  professionalId?: string; // ID del Professional asociado
 }

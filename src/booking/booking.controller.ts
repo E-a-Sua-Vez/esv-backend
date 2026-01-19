@@ -376,6 +376,32 @@ export class BookingController {
   }
 
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/assign-professional')
+  @ApiOperation({
+    summary: 'Assign professional to booking',
+    description: 'Assigns a professional to a booking and auto-suggests commission if configured',
+  })
+  @ApiParam({ name: 'id', description: 'Booking ID', example: 'booking-123' })
+  @ApiResponse({ status: 200, description: 'Professional assigned successfully', type: Booking })
+  @ApiResponse({ status: 400, description: 'Invalid professional assignment' })
+  @ApiResponse({ status: 404, description: 'Booking or professional not found' })
+  public async assignProfessional(
+    @User() user,
+    @Param() params: any,
+    @Body() body: any
+  ): Promise<Booking> {
+    const { id } = params;
+    const { professionalId, professionalName } = body;
+    return this.bookingService.assignProfessional(
+      typeof user === 'string' ? user : user?.id || user?.userId || 'system',
+      id,
+      professionalId,
+      professionalName
+    );
+  }
+
+  @UseGuards(AuthGuard)
   @Get('/commerceId/:commerceId/clientId/:clientId/idNumber/:idNumber')
   public async getBookingsByClient(@Param() params: any): Promise<Booking[]> {
     const { commerceId, clientId, idNumber } = params;

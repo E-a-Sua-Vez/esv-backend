@@ -25,4 +25,12 @@ export class PaymentConfirmation {
   pendingPaymentId: string;
   processPaymentNow: boolean;
   confirmInstallments: boolean;
+  
+  // Campos de comisión del profesional
+  professionalId?: string; // ID del profesional asociado
+  professionalCommissionType?: string; // 'PERCENTAGE' o 'FIXED'
+  professionalCommissionValue?: number; // % o monto configurado
+  professionalCommissionAmount?: number; // Monto calculado final
+  professionalCommissionPercentage?: number; // % usado en el cálculo
+  professionalCommissionNotes?: string; // Notas sobre la comisión
 }

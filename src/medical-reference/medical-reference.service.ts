@@ -45,6 +45,24 @@ export class MedicalReferenceService {
     user: string,
     createDto: CreateMedicalReferenceDto
   ): Promise<MedicalReference> {
+    // Validación: Debe tener al menos professionalId o collaboratorId
+    if (!createDto.professionalId && !createDto.collaboratorId) {
+      console.warn('Creating reference without professionalId or collaboratorId');
+    }
+
+    // Auto-resolución: Si solo tiene collaboratorId, intentar obtener professionalId vinculado
+    if (createDto.collaboratorId && !createDto.professionalId && this.collaboratorService) {
+      try {
+        const collaborator = await this.collaboratorService.getCollaboratorById(createDto.collaboratorId);
+        if (collaborator?.professionalId) {
+          createDto.professionalId = collaborator.professionalId;
+          console.log(`Auto-resolved professionalId ${createDto.professionalId} from collaboratorId ${createDto.collaboratorId}`);
+        }
+      } catch (error) {
+        console.warn(`Could not auto-resolve professionalId from collaboratorId ${createDto.collaboratorId}: ${error.message}`);
+      }
+    }
+
     const reference = new MedicalReference();
     reference.commerceId = createDto.commerceId;
     reference.clientId = createDto.clientId;
@@ -52,6 +70,8 @@ export class MedicalReferenceService {
     reference.patientHistoryId = createDto.patientHistoryId;
     reference.doctorOriginId = createDto.doctorOriginId;
     reference.doctorOriginName = createDto.doctorOriginName;
+    reference.collaboratorId = createDto.collaboratorId;
+    reference.professionalId = createDto.professionalId;
     reference.doctorDestinationId = createDto.doctorDestinationId;
     reference.doctorDestinationName = createDto.doctorDestinationName;
     reference.specialtyDestination = createDto.specialtyDestination;
@@ -257,17 +277,19 @@ export class MedicalReferenceService {
             reference.doctorOriginId
           );
           if (collaborator) {
+            // Acceder a medicalData si está disponible
+            const medicalData = (collaborator as any)?.medicalData;
             // Obtener firma digital
-            if (collaborator.digitalSignature) {
-              doctorSignature = collaborator.digitalSignature.startsWith('http')
-                ? collaborator.digitalSignature
-                : `${process.env.BACKEND_URL || ''}${collaborator.digitalSignature}`;
+            if (medicalData?.digitalSignature) {
+              doctorSignature = medicalData.digitalSignature.startsWith('http')
+                ? medicalData.digitalSignature
+                : `${process.env.BACKEND_URL || ''}${medicalData.digitalSignature}`;
             }
             // Obtener CRM (licencia médica)
-            if (collaborator.crm) {
-              doctorLicense = collaborator.crmState
-                ? `CRM/${collaborator.crmState} ${collaborator.crm}`
-                : `CRM ${collaborator.crm}`;
+            if (medicalData?.medicalLicense) {
+              doctorLicense = medicalData.medicalLicenseState
+                ? `CRM/${medicalData.medicalLicenseState} ${medicalData.medicalLicense}`
+                : `CRM ${medicalData.medicalLicense}`;
             }
           }
         } catch (error) {

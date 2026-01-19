@@ -29,6 +29,7 @@ import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { FeatureToggle } from '../feature-toggle/model/feature-toggle.entity';
 import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
 import { IncomeService } from '../income/income.service';
+import { ProfessionalService } from '../professional/professional.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
 import { PackageType } from '../package/model/package-type.enum';
@@ -47,6 +48,7 @@ import { BookingAvailabilityDto } from './dto/booking-availability.dto';
 import { BookingDetailsDto } from './dto/booking-details.dto';
 import BookingCreated from './events/BookingCreated';
 import BookingUpdated from './events/BookingUpdated';
+import ProfessionalAssignedToBooking from './events/ProfessionalAssignedToBooking';
 import TermsAccepted from '../shared/events/TermsAccepted';
 import { LgpdConsentService } from '../shared/services/lgpd-consent.service';
 import { ConsentType } from '../shared/model/lgpd-consent.entity';
@@ -84,6 +86,7 @@ export class BookingService {
     private telemedicineService: TelemedicineService,
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService,
+    private professionalService: ProfessionalService,
     @Optional() @Inject(AuditLogService) private auditLogService?: AuditLogService,
     @Optional() @Inject(LgpdConsentService) private lgpdConsentService?: LgpdConsentService,
     @Optional() @Inject(forwardRef(() => ConsentOrchestrationService))
@@ -1193,6 +1196,12 @@ export class BookingService {
   public async getBookingDetails(id: string): Promise<BookingDetailsDto> {
     try {
       const booking = await this.getBookingById(id);
+      
+      // Debug: Log what booking data we have
+      this.logger.log(`[BookingService.getBookingDetails] Booking ID: ${booking.id}`);
+      this.logger.log(`[BookingService.getBookingDetails] Professional ID: ${booking.professionalId}`);
+      this.logger.log(`[BookingService.getBookingDetails] Professional Name: ${booking.professionalName}`);
+      
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
       // Debug: Log booking block
@@ -1227,6 +1236,8 @@ export class BookingService {
       console.log('[BookingService.getBookingDetails] DTO block assigned:', JSON.stringify(bookingDetailsDto.block, null, 2));
       bookingDetailsDto.telemedicineSessionId = booking.telemedicineSessionId;
       bookingDetailsDto.telemedicineConfig = booking.telemedicineConfig;
+      bookingDetailsDto.professionalId = booking.professionalId;
+      bookingDetailsDto.professionalName = booking.professionalName;
       if (booking.queueId) {
         bookingDetailsDto.queue = await this.queueService.getQueueById(booking.queueId);
         bookingDetailsDto.commerce = await this.commerceService.getCommerceById(
@@ -1451,7 +1462,9 @@ export class BookingService {
                       confirmationData.transactionId,
                       confirmationData.bankEntity,
                       confirmationData.confirmInstallments,
-                      { user }
+                      { user },
+                      confirmationData.professionalId,
+                      confirmationData.professionalCommissionAmount
                     );
                   } else {
                     if (!packageId || !pack.paid || pack.paid === false) {
@@ -1474,7 +1487,10 @@ export class BookingService {
                         confirmationData.promotionalCode,
                         confirmationData.transactionId,
                         confirmationData.bankEntity,
-                        { user }
+                        { user },
+                        undefined,
+                        confirmationData.professionalId,
+                        confirmationData.professionalCommissionAmount
                       );
                     }
                   }
@@ -2190,6 +2206,154 @@ export class BookingService {
       );
     }
     return booking;
+  }
+
+  /**
+   * Assign a professional to a booking and calculate commission
+   * @param user - User performing the assignment
+   * @param bookingId - Booking ID
+   * @param professionalId - Professional ID to assign
+   * @returns Updated booking with professional assigned
+   */
+  public async assignProfessional(
+    user: string,
+    bookingId: string,
+    professionalId: string,
+    professionalName?: string
+  ): Promise<Booking> {
+    try {
+      // Get booking
+      const booking = await this.getBookingById(bookingId);
+      if (!booking || !booking.id) {
+        throw new HttpException(
+          `Reserva no existe: ${bookingId}`,
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      // Get professional
+      const professional = await this.professionalService.getProfessionalById(professionalId);
+      if (!professional || !professional.id) {
+        throw new HttpException(
+          `Profesional no existe: ${professionalId}`,
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      // Validate professional belongs to the same commerce
+      if (professional.commerceId !== booking.commerceId) {
+        throw new HttpException(
+          `El profesional no pertenece al mismo comercio de la reserva`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Validate professional is active and available
+      if (!professional.active || !professional.available) {
+        throw new HttpException(
+          `El profesional no está activo o disponible para asignación`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Validate professional can perform the services
+      if (booking.servicesId?.length > 0 && 
+          professional.professionalInfo?.servicesId?.length > 0) {
+        const hasAllServices = booking.servicesId.every(
+          serviceId => professional.professionalInfo.servicesId.includes(serviceId)
+        );
+        if (!hasAllServices) {
+          throw new HttpException(
+            `El profesional no está habilitado para realizar todos los servicios de esta reserva`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+
+      // Assign professional to booking
+      booking.professionalId = professionalId;
+      booking.professionalName = professionalName || professional.personalInfo?.name || 'N/I';
+
+      // Auto-suggest commission if confirmation data exists and professional has commission configured
+      if (booking.confirmationData && professional.financialInfo) {
+        const { commissionType, commissionValue } = professional.financialInfo;
+        
+        if (commissionType && commissionValue && commissionValue > 0) {
+          // Calculate commission amount based on type
+          let commissionAmount = 0;
+          let commissionPercentage = 0;
+
+          if (commissionType === 'PERCENTAGE') {
+            commissionPercentage = commissionValue;
+            commissionAmount = (booking.confirmationData.totalAmount * commissionValue) / 100;
+          } else if (commissionType === 'FIXED') {
+            commissionAmount = commissionValue;
+            commissionPercentage = (commissionValue / booking.confirmationData.totalAmount) * 100;
+          }
+
+          // Update confirmation data with professional commission data
+          booking.confirmationData.professionalId = professionalId;
+          booking.confirmationData.professionalCommissionType = commissionType;
+          booking.confirmationData.professionalCommissionValue = commissionValue;
+          booking.confirmationData.professionalCommissionAmount = commissionAmount;
+          booking.confirmationData.professionalCommissionPercentage = commissionPercentage;
+          booking.confirmationData.professionalCommissionNotes = 
+            `Comisión auto-sugerida del profesional ${professional.personalInfo?.name || professionalId}`;
+        }
+      }
+
+      // Update booking
+      const updatedBooking = await this.update(user, booking);
+      
+      // Debug: Log what we're getting back
+      this.logger.log(`[BookingService] Before update - ID: ${booking.professionalId}, Name: ${booking.professionalName}`);
+      this.logger.log(`[BookingService] After update - ID: ${updatedBooking.professionalId}, Name: ${updatedBooking.professionalName}`);
+      
+      // Ensure professionalId and professionalName are set in the response
+      this.logger.log(`[BookingService] Professional assigned - ID: ${booking.professionalId}, Name: ${booking.professionalName}`);
+      updatedBooking.professionalId = booking.professionalId;
+      updatedBooking.professionalName = booking.professionalName;
+      
+      this.logger.log(`[BookingService] Final response - ID: ${updatedBooking.professionalId}, Name: ${updatedBooking.professionalName}`);
+
+      // Get commerce and queue for event metadata
+      const queue = await this.queueService.getQueueById(booking.queueId);
+      const businessId = queue?.commerceId || booking.clientId;
+
+      // Publish event
+      const event = new ProfessionalAssignedToBooking(
+        bookingId,
+        professionalId,
+        businessId,
+        booking.commerceId,
+        booking.userId,
+        user,
+        booking.servicesId?.[0], // First service if multiple
+        booking.confirmationData?.professionalCommissionType,
+        booking.confirmationData?.professionalCommissionValue,
+        booking.confirmationData?.professionalCommissionAmount
+      );
+      
+      await publish('professional-assigned-to-booking', event, {
+        bookingId,
+        professionalId,
+        businessId,
+        commerceId: booking.commerceId
+      });
+
+      return updatedBooking;
+    } catch (error) {
+      this.logger.error(
+        `Error assigning professional to booking: bookingId=${bookingId}, professionalId=${professionalId}, error=${error.message}`
+      );
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Hubo un problema al asignar el profesional: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   public async editBookingDateAndBlock(

@@ -87,4 +87,10 @@ export class BookingDetailsDto {
     recordingEnabled?: boolean;
     notes?: string;
   };
+
+  @ApiPropertyOptional({ description: 'Professional ID assigned to booking' })
+  professionalId?: string;
+
+  @ApiPropertyOptional({ description: 'Professional name assigned to booking' })
+  professionalName?: string;
 }

@@ -7,6 +7,7 @@ import { PatientHistoryModule } from '../patient-history/patient-history.module'
 import { DocumentsModule } from '../documents/documents.module';
 import { NotificationModule } from '../notification/notification.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
+import { ProfessionalModule } from '../professional/professional.module';
 import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 import { PdfTemplateModule } from '../shared/modules/pdf-template.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
@@ -28,6 +29,7 @@ import { MedicalReference } from './model/medical-reference.entity';
     DocumentsModule,
     NotificationModule,
     CollaboratorModule,
+    ProfessionalModule,
     PdfTemplateModule,
     AuditLogModule,
     DigitalSignatureModule,

@@ -34,6 +34,16 @@ export class CreateMedicalReferenceDto {
   @IsString()
   doctorOriginName: string;
 
+  @ApiProperty({ description: 'ID del colaborador que emite (DEPRECATED: usar professionalId)', required: false, deprecated: true })
+  @IsOptional()
+  @IsString()
+  collaboratorId?: string;
+
+  @ApiProperty({ description: 'ID del profesional que emite la referencia', required: false })
+  @IsOptional()
+  @IsString()
+  professionalId?: string;
+
   @ApiProperty({ description: 'ID del médico destino', required: false })
   @IsOptional()
   @IsString()

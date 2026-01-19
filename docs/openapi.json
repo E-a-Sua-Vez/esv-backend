@@ -1034,13 +1034,23 @@
         ]
       },
       "patch": {
+        "description": "Actualiza los datos básicos de un colaborador",
         "operationId": "CollaboratorController_updateCollaborator",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {}
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
           }
         },
+        "summary": "Actualizar colaborador",
         "tags": [
           "collaborator"
         ]
@@ -1251,128 +1261,6 @@
             "description": ""
           }
         },
-        "tags": [
-          "collaborator"
-        ]
-      }
-    },
-    "/collaborator/{id}/digital-signature": {
-      "post": {
-        "description": "Permite subir o actualizar la firma digital del colaborador",
-        "operationId": "CollaboratorController_updateDigitalSignature",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID del colaborador",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "digitalSignature": {
-                    "type": "string",
-                    "description": "URL o base64 de la imagen de firma"
-                  },
-                  "crm": {
-                    "type": "string",
-                    "description": "Número de registro médico (CRM)"
-                  },
-                  "crmState": {
-                    "type": "string",
-                    "description": "Estado del CRM (ej: SP, RJ, MG)"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Firma digital actualizada exitosamente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Collaborator"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Actualizar firma digital del colaborador",
-        "tags": [
-          "collaborator"
-        ]
-      },
-      "get": {
-        "description": "Retorna la URL de la firma digital del colaborador; firma si es privada",
-        "operationId": "CollaboratorController_getDigitalSignature",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID del colaborador",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Obtener URL de la firma digital",
-        "tags": [
-          "collaborator"
-        ]
-      }
-    },
-    "/collaborator/{id}/digital-signature/upload": {
-      "post": {
-        "description": "Sube una imagen de la firma digital del colaborador a S3 y actualiza su URL",
-        "operationId": "CollaboratorController_uploadDigitalSignature",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "ID del colaborador",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Subir firma digital (archivo)",
         "tags": [
           "collaborator"
         ]
@@ -1617,6 +1505,37 @@
         ]
       }
     },
+    "/collaborator/{id}/digital-signature": {
+      "get": {
+        "description": "Retorna la URL de la firma digital del colaborador; firma si es privada",
+        "operationId": "CollaboratorController_getDigitalSignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Obtener URL de la firma digital",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
     "/collaborator/{id}/profile-photo": {
       "get": {
         "description": "Retorna la URL de la foto de perfil del colaborador si existe",
@@ -1701,6 +1620,71 @@
           }
         ],
         "summary": "Actualizar URL de la foto de perfil",
+        "tags": [
+          "collaborator"
+        ]
+      }
+    },
+    "/collaborator/{id}/create-associated-professional": {
+      "post": {
+        "description": "Crea un perfil Professional asociado a partir de los datos del Collaborator. Establece relación bidireccional.",
+        "operationId": "CollaboratorController_createAssociatedProfessional",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del colaborador",
+            "schema": {
+              "example": "collab-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssociatedProfessionalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Professional creado y asociado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "collaborator": {
+                      "type": "object",
+                      "description": "Collaborator actualizado con isProfessional=true"
+                    },
+                    "professional": {
+                      "type": "object",
+                      "description": "Professional creado"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "El colaborador ya tiene un professional asociado"
+          },
+          "404": {
+            "description": "Colaborador no encontrado"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Crear Professional asociado",
         "tags": [
           "collaborator"
         ]
@@ -4464,6 +4448,498 @@
         ]
       }
     },
+    "/professional/{id}": {
+      "get": {
+        "description": "Retrieves a professional by their unique identifier",
+        "operationId": "ProfessionalController_getProfessionalById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "example": "professional-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Professional found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Professional"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Professional not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get professional by ID",
+        "tags": [
+          "professional"
+        ]
+      },
+      "patch": {
+        "description": "Updates the configuration of an existing professional",
+        "operationId": "ProfessionalController_updateProfessional",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "example": "professional-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfessionalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Professional updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Professional"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Professional not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update professional",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional": {
+      "get": {
+        "description": "Retrieves a list of all professionals",
+        "operationId": "ProfessionalController_getProfessionals",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of professionals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Professional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all professionals",
+        "tags": [
+          "professional"
+        ]
+      },
+      "post": {
+        "description": "Creates a new professional for a business",
+        "operationId": "ProfessionalController_createProfessional",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProfessionalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Professional created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Professional"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new professional",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/business/{businessId}": {
+      "get": {
+        "description": "Retrieves all professionals for a specific business",
+        "operationId": "ProfessionalController_getProfessionalsByBusiness",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "description": "Business ID",
+            "schema": {
+              "example": "business-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of professionals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Professional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get professionals by business",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/commerce/{commerceId}": {
+      "get": {
+        "description": "Retrieves all professionals for a specific commerce",
+        "operationId": "ProfessionalController_getProfessionalsByCommerce",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of professionals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Professional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get professionals by commerce",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/commerce/{commerceId}/active": {
+      "get": {
+        "description": "Retrieves all active and available professionals for a specific commerce",
+        "operationId": "ProfessionalController_getActiveProfessionalsByCommerce",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active professionals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Professional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get active professionals by commerce",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/list/{ids}": {
+      "get": {
+        "description": "Retrieves multiple professionals by their IDs (comma-separated)",
+        "operationId": "ProfessionalController_getProfessionalsById",
+        "parameters": [
+          {
+            "name": "ids",
+            "required": true,
+            "in": "path",
+            "description": "Comma-separated professional IDs",
+            "schema": {
+              "example": "prof-1,prof-2,prof-3",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of professionals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Professional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get professionals by IDs",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/service/{serviceId}/available": {
+      "get": {
+        "description": "Retrieves professionals that can perform a specific service",
+        "operationId": "ProfessionalController_getAvailableProfessionalsForService",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "required": true,
+            "in": "path",
+            "description": "Service ID",
+            "schema": {
+              "example": "service-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available professionals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Professional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get available professionals for a service",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/{id}/profile-photo": {
+      "get": {
+        "description": "Returns the profile photo URL for the professional if it exists",
+        "operationId": "ProfessionalController_getProfilePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get profile photo URL",
+        "tags": [
+          "professional"
+        ]
+      },
+      "post": {
+        "description": "Allows uploading a new profile photo for the professional",
+        "operationId": "ProfessionalController_uploadProfilePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload professional profile photo",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/{id}/digital-signature": {
+      "get": {
+        "description": "Returns the digital signature URL for the professional if it exists",
+        "operationId": "ProfessionalController_getDigitalSignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get digital signature URL",
+        "tags": [
+          "professional"
+        ]
+      },
+      "post": {
+        "description": "Allows uploading a digital signature for the professional",
+        "operationId": "ProfessionalController_uploadDigitalSignature",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload professional digital signature",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
     "/attention/{id}": {
       "get": {
         "description": "Retrieves an attention record by its unique identifier",
@@ -4908,13 +5384,84 @@
     },
     "/attention/transfer/{id}": {
       "patch": {
+        "description": "Transfers an attention to a collaborator queue",
         "operationId": "AttentionController_transferAttentionToQueue",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Attention transferred",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attention or queue not found"
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Transfer attention to queue",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
+    "/attention/{id}/assign-professional": {
+      "patch": {
+        "description": "Assigns a professional to an attention and auto-suggests commission if configured",
+        "operationId": "AttentionController_assignProfessional",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Attention ID",
+            "schema": {
+              "example": "attention-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Professional assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attention"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid professional assignment"
+          },
+          "404": {
+            "description": "Attention or professional not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Assign professional to attention",
         "tags": [
           "attention"
         ]
@@ -4953,6 +5500,11 @@
             "description": "Attention not found"
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "summary": "Advance attention stage",
         "tags": [
           "attention"
@@ -11765,6 +12317,50 @@
         ]
       }
     },
+    "/booking/{id}/assign-professional": {
+      "patch": {
+        "description": "Assigns a professional to a booking and auto-suggests commission if configured",
+        "operationId": "BookingController_assignProfessional",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "example": "booking-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Professional assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid professional assignment"
+          },
+          "404": {
+            "description": "Booking or professional not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Assign professional to booking",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
     "/booking/commerceId/{commerceId}/clientId/{clientId}/idNumber/{idNumber}": {
       "get": {
         "operationId": "BookingController_getBookingsByClient",
@@ -14897,245 +15493,188 @@
         ]
       }
     },
-    "/outcome-type/{id}": {
+    "/professional-commission-payment/unpaid/professional/{professionalId}": {
       "get": {
-        "description": "Retrieves an outcome type by its unique identifier",
-        "operationId": "OutcomeTypeController_getOutcomeTypeById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Outcome type ID",
-            "schema": {
-              "example": "outcome-type-123"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Outcome type found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OutcomeType"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Outcome type not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get outcome type by ID",
-        "tags": [
-          "outcome-type"
-        ]
-      },
-      "patch": {
-        "description": "Updates outcome type configuration",
-        "operationId": "OutcomeTypeController_updateOutcomeType",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Outcome type ID",
-            "schema": {
-              "example": "outcome-type-123"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OutcomeType"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Outcome type updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OutcomeType"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Outcome type not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Update outcome type",
-        "tags": [
-          "outcome-type"
-        ]
-      }
-    },
-    "/outcome-type": {
-      "get": {
-        "description": "Retrieves a list of all outcome types",
-        "operationId": "OutcomeTypeController_getOutcomeTypes",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of outcome types",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OutcomeType"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get all outcome types",
-        "tags": [
-          "outcome-type"
-        ]
-      },
-      "post": {
-        "description": "Creates a new outcome type category",
-        "operationId": "OutcomeTypeController_createOutcomeType",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OutcomeType"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Outcome type created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OutcomeType"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Create a new outcome type",
-        "tags": [
-          "outcome-type"
-        ]
-      }
-    },
-    "/outcome-type/commerceId/{commerceId}": {
-      "get": {
-        "description": "Retrieves all outcome types for a specific commerce",
-        "operationId": "OutcomeTypeController_getOutcomeTypeByCommerce",
+        "operationId": "ProfessionalCommissionPaymentController_getUnpaidIncomesByProfessional",
         "parameters": [
           {
             "name": "commerceId",
             "required": true,
-            "in": "path",
-            "description": "Commerce ID",
+            "in": "query",
             "schema": {
-              "example": "commerce-123"
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of outcome types",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OutcomeType"
-                  }
-                }
-              }
-            }
+            "description": ""
           }
         },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Get outcome types by commerce",
         "tags": [
-          "outcome-type"
+          "ProfessionalCommissionPayment"
         ]
       }
     },
-    "/outcome-type/list/{ids}": {
+    "/professional-commission-payment/commerce/{commerceId}/status/{status}": {
       "get": {
-        "description": "Retrieves multiple outcome types by their IDs (comma-separated)",
-        "operationId": "OutcomeTypeController_getOutcomeTypesById",
+        "operationId": "ProfessionalCommissionPaymentController_getCommissionPaymentsByStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
+    "/professional-commission-payment/commerce/{commerceId}": {
+      "get": {
+        "operationId": "ProfessionalCommissionPaymentController_getCommissionPaymentsByCommerce",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
+    "/professional-commission-payment/professional/{professionalId}": {
+      "get": {
+        "operationId": "ProfessionalCommissionPaymentController_getCommissionPaymentsByProfessional",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
+    "/professional-commission-payment/{id}": {
+      "get": {
+        "operationId": "ProfessionalCommissionPaymentController_getCommissionPaymentById",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      },
+      "patch": {
+        "operationId": "ProfessionalCommissionPaymentController_updateCommissionPayment",
         "parameters": [
           {
-            "name": "ids",
+            "name": "user",
             "required": true,
-            "in": "path",
-            "description": "Comma-separated outcome type IDs",
+            "in": "header",
             "schema": {
-              "example": "type-1,type-2,type-3"
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of outcome types",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OutcomeType"
-                  }
-                }
-              }
-            }
+            "description": ""
           }
         },
-        "security": [
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
+    "/professional-commission-payment": {
+      "post": {
+        "operationId": "ProfessionalCommissionPaymentController_createCommissionPayment",
+        "parameters": [
           {
-            "JWT-auth": []
+            "name": "user",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "summary": "Get outcome types by IDs",
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
         "tags": [
-          "outcome-type"
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
+    "/professional-commission-payment/{id}/confirm": {
+      "post": {
+        "operationId": "ProfessionalCommissionPaymentController_confirmCommissionPayment",
+        "parameters": [
+          {
+            "name": "user",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
+    "/professional-commission-payment/{id}/cancel": {
+      "post": {
+        "operationId": "ProfessionalCommissionPaymentController_cancelCommissionPayment",
+        "parameters": [
+          {
+            "name": "user",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
         ]
       }
     },
@@ -15428,6 +15967,248 @@
         "summary": "Get outcomes by IDs",
         "tags": [
           "outcome"
+        ]
+      }
+    },
+    "/outcome-type/{id}": {
+      "get": {
+        "description": "Retrieves an outcome type by its unique identifier",
+        "operationId": "OutcomeTypeController_getOutcomeTypeById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Outcome type ID",
+            "schema": {
+              "example": "outcome-type-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Outcome type found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutcomeType"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Outcome type not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get outcome type by ID",
+        "tags": [
+          "outcome-type"
+        ]
+      },
+      "patch": {
+        "description": "Updates outcome type configuration",
+        "operationId": "OutcomeTypeController_updateOutcomeType",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Outcome type ID",
+            "schema": {
+              "example": "outcome-type-123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutcomeType"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Outcome type updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutcomeType"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Outcome type not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update outcome type",
+        "tags": [
+          "outcome-type"
+        ]
+      }
+    },
+    "/outcome-type": {
+      "get": {
+        "description": "Retrieves a list of all outcome types",
+        "operationId": "OutcomeTypeController_getOutcomeTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of outcome types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OutcomeType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all outcome types",
+        "tags": [
+          "outcome-type"
+        ]
+      },
+      "post": {
+        "description": "Creates a new outcome type category",
+        "operationId": "OutcomeTypeController_createOutcomeType",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutcomeType"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Outcome type created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutcomeType"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new outcome type",
+        "tags": [
+          "outcome-type"
+        ]
+      }
+    },
+    "/outcome-type/commerceId/{commerceId}": {
+      "get": {
+        "description": "Retrieves all outcome types for a specific commerce",
+        "operationId": "OutcomeTypeController_getOutcomeTypeByCommerce",
+        "parameters": [
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of outcome types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OutcomeType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get outcome types by commerce",
+        "tags": [
+          "outcome-type"
+        ]
+      }
+    },
+    "/outcome-type/list/{ids}": {
+      "get": {
+        "description": "Retrieves multiple outcome types by their IDs (comma-separated)",
+        "operationId": "OutcomeTypeController_getOutcomeTypesById",
+        "parameters": [
+          {
+            "name": "ids",
+            "required": true,
+            "in": "path",
+            "description": "Comma-separated outcome type IDs",
+            "schema": {
+              "example": "type-1,type-2,type-3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of outcome types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OutcomeType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get outcome types by IDs",
+        "tags": [
+          "outcome-type"
         ]
       }
     },
@@ -21820,6 +22601,152 @@
         "type": "object",
         "properties": {}
       },
+      "CreateAssociatedProfessionalDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "ASSISTANT",
+              "FULL",
+              "RECEPTIONIST",
+              "SECRETARY",
+              "ADMINISTRATOR",
+              "STYLIST",
+              "BARBER",
+              "MANICURIST",
+              "ESTHETICIAN",
+              "MASSEUR",
+              "DOCTOR",
+              "SPECIALIST",
+              "NURSE",
+              "MEDICAL_ASSISTANT",
+              "DENTIST",
+              "PHYSIOTHERAPIST",
+              "THERAPIST",
+              "PSYCHOLOGIST",
+              "NUTRITIONIST",
+              "PHARMACIST",
+              "TECHNICIAN",
+              "OTHER"
+            ],
+            "description": "Rol profesional (si no se especifica, se toma del colaborador)"
+          },
+          "specialties": {
+            "description": "Especialidades del profesional",
+            "example": [
+              "Corte",
+              "Color",
+              "Peinado"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "servicesId": {
+            "description": "IDs de servicios que puede realizar (si no se especifica, se toma del colaborador)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "license": {
+            "type": "string",
+            "description": "Licencia o matrícula profesional",
+            "example": "CRM-12345"
+          },
+          "licenseType": {
+            "type": "string",
+            "description": "Tipo de licencia",
+            "example": "CRM"
+          },
+          "licenseState": {
+            "type": "string",
+            "description": "Estado de la licencia",
+            "example": "SP"
+          },
+          "commissionType": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED"
+            ],
+            "description": "Tipo de comisión: PERCENTAGE o FIXED"
+          },
+          "commissionValue": {
+            "type": "number",
+            "description": "Valor de comisión (% o monto fijo)",
+            "example": 30
+          },
+          "paymentAccount": {
+            "type": "object",
+            "description": "Datos de cuenta bancaria para pagos",
+            "example": {
+              "bank": "Banco do Brasil",
+              "accountNumber": "12345-6",
+              "accountType": "Corrente",
+              "pixKey": "email@example.com",
+              "holder": "João Silva"
+            }
+          },
+          "medicalData": {
+            "type": "object",
+            "description": "Datos médicos específicos (para profesionales de salud)"
+          },
+          "crm": {
+            "type": "string",
+            "description": "Número de registro médico (CRM, CRO, etc.)",
+            "example": "CRM-123456"
+          },
+          "crmState": {
+            "type": "string",
+            "description": "Estado/provincia del CRM",
+            "example": "SP"
+          },
+          "professionalTitle": {
+            "type": "string",
+            "description": "Título profesional (Dr., Dra., Enf., etc.)",
+            "example": "Dr."
+          },
+          "department": {
+            "type": "string",
+            "description": "Departamento o área de trabajo",
+            "example": "Cardiología"
+          },
+          "position": {
+            "type": "string",
+            "description": "Cargo específico",
+            "example": "Médico Senior"
+          },
+          "workEmail": {
+            "type": "string",
+            "description": "Email de trabajo (diferente al personal)",
+            "example": "trabajo@clinica.com"
+          },
+          "emergencyContact": {
+            "type": "string",
+            "description": "Contacto de emergencia",
+            "example": "+55 11 98765-4321"
+          },
+          "canSignDocuments": {
+            "type": "boolean",
+            "description": "Puede firmar documentos profesionales",
+            "default": false
+          },
+          "documentSignatureText": {
+            "type": "string",
+            "description": "Texto personalizado para firma en documentos",
+            "example": "Dr. João Silva - CRM 12345"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Disponible para ser asignado",
+            "default": true
+          }
+        }
+      },
       "Administrator": {
         "type": "object",
         "properties": {}
@@ -21998,6 +22925,540 @@
       "Service": {
         "type": "object",
         "properties": {}
+      },
+      "Professional": {
+        "type": "object",
+        "properties": {}
+      },
+      "PersonalInfoDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del profesional"
+          },
+          "idNumber": {
+            "type": "string",
+            "description": "Número de identificación (DNI, RUT, CPF)"
+          },
+          "idType": {
+            "type": "string",
+            "description": "Tipo de documento"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email del profesional"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Teléfono del profesional"
+          },
+          "profilePhoto": {
+            "type": "string",
+            "description": "URL de la foto de perfil"
+          },
+          "digitalSignature": {
+            "type": "string",
+            "description": "URL o base64 de la firma digital"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas adicionales"
+          }
+        },
+        "required": [
+          "name",
+          "idNumber",
+          "email",
+          "phone"
+        ]
+      },
+      "ProfessionalInfoDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "ASSISTANT",
+              "FULL",
+              "RECEPTIONIST",
+              "SECRETARY",
+              "ADMINISTRATOR",
+              "STYLIST",
+              "BARBER",
+              "MANICURIST",
+              "ESTHETICIAN",
+              "MASSEUR",
+              "DOCTOR",
+              "SPECIALIST",
+              "NURSE",
+              "MEDICAL_ASSISTANT",
+              "DENTIST",
+              "PHYSIOTHERAPIST",
+              "THERAPIST",
+              "PSYCHOLOGIST",
+              "NUTRITIONIST",
+              "PHARMACIST",
+              "TECHNICIAN",
+              "OTHER"
+            ],
+            "description": "Rol del profesional (unificado)"
+          },
+          "professionalType": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "ASSISTANT",
+              "FULL",
+              "RECEPTIONIST",
+              "SECRETARY",
+              "ADMINISTRATOR",
+              "STYLIST",
+              "BARBER",
+              "MANICURIST",
+              "ESTHETICIAN",
+              "MASSEUR",
+              "DOCTOR",
+              "SPECIALIST",
+              "NURSE",
+              "MEDICAL_ASSISTANT",
+              "DENTIST",
+              "PHYSIOTHERAPIST",
+              "THERAPIST",
+              "PSYCHOLOGIST",
+              "NUTRITIONIST",
+              "PHARMACIST",
+              "TECHNICIAN",
+              "OTHER"
+            ],
+            "description": "Tipo de profesional (compatibilidad)"
+          },
+          "specialties": {
+            "description": "Especialidades",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "servicesId": {
+            "description": "IDs de servicios que puede realizar",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "license": {
+            "type": "string",
+            "description": "Licencia o matrícula profesional"
+          },
+          "licenseType": {
+            "type": "string",
+            "description": "Tipo de licencia"
+          },
+          "licenseState": {
+            "type": "string",
+            "description": "Estado de la licencia"
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "PaymentAccountDto": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "Banco"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Número de cuenta"
+          },
+          "accountType": {
+            "type": "string",
+            "description": "Tipo de cuenta"
+          },
+          "pixKey": {
+            "type": "string",
+            "description": "Clave PIX (Brasil)"
+          },
+          "holder": {
+            "type": "string",
+            "description": "Titular de la cuenta"
+          }
+        }
+      },
+      "FinancialInfoDto": {
+        "type": "object",
+        "properties": {
+          "commissionType": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED"
+            ],
+            "description": "Tipo de comisión"
+          },
+          "commissionValue": {
+            "type": "number",
+            "description": "Valor de comisión (% o monto fijo)"
+          },
+          "paymentAccount": {
+            "description": "Datos de cuenta bancaria",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentAccountDto"
+              }
+            ]
+          }
+        }
+      },
+      "CreateProfessionalDto": {
+        "type": "object",
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "description": "ID del business"
+          },
+          "commerceId": {
+            "type": "string",
+            "description": "ID del commerce específico"
+          },
+          "commercesId": {
+            "description": "IDs de commerces donde puede trabajar",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "personalInfo": {
+            "description": "Información personal",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonalInfoDto"
+              }
+            ]
+          },
+          "professionalInfo": {
+            "description": "Información profesional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfessionalInfoDto"
+              }
+            ]
+          },
+          "financialInfo": {
+            "description": "Información financiera",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FinancialInfoDto"
+              }
+            ]
+          },
+          "isCollaborator": {
+            "type": "boolean",
+            "description": "Indica si tiene Collaborator asociado",
+            "default": false
+          },
+          "collaboratorId": {
+            "type": "string",
+            "description": "ID del Collaborator asociado"
+          },
+          "medicalData": {
+            "type": "object",
+            "description": "Datos médicos específicos"
+          },
+          "crm": {
+            "type": "string",
+            "description": "Número de registro médico (CRM, CRO, etc.)"
+          },
+          "crmState": {
+            "type": "string",
+            "description": "Estado/provincia del CRM"
+          },
+          "professionalTitle": {
+            "type": "string",
+            "description": "Título profesional (Dr., Dra., Enf., etc.)"
+          },
+          "department": {
+            "type": "string",
+            "description": "Departamento o área de trabajo"
+          },
+          "position": {
+            "type": "string",
+            "description": "Cargo específico"
+          },
+          "workEmail": {
+            "type": "string",
+            "description": "Email de trabajo"
+          },
+          "emergencyContact": {
+            "type": "string",
+            "description": "Contacto de emergencia"
+          },
+          "canSignDocuments": {
+            "type": "boolean",
+            "description": "Puede firmar documentos profesionales",
+            "default": false
+          },
+          "documentSignatureText": {
+            "type": "string",
+            "description": "Texto personalizado para firma en documentos"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Estado activo",
+            "default": true
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Disponible para asignación",
+            "default": true
+          }
+        },
+        "required": [
+          "businessId",
+          "personalInfo",
+          "professionalInfo"
+        ]
+      },
+      "PersonalInfoUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del profesional"
+          },
+          "idNumber": {
+            "type": "string",
+            "description": "Número de identificación"
+          },
+          "idType": {
+            "type": "string",
+            "description": "Tipo de documento"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email del profesional"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Teléfono del profesional"
+          },
+          "profilePhoto": {
+            "type": "string",
+            "description": "URL de la foto de perfil"
+          },
+          "digitalSignature": {
+            "type": "string",
+            "description": "URL o base64 de la firma digital"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas adicionales"
+          }
+        }
+      },
+      "ProfessionalInfoUpdateDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "ASSISTANT",
+              "FULL",
+              "RECEPTIONIST",
+              "SECRETARY",
+              "ADMINISTRATOR",
+              "STYLIST",
+              "BARBER",
+              "MANICURIST",
+              "ESTHETICIAN",
+              "MASSEUR",
+              "DOCTOR",
+              "SPECIALIST",
+              "NURSE",
+              "MEDICAL_ASSISTANT",
+              "DENTIST",
+              "PHYSIOTHERAPIST",
+              "THERAPIST",
+              "PSYCHOLOGIST",
+              "NUTRITIONIST",
+              "PHARMACIST",
+              "TECHNICIAN",
+              "OTHER"
+            ],
+            "description": "Rol del profesional (unificado)"
+          },
+          "professionalType": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "ASSISTANT",
+              "FULL",
+              "RECEPTIONIST",
+              "SECRETARY",
+              "ADMINISTRATOR",
+              "STYLIST",
+              "BARBER",
+              "MANICURIST",
+              "ESTHETICIAN",
+              "MASSEUR",
+              "DOCTOR",
+              "SPECIALIST",
+              "NURSE",
+              "MEDICAL_ASSISTANT",
+              "DENTIST",
+              "PHYSIOTHERAPIST",
+              "THERAPIST",
+              "PSYCHOLOGIST",
+              "NUTRITIONIST",
+              "PHARMACIST",
+              "TECHNICIAN",
+              "OTHER"
+            ],
+            "description": "Tipo de profesional (compatibilidad)"
+          },
+          "specialties": {
+            "description": "Especialidades",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "servicesId": {
+            "description": "IDs de servicios que puede realizar",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "license": {
+            "type": "string",
+            "description": "Licencia o matrícula profesional"
+          },
+          "licenseType": {
+            "type": "string",
+            "description": "Tipo de licencia"
+          },
+          "licenseState": {
+            "type": "string",
+            "description": "Estado de la licencia"
+          }
+        }
+      },
+      "PaymentAccountUpdateDto": {
+        "type": "object",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "description": "Banco"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Número de cuenta"
+          },
+          "accountType": {
+            "type": "string",
+            "description": "Tipo de cuenta"
+          },
+          "pixKey": {
+            "type": "string",
+            "description": "Clave PIX (Brasil)"
+          },
+          "holder": {
+            "type": "string",
+            "description": "Titular de la cuenta"
+          }
+        }
+      },
+      "FinancialInfoUpdateDto": {
+        "type": "object",
+        "properties": {
+          "commissionType": {
+            "type": "string",
+            "enum": [
+              "PERCENTAGE",
+              "FIXED"
+            ],
+            "description": "Tipo de comisión"
+          },
+          "commissionValue": {
+            "type": "number",
+            "description": "Valor de comisión (% o monto fijo)"
+          },
+          "paymentAccount": {
+            "description": "Datos de cuenta bancaria",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentAccountUpdateDto"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateProfessionalDto": {
+        "type": "object",
+        "properties": {
+          "commerceId": {
+            "type": "string",
+            "description": "ID del commerce específico"
+          },
+          "commercesId": {
+            "description": "IDs de commerces donde puede trabajar",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "personalInfo": {
+            "description": "Información personal",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonalInfoUpdateDto"
+              }
+            ]
+          },
+          "professionalInfo": {
+            "description": "Información profesional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfessionalInfoUpdateDto"
+              }
+            ]
+          },
+          "financialInfo": {
+            "description": "Información financiera",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FinancialInfoUpdateDto"
+              }
+            ]
+          },
+          "isCollaborator": {
+            "type": "boolean",
+            "description": "Indica si tiene Collaborator asociado"
+          },
+          "collaboratorId": {
+            "type": "string",
+            "description": "ID del Collaborator asociado"
+          },
+          "medicalData": {
+            "type": "object",
+            "description": "Datos médicos específicos"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Estado activo"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Disponible para asignación"
+          }
+        }
       },
       "Attention": {
         "type": "object",
@@ -22459,6 +23920,14 @@
               "recordingEnabled": false,
               "notes": "Optional notes"
             }
+          },
+          "professionalId": {
+            "type": "string",
+            "description": "Professional ID assigned to booking"
+          },
+          "professionalName": {
+            "type": "string",
+            "description": "Professional name assigned to booking"
           }
         },
         "required": [
@@ -22590,11 +24059,11 @@
         "type": "object",
         "properties": {}
       },
-      "OutcomeType": {
+      "Outcome": {
         "type": "object",
         "properties": {}
       },
-      "Outcome": {
+      "OutcomeType": {
         "type": "object",
         "properties": {}
       },
@@ -22792,6 +24261,15 @@
           "doctorLicense": {
             "type": "string",
             "description": "Número de licencia médica"
+          },
+          "collaboratorId": {
+            "type": "string",
+            "description": "ID del colaborador que emite (DEPRECATED: usar professionalId)",
+            "deprecated": true
+          },
+          "professionalId": {
+            "type": "string",
+            "description": "ID del profesional que emite la prescripción"
           },
           "medications": {
             "description": "Lista de medicamentos",
@@ -23200,6 +24678,15 @@
             "description": "Nombre del médico",
             "example": "Dr. Juan Pérez"
           },
+          "collaboratorId": {
+            "type": "string",
+            "description": "ID del colaborador que emite (DEPRECATED: usar professionalId)",
+            "deprecated": true
+          },
+          "professionalId": {
+            "type": "string",
+            "description": "ID del profesional que emite la orden"
+          },
           "exams": {
             "description": "Lista de exámenes",
             "type": "array",
@@ -23548,6 +25035,15 @@
             "type": "string",
             "description": "Nombre del médico origen",
             "example": "Dr. Juan Pérez"
+          },
+          "collaboratorId": {
+            "type": "string",
+            "description": "ID del colaborador que emite (DEPRECATED: usar professionalId)",
+            "deprecated": true
+          },
+          "professionalId": {
+            "type": "string",
+            "description": "ID del profesional que emite la referencia"
           },
           "doctorDestinationId": {
             "type": "string",

@@ -69,6 +69,16 @@ export class CreateExamOrderDto {
   @IsString()
   doctorName: string;
 
+  @ApiProperty({ description: 'ID del colaborador que emite (DEPRECATED: usar professionalId)', required: false, deprecated: true })
+  @IsOptional()
+  @IsString()
+  collaboratorId?: string;
+
+  @ApiProperty({ description: 'ID del profesional que emite la orden', required: false })
+  @IsOptional()
+  @IsString()
+  professionalId?: string;
+
   @ApiProperty({ description: 'Lista de exámenes', type: [ExamItemDto] })
   @IsArray()
   @ValidateNested({ each: true })

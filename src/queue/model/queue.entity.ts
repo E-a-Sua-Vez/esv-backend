@@ -1,6 +1,7 @@
 import { Collection } from 'fireorm';
 
 import { Collaborator } from '../../collaborator/model/collaborator.entity';
+import { Professional } from '../../professional/model/professional.entity';
 import { Service } from '../../service/model/service.entity';
 
 import { QueueType } from './queue-type.enum';
@@ -53,13 +54,20 @@ export class Queue {
   order: number;
   estimatedTime: number;
   blockTime: number;
-  collaboratorId?: string;
+  
+  // CAMBIO: Queue ahora se relaciona con Professional en lugar de Collaborator
+  professionalId?: string; // ID del Professional asignado
+  professional?: Professional; // Professional asignado
+  
+  // @deprecated: Mantener para retrocompatibilidad durante la migración
+  collaboratorId?: string; // DEPRECADO: Usar professionalId en su lugar
+  collaborator?: Collaborator; // DEPRECADO: Usar professional en su lugar
+  
   serviceId?: string;
   serviceInfo?: ServiceInfo;
-  collaborator?: Collaborator;
-  service?: Service;
   servicesId?: string[];
   services?: Service[];
+  service?: Service;
   telemedicineEnabled?: boolean;
   presentialEnabled?: boolean;
 }

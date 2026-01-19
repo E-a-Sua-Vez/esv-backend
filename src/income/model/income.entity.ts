@@ -47,4 +47,8 @@ export class Income {
   cancelledAt: Date;
   cancelledBy: string;
   paymentType?: PaymentType;
+  professionalId?: string; // ID del profesional asignado
+  professionalCommission?: number; // Comisión del profesional
+  commissionPaid: boolean; // false por defecto, true cuando se paga
+  commissionPaymentId?: string; // ID del pago de comisión asociado
 }

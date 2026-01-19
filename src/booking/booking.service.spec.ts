@@ -12,6 +12,7 @@ import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { IncomeService } from '../income/income.service';
 import { NotificationService } from '../notification/notification.service';
 import { PackageService } from '../package/package.service';
+import { ProfessionalService } from '../professional/professional.service';
 import { QueueService } from '../queue/queue.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
@@ -161,7 +162,8 @@ describe('BookingService', () => {
             documentsService: DocumentsService,
             bookingBlockNumbersUsedService: BookingBlockNumberUsedService,
             telemedicineService: TelemedicineService,
-            logger: GcpLoggerService
+            logger: GcpLoggerService,
+            professionalService: ProfessionalService
           ) => {
             const service = new BookingService(
               mockRepository as any,
@@ -180,7 +182,8 @@ describe('BookingService', () => {
               documentsService,
               bookingBlockNumbersUsedService,
               telemedicineService,
-              logger
+              logger,
+              professionalService
             );
             return service;
           },
@@ -201,6 +204,7 @@ describe('BookingService', () => {
             BookingBlockNumberUsedService,
             TelemedicineService,
             GcpLoggerService,
+            ProfessionalService,
           ],
         },
         {
@@ -318,6 +322,14 @@ describe('BookingService', () => {
             verbose: jest.fn(),
             logWithRequest: jest.fn(),
             logError: jest.fn(),
+          },
+        },
+        {
+          provide: ProfessionalService,
+          useValue: {
+            getProfessionalById: jest.fn(),
+            getProfessionalCommissionConfig: jest.fn(),
+            update: jest.fn(),
           },
         },
       ],
