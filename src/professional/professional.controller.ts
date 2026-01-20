@@ -36,6 +36,34 @@ import { ProfessionalService } from './professional.service';
 export class ProfessionalController {
   constructor(private readonly professionalService: ProfessionalService) {}
 
+  @Get('/photo-url/:id')
+  @ApiOperation({
+    summary: 'Get professional profile photo signed URL (public)',
+    description: 'Returns a signed URL for the professional profile photo. No authentication required.',
+  })
+  @ApiParam({ name: 'id', description: 'Professional ID', example: 'professional-123' })
+  @ApiResponse({ status: 200, description: 'Signed URL returned', type: Object })
+  @ApiResponse({ status: 404, description: 'Professional not found' })
+  public async getProfilePhotoUrl(
+    @Param('id') id: string
+  ): Promise<{ photoUrl: string | null }> {
+    return this.professionalService.getProfilePhotoSignedUrl(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/by-collaborator/:collaboratorId')
+  @ApiOperation({
+    summary: 'Get professional by collaborator ID',
+    description: 'Retrieves a professional associated with a collaborator',
+  })
+  @ApiParam({ name: 'collaboratorId', description: 'Collaborator ID', example: 'collaborator-123' })
+  @ApiResponse({ status: 200, description: 'Professional found', type: Professional })
+  @ApiResponse({ status: 404, description: 'Professional not found' })
+  public async getProfessionalByCollaboratorId(@Param('collaboratorId') collaboratorId: string): Promise<Professional> {
+    return this.professionalService.getProfessionalByCollaboratorId(collaboratorId);
+  }
+
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get('/:id')

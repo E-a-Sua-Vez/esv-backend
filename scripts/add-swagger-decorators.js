@@ -27,10 +27,8 @@ function findControllers(dir) {
 
 findControllers(controllersDir);
 
-console.log('Found controllers:');
 controllers.forEach(ctrl => {
   console.log(`- ${path.relative(process.cwd(), ctrl)}`);
 });
 
-console.log(`\nTotal: ${controllers.length} controllers`);
 

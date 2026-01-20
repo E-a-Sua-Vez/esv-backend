@@ -53,7 +53,7 @@ export class ProfessionalService {
           Key: key,
           Body: buffer,
           ContentType: mimeType,
-          ACL: 'private',
+          ACL: 'public-read',
           Metadata: meta,
         },
         (error, result) => {
@@ -226,12 +226,12 @@ export class ProfessionalService {
       professional.businessId = dto.businessId;
       professional.commerceId = dto.commerceId;
       professional.commercesId = dto.commercesId || [];
-      
+
       // Convertir DTOs a objetos planos para Firestore
       professional.personalInfo = JSON.parse(JSON.stringify(dto.personalInfo)) as PersonalInfo;
       professional.professionalInfo = JSON.parse(JSON.stringify(dto.professionalInfo)) as ProfessionalInfo;
       professional.financialInfo = dto.financialInfo ? JSON.parse(JSON.stringify(dto.financialInfo)) as FinancialInfo : undefined;
-      
+
       professional.active = dto.active !== undefined ? dto.active : true;
       professional.available = dto.available !== undefined ? dto.available : true;
       professional.createdAt = new Date();
@@ -264,30 +264,30 @@ export class ProfessionalService {
       professional.businessId = data.businessId;
       professional.commerceId = data.commerceId;
       professional.commercesId = data.commercesId || [];
-      
+
       // Información personal
       professional.personalInfo = data.personalInfo;
       professional.professionalInfo = data.professionalInfo;
       professional.financialInfo = data.financialInfo;
-      
+
       // Campos de acceso directo
       professional.profilePhoto = data.profilePhoto || data.personalInfo?.profilePhoto;
       professional.digitalSignature = data.digitalSignature || data.personalInfo?.digitalSignature;
-      
+
       // Relación con Collaborator
       professional.isCollaborator = data.isCollaborator || false;
       professional.collaboratorId = data.collaboratorId;
-      
+
       // Rol unificado
       professional.role = data.role || data.professionalInfo?.role;
-      
+
       // Datos médicos/profesionales
       if (data.medicalData) professional.medicalData = data.medicalData;
-      
+
       // Estado
       professional.active = data.active !== undefined ? data.active : true;
       professional.available = data.available !== undefined ? data.available : true;
-      
+
       // Auditoría
       professional.createdAt = new Date();
       professional.createdBy = user;
@@ -405,7 +405,7 @@ export class ProfessionalService {
       await this.uploadToS3(photo.buffer, key, photo.mimetype, metadata);
 
       const photoUrl = `https://${this.bucketName}.s3.amazonaws.com/${key}`;
-      
+
       // Actualizar en personalInfo
       if (!professional.personalInfo) {
         professional.personalInfo = {} as PersonalInfo;
@@ -499,7 +499,7 @@ export class ProfessionalService {
       await this.uploadToS3(signature.buffer, key, signature.mimetype, metadata);
 
       const signatureUrl = `https://${this.bucketName}.s3.amazonaws.com/${key}`;
-      
+
       // Actualizar en personalInfo
       if (!professional.personalInfo) {
         professional.personalInfo = {} as PersonalInfo;
@@ -584,11 +584,11 @@ export class ProfessionalService {
   }> {
     try {
       const professional = await this.getProfessionalById(id);
-      
+
       if (!professional.active) {
         this.logger.warn(`Attempting to use inactive professional for medical documents: ${id}`);
       }
-      
+
       // Retornar estructura plana para compatibilidad con PDFs
       return {
         id: professional.id,
@@ -613,4 +613,32 @@ export class ProfessionalService {
       );
     }
   }
-}
+
+    /**
+     * Obtener profesional por collaborator ID
+     */
+    public async getProfessionalByCollaboratorId(collaboratorId: string): Promise<Professional> {
+      try {
+        const professionals = await this.professionalRepository.find();
+        const professional = professionals.find(p => p.collaboratorId === collaboratorId);
+
+        if (!professional) {
+          throw new HttpException(
+            `Professional not found for collaborator: ${collaboratorId}`,
+            HttpStatus.NOT_FOUND
+          );
+        }
+
+        return professional;
+      } catch (error) {
+        if (error instanceof HttpException) {
+          throw error;
+        }
+        this.logger.error(`Error getting professional by collaborator id: ${collaboratorId}`, error);
+        throw new HttpException(
+          `Error getting professional: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+    }
+  }

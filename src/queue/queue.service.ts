@@ -93,6 +93,7 @@ export class QueueService {
         queueDetailsDto.id = queue.id;
         queueDetailsDto.commerceId = queue.commerceId;
         queueDetailsDto.collaboratorId = queue.collaboratorId;
+        queueDetailsDto.professionalId = queue.professionalId; // Agregar mapping para professionalId
         queueDetailsDto.type = queue.type;
         queueDetailsDto.active = queue.active;
         queueDetailsDto.available = queue.available;
@@ -188,7 +189,9 @@ export class QueueService {
     blockTime = 60,
     servicesId,
     telemedicineEnabled?: boolean,
-    presentialEnabled?: boolean
+    presentialEnabled?: boolean,
+    collaboratorId?: string,
+    professionalId?: string
   ): Promise<Queue> {
     try {
       const queue = await this.queueRepository.findById(id);
@@ -225,9 +228,15 @@ export class QueueService {
       if (telemedicineEnabled !== undefined) {
         queue.telemedicineEnabled = telemedicineEnabled;
       }
-       if (presentialEnabled !== undefined) {
-         queue.presentialEnabled = presentialEnabled;
-       }
+      if (presentialEnabled !== undefined) {
+        queue.presentialEnabled = presentialEnabled;
+      }
+      if (collaboratorId !== undefined) {
+        queue.collaboratorId = collaboratorId;
+      }
+      if (professionalId !== undefined) {
+        queue.professionalId = professionalId;
+      }
       const updatedQueue = await this.update(user, queue);
       this.logger.info('Queue configuration updated', {
         queueId: id,
@@ -237,6 +246,8 @@ export class QueueService {
         active,
         available,
         online,
+        collaboratorId,
+        professionalId,
         user,
       });
       return updatedQueue;
@@ -277,6 +288,7 @@ export class QueueService {
     serviceInfo: ServiceInfo,
     blockTime = 60,
     collaboratorId: string,
+    professionalId: string,
     serviceId: string,
     servicesId: string[],
     telemedicineEnabled?: boolean,
@@ -300,6 +312,9 @@ export class QueueService {
     queue.blockTime = blockTime;
     if (collaboratorId) {
       queue.collaboratorId = collaboratorId;
+    }
+    if (professionalId) {
+      queue.professionalId = professionalId;
     }
     if (serviceId) {
       queue.serviceId = serviceId;
@@ -328,6 +343,7 @@ export class QueueService {
       name,
       limit,
       collaboratorId,
+      professionalId,
       serviceId,
       hasServicesId: !!servicesId && servicesId.length > 0,
       user,

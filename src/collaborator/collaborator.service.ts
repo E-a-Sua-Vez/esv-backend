@@ -67,7 +67,7 @@ export class CollaboratorService {
           Key: key,
           Body: buffer,
           ContentType: mimeType,
-          ACL: 'private',
+          ACL: 'public-read',
           Metadata: meta,
         },
         (error, result) => {
@@ -395,7 +395,7 @@ export class CollaboratorService {
       if (!bot && !idNumber) {
         throw new HttpException('idNumber es obligatorio', HttpStatus.BAD_REQUEST);
       }
-      
+
       const collaborator = new Collaborator();
       collaborator.name = name;
       if (lastName) {
@@ -414,7 +414,7 @@ export class CollaboratorService {
       // Inicializar flags de relación con Professional
       (collaborator as any).isProfessional = false;
       (collaborator as any).professionalId = null;
-      
+
       if (collaborator.bot === true) {
         const collaboratorBot = await this.getCollaboratorBot(commerceId);
         if (collaboratorBot) {
@@ -681,7 +681,7 @@ export class CollaboratorService {
       if (collaborator.professionalId) {
         this.logger.warn(`Collaborator ${id} has linked professionalId ${collaborator.professionalId}. Digital signature should be updated in Professional entity.`);
       }
-      
+
       collaborator.updatedAt = new Date();
       collaborator.updatedBy = user as any;
       await this.update(user, collaborator);
@@ -756,13 +756,13 @@ export class CollaboratorService {
 
   /**
    * Crear un Professional asociado a partir de un Collaborator existente
-   * 
+   *
    * Este método:
    * 1. Valida que el Collaborator existe y no tiene Professional asociado
    * 2. Crea un Professional con los datos del Collaborator
    * 3. Establece la relación bidireccional
    * 4. Emite los eventos correspondientes
-   * 
+   *
    * @param user - ID del usuario que realiza la acción
    * @param collaboratorId - ID del Collaborator
    * @param dto - Datos adicionales para el Professional
@@ -799,7 +799,7 @@ export class CollaboratorService {
         businessId: collaborator.commerceId, // Usar commerceId como businessId
         commerceId: collaborator.commerceId,
         commercesId: collaborator.commercesId || [collaborator.commerceId],
-        
+
         // Datos personales desde Collaborator
         personalInfo: {
           name: collaborator.name,
@@ -808,7 +808,7 @@ export class CollaboratorService {
           phone: collaborator.phone,
           profilePhoto: (collaborator as any).profilePhoto,
         },
-        
+
         // Datos profesionales
         professionalInfo: {
           role: dto.role || collaborator.role,
@@ -818,19 +818,19 @@ export class CollaboratorService {
           licenseType: dto.licenseType,
           licenseState: dto.licenseState,
         },
-        
+
         // Datos financieros (si se proveen)
         financialInfo: dto.commissionType ? {
           commissionType: dto.commissionType,
           commissionValue: dto.commissionValue,
           paymentAccount: dto.paymentAccount,
         } : undefined,
-        
+
         // Relación con Collaborator
         isCollaborator: true,
         collaboratorId: collaborator.id,
         role: dto.role || collaborator.role,
-        
+
         // Datos médicos/profesionales (si aplica)
         medicalData: dto.medicalData,
         crm: dto.crm,
@@ -842,11 +842,11 @@ export class CollaboratorService {
         emergencyContact: dto.emergencyContact,
         canSignDocuments: dto.canSignDocuments || false,
         documentSignatureText: dto.documentSignatureText,
-        
+
         // Estado
         active: true,
         available: dto.available !== undefined ? dto.available : true,
-        
+
         // Auditoría
         createdBy: user,
       };

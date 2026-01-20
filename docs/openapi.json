@@ -4448,6 +4448,85 @@
         ]
       }
     },
+    "/professional/photo-url/{id}": {
+      "get": {
+        "description": "Returns a signed URL for the professional profile photo. No authentication required.",
+        "operationId": "ProfessionalController_getProfilePhotoUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Professional ID",
+            "schema": {
+              "example": "professional-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Professional not found"
+          }
+        },
+        "summary": "Get professional profile photo signed URL (public)",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
+    "/professional/by-collaborator/{collaboratorId}": {
+      "get": {
+        "description": "Retrieves a professional associated with a collaborator",
+        "operationId": "ProfessionalController_getProfessionalByCollaboratorId",
+        "parameters": [
+          {
+            "name": "collaboratorId",
+            "required": true,
+            "in": "path",
+            "description": "Collaborator ID",
+            "schema": {
+              "example": "collaborator-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Professional found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Professional"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Professional not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get professional by collaborator ID",
+        "tags": [
+          "professional"
+        ]
+      }
+    },
     "/professional/{id}": {
       "get": {
         "description": "Retrieves a professional by their unique identifier",

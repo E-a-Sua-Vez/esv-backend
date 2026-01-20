@@ -6,7 +6,8 @@ import { ServiceInfo } from '../model/queue.entity';
 export class QueueDetailsDto {
   id: string;
   commerceId: string;
-  collaboratorId: string;
+  collaboratorId: string; // DEPRECATED: usar professionalId en lugar de esto
+  professionalId?: string; // ID del Professional asignado (nuevo, reemplaza collaboratorId)
   type: QueueType;
   active: boolean;
   available: boolean;
