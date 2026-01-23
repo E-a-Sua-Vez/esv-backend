@@ -10127,6 +10127,56 @@
         ]
       }
     },
+    "/income/commerceId/{commerceId}/packageId/{packageId}/all": {
+      "get": {
+        "description": "Retrieves all income records (pending and confirmed) for a specific package",
+        "operationId": "IncomeController_getAllIncomesByPackage",
+        "parameters": [
+          {
+            "name": "packageId",
+            "required": true,
+            "in": "path",
+            "description": "Package ID",
+            "schema": {
+              "example": "package-123"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "path",
+            "description": "Commerce ID",
+            "schema": {
+              "example": "commerce-123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all incomes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Income"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all incomes by package",
+        "tags": [
+          "income"
+        ]
+      }
+    },
     "/income/list/{ids}": {
       "get": {
         "description": "Retrieves multiple income records by their IDs (comma-separated)",

@@ -1365,13 +1365,61 @@ export class BookingService {
           booking.status = BookingStatus.CONFIRMED;
           booking.confirmedAt = new Date();
           booking.confirmed = true;
+          
+          // CRITICAL: Check if the booking is already marked as paid
+          const alreadyPaid =
+            booking.confirmed === true &&
+            booking.confirmationData &&
+            booking.confirmationData.paid === true;
+
+          // CRITICAL: Check if the package is already paid
+          // If the package is paid, all sessions are prepaid and should be marked as paid automatically
+          let packageAlreadyPaid = false;
+          if (booking.packageId) {
+            try {
+              const pack = await this.packageService.getPackageById(booking.packageId);
+              if (pack && pack.paid === true) {
+                packageAlreadyPaid = true;
+              }
+            } catch (error) {
+              this.logger.warn(
+                `[BookingService] Could not verify package payment status for package ${booking.packageId}: ${error.message}`,
+              );
+              // If we can't load the package, do not block the operation based on this flag
+            }
+          }
+
+          const skipFinancialFlow = alreadyPaid || packageAlreadyPaid;
+
+          // If the package is paid but the booking is not marked as paid, mark it automatically
+          if (packageAlreadyPaid && !alreadyPaid && confirmationData) {
+            confirmationData.paid = true;
+            confirmationData.paymentAmount = 0;
+            confirmationData.totalAmount = 0;
+            if (!confirmationData.paymentComment) {
+              confirmationData.paymentComment = 'Pago incluido en paquete prepagado';
+            }
+            confirmationData.processPaymentNow = true; // To ensure it's saved in confirmationData
+            confirmationData.user = user || 'ett';
+          }
+
           // GESTION DE PAQUETE
           let pack;
           if (confirmationData !== undefined) {
             if (confirmationData.packageId) {
+              // Usuario seleccionó un paquete en PaymentForm
               pack = await this.packageService.addProcedureToPackage(
                 user,
                 confirmationData.packageId,
+                [id],
+                []
+              );
+            } else if (booking.packageId) {
+              // La reserva ya tiene un packageId (creado en builder)
+              // Usar ese paquete en lugar de crear uno nuevo
+              pack = await this.packageService.addProcedureToPackage(
+                user,
+                booking.packageId,
                 [id],
                 []
               );
@@ -1379,6 +1427,7 @@ export class BookingService {
               confirmationData.procedureNumber === 1 &&
               confirmationData.proceduresTotalNumber > 1
             ) {
+              // Solo crear nuevo paquete si realmente no hay uno asociado
               let packageName;
               if (booking.servicesDetails && booking.servicesDetails.length > 0) {
                 const names = booking.servicesDetails.map(service => service['tag']);
@@ -1410,23 +1459,45 @@ export class BookingService {
           if (this.featureToggleIsActive(featureToggle, 'booking-confirm-payment')) {
             const packageId = pack && pack.id ? pack.id : undefined;
             if (confirmationData.processPaymentNow) {
-              if (
-                confirmationData === undefined ||
-                confirmationData.paid === false ||
-                !confirmationData.paymentDate ||
-                confirmationData.paymentAmount === undefined ||
-                confirmationData.paymentAmount < 0
-              ) {
-                throw new HttpException(
-                  `Datos insuficientes para confirmar el pago de la reserva`,
-                  HttpStatus.INTERNAL_SERVER_ERROR
-                );
+              // If package is already paid, paymentAmount can be 0 (it's included in the package)
+              // Otherwise, validate that payment data is complete
+              if (!skipFinancialFlow) {
+                if (
+                  confirmationData === undefined ||
+                  confirmationData.paid === false ||
+                  !confirmationData.paymentDate ||
+                  confirmationData.paymentAmount === undefined ||
+                  confirmationData.paymentAmount < 0
+                ) {
+                  throw new HttpException(
+                    `Datos insuficientes para confirmar el pago de la reserva`,
+                    HttpStatus.INTERNAL_SERVER_ERROR
+                  );
+                }
+              } else if (packageAlreadyPaid) {
+                // If package is paid, ensure paymentAmount is 0 if not provided
+                if (confirmationData && confirmationData.paymentAmount === undefined) {
+                  confirmationData.paymentAmount = 0;
+                }
+                if (confirmationData && confirmationData.totalAmount === undefined) {
+                  confirmationData.totalAmount = 0;
+                }
+                // Set paymentDate if not provided
+                if (confirmationData && !confirmationData.paymentDate) {
+                  confirmationData.paymentDate = new Date();
+                }
               }
               confirmationData.user = user ? user : 'ett';
               booking.confirmationData = confirmationData;
               booking.confirmedBy = user;
+              
               // GESTION DE ENTRADA EN CAJA
-              if (confirmationData !== undefined) {
+              // Si el paquete está pagado o ya estaba pagado, no crear Income
+              if (skipFinancialFlow) {
+                // Solo guardar confirmationData sin crear Income
+                // El booking ya está marcado como paid arriba
+                // No crear Income cuando el paquete está pagado
+              } else if (confirmationData !== undefined && !packageAlreadyPaid) {
                 let income;
 
                 // Obtener datos del profesional si existe professionalId
@@ -1496,7 +1567,9 @@ export class BookingService {
                       professionalName,
                       professionalCommissionType,
                       professionalCommissionValue,
-                      professionalCommissionNotes
+                      professionalCommissionNotes,
+                      booking.servicesId,
+                      booking.servicesDetails
                     );
                   } else {
                     if (!packageId || !pack.paid || pack.paid === false) {
@@ -1526,7 +1599,9 @@ export class BookingService {
                         professionalName,
                         professionalCommissionType,
                         professionalCommissionValue,
-                        professionalCommissionNotes
+                        professionalCommissionNotes,
+                        booking.servicesId,
+                        booking.servicesDetails
                       );
                     }
                   }
@@ -1539,6 +1614,12 @@ export class BookingService {
               }
             } else {
               confirmationData.paid = false;
+              booking.confirmationData = confirmationData;
+            }
+          } else if (skipFinancialFlow && packageAlreadyPaid) {
+            // Si el paquete está pagado pero no se procesó pago, guardar confirmationData
+            if (confirmationData) {
+              confirmationData.user = user || 'ett';
               booking.confirmationData = confirmationData;
             }
           }

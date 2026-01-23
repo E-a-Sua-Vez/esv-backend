@@ -2499,14 +2499,41 @@ export class AttentionService {
           }
         }
 
-        const skipFinancialFlow = alreadyPaid || bookingAlreadyPaid;
+        // CRITICAL: Check if the package is already paid
+        // If the package is paid, all sessions are prepaid and should be marked as paid automatically
+        let packageAlreadyPaid = false;
+        if (attention.packageId) {
+          try {
+            const pack = await this.packageService.getPackageById(attention.packageId);
+            if (pack && pack.paid === true) {
+              packageAlreadyPaid = true;
+            }
+          } catch (error) {
+            this.logger.warn(
+              `[AttentionService] Could not verify package payment status for package ${attention.packageId}: ${error.message}`,
+            );
+            // If we can't load the package, do not block the operation based on this flag
+          }
+        }
+
+        const skipFinancialFlow = alreadyPaid || bookingAlreadyPaid || packageAlreadyPaid;
         // GESTION DE PAQUETE (solo si no debemos saltar el flujo financiero)
         let pack;
         if (!skipFinancialFlow && confirmationData !== undefined) {
           if (confirmationData.packageId) {
+            // Usuario seleccionó un paquete en PaymentForm
             pack = await this.packageService.addProcedureToPackage(
               user,
               confirmationData.packageId,
+              [],
+              [id]
+            );
+          } else if (attention.packageId) {
+            // La atención ya tiene un packageId (creado en builder)
+            // Usar ese paquete en lugar de crear uno nuevo
+            pack = await this.packageService.addProcedureToPackage(
+              user,
+              attention.packageId,
               [],
               [id]
             );
@@ -2514,6 +2541,7 @@ export class AttentionService {
             confirmationData.procedureNumber === 1 &&
             confirmationData.proceduresTotalNumber > 1
           ) {
+            // Solo crear nuevo paquete si realmente no hay uno asociado
             let packageName;
             if (attention.servicesDetails && attention.servicesDetails.length > 0) {
               const names = attention.servicesDetails.map(service => service['tag']);
@@ -2542,11 +2570,57 @@ export class AttentionService {
         }
         if (this.featureToggleIsActive(featureToggle, 'attention-confirm-payment')) {
           const packageId = pack && pack.id ? pack.id : attention.packageId;
-          // Si ya estaba pagada (o la reserva ya pagó), no volvemos a crear income ni tocar paquete.
+          // Si ya estaba pagada (o la reserva ya pagó, o el paquete está pagado), no volvemos a crear income ni tocar paquete.
           if (skipFinancialFlow) {
+            // Si el paquete está pagado pero la atención no está marcada como paid, marcarla automáticamente
+            if (packageAlreadyPaid && !alreadyPaid) {
+              attention.paid = true;
+              attention.paidAt = attention.paidAt || new Date();
+              
+              // Crear o actualizar paymentConfirmationData para reflejar que está pagada por el paquete
+              if (!attention.paymentConfirmationData) {
+                attention.paymentConfirmationData = {
+                  bankEntity: '',
+                  procedureNumber: attention.packageProcedureNumber || 0,
+                  proceduresTotalNumber: attention.packageProceduresTotalNumber || 0,
+                  transactionId: '',
+                  paymentType: null,
+                  paymentMethod: null,
+                  installments: 0,
+                  paid: true,
+                  totalAmount: 0,
+                  paymentAmount: 0,
+                  paymentPercentage: 0,
+                  paymentDate: new Date(),
+                  paymentCommission: 0,
+                  paymentComment: confirmationData?.paymentComment || 'Pago incluido en paquete prepagado',
+                  paymentFiscalNote: confirmationData?.paymentFiscalNote || '',
+                  promotionalCode: '',
+                  paymentDiscountAmount: 0,
+                  paymentDiscountPercentage: 0,
+                  user: user || 'ett',
+                  packageId: attention.packageId || '',
+                  pendingPaymentId: '',
+                  processPaymentNow: false,
+                  confirmInstallments: false,
+                } as PaymentConfirmation;
+              } else {
+                // Actualizar campos existentes
+                attention.paymentConfirmationData.paid = true;
+                attention.paymentConfirmationData.packageId = attention.packageId || attention.paymentConfirmationData.packageId || '';
+                attention.paymentConfirmationData.paymentAmount = 0;
+                attention.paymentConfirmationData.totalAmount = 0;
+                if (confirmationData?.paymentComment) {
+                  attention.paymentConfirmationData.paymentComment = confirmationData.paymentComment;
+                } else if (!attention.paymentConfirmationData.paymentComment) {
+                  attention.paymentConfirmationData.paymentComment = 'Pago incluido en paquete prepagado';
+                }
+              }
+            }
+            
             // Solo actualizamos campos no financieros si se envían (por ejemplo, paymentComment)
-            if (confirmationData && confirmationData.paymentComment) {
-              // Solo actualizar el comentario si ya existe paymentConfirmationData
+            if (confirmationData && confirmationData.paymentComment && !packageAlreadyPaid) {
+              // Solo actualizar el comentario si ya existe paymentConfirmationData y no es por paquete pagado
               if (attention.paymentConfirmationData) {
                 attention.paymentConfirmationData.paymentComment = confirmationData.paymentComment;
               } else {
@@ -2586,17 +2660,33 @@ export class AttentionService {
 
           attention.paidAt = new Date();
           attention.paid = true;
-          if (
-            confirmationData === undefined ||
-            confirmationData.paid === false ||
-            !confirmationData.paymentDate ||
-            confirmationData.paymentAmount === undefined ||
-            confirmationData.paymentAmount < 0
-          ) {
-            throw new HttpException(
-              `Datos insuficientes para confirmar el pago de la atenci?n`,
-              HttpStatus.INTERNAL_SERVER_ERROR
-            );
+          // If package is paid, paymentAmount can be 0 (it's included in the package)
+          // Otherwise, validate that payment data is complete
+          if (!packageAlreadyPaid) {
+            if (
+              confirmationData === undefined ||
+              confirmationData.paid === false ||
+              !confirmationData.paymentDate ||
+              confirmationData.paymentAmount === undefined ||
+              confirmationData.paymentAmount < 0
+            ) {
+              throw new HttpException(
+                `Datos insuficientes para confirmar el pago de la atenci?n`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+              );
+            }
+          } else {
+            // If package is paid, ensure paymentAmount is 0 if not provided
+            if (confirmationData && confirmationData.paymentAmount === undefined) {
+              confirmationData.paymentAmount = 0;
+            }
+            if (confirmationData && confirmationData.totalAmount === undefined) {
+              confirmationData.totalAmount = 0;
+            }
+            // Set paymentDate if not provided
+            if (confirmationData && !confirmationData.paymentDate) {
+              confirmationData.paymentDate = new Date();
+            }
           }
           confirmationData.user = user ? user : 'ett';
           attention.paymentConfirmationData = JSON.parse(JSON.stringify(confirmationData));
@@ -2604,7 +2694,8 @@ export class AttentionService {
           attention.confirmedAt = new Date();
           attention.confirmedBy = user;
           // GESTION DE ENTRADA EN CAJA
-          if (confirmationData !== undefined) {
+          // Si el paquete está pagado, NO crear Income (ya está pagado)
+          if (confirmationData !== undefined && !packageAlreadyPaid) {
             let income;
 
             // Obtener datos del profesional si existe professionalId
@@ -2674,7 +2765,9 @@ export class AttentionService {
                   professionalName,
                   professionalCommissionType,
                   professionalCommissionValue,
-                  professionalCommissionNotes
+                  professionalCommissionNotes,
+                  attention.servicesId,
+                  attention.servicesDetails
                 );
               } else {
                 if (!packageId || !pack.paid || pack.paid === false) {
@@ -2704,7 +2797,9 @@ export class AttentionService {
                     professionalName,
                     professionalCommissionType,
                     professionalCommissionValue,
-                    professionalCommissionNotes
+                    professionalCommissionNotes,
+                    attention.servicesId,
+                    attention.servicesDetails
                   );
                 }
               }

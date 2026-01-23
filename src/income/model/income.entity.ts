@@ -55,4 +55,6 @@ export class Income {
   professionalCommissionNotes?: string; // Notas sobre la comisión
   commissionPaid: boolean; // false por defecto, true cuando se paga
   commissionPaymentId?: string; // ID del pago de comisión asociado
+  servicesId?: string[]; // IDs de los servicios pagados en esta income
+  servicesDetails?: object[]; // Detalles completos de los servicios pagados
 }

@@ -47,6 +47,16 @@ export class IncomeService {
     return incomes;
   }
 
+  public async getAllIncomesByPackage(commerceId: string, packageId: string): Promise<Income[]> {
+    let incomes: Income[] = [];
+    incomes = await this.incomeRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereEqualTo('packageId', packageId)
+      .orderByAscending('createdAt')
+      .find();
+    return incomes;
+  }
+
   public async getIncomesById(incomesId: string[]): Promise<Income[]> {
     let incomes: Income[] = [];
     incomes = await this.incomeRepository.whereIn('id', incomesId).find();
@@ -143,7 +153,9 @@ export class IncomeService {
     professionalName?: string,
     professionalCommissionType?: string,
     professionalCommissionValue?: number,
-    professionalCommissionNotes?: string
+    professionalCommissionNotes?: string,
+    servicesId?: string[],
+    servicesDetails?: object[]
   ): Promise<Income> {
     const income = new Income();
     income.commerceId = commerceId;
@@ -170,6 +182,8 @@ export class IncomeService {
     income.professionalCommissionType = professionalCommissionType;
     income.professionalCommissionValue = professionalCommissionValue;
     income.professionalCommissionNotes = professionalCommissionNotes;
+    income.servicesId = servicesId;
+    income.servicesDetails = servicesDetails;
     if (status === IncomeStatus.CONFIRMED) {
       income.paid = true;
       income.paidAt = new Date();
@@ -213,7 +227,9 @@ export class IncomeService {
     professionalName?: string,
     professionalCommissionType?: string,
     professionalCommissionValue?: number,
-    professionalCommissionNotes?: string
+    professionalCommissionNotes?: string,
+    servicesId?: string[],
+    servicesDetails?: object[]
   ): Promise<Income> {
     if (installments && installments > 1) {
       const firstIncome = await this.createIncome(
@@ -242,7 +258,9 @@ export class IncomeService {
         professionalName,
         professionalCommissionType,
         professionalCommissionValue,
-        professionalCommissionNotes
+        professionalCommissionNotes,
+        servicesId,
+        servicesDetails
       );
       if (firstIncome && firstIncome.id) {
         let installmentAmount = 0;
@@ -281,7 +299,9 @@ export class IncomeService {
             professionalName,
             professionalCommissionType,
             professionalCommissionValue,
-            professionalCommissionNotes
+            professionalCommissionNotes,
+            servicesId,
+            servicesDetails
           );
         }
       }

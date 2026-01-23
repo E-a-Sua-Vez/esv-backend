@@ -86,6 +86,21 @@ export class IncomeController {
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @Get('/commerceId/:commerceId/packageId/:packageId/all')
+  @ApiOperation({
+    summary: 'Get all incomes by package',
+    description: 'Retrieves all income records (pending and confirmed) for a specific package',
+  })
+  @ApiParam({ name: 'commerceId', description: 'Commerce ID', example: 'commerce-123' })
+  @ApiParam({ name: 'packageId', description: 'Package ID', example: 'package-123' })
+  @ApiResponse({ status: 200, description: 'List of all incomes', type: [Income] })
+  public async getAllIncomesByPackage(@Param() params: any): Promise<Income[]> {
+    const { commerceId, packageId } = params;
+    return this.incomeService.getAllIncomesByPackage(commerceId, packageId);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/list/:ids')
   @ApiOperation({
     summary: 'Get incomes by IDs',

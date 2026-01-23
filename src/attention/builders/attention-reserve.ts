@@ -211,6 +211,44 @@ export class AttentionReserveBuilder implements BuilderInterface {
             [],
             [attentionCreated.id]
           );
+          
+          // CRITICAL: If the package is already paid, mark the attention as paid automatically
+          try {
+            const pack = await this.packageService.getPackageById(booking.packageId);
+            if (pack && pack.paid === true) {
+              attention.paid = true;
+              attention.paidAt = new Date();
+              attention.paymentConfirmationData = {
+                bankEntity: '',
+                procedureNumber: attention.packageProcedureNumber || 0,
+                proceduresTotalNumber: attention.packageProceduresTotalNumber || 0,
+                transactionId: '',
+                paymentType: null,
+                paymentMethod: null,
+                installments: 0,
+                paid: true,
+                totalAmount: 0,
+                paymentAmount: 0,
+                paymentPercentage: 0,
+                paymentDate: new Date(),
+                paymentCommission: 0,
+                paymentComment: 'Pago incluido en paquete prepagado',
+                paymentFiscalNote: '',
+                promotionalCode: '',
+                paymentDiscountAmount: 0,
+                paymentDiscountPercentage: 0,
+                user: 'ett',
+                packageId: attention.packageId,
+                pendingPaymentId: '',
+                processPaymentNow: false,
+                confirmInstallments: false,
+              } as PaymentConfirmation;
+              await this.attentionRepository.update(attention);
+            }
+          } catch (error) {
+            console.error('[AttentionReserveBuilder] Error checking package payment status:', error);
+            // Don't block attention creation if we can't check package status
+          }
         }
       } catch (error) {
         console.error('[AttentionReserveBuilder] Error getting booking for packageId:', error);
