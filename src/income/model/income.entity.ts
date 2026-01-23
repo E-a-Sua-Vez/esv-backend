@@ -49,6 +49,10 @@ export class Income {
   paymentType?: PaymentType;
   professionalId?: string; // ID del profesional asignado
   professionalCommission?: number; // Comisión del profesional
+  professionalName?: string; // Nombre del profesional
+  professionalCommissionType?: string; // Tipo de comisión (PERCENTAGE, FIXED)
+  professionalCommissionValue?: number; // Valor de la comisión configurada
+  professionalCommissionNotes?: string; // Notas sobre la comisión
   commissionPaid: boolean; // false por defecto, true cuando se paga
   commissionPaymentId?: string; // ID del pago de comisión asociado
 }

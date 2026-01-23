@@ -2738,7 +2738,7 @@ export class AttentionService {
       const queueToTransfer = await this.queueService.getQueueById(queueId);
       if (attention && attention.id) {
         if (queueToTransfer && queueToTransfer.id) {
-          if (queueToTransfer.type === QueueType.COLLABORATOR) {
+          if (queueToTransfer.type === QueueType.SERVICE || queueToTransfer.type === QueueType.PROFESSIONAL) {
             attention.transfered = true;
             attention.transferedAt = new Date();
             attention.transferedOrigin = attention.queueId;

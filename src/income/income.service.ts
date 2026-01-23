@@ -139,7 +139,11 @@ export class IncomeService {
     incomeInfo: IncomeInfo,
     installmentNumber?: number,
     professionalId?: string,
-    professionalCommission?: number
+    professionalCommission?: number,
+    professionalName?: string,
+    professionalCommissionType?: string,
+    professionalCommissionValue?: number,
+    professionalCommissionNotes?: string
   ): Promise<Income> {
     const income = new Income();
     income.commerceId = commerceId;
@@ -162,6 +166,10 @@ export class IncomeService {
     income.bankEntity = bankEntity;
     income.professionalId = professionalId;
     income.professionalCommission = professionalCommission;
+    income.professionalName = professionalName;
+    income.professionalCommissionType = professionalCommissionType;
+    income.professionalCommissionValue = professionalCommissionValue;
+    income.professionalCommissionNotes = professionalCommissionNotes;
     if (status === IncomeStatus.CONFIRMED) {
       income.paid = true;
       income.paidAt = new Date();
@@ -201,7 +209,11 @@ export class IncomeService {
     confirmInstallments: boolean,
     incomeInfo: IncomeInfo,
     professionalId?: string,
-    professionalCommission?: number
+    professionalCommission?: number,
+    professionalName?: string,
+    professionalCommissionType?: string,
+    professionalCommissionValue?: number,
+    professionalCommissionNotes?: string
   ): Promise<Income> {
     if (installments && installments > 1) {
       const firstIncome = await this.createIncome(
@@ -226,7 +238,11 @@ export class IncomeService {
         incomeInfo,
         undefined,
         professionalId,
-        professionalCommission
+        professionalCommission,
+        professionalName,
+        professionalCommissionType,
+        professionalCommissionValue,
+        professionalCommissionNotes
       );
       if (firstIncome && firstIncome.id) {
         let installmentAmount = 0;
@@ -261,7 +277,11 @@ export class IncomeService {
             incomeInfo,
             installmentNumber,
             professionalId,
-            professionalCommission
+            professionalCommission,
+            professionalName,
+            professionalCommissionType,
+            professionalCommissionValue,
+            professionalCommissionNotes
           );
         }
       }

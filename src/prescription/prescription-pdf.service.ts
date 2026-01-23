@@ -76,24 +76,18 @@ export class PrescriptionPdfService {
           return this.getDoctorVariables(collaborator.professionalId, undefined);
         }
 
-        // Usar datos del collaborator (legacy)
-        const variables: any = {
+        // Si no tiene professionalId vinculado, retornar datos básicos del collaborator
+        return {
           doctorName: collaborator.name || '',
-          doctorTitle: 'Dr.', // Sin acceso directo, usar default
-          doctorLicense: collaborator.medicalLicense || '',
-          doctorSignature: collaborator.digitalSignature || '',
+          doctorTitle: 'Dr.',
+          doctorLicense: '',
+          doctorSignature: '',
+          doctorSpecialization: '',
+          doctorClinicName: '',
+          doctorClinicAddress: '',
+          doctorProfessionalPhone: '',
+          doctorProfessionalEmail: '',
         };
-
-        // Datos médicos extendidos si están disponibles
-        if (collaborator.medicalLicense) {
-          variables.doctorSpecialization = collaborator.specialization || '';
-          variables.doctorClinicName = collaborator.clinicName || '';
-          variables.doctorClinicAddress = collaborator.clinicAddress || collaborator.professionalAddress || '';
-          variables.doctorProfessionalPhone = collaborator.professionalPhone || collaborator.clinicPhone || '';
-          variables.doctorProfessionalEmail = collaborator.professionalEmail || '';
-        }
-
-        return variables;
       }
 
       return {};

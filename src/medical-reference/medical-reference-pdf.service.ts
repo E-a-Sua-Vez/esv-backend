@@ -75,24 +75,18 @@ export class MedicalReferencePdfService {
           return this.getDoctorVariables(collaborator.professionalId, undefined);
         }
 
-        // Usar datos del collaborator (legacy)
-        const variables: any = {
+        // Si no tiene professionalId vinculado, retornar datos básicos del collaborator
+        return {
           doctorName: collaborator.name || '',
-          doctorTitle: 'Dr.', // Sin acceso directo, usar default
-          doctorLicense: collaborator.medicalData?.medicalLicense || '',
-          doctorSignature: collaborator.medicalData?.digitalSignature || '',
+          doctorTitle: 'Dr.',
+          doctorLicense: '',
+          doctorSignature: '',
+          doctorSpecialization: '',
+          doctorClinicName: '',
+          doctorClinicAddress: '',
+          doctorProfessionalPhone: '',
+          doctorProfessionalEmail: '',
         };
-
-        // Datos médicos extendidos si están disponibles
-        if (collaborator.medicalData) {
-          variables.doctorSpecialization = collaborator.medicalData.specialization || '';
-          variables.doctorClinicName = collaborator.medicalData.clinicName || '';
-          variables.doctorClinicAddress = collaborator.medicalData.clinicAddress || collaborator.medicalData.professionalAddress || '';
-          variables.doctorProfessionalPhone = collaborator.medicalData.professionalPhone || collaborator.medicalData.clinicPhone || '';
-          variables.doctorProfessionalEmail = collaborator.medicalData.professionalEmail || '';
-        }
-
-        return variables;
       }
 
       return {};
