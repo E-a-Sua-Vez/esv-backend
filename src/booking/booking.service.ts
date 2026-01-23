@@ -1428,6 +1428,34 @@ export class BookingService {
               // GESTION DE ENTRADA EN CAJA
               if (confirmationData !== undefined) {
                 let income;
+
+                // Obtener datos del profesional si existe professionalId
+                let professionalName = null;
+                let professionalCommissionType = null;
+                let professionalCommissionValue = null;
+                let professionalCommissionNotes = null;
+
+                if (confirmationData.professionalId) {
+                  try {
+                    const professional = await this.professionalService.getProfessionalById(confirmationData.professionalId);
+                    if (professional) {
+                      professionalName = professional.personalInfo?.name || booking.professionalName || null;
+                      professionalCommissionType = confirmationData.professionalCommissionType ||
+                        professional.financialInfo?.commissionType || null;
+                      professionalCommissionValue = confirmationData.professionalCommissionValue ||
+                        professional.financialInfo?.commissionValue || null;
+                      professionalCommissionNotes = confirmationData.professionalCommissionNotes ||
+                        `Comisión del profesional ${professionalName}` || null;
+                    }
+                  } catch (error) {
+                    this.logger.warn(`No se pudo obtener datos del profesional ${confirmationData.professionalId}: ${error.message}`);
+                    // Usar datos disponibles en confirmationData
+                    professionalName = booking.professionalName || null;
+                    professionalCommissionType = confirmationData.professionalCommissionType || null;
+                    professionalCommissionValue = confirmationData.professionalCommissionValue || null;
+                    professionalCommissionNotes = confirmationData.professionalCommissionNotes || null;
+                  }
+                }
                 if (confirmationData.pendingPaymentId) {
                   income = await this.incomeService.payPendingIncome(
                     user,
@@ -1464,7 +1492,11 @@ export class BookingService {
                       confirmationData.confirmInstallments,
                       { user },
                       confirmationData.professionalId,
-                      confirmationData.professionalCommissionAmount
+                      confirmationData.professionalCommissionAmount,
+                      professionalName,
+                      professionalCommissionType,
+                      professionalCommissionValue,
+                      professionalCommissionNotes
                     );
                   } else {
                     if (!packageId || !pack.paid || pack.paid === false) {
@@ -1490,7 +1522,11 @@ export class BookingService {
                         { user },
                         undefined,
                         confirmationData.professionalId,
-                        confirmationData.professionalCommissionAmount
+                        confirmationData.professionalCommissionAmount,
+                        professionalName,
+                        professionalCommissionType,
+                        professionalCommissionValue,
+                        professionalCommissionNotes
                       );
                     }
                   }

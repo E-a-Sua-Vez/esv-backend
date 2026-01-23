@@ -2546,10 +2546,37 @@ export class AttentionService {
           if (skipFinancialFlow) {
             // Solo actualizamos campos no financieros si se envían (por ejemplo, paymentComment)
             if (confirmationData && confirmationData.paymentComment) {
-              attention.paymentConfirmationData = {
-                ...(attention.paymentConfirmationData || {}),
-                paymentComment: confirmationData.paymentComment,
-              } as PaymentConfirmation;
+              // Solo actualizar el comentario si ya existe paymentConfirmationData
+              if (attention.paymentConfirmationData) {
+                attention.paymentConfirmationData.paymentComment = confirmationData.paymentComment;
+              } else {
+                // Si no existe, crear un objeto mínimo válido con los campos requeridos
+                attention.paymentConfirmationData = {
+                  bankEntity: '',
+                  procedureNumber: 0,
+                  proceduresTotalNumber: 0,
+                  transactionId: '',
+                  paymentType: null,
+                  paymentMethod: null,
+                  installments: 0,
+                  paid: false,
+                  totalAmount: 0,
+                  paymentAmount: 0,
+                  paymentPercentage: 0,
+                  paymentDate: new Date(),
+                  paymentCommission: 0,
+                  paymentComment: confirmationData.paymentComment,
+                  paymentFiscalNote: '',
+                  promotionalCode: '',
+                  paymentDiscountAmount: 0,
+                  paymentDiscountPercentage: 0,
+                  user: '',
+                  packageId: '',
+                  pendingPaymentId: '',
+                  processPaymentNow: false,
+                  confirmInstallments: false,
+                } as PaymentConfirmation;
+              }
             }
             attention.confirmed = true;
             attention.confirmedAt = attention.confirmedAt || new Date();
@@ -2572,13 +2599,41 @@ export class AttentionService {
             );
           }
           confirmationData.user = user ? user : 'ett';
-          attention.paymentConfirmationData = confirmationData;
+          attention.paymentConfirmationData = JSON.parse(JSON.stringify(confirmationData));
           attention.confirmed = true;
           attention.confirmedAt = new Date();
           attention.confirmedBy = user;
           // GESTION DE ENTRADA EN CAJA
           if (confirmationData !== undefined) {
             let income;
+
+            // Obtener datos del profesional si existe professionalId
+            let professionalName = null;
+            let professionalCommissionType = null;
+            let professionalCommissionValue = null;
+            let professionalCommissionNotes = null;
+
+            if (confirmationData.professionalId) {
+              try {
+                const professional = await this.professionalService.getProfessionalById(confirmationData.professionalId);
+                if (professional) {
+                  professionalName = professional.personalInfo?.name || attention.professionalName || null;
+                  professionalCommissionType = confirmationData.professionalCommissionType ||
+                    professional.financialInfo?.commissionType || null;
+                  professionalCommissionValue = confirmationData.professionalCommissionValue ||
+                    professional.financialInfo?.commissionValue || null;
+                  professionalCommissionNotes = confirmationData.professionalCommissionNotes ||
+                    `Comisión del profesional ${professionalName}` || null;
+                }
+              } catch (error) {
+                this.logger.warn(`No se pudo obtener datos del profesional ${confirmationData.professionalId}: ${error.message}`);
+                // Usar datos disponibles en confirmationData
+                professionalName = attention.professionalName || null;
+                professionalCommissionType = confirmationData.professionalCommissionType || null;
+                professionalCommissionValue = confirmationData.professionalCommissionValue || null;
+                professionalCommissionNotes = confirmationData.professionalCommissionNotes || null;
+              }
+            }
             if (confirmationData.pendingPaymentId) {
               income = await this.incomeService.payPendingIncome(
                 user,
@@ -2615,7 +2670,11 @@ export class AttentionService {
                   confirmationData.confirmInstallments,
                   { user },
                   confirmationData.professionalId,
-                  confirmationData.professionalCommissionAmount
+                  confirmationData.professionalCommissionAmount,
+                  professionalName,
+                  professionalCommissionType,
+                  professionalCommissionValue,
+                  professionalCommissionNotes
                 );
               } else {
                 if (!packageId || !pack.paid || pack.paid === false) {
@@ -2641,7 +2700,11 @@ export class AttentionService {
                     { user },
                     undefined,
                     confirmationData.professionalId,
-                    confirmationData.professionalCommissionAmount
+                    confirmationData.professionalCommissionAmount,
+                    professionalName,
+                    professionalCommissionType,
+                    professionalCommissionValue,
+                    professionalCommissionNotes
                   );
                 }
               }
