@@ -138,7 +138,7 @@ export class AttentionService {
   ): Promise<AttentionDetailsDto> {
     try {
       const attention = await this.getAttentionById(id);
-
+      
       // Debug: Log what attention data we have
       this.logger.log(`[AttentionService.getAttentionDetails] Attention ID: ${attention.id}`);
       this.logger.log(`[AttentionService.getAttentionDetails] Professional ID: ${attention.professionalId}`);
@@ -487,8 +487,7 @@ export class AttentionService {
       scheduledAt: Date | string;
       recordingEnabled?: boolean;
       notes?: string;
-    },
-    professionalId?: string
+    }
   ): Promise<Attention> {
     try {
       let attentionCreated;
@@ -589,8 +588,7 @@ export class AttentionService {
             clientId,
             termsConditionsToAcceptCode,
             termsConditionsAcceptedCode,
-            termsConditionsToAcceptedAt,
-            professionalId
+            termsConditionsToAcceptedAt
           );
         } else {
           attentionCreated = await this.attentionNoDeviceBuilder.create(
@@ -601,8 +599,7 @@ export class AttentionService {
             date,
             servicesId,
             servicesDetails,
-            clientId,
-            professionalId
+            clientId
           );
         }
       } else if (onlySurvey) {
@@ -624,8 +621,7 @@ export class AttentionService {
             date,
             servicesId,
             servicesDetails,
-            clientId,
-            professionalId
+            clientId
           );
           attentionCreated = await this.finishAttention(
             attentionBuild.userId,
@@ -641,8 +637,7 @@ export class AttentionService {
             date,
             servicesId,
             servicesDetails,
-            clientId,
-            professionalId
+            clientId
           );
         }
       } else if (block && block.number) {
@@ -672,8 +667,7 @@ export class AttentionService {
           date,
           servicesId,
           servicesDetails,
-          clientId,
-          professionalId
+          clientId
         );
       }
       // Update attention with user name for easy access in Firebase
@@ -2552,37 +2546,10 @@ export class AttentionService {
           if (skipFinancialFlow) {
             // Solo actualizamos campos no financieros si se envían (por ejemplo, paymentComment)
             if (confirmationData && confirmationData.paymentComment) {
-              // Solo actualizar el comentario si ya existe paymentConfirmationData
-              if (attention.paymentConfirmationData) {
-                attention.paymentConfirmationData.paymentComment = confirmationData.paymentComment;
-              } else {
-                // Si no existe, crear un objeto mínimo válido con los campos requeridos
-                attention.paymentConfirmationData = {
-                  bankEntity: '',
-                  procedureNumber: 0,
-                  proceduresTotalNumber: 0,
-                  transactionId: '',
-                  paymentType: null,
-                  paymentMethod: null,
-                  installments: 0,
-                  paid: false,
-                  totalAmount: 0,
-                  paymentAmount: 0,
-                  paymentPercentage: 0,
-                  paymentDate: new Date(),
-                  paymentCommission: 0,
-                  paymentComment: confirmationData.paymentComment,
-                  paymentFiscalNote: '',
-                  promotionalCode: '',
-                  paymentDiscountAmount: 0,
-                  paymentDiscountPercentage: 0,
-                  user: '',
-                  packageId: '',
-                  pendingPaymentId: '',
-                  processPaymentNow: false,
-                  confirmInstallments: false,
-                } as PaymentConfirmation;
-              }
+              attention.paymentConfirmationData = {
+                ...(attention.paymentConfirmationData || {}),
+                paymentComment: confirmationData.paymentComment,
+              } as PaymentConfirmation;
             }
             attention.confirmed = true;
             attention.confirmedAt = attention.confirmedAt || new Date();
@@ -2605,42 +2572,13 @@ export class AttentionService {
             );
           }
           confirmationData.user = user ? user : 'ett';
-          attention.paymentConfirmationData = JSON.parse(JSON.stringify(confirmationData));
+          attention.paymentConfirmationData = confirmationData;
           attention.confirmed = true;
           attention.confirmedAt = new Date();
           attention.confirmedBy = user;
           // GESTION DE ENTRADA EN CAJA
           if (confirmationData !== undefined) {
             let income;
-
-            // Obtener datos del profesional si existe professionalId
-            let professionalName = null;
-            let professionalCommissionType = null;
-            let professionalCommissionValue = null;
-            let professionalCommissionNotes = null;
-
-            if (confirmationData.professionalId) {
-              try {
-                const professional = await this.professionalService.getProfessionalById(confirmationData.professionalId);
-                if (professional) {
-                  professionalName = professional.personalInfo?.name || attention.professionalName || null;
-                  professionalCommissionType = confirmationData.professionalCommissionType ||
-                    professional.financialInfo?.commissionType || null;
-                  professionalCommissionValue = confirmationData.professionalCommissionValue ||
-                    professional.financialInfo?.commissionValue || null;
-                  professionalCommissionNotes = confirmationData.professionalCommissionNotes ||
-                    `Comisión del profesional ${professionalName}` || null;
-                }
-              } catch (error) {
-                this.logger.warn(`No se pudo obtener datos del profesional ${confirmationData.professionalId}: ${error.message}`);
-                // Usar datos disponibles en confirmationData
-                professionalName = attention.professionalName || null;
-                professionalCommissionType = confirmationData.professionalCommissionType || null;
-                professionalCommissionValue = confirmationData.professionalCommissionValue || null;
-                professionalCommissionNotes = confirmationData.professionalCommissionNotes || null;
-              }
-            }
-
             if (confirmationData.pendingPaymentId) {
               income = await this.incomeService.payPendingIncome(
                 user,
@@ -2677,11 +2615,7 @@ export class AttentionService {
                   confirmationData.confirmInstallments,
                   { user },
                   confirmationData.professionalId,
-                  confirmationData.professionalCommissionAmount,
-                  professionalName,
-                  professionalCommissionType,
-                  professionalCommissionValue,
-                  professionalCommissionNotes
+                  confirmationData.professionalCommissionAmount
                 );
               } else {
                 if (!packageId || !pack.paid || pack.paid === false) {
@@ -2707,11 +2641,7 @@ export class AttentionService {
                     { user },
                     undefined,
                     confirmationData.professionalId,
-                    confirmationData.professionalCommissionAmount,
-                    professionalName,
-                    professionalCommissionType,
-                    professionalCommissionValue,
-                    professionalCommissionNotes
+                    confirmationData.professionalCommissionAmount
                   );
                 }
               }
@@ -2745,7 +2675,7 @@ export class AttentionService {
       const queueToTransfer = await this.queueService.getQueueById(queueId);
       if (attention && attention.id) {
         if (queueToTransfer && queueToTransfer.id) {
-          if (queueToTransfer.type === QueueType.SERVICE || queueToTransfer.type === QueueType.PROFESSIONAL) {
+          if (queueToTransfer.type === QueueType.COLLABORATOR) {
             attention.transfered = true;
             attention.transferedAt = new Date();
             attention.transferedOrigin = attention.queueId;
@@ -2823,8 +2753,8 @@ export class AttentionService {
       }
 
       // Validate professional can perform the service
-      if (attention.serviceId &&
-          professional.professionalInfo?.servicesId?.length > 0 &&
+      if (attention.serviceId && 
+          professional.professionalInfo?.servicesId?.length > 0 && 
           !professional.professionalInfo.servicesId.includes(attention.serviceId)) {
         throw new HttpException(
           `El profesional no está habilitado para realizar este servicio`,
@@ -2835,108 +2765,49 @@ export class AttentionService {
       // Assign professional to attention
       attention.professionalId = professionalId;
       attention.professionalName = professionalName || professional.personalInfo?.name || 'N/I';
-
+      
       this.logger.log(`[AttentionService.assignProfessional] VALUES ASSIGNED - ID: ${attention.professionalId}, Name: ${attention.professionalName}`);
 
-      // GARANTIZAR que siempre se guarde la información de comisión del profesional
-      // Crear paymentConfirmationData si no existe como objeto plano (sin prototipo)
-      if (!attention.paymentConfirmationData) {
-        attention.paymentConfirmationData = {
-          bankEntity: '',
-          procedureNumber: 0,
-          proceduresTotalNumber: 0,
-          transactionId: '',
-          paymentType: undefined,
-          paymentMethod: undefined,
-          installments: 0,
-          paid: false,
-          totalAmount: 0,
-          paymentAmount: 0,
-          paymentPercentage: 0,
-          paymentDate: undefined,
-          paymentCommission: 0,
-          paymentComment: '',
-          paymentFiscalNote: '',
-          promotionalCode: '',
-          paymentDiscountAmount: 0,
-          paymentDiscountPercentage: 0,
-          user: '',
-          packageId: '',
-          pendingPaymentId: '',
-          processPaymentNow: false,
-          confirmInstallments: false,
-          // Campos de comisión del profesional
-          professionalId: undefined,
-          professionalCommissionType: undefined,
-          professionalCommissionValue: undefined,
-          professionalCommissionAmount: undefined,
-          professionalCommissionPercentage: undefined,
-          professionalCommissionNotes: undefined
-        };
-      }
-
-      // Asignar siempre los datos del profesional a paymentConfirmationData
-      attention.paymentConfirmationData.professionalId = professionalId;
-
-      // Guardar información de comisión del profesional (SIEMPRE)
-      if (professional.financialInfo) {
+      // Auto-suggest commission if paymentConfirmationData exists and professional has commission configured
+      if (attention.paymentConfirmationData && professional.financialInfo) {
         const { commissionType, commissionValue } = professional.financialInfo;
-
-        // Guardar configuración de comisión independientemente de si existe paymentAmount
-        attention.paymentConfirmationData.professionalCommissionType = commissionType || '';
-        attention.paymentConfirmationData.professionalCommissionValue = commissionValue || 0;
-
+        
         if (commissionType && commissionValue && commissionValue > 0) {
-          // Si ya hay un monto de pago, calcular comisión automáticamente
-          if (attention.paymentConfirmationData.totalAmount && attention.paymentConfirmationData.totalAmount > 0) {
-            let commissionAmount = 0;
-            let commissionPercentage = 0;
+          // Calculate commission amount based on type
+          let commissionAmount = 0;
+          let commissionPercentage = 0;
 
-            if (commissionType === 'PERCENTAGE') {
-              commissionPercentage = commissionValue;
-              commissionAmount = Math.round((attention.paymentConfirmationData.totalAmount * commissionValue) / 100);
-            } else if (commissionType === 'FIXED') {
-              commissionAmount = commissionValue;
-              commissionPercentage = (commissionValue / attention.paymentConfirmationData.totalAmount) * 100;
-            }
-
-            attention.paymentConfirmationData.professionalCommissionAmount = commissionAmount;
-            attention.paymentConfirmationData.professionalCommissionPercentage = commissionPercentage;
-            attention.paymentConfirmationData.professionalCommissionNotes =
-              `Comisión auto-calculada del profesional ${professional.personalInfo?.name || professionalId}`;
-          } else {
-            // Si no hay monto, solo guardar la configuración para uso posterior
-            attention.paymentConfirmationData.professionalCommissionNotes =
-              `Profesional ${professional.personalInfo?.name || professionalId} configurado - comisión: ${commissionType === 'PERCENTAGE' ? commissionValue + '%' : commissionValue}`;
+          if (commissionType === 'PERCENTAGE') {
+            commissionPercentage = commissionValue;
+            commissionAmount = (attention.paymentConfirmationData.totalAmount * commissionValue) / 100;
+          } else if (commissionType === 'FIXED') {
+            commissionAmount = commissionValue;
+            commissionPercentage = (commissionValue / attention.paymentConfirmationData.totalAmount) * 100;
           }
+
+          // Update paymentConfirmationData with professional commission data
+          attention.paymentConfirmationData.professionalId = professionalId;
+          attention.paymentConfirmationData.professionalCommissionType = commissionType;
+          attention.paymentConfirmationData.professionalCommissionValue = commissionValue;
+          attention.paymentConfirmationData.professionalCommissionAmount = commissionAmount;
+          attention.paymentConfirmationData.professionalCommissionPercentage = commissionPercentage;
+          attention.paymentConfirmationData.professionalCommissionNotes = 
+            `Comisión auto-sugerida del profesional ${professional.personalInfo?.name || professionalId}`;
         }
-      } else {
-        // Limpiar datos de comisión si el profesional no tiene configuración
-        attention.paymentConfirmationData.professionalCommissionType = '';
-        attention.paymentConfirmationData.professionalCommissionValue = 0;
-        attention.paymentConfirmationData.professionalCommissionAmount = 0;
-        attention.paymentConfirmationData.professionalCommissionPercentage = 0;
-        attention.paymentConfirmationData.professionalCommissionNotes =
-          `Profesional ${professional.personalInfo?.name || professionalId} asignado - sin configuración de comisión`;
       }
 
       // Update attention
-      // Asegurar que paymentConfirmationData sea un objeto plano antes de guardar
-      if (attention.paymentConfirmationData) {
-        attention.paymentConfirmationData = JSON.parse(JSON.stringify(attention.paymentConfirmationData));
-      }
-
       const updatedAttention = await this.update(user, attention);
-
+      
       // Debug: Log what we're getting back
       this.logger.log(`[AttentionService] Before update - ID: ${attention.professionalId}, Name: ${attention.professionalName}`);
       this.logger.log(`[AttentionService] After update - ID: ${updatedAttention.professionalId}, Name: ${updatedAttention.professionalName}`);
-
+      
       // Ensure professionalId and professionalName are set in the response
       this.logger.log(`[AttentionService] Professional assigned - ID: ${attention.professionalId}, Name: ${attention.professionalName}`);
       updatedAttention.professionalId = attention.professionalId;
       updatedAttention.professionalName = attention.professionalName;
-
+      
       this.logger.log(`[AttentionService] Final response - ID: ${updatedAttention.professionalId}, Name: ${updatedAttention.professionalName}`);
 
       // Get commerce to extract businessId
@@ -2956,7 +2827,7 @@ export class AttentionService {
         attention.paymentConfirmationData?.professionalCommissionValue,
         attention.paymentConfirmationData?.professionalCommissionAmount
       );
-
+      
       await publish('professional-assigned-to-attention', event, {
         attentionId,
         professionalId,

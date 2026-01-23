@@ -14,7 +14,6 @@ import { IncomeModule } from '../income/income.module';
 import { ModuleModule } from '../module/module.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PackageModule } from '../package/package.module';
-import { ProfessionalModule } from '../professional/professional.module';
 import { QueueModule } from '../queue/queue.module';
 import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
@@ -22,6 +21,7 @@ import { WaitlistModule } from '../waitlist/waitlist.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
 import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 import { ConsentOrchestrationModule } from '../shared/modules/consent-orchestration.module';
+import { ProfessionalModule } from '../professional/professional.module';
 
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
@@ -50,10 +50,10 @@ import { Booking } from './model/booking.entity';
     forwardRef(() => DocumentsModule),
     forwardRef(() => BookingBlockNumberUsedModule),
     forwardRef(() => TelemedicineModule),
-    forwardRef(() => ProfessionalModule),
     AuditLogModule,
     forwardRef(() => LgpdConsentModule),
     forwardRef(() => ConsentOrchestrationModule),
+    forwardRef(() => ProfessionalModule),
   ],
   providers: [BookingService, BookingDefaultBuilder],
   exports: [BookingService],

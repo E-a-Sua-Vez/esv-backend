@@ -24,6 +24,7 @@
       "business.main-menu.booking-manage": true,
       "business.main-menu.modules-admin": true,
       "business.main-menu.collaborators-admin": true,
+      "business.main-menu.professionals-admin": true,
       "business.main-menu.queues-admin": true,
       "business.main-menu.business-resume": true,
       "business.main-menu.surveys-admin": true,
@@ -38,7 +39,7 @@
       "business.main-menu.service-admin": true,
       "business.main-menu.tracing": true,
       "business.main-menu.product-admin": true,
-      "business.main-menu.product-stock": false,
+      "business.main-menu.product-stock": true,
       "business.main-menu.documents": true,
       "business.main-menu.control-admin": true,
       "business.main-menu.financial": true,
@@ -56,12 +57,12 @@
       "business.main-menu.pdf-templates-admin": true,
       "business.main-menu.audit-log": true,
 
-      "businesses.admin.add": false,
-      "businesses.admin.update": false,
-      "businesses.admin.edit": false,
-      "businesses.admin.read": false,
+      "businesses.admin.add": true,
+      "businesses.admin.update": true,
+      "businesses.admin.edit": true,
+      "businesses.admin.read": true,
       "businesses.admin.limit": 0,
-      "businesses.admin.view": false,
+      "businesses.admin.view": true,
 
       "client.notify.email": false,
       "client.notify.whatsapp": false,
@@ -70,24 +71,26 @@
 
       "collaborator.attention.attend": true,
       "collaborator.attention.transfer": true,
+      "collaborator.attention.edit": true,
+      "collaborator.attention.cancel": true,
+      "collaborator.attention.skip": true,
+      "collaborator.attention.finish": true,
+      "collaborator.attention.payment-confirm": true,
+      "collaborator.attention.patient-history": true,
+      "collaborator.attention.products": true,
+      "collaborator.bookings.admin": true,
+      "collaborator.bookings.manage": true,
+      "collaborator.bookings.cancel": true,
+      "collaborator.bookings.confirm": true,
+      "collaborator.bookings.transfer": true,
+      "collaborator.bookings.edit": true,
       "collaborator.module.update": true,
       "collaborator.main-menu.dashboard": true,
       "collaborator.main-menu.queue-manage": true,
       "collaborator.main-menu.booking-manage": true,
       "collaborator.main-menu.product-stock": true,
       "collaborator.main-menu.tracing": true,
-      "collaborator.bookings.admin": true,
       "collaborator.waitlists.book": true,
-      "collaborator.bookings.manage": true,
-      "collaborator.bookings.cancel": true,
-      "collaborator.bookings.confirm": true,
-      "collaborator.bookings.transfer": true,
-      "collaborator.bookings.edit": true,
-      "collaborator.attention.skip": true,
-      "collaborator.attention.finish": true,
-      "collaborator.attention.payment-confirm": true,
-      "collaborator.attention.patient-history": true,
-      "collaborator.attention.products": true,
 
       "collaborators.admin.update": true,
       "collaborators.admin.read": true,
@@ -96,6 +99,14 @@
       "collaborators.admin.edit": true,
       "collaborators.admin.view": true,
       "collaborators.admin.add": true,
+
+      "professionals.admin.view": true,
+      "professionals.admin.read": true,
+      "professionals.admin.edit": true,
+      "professionals.admin.update": true,
+      "professionals.admin.add": true,
+      "professionals.admin.limit": 20,
+      "professionals.admin.unavailable": true,
 
       "configuration.admin.view": true,
       "configuration.admin.whatsapp-notify-one": true,
@@ -190,12 +201,12 @@
       "plan.admin.add": true,
       "plan.admin.edit": true,
 
-      "plans.admin.view": false,
-      "plans.admin.update": false,
-      "plans.admin.read": false,
-      "plans.admin.add": false,
+      "plans.admin.view": true,
+      "plans.admin.update": true,
+      "plans.admin.read": true,
+      "plans.admin.add": true,
       "plans.admin.limit": 0,
-      "plans.admin.edit": false,
+      "plans.admin.edit": true,
 
       "queues.admin.edit": true,
       "queues.admin.add": true,
@@ -243,6 +254,9 @@
       "surveys.admin.limit": 5,
 
       "user.notification.add": true,
+
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
 
       "products.admin.limit": 10,
       "products.admin.read": true,
@@ -403,6 +417,7 @@
       "business.main-menu.booking-manage": true,
       "business.main-menu.modules-admin": true,
       "business.main-menu.collaborators-admin": true,
+      "business.main-menu.professionals-admin": true,
       "business.main-menu.queues-admin": true,
       "business.main-menu.business-resume": true,
       "business.main-menu.surveys-admin": true,
@@ -475,6 +490,14 @@
       "collaborators.admin.edit": true,
       "collaborators.admin.view": true,
       "collaborators.admin.add": true,
+
+      "professionals.admin.view": true,
+      "professionals.admin.read": true,
+      "professionals.admin.edit": true,
+      "professionals.admin.update": true,
+      "professionals.admin.add": true,
+      "professionals.admin.limit": 20,
+      "professionals.admin.unavailable": true,
 
       "configuration.admin.view": true,
       "configuration.admin.whatsapp-notify-one": true,
@@ -629,6 +652,9 @@
       "surveys.admin.limit": 5,
 
       "user.notification.add": true,
+
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
 
       "products.admin.limit": 10,
       "products.admin.read": true,
@@ -867,6 +893,9 @@
       "client.admin.edit": true,
       "client.admin.add": true,
 
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
+
       "messages.admin.send": true,
       "messages.admin.view": true,
       "messages.admin.read": true,
@@ -889,7 +918,9 @@
     "permissions": {
       "client.notify.whatsapp": true,
       "client.notify.email": true,
-      "user.notification.add": true
+      "user.notification.add": true,
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true
     }
   },
   {
@@ -915,6 +946,9 @@
       "client-portal.documents.download": true,
       "client-portal.history.view": true,
       "client-portal.history.details": true,
+
+      "user.bookings.cancel": true,
+      "user.attentions.cancel": true,
 
       "messages.admin.send": true,
       "messages.admin.view": true,

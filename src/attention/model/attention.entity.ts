@@ -90,7 +90,7 @@ export class Attention {
   currentStage?: AttentionStage; // Etapa actual de la atención
   stageHistory?: AttentionStageHistory[]; // Historial de etapas por las que ha pasado
   originalQueueId?: string; // Referencia a la cola original (útil cuando se transfiere entre colas)
-
+  
   // Campo para asignar profesional que ejecuta el servicio
   professionalId?: string; // ID del profesional asignado
   professionalName?: string; // Nombre del profesional asignado (desnormalizado para consultas rápidas)

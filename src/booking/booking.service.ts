@@ -1196,12 +1196,12 @@ export class BookingService {
   public async getBookingDetails(id: string): Promise<BookingDetailsDto> {
     try {
       const booking = await this.getBookingById(id);
-
+      
       // Debug: Log what booking data we have
       this.logger.log(`[BookingService.getBookingDetails] Booking ID: ${booking.id}`);
       this.logger.log(`[BookingService.getBookingDetails] Professional ID: ${booking.professionalId}`);
       this.logger.log(`[BookingService.getBookingDetails] Professional Name: ${booking.professionalName}`);
-
+      
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
       // Debug: Log booking block
@@ -1428,35 +1428,6 @@ export class BookingService {
               // GESTION DE ENTRADA EN CAJA
               if (confirmationData !== undefined) {
                 let income;
-
-                // Obtener datos del profesional si existe professionalId
-                let professionalName = null;
-                let professionalCommissionType = null;
-                let professionalCommissionValue = null;
-                let professionalCommissionNotes = null;
-
-                if (confirmationData.professionalId) {
-                  try {
-                    const professional = await this.professionalService.getProfessionalById(confirmationData.professionalId);
-                    if (professional) {
-                      professionalName = professional.personalInfo?.name || booking.professionalName || null;
-                      professionalCommissionType = confirmationData.professionalCommissionType ||
-                        professional.financialInfo?.commissionType || null;
-                      professionalCommissionValue = confirmationData.professionalCommissionValue ||
-                        professional.financialInfo?.commissionValue || null;
-                      professionalCommissionNotes = confirmationData.professionalCommissionNotes ||
-                        `Comisión del profesional ${professionalName}` || null;
-                    }
-                  } catch (error) {
-                    this.logger.warn(`No se pudo obtener datos del profesional ${confirmationData.professionalId}: ${error.message}`);
-                    // Usar datos disponibles en confirmationData
-                    professionalName = booking.professionalName || null;
-                    professionalCommissionType = confirmationData.professionalCommissionType || null;
-                    professionalCommissionValue = confirmationData.professionalCommissionValue || null;
-                    professionalCommissionNotes = confirmationData.professionalCommissionNotes || null;
-                  }
-                }
-
                 if (confirmationData.pendingPaymentId) {
                   income = await this.incomeService.payPendingIncome(
                     user,
@@ -1493,11 +1464,7 @@ export class BookingService {
                       confirmationData.confirmInstallments,
                       { user },
                       confirmationData.professionalId,
-                      confirmationData.professionalCommissionAmount,
-                      professionalName,
-                      professionalCommissionType,
-                      professionalCommissionValue,
-                      professionalCommissionNotes
+                      confirmationData.professionalCommissionAmount
                     );
                   } else {
                     if (!packageId || !pack.paid || pack.paid === false) {
@@ -1523,11 +1490,7 @@ export class BookingService {
                         { user },
                         undefined,
                         confirmationData.professionalId,
-                        confirmationData.professionalCommissionAmount,
-                        professionalName,
-                        professionalCommissionType,
-                        professionalCommissionValue,
-                        professionalCommissionNotes
+                        confirmationData.professionalCommissionAmount
                       );
                     }
                   }
@@ -1632,7 +1595,6 @@ export class BookingService {
       termsConditionsAcceptedCode,
       termsConditionsToAcceptedAt,
       telemedicineConfig,
-      professionalId,
     } = booking;
 
     // Determinar tipo de atención basado en telemedicina
@@ -1668,8 +1630,7 @@ export class BookingService {
       termsConditionsToAcceptCode,
       termsConditionsAcceptedCode,
       termsConditionsToAcceptedAt,
-      normalizedTelemedicineConfig,
-      professionalId
+      normalizedTelemedicineConfig
     );
 
     // Si se creó sesión de telemedicina, vincular con booking
@@ -2296,7 +2257,7 @@ export class BookingService {
       }
 
       // Validate professional can perform the services
-      if (booking.servicesId?.length > 0 &&
+      if (booking.servicesId?.length > 0 && 
           professional.professionalInfo?.servicesId?.length > 0) {
         const hasAllServices = booking.servicesId.every(
           serviceId => professional.professionalInfo.servicesId.includes(serviceId)
@@ -2316,7 +2277,7 @@ export class BookingService {
       // Auto-suggest commission if confirmation data exists and professional has commission configured
       if (booking.confirmationData && professional.financialInfo) {
         const { commissionType, commissionValue } = professional.financialInfo;
-
+        
         if (commissionType && commissionValue && commissionValue > 0) {
           // Calculate commission amount based on type
           let commissionAmount = 0;
@@ -2336,23 +2297,23 @@ export class BookingService {
           booking.confirmationData.professionalCommissionValue = commissionValue;
           booking.confirmationData.professionalCommissionAmount = commissionAmount;
           booking.confirmationData.professionalCommissionPercentage = commissionPercentage;
-          booking.confirmationData.professionalCommissionNotes =
+          booking.confirmationData.professionalCommissionNotes = 
             `Comisión auto-sugerida del profesional ${professional.personalInfo?.name || professionalId}`;
         }
       }
 
       // Update booking
       const updatedBooking = await this.update(user, booking);
-
+      
       // Debug: Log what we're getting back
       this.logger.log(`[BookingService] Before update - ID: ${booking.professionalId}, Name: ${booking.professionalName}`);
       this.logger.log(`[BookingService] After update - ID: ${updatedBooking.professionalId}, Name: ${updatedBooking.professionalName}`);
-
+      
       // Ensure professionalId and professionalName are set in the response
       this.logger.log(`[BookingService] Professional assigned - ID: ${booking.professionalId}, Name: ${booking.professionalName}`);
       updatedBooking.professionalId = booking.professionalId;
       updatedBooking.professionalName = booking.professionalName;
-
+      
       this.logger.log(`[BookingService] Final response - ID: ${updatedBooking.professionalId}, Name: ${updatedBooking.professionalName}`);
 
       // Get commerce and queue for event metadata
@@ -2372,7 +2333,7 @@ export class BookingService {
         booking.confirmationData?.professionalCommissionValue,
         booking.confirmationData?.professionalCommissionAmount
       );
-
+      
       await publish('professional-assigned-to-booking', event, {
         bookingId,
         professionalId,

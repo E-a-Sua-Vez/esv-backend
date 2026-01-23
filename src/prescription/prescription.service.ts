@@ -120,6 +120,24 @@ export class PrescriptionService {
    * Crear una nueva receta
    */
   async createPrescription(user: string, createDto: CreatePrescriptionDto): Promise<Prescription> {
+    // Validación: Debe tener al menos professionalId o collaboratorId
+    if (!createDto.professionalId && !createDto.collaboratorId) {
+      this.logger.warn('Creating prescription without professionalId or collaboratorId');
+    }
+
+    // Auto-resolución: Si solo tiene collaboratorId, intentar obtener professionalId vinculado
+    if (createDto.collaboratorId && !createDto.professionalId && this.collaboratorService) {
+      try {
+        const collaborator = await this.collaboratorService.getCollaboratorById(createDto.collaboratorId);
+        if (collaborator?.professionalId) {
+          createDto.professionalId = collaborator.professionalId;
+          this.logger.log(`Auto-resolved professionalId ${createDto.professionalId} from collaboratorId ${createDto.collaboratorId}`);
+        }
+      } catch (error) {
+        this.logger.warn(`Could not auto-resolve professionalId from collaboratorId ${createDto.collaboratorId}: ${error.message}`);
+      }
+    }
+
     // Validar que todos los medicamentos existan
     for (const medication of createDto.medications) {
       try {
@@ -143,6 +161,8 @@ export class PrescriptionService {
     prescription.doctorId = createDto.doctorId;
     prescription.doctorName = createDto.doctorName;
     prescription.doctorLicense = createDto.doctorLicense;
+    prescription.collaboratorId = createDto.collaboratorId;
+    prescription.professionalId = createDto.professionalId;
 
     prescription.medications = createDto.medications.map(med => ({
       ...med,
@@ -220,10 +240,12 @@ export class PrescriptionService {
           const collaborator = await this.collaboratorService?.getCollaboratorById(
             prescription.doctorId
           );
-          if (collaborator?.digitalSignature) {
-            doctorSignature = collaborator.digitalSignature.startsWith('http')
-              ? collaborator.digitalSignature
-              : `${process.env.BACKEND_URL || ''}${collaborator.digitalSignature}`;
+          // Acceder a medicalData si está disponible
+          const medicalData = (collaborator as any)?.medicalData;
+          if (medicalData?.digitalSignature) {
+            doctorSignature = medicalData.digitalSignature.startsWith('http')
+              ? medicalData.digitalSignature
+              : `${process.env.BACKEND_URL || ''}${medicalData.digitalSignature}`;
           }
         } catch (error) {
           this.logger.warn(`Could not load doctor signature: ${error.message}`);

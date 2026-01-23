@@ -33,8 +33,7 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     date?: Date,
     servicesId?: string[],
     servicesDetails?: object[],
-    clientId?: string,
-    professionalId?: string
+    clientId?: string
   ): Promise<Attention> {
     const currentNumber = queue.currentNumber;
     const attention = new Attention();
@@ -46,16 +45,12 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     attention.number = currentNumber + 1;
     if (queue.professionalId !== undefined) {
       attention.collaboratorId = queue.professionalId; // Attention usa collaboratorId para referirse al profesional que registra
-      attention.professionalId = queue.professionalId;
     } else if (queue.collaboratorId !== undefined) {
       // Compatibilidad temporal: si aún no migrado, usar collaboratorId del queue
       attention.collaboratorId = queue.collaboratorId;
     }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
-    }
-    if (professionalId !== undefined) {
-      attention.professionalId = professionalId;
     }
     attention.channel = channel;
     if (userId !== undefined) {

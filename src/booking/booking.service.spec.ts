@@ -183,9 +183,7 @@ describe('BookingService', () => {
               bookingBlockNumbersUsedService,
               telemedicineService,
               logger,
-              undefined, // auditLogService
-              undefined, // lgpdConsentService
-              undefined  // consentOrchestrationService
+              professionalService
             );
             return service;
           },

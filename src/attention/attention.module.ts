@@ -12,13 +12,13 @@ import { FeatureToggleModule } from '../feature-toggle/feature-toggle.module';
 import { IncomeModule } from '../income/income.module';
 import { ModuleModule } from '../module/module.module';
 import { NotificationModule } from '../notification/notification.module';
-import { ProfessionalModule } from '../professional/professional.module';
 import { QueueModule } from '../queue/queue.module';
 import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
 import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 import { ConsentOrchestrationModule } from '../shared/modules/consent-orchestration.module';
+import { ProfessionalModule } from '../professional/professional.module';
 
 import { AttentionController } from './attention.controller';
 import { AttentionService } from './attention.service';
@@ -46,10 +46,10 @@ import { Attention } from './model/attention.entity';
     forwardRef(() => DocumentsModule),
     forwardRef(() => TelemedicineModule),
     forwardRef(() => BookingModule),
-    forwardRef(() => ProfessionalModule),
     AuditLogModule,
     forwardRef(() => LgpdConsentModule),
     forwardRef(() => ConsentOrchestrationModule),
+    forwardRef(() => ProfessionalModule),
   ],
   providers: [
     AttentionService,
