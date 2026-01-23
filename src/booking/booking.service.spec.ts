@@ -183,7 +183,9 @@ describe('BookingService', () => {
               bookingBlockNumbersUsedService,
               telemedicineService,
               logger,
-              professionalService
+              undefined, // auditLogService
+              undefined, // lgpdConsentService
+              undefined  // consentOrchestrationService
             );
             return service;
           },

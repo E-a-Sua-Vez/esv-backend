@@ -32,4 +32,15 @@ export class CollaboratorDetailsDto {
   // Relación con Professional (NUEVO)
   isProfessional?: boolean; // Indica si tiene Professional asociado
   professionalId?: string; // ID del Professional asociado
+  
+  // Firma digital (opcional)
+  digitalSignature?: string;
+  canSignDocuments?: boolean;
+  
+  // CRM data (opcional)
+  crm?: any;
+  crmState?: any;
+  
+  // Medical data (opcional)
+  medicalData?: any;
 }

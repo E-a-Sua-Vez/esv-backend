@@ -10,7 +10,6 @@ import * as crypto from 'crypto';
 
 import { Prescription, MedicationItem } from './model/prescription.entity';
 import { CollaboratorService } from '../collaborator/collaborator.service';
-import { ProfessionalService } from '../professional/professional.service';
 
 @Injectable()
 export class PrescriptionPdfService {
@@ -18,8 +17,7 @@ export class PrescriptionPdfService {
   private readonly logger = new Logger(PrescriptionPdfService.name);
 
   constructor(
-    private collaboratorService: CollaboratorService,
-    private professionalService: ProfessionalService
+    private collaboratorService: CollaboratorService
   ) {
     this.s3 = new AWS.S3({
       apiVersion: '2006-03-01',
@@ -30,12 +28,9 @@ export class PrescriptionPdfService {
   }
 
   /**
-   * Obtener variables médicas extendidas de un profesional o colaborador (fallback)
+   * Obtener variables médicas extendidas de un colaborador
    */
-  private async getDoctorVariables(
-    professionalId?: string,
-    collaboratorId?: string
-  ): Promise<{
+  private async getDoctorVariables(collaboratorId: string): Promise<{
     doctorName?: string;
     doctorTitle?: string;
     doctorLicense?: string;
@@ -47,58 +42,27 @@ export class PrescriptionPdfService {
     doctorSignature?: string;
   }> {
     try {
-      // PRIORIDAD 1: Usar professionalId si existe
-      if (professionalId) {
-        const professional = await this.professionalService.getProfessionalForMedicalDocuments(professionalId);
+      const collaborator = await this.collaboratorService.getCollaboratorForMedicalDocuments(collaboratorId);
 
-        return {
-          doctorName: professional.name || '',
-          doctorTitle: professional.professionalTitle || 'Dr.',
-          doctorLicense: professional.crm || '',
-          doctorSpecialization: professional.specialties || '',
-          doctorClinicName: professional.medicalData?.clinicName || '',
-          doctorClinicAddress: professional.medicalData?.clinicAddress || professional.medicalData?.professionalAddress || '',
-          doctorProfessionalPhone: professional.medicalData?.professionalPhone || professional.medicalData?.clinicPhone || '',
-          doctorProfessionalEmail: professional.email || '',
-          doctorSignature: professional.digitalSignature || '',
-        };
+      const variables: any = {
+        doctorName: collaborator.name || '',
+        doctorTitle: collaborator.professionalTitle || 'Dr.',
+        doctorLicense: collaborator.crm || collaborator.medicalData?.medicalLicense || '',
+        doctorSignature: collaborator.digitalSignature || '',
+      };
+
+      // Datos médicos extendidos si están disponibles
+      if (collaborator.medicalData) {
+        variables.doctorSpecialization = collaborator.medicalData.specialization || '';
+        variables.doctorClinicName = collaborator.medicalData.clinicName || '';
+        variables.doctorClinicAddress = collaborator.medicalData.clinicAddress || collaborator.medicalData.professionalAddress || '';
+        variables.doctorProfessionalPhone = collaborator.medicalData.professionalPhone || collaborator.medicalData.clinicPhone || '';
+        variables.doctorProfessionalEmail = collaborator.medicalData.professionalEmail || '';
       }
 
-      // FALLBACK: Usar collaboratorId si no hay professionalId (compatibilidad)
-      if (collaboratorId) {
-        this.logger.warn(`Using deprecated collaboratorId for medical document. Please migrate to professionalId. CollaboratorId: ${collaboratorId}`);
-
-        const collaborator = await this.collaboratorService.getCollaboratorForMedicalDocuments(collaboratorId);
-
-        // Verificar si tiene professional vinculado
-        if (collaborator.professionalId) {
-          this.logger.log(`Found professionalId ${collaborator.professionalId} linked to collaboratorId ${collaboratorId}`);
-          return this.getDoctorVariables(collaborator.professionalId, undefined);
-        }
-
-        // Usar datos del collaborator (legacy)
-        const variables: any = {
-          doctorName: collaborator.name || '',
-          doctorTitle: 'Dr.', // Sin acceso directo, usar default
-          doctorLicense: collaborator.medicalLicense || '',
-          doctorSignature: collaborator.digitalSignature || '',
-        };
-
-        // Datos médicos extendidos si están disponibles
-        if (collaborator.medicalLicense) {
-          variables.doctorSpecialization = collaborator.specialization || '';
-          variables.doctorClinicName = collaborator.clinicName || '';
-          variables.doctorClinicAddress = collaborator.clinicAddress || collaborator.professionalAddress || '';
-          variables.doctorProfessionalPhone = collaborator.professionalPhone || collaborator.clinicPhone || '';
-          variables.doctorProfessionalEmail = collaborator.professionalEmail || '';
-        }
-
-        return variables;
-      }
-
-      return {};
+      return variables;
     } catch (error) {
-      this.logger.error(`Could not fetch doctor data: ${error.message}`);
+      this.logger.warn(`Could not fetch extended doctor data for collaborator ${collaboratorId}: ${error.message}`);
       return {};
     }
   }
@@ -855,11 +819,10 @@ export class PrescriptionPdfService {
         width: 200,
       });
 
-      // Obtener variables médicas extendidas del profesional o colaborador (fallback)
-      const extendedDoctorVariables = await this.getDoctorVariables(
-        prescription.professionalId,
-        prescription.collaboratorId // fallback
-      );
+      // Obtener variables médicas extendidas del colaborador
+      const extendedDoctorVariables = prescription.collaboratorId
+        ? await this.getDoctorVariables(prescription.collaboratorId)
+        : {};
 
       // Variables disponibles para templates (EXTENDIDAS con datos médicos)
       const templateVariables = {

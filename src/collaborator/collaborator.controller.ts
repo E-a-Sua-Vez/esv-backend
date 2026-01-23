@@ -27,7 +27,6 @@ import { User } from 'src/auth/user.decorator';
 
 import { CollaboratorService } from './collaborator.service';
 import { CollaboratorDetailsDto } from './dto/collaborator-details.dto';
-import { CreateAssociatedProfessionalDto } from './dto/create-associated-professional.dto';
 import { Collaborator } from './model/collaborator.entity';
 
 @ApiTags('collaborator')
@@ -128,14 +127,88 @@ export class CollaboratorController {
     return this.collaboratorService.getCollaboratorsByCommerceIdAndEmail(commerceId, email);
   }
 
-  // Los endpoints de firma digital y datos médicos ahora están en ProfessionalController
-
-  @Patch('/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/digital-signature')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Actualizar colaborador',
-    description: 'Actualiza los datos básicos de un colaborador',
+    summary: 'Actualizar firma digital del colaborador',
+    description: 'Permite subir o actualizar la firma digital del colaborador',
   })
   @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        digitalSignature: { type: 'string', description: 'URL o base64 de la imagen de firma' },
+        crm: { type: 'string', description: 'Número de registro médico (CRM)' },
+        crmState: { type: 'string', description: 'Estado del CRM (ej: SP, RJ, MG)' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Firma digital actualizada exitosamente',
+    type: Collaborator,
+  })
+  async updateDigitalSignature(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { digitalSignature?: string; crm?: string; crmState?: string }
+  ): Promise<Collaborator> {
+    const collaborator = await this.collaboratorService.getCollaboratorById(id);
+    if (!collaborator) {
+      throw new HttpException('Collaborator not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Actualizar firma digital y CRM
+    if (body.digitalSignature !== undefined) {
+      collaborator.digitalSignature = body.digitalSignature;
+    }
+    if (body.crm !== undefined) {
+      collaborator.crm = body.crm;
+    }
+    if (body.crmState !== undefined) {
+      collaborator.crmState = body.crmState;
+    }
+
+    return this.collaboratorService.updateCollaborator(
+      user,
+      id,
+      collaborator.name,
+      collaborator.moduleId,
+      collaborator.phone,
+      collaborator.active,
+      collaborator.available,
+      collaborator.alias,
+      collaborator.servicesId,
+      collaborator.type,
+      collaborator.commercesId,
+      collaborator.digitalSignature,
+      collaborator.crm,
+      collaborator.crmState
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('/:id/digital-signature/upload')
+  @UseInterceptors(FileInterceptor('signature'))
+  @ApiOperation({
+    summary: 'Subir firma digital (archivo)',
+    description: 'Sube una imagen de la firma digital del colaborador a S3 y actualiza su URL'
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'ID del colaborador' })
+  public async uploadDigitalSignature(
+    @User() user,
+    @Param('id') id: string,
+    @UploadedFile() signature: any,
+  ): Promise<{ signatureUrl: string }> {
+    return this.collaboratorService.uploadDigitalSignature(user, id, signature);
+  }
+
+  @Patch('/:id')
   public async updateCollaborator(
     @User() user,
     @Param() params: any,
@@ -144,8 +217,6 @@ export class CollaboratorController {
     const { id } = params;
     const {
       name,
-      lastName,
-      idNumber,
       type,
       alias,
       phone,
@@ -154,7 +225,9 @@ export class CollaboratorController {
       available,
       servicesId,
       commercesId,
-      role,
+      digitalSignature,
+      crm,
+      crmState,
     } = body;
     return this.collaboratorService.updateCollaborator(
       user,
@@ -168,9 +241,9 @@ export class CollaboratorController {
       servicesId,
       type,
       commercesId,
-      lastName,
-      idNumber,
-      role
+      digitalSignature,
+      crm,
+      crmState
     );
   }
 
@@ -204,7 +277,7 @@ export class CollaboratorController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   public async createCollaborator(@User() user, @Body() body: Collaborator): Promise<Collaborator> {
-    const { name, lastName, idNumber, commerceId, commercesId, email, type, phone, moduleId, bot, alias, servicesId, role } =
+    const { name, commerceId, commercesId, email, type, phone, moduleId, bot, alias, servicesId } =
       body;
     return this.collaboratorService.createCollaborator(
       user,
@@ -217,10 +290,7 @@ export class CollaboratorController {
       moduleId,
       bot,
       alias,
-      servicesId,
-      role,
-      lastName,
-      idNumber
+      servicesId
     );
   }
 
@@ -277,7 +347,10 @@ export class CollaboratorController {
       collaborator.alias,
       collaborator.servicesId,
       collaborator.type,
-      collaborator.commercesId
+      collaborator.commercesId,
+      collaborator.digitalSignature,
+      collaborator.crm,
+      collaborator.crmState
     );
   }
 
@@ -495,42 +568,5 @@ export class CollaboratorController {
       throw new HttpException('photoUrl es requerido', HttpStatus.BAD_REQUEST);
     }
     return this.collaboratorService.updateProfilePhoto(user, id, body.photoUrl);
-  }
-
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @Post('/:id/create-associated-professional')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Crear Professional asociado',
-    description: 'Crea un perfil Professional asociado a partir de los datos del Collaborator. Establece relación bidireccional.'
-  })
-  @ApiParam({ name: 'id', description: 'ID del colaborador', example: 'collab-123' })
-  @ApiBody({ type: CreateAssociatedProfessionalDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Professional creado y asociado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        collaborator: { type: 'object', description: 'Collaborator actualizado con isProfessional=true' },
-        professional: { type: 'object', description: 'Professional creado' }
-      }
-    }
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'El colaborador ya tiene un professional asociado'
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Colaborador no encontrado'
-  })
-  public async createAssociatedProfessional(
-    @User() user,
-    @Param('id') id: string,
-    @Body() dto: CreateAssociatedProfessionalDto
-  ): Promise<{ collaborator: Collaborator; professional: any }> {
-    return this.collaboratorService.createAssociatedProfessional(user, id, dto);
   }
 }

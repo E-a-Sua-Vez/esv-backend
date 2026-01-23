@@ -251,13 +251,5 @@
   {
     "name": "allow-attention-without-consents",
     "type": "PRODUCT"
-  },
-  {
-    "name": "professional-assignment-enabled",
-    "type": "PRODUCT"
-  },
-  {
-    "name": "professional-commission-enabled",
-    "type": "PRODUCT"
   }
 ]

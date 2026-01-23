@@ -50,8 +50,6 @@ import { PlanModule } from './plan/plan.module';
 import { PlanActivationModule } from './plan-activation/plan-activation.module';
 import { PrescriptionModule } from './prescription/prescription.module';
 import { ProductModule } from './product/product.module';
-import { ProfessionalModule } from './professional/professional.module';
-import { ProfessionalCommissionPaymentModule } from './professional-commission-payment/professional-commission-payment.module';
 import { QueueModule } from './queue/queue.module';
 import { RolModule } from './rol/rol.module';
 import { ServiceModule } from './service/service.module';
@@ -115,8 +113,6 @@ import { ClientPortalModule } from './client-portal/client-portal.module';
     ClientContactModule,
     LeadModule,
     ProductModule,
-    ProfessionalModule,
-    ProfessionalCommissionPaymentModule,
     DocumentsModule,
     IncomeModule,
     OutcomeTypeModule,

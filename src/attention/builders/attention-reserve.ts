@@ -76,10 +76,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
       attention.number = block.number;
       attention.block = block;
     }
-    if (queue.professionalId !== undefined) {
-      attention.collaboratorId = queue.professionalId; // Attention usa collaboratorId para referirse al profesional que registra
-    } else if (queue.collaboratorId !== undefined) {
-      // Compatibilidad temporal: si aún no migrado, usar collaboratorId del queue
+    if (queue.collaboratorId !== undefined) {
       attention.collaboratorId = queue.collaboratorId;
     }
     if (collaboratorId !== undefined) {

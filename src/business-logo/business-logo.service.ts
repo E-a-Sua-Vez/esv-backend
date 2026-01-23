@@ -242,19 +242,7 @@ export class BusinessLogoService {
     };
 
     try {
-      const stream = s3.getObject(getObjectRequest).createReadStream();
-
-      // Evita que errores como NoSuchKey sin handler tumben el proceso
-      stream.on('error', (error: any) => {
-        console.error('Error leyendo logo de negocio de S3', {
-          key,
-          bucket: this.bucketName,
-          code: error?.code,
-          message: error?.message,
-        });
-      });
-
-      return stream;
+      return s3.getObject(getObjectRequest).createReadStream();
     } catch (error) {
       throw new HttpException('Logo no encontrado', HttpStatus.NOT_FOUND);
     }

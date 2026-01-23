@@ -21,7 +21,6 @@ import { WaitlistModule } from '../waitlist/waitlist.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
 import { LgpdConsentModule } from '../shared/modules/lgpd-consent.module';
 import { ConsentOrchestrationModule } from '../shared/modules/consent-orchestration.module';
-import { ProfessionalModule } from '../professional/professional.module';
 
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
@@ -53,7 +52,6 @@ import { Booking } from './model/booking.entity';
     AuditLogModule,
     forwardRef(() => LgpdConsentModule),
     forwardRef(() => ConsentOrchestrationModule),
-    forwardRef(() => ProfessionalModule),
   ],
   providers: [BookingService, BookingDefaultBuilder],
   exports: [BookingService],

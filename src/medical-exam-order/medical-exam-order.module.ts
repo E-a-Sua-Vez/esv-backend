@@ -8,7 +8,6 @@ import { CommerceModule } from '../commerce/commerce.module';
 import { PatientHistoryModule } from '../patient-history/patient-history.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
-import { ProfessionalModule } from '../professional/professional.module';
 import { GeneratedDocumentService } from '../shared/services/generated-document.service';
 import { PdfTemplateModule } from '../shared/modules/pdf-template.module';
 import { AuditLogModule } from '../shared/modules/audit-log.module';
@@ -36,7 +35,6 @@ import { MedicalExam } from './model/medical-exam.entity';
     CommerceModule,
     DocumentsModule,
     CollaboratorModule,
-    ProfessionalModule,
     PdfTemplateModule,
     AuditLogModule,
     DigitalSignatureModule,
