@@ -52,7 +52,8 @@ export class AttentionReserveBuilder implements BuilderInterface {
     clientId?: string,
     termsConditionsToAcceptCode?: string,
     termsConditionsAcceptedCode?: string,
-    termsConditionsToAcceptedAt?: Date
+    termsConditionsToAcceptedAt?: Date,
+    professionalId?: string
   ): Promise<Attention> {
     if (!block) {
       throw new HttpException(
@@ -81,6 +82,9 @@ export class AttentionReserveBuilder implements BuilderInterface {
     }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
+    }
+    if (professionalId !== undefined) {
+      attention.professionalId = professionalId;
     }
     attention.channel = channel;
     if (userId !== undefined) {

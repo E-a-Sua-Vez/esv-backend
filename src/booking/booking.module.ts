@@ -14,6 +14,7 @@ import { IncomeModule } from '../income/income.module';
 import { ModuleModule } from '../module/module.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PackageModule } from '../package/package.module';
+import { ProfessionalModule } from '../professional/professional.module';
 import { QueueModule } from '../queue/queue.module';
 import { TelemedicineModule } from '../telemedicine/telemedicine.module';
 import { UserModule } from '../user/user.module';
@@ -49,6 +50,7 @@ import { Booking } from './model/booking.entity';
     forwardRef(() => DocumentsModule),
     forwardRef(() => BookingBlockNumberUsedModule),
     forwardRef(() => TelemedicineModule),
+    forwardRef(() => ProfessionalModule),
     AuditLogModule,
     forwardRef(() => LgpdConsentModule),
     forwardRef(() => ConsentOrchestrationModule),
