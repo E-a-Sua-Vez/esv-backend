@@ -327,6 +327,20 @@ export class ProfessionalCommissionPaymentService {
 
       const updated = await this.commissionPaymentRepository.update(payment);
 
+      // Asegurar que todos los incomes relacionados estén marcados como commissionPaid = true
+      // (Esto debería estar ya hecho al crear el pago, pero lo verificamos por seguridad)
+      if (payment.incomeIds && payment.incomeIds.length > 0) {
+        const incomes = await this.incomeService.getIncomesById(payment.incomeIds);
+        for (const income of incomes) {
+          if (!income.commissionPaid) {
+            income.commissionPaid = true;
+            income.commissionPaymentId = payment.id;
+            await this.incomeService.updateIncome(user, income);
+            this.logger.log(`Marked income ${income.id} as commission paid`);
+          }
+        }
+      }
+
       // Publicar evento
       const event = new ProfessionalCommissionPaymentPaid(new Date(), updated, { user });
       publish(event);

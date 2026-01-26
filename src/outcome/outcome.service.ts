@@ -158,7 +158,11 @@ export class OutcomeService {
     outcome.createdAt = new Date();
     outcome.createdBy = user;
     const outcomeCreated = await this.outcomeRepository.create(outcome);
-    const outcomeCreatedEvent = new OutcomeCreated(new Date(), outcomeCreated, { user });
+    // ✅ Asegurar que el aggregateId sea el ID del outcome para que el event-consumer pueda procesarlo
+    const outcomeCreatedEvent = new OutcomeCreated(new Date(), outcomeCreated, {
+      user,
+      aggregateId: outcomeCreated.id
+    });
     publish(outcomeCreatedEvent);
     return outcomeCreated;
   }

@@ -392,12 +392,14 @@ export class BookingController {
     @Body() body: any
   ): Promise<Booking> {
     const { id } = params;
-    const { professionalId, professionalName } = body;
+    const { professionalId, professionalName, professionalCommission, professionalCommissionType } = body;
     return this.bookingService.assignProfessional(
       typeof user === 'string' ? user : user?.id || user?.userId || 'system',
       id,
       professionalId,
-      professionalName
+      professionalName,
+      professionalCommission,
+      professionalCommissionType
     );
   }
 

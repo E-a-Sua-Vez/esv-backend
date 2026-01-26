@@ -15703,10 +15703,50 @@
         ]
       }
     },
+    "/professional-commission-payment/{id}/pdf": {
+      "get": {
+        "operationId": "ProfessionalCommissionPaymentController_downloadCommissionPaymentPdf",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProfessionalCommissionPayment"
+        ]
+      }
+    },
     "/professional-commission-payment/{id}": {
       "get": {
         "operationId": "ProfessionalCommissionPaymentController_getCommissionPaymentById",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""

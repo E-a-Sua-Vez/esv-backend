@@ -77,20 +77,57 @@ export class IncomeService {
     from?: Date,
     to?: Date
   ): Promise<Income[]> {
+    // Construir query base sin el filtro de commissionPaid
+    // porque puede ser false, undefined o null, y FireORM whereEqualTo no maneja bien undefined
     let query = this.incomeRepository
       .whereEqualTo('professionalId', professionalId)
-      .whereEqualTo('commerceId', commerceId)
-      .whereEqualTo('commissionPaid', false);
+      .whereEqualTo('commerceId', commerceId);
 
+    // Filtrar por fecha usando paidAt si existe, sino createdAt
+    // Usar paidAt porque es la fecha real del pago, no la creación
     if (from) {
-      query = query.whereGreaterOrEqualThan('createdAt', from);
+      query = query.whereGreaterOrEqualThan('paidAt', from);
     }
     if (to) {
-      query = query.whereLessOrEqualThan('createdAt', to);
+      query = query.whereLessOrEqualThan('paidAt', to);
     }
 
-    const incomes = await query.find();
-    return incomes.filter(income => income.professionalCommission && income.professionalCommission > 0);
+    // Obtener todos los ingresos que cumplan los criterios
+    let incomes = await query.find();
+
+    // Filtrar en memoria:
+    // 1. commissionPaid debe ser false, undefined o null (no true)
+    // 2. Debe tener professionalCommission > 0
+    // 3. Si no hay paidAt, usar createdAt como fallback para el filtro de fechas
+    incomes = incomes.filter(income => {
+      // Verificar que la comisión no esté pagada
+      if (income.commissionPaid === true) {
+        return false;
+      }
+
+      // Verificar que tenga comisión
+      if (!income.professionalCommission || income.professionalCommission <= 0) {
+        return false;
+      }
+
+      // Verificar fechas: usar paidAt si existe, sino createdAt
+      const dateToCheck = income.paidAt || income.createdAt;
+      if (from && dateToCheck < from) {
+        return false;
+      }
+      if (to) {
+        // Asegurar que incluya todo el día
+        const toDateEnd = new Date(to);
+        toDateEnd.setHours(23, 59, 59, 999);
+        if (dateToCheck > toDateEnd) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    return incomes;
   }
 
   public async updateIncomeConfigurations(

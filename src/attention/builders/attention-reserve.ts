@@ -211,7 +211,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
             [],
             [attentionCreated.id]
           );
-          
+
           // CRITICAL: If the package is already paid, mark the attention as paid automatically
           try {
             const pack = await this.packageService.getPackageById(booking.packageId);
