@@ -206,21 +206,14 @@ export class AttentionReserveBuilder implements BuilderInterface {
       } else {
         console.log('[AttentionReserveBuilder] Payment data transferred but not marked as paid:', paymentConfirmationData.paid);
       }
-        console.log('[AttentionReserveBuilder] Payment data transfer completed:', {
-          paid: attention.paid,
-          confirmed: attention.confirmed,
-          paidAt: attention.paidAt,
-          confirmedAt: attention.confirmedAt,
-          hasPaymentConfirmationData: !!attention.paymentConfirmationData,
-          professionalCommissionAmount: attention.paymentConfirmationData?.professionalCommissionAmount
-        });
-      } else {
-        console.log('[AttentionReserveBuilder] Payment not confirmed - not transferring payment data:', {
-          paid: paymentConfirmationData.paid,
-          paidValue: paymentConfirmationData?.paid,
-          paidType: typeof paymentConfirmationData?.paid
-        });
-      }
+      console.log('[AttentionReserveBuilder] Payment data transfer completed:', {
+        paid: attention.paid,
+        confirmed: attention.confirmed,
+        paidAt: attention.paidAt,
+        confirmedAt: attention.confirmedAt,
+        hasPaymentConfirmationData: !!attention.paymentConfirmationData,
+        professionalCommissionAmount: attention.paymentConfirmationData?.professionalCommissionAmount
+      });
     } else {
       console.log('[AttentionReserveBuilder] No payment confirmation data provided');
     }

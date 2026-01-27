@@ -171,9 +171,10 @@ if (testPaymentData !== undefined) {
   testAttention.paymentConfirmationData = testPaymentData;
   if (testPaymentData.paid === true) {
     testAttention.paid = testPaymentData.paid;
-    testAttention.paidAt = testPaymentData.paymentDate instanceof Date
-      ? testPaymentData.paymentDate
-      : new Date(testPaymentData.paymentDate);
+    // Handle paymentDate conversion from string to Date if necessary
+    testAttention.paidAt = typeof testPaymentData.paymentDate === 'string'
+      ? new Date(testPaymentData.paymentDate)
+      : testPaymentData.paymentDate;
     testAttention.confirmed = true;
     testAttention.confirmedAt = new Date();
 
