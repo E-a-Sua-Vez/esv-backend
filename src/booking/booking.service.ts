@@ -1732,6 +1732,16 @@ export class BookingService {
       };
     }
 
+    // Debug: Log booking data before creating attention
+    console.log('[BookingService.createAttention] Processing booking:', {
+      bookingId: id,
+      professionalId: booking.professionalId,
+      hasConfirmationData: !!booking.confirmationData,
+      confirmationDataPaid: booking.confirmationData?.paid,
+      confirmationDataAmount: booking.confirmationData?.paymentAmount,
+      professionalCommissionAmount: booking.confirmationData?.professionalCommissionAmount
+    });
+
     const attention = await this.attentionService.createAttention(
       queueId,
       booking.professionalId, // Pasar el professionalId del booking como collaboratorId
