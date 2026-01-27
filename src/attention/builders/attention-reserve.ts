@@ -186,7 +186,9 @@ export class AttentionReserveBuilder implements BuilderInterface {
       paidType: typeof paymentConfirmationData?.paid,
       paymentAmount: paymentConfirmationData?.paymentAmount,
       professionalId: paymentConfirmationData?.professionalId,
-      professionalCommissionAmount: paymentConfirmationData?.professionalCommissionAmount
+      professionalCommissionAmount: paymentConfirmationData?.professionalCommissionAmount,
+      paymentDate: paymentConfirmationData?.paymentDate,
+      paymentDateType: typeof paymentConfirmationData?.paymentDate
     });
 
     if (paymentConfirmationData !== undefined) {
@@ -204,14 +206,19 @@ export class AttentionReserveBuilder implements BuilderInterface {
           paid: attention.paid,
           confirmed: attention.confirmed,
           paidAt: attention.paidAt,
-          confirmedAt: attention.confirmedAt
+          confirmedAt: attention.confirmedAt,
+          hasPaymentConfirmationData: !!attention.paymentConfirmationData,
+          professionalCommissionAmount: attention.paymentConfirmationData?.professionalCommissionAmount
         });
       } else {
         console.log('[AttentionReserveBuilder] Payment not confirmed - not transferring payment data:', {
           paid: paymentConfirmationData.paid,
-          paidValue: paymentConfirmationData?.paid
+          paidValue: paymentConfirmationData?.paid,
+          paidType: typeof paymentConfirmationData?.paid
         });
       }
+    } else {
+      console.log('[AttentionReserveBuilder] No payment confirmation data provided');
     }
     if (bookingId != undefined) {
       attention.bookingId = bookingId;
