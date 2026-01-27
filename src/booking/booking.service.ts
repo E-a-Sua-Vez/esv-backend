@@ -1739,7 +1739,8 @@ export class BookingService {
       hasConfirmationData: !!booking.confirmationData,
       confirmationDataPaid: booking.confirmationData?.paid,
       confirmationDataAmount: booking.confirmationData?.paymentAmount,
-      professionalCommissionAmount: booking.confirmationData?.professionalCommissionAmount
+      professionalCommissionAmount: booking.confirmationData?.professionalCommissionAmount,
+      fullConfirmationData: JSON.stringify(booking.confirmationData, null, 2)
     });
 
     const attention = await this.attentionService.createAttention(

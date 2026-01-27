@@ -641,6 +641,12 @@ export class AttentionService {
           );
         }
       } else if (block && block.number) {
+        console.log('[AttentionService.createAttention] Using AttentionReserveBuilder with payment data:', {
+          hasPaymentConfirmationData: !!paymentConfirmationData,
+          paymentDataPaid: paymentConfirmationData?.paid,
+          collaboratorId,
+          bookingId
+        });
         attentionCreated = await this.attentionReserveBuilder.create(
           queue,
           collaboratorId,
