@@ -647,6 +647,23 @@ export class AttentionService {
           collaboratorId,
           bookingId
         });
+
+        console.log('🔥🔥🔥 [CRITICAL ATTENTION DEBUG] DATOS RECIBIDOS EN AttentionService:');
+        console.log('  - queueId:', queueId);
+        console.log('  - collaboratorId:', collaboratorId);
+        console.log('  - channel:', channel);
+        console.log('  - block:', JSON.stringify(block));
+        console.log('  - date:', date);
+        console.log('  - paymentConfirmationData:', paymentConfirmationData ? 'EXISTS' : 'UNDEFINED');
+        if (paymentConfirmationData) {
+          console.log('  - paymentConfirmationData.paid:', paymentConfirmationData.paid);
+          console.log('  - paymentConfirmationData.paymentAmount:', paymentConfirmationData.paymentAmount);
+          console.log('  - paymentConfirmationData.professionalCommissionAmount:', paymentConfirmationData.professionalCommissionAmount);
+          console.log('  - paymentConfirmationData COMPLETO:', JSON.stringify(paymentConfirmationData, null, 2));
+        }
+        console.log('  - bookingId:', bookingId);
+        console.log('🔥🔥🔥 [CRITICAL ATTENTION DEBUG] ENVIANDO A AttentionReserveBuilder');
+
         attentionCreated = await this.attentionReserveBuilder.create(
           queue,
           collaboratorId,

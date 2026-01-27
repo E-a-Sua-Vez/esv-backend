@@ -1743,6 +1743,19 @@ export class BookingService {
       fullConfirmationData: JSON.stringify(booking.confirmationData, null, 2)
     });
 
+    console.log('🔥🔥🔥 [CRITICAL DEBUG] DATOS ENVIADOS AL AttentionService.createAttention():');
+    console.log('  - queueId:', queueId);
+    console.log('  - collaboratorId (booking.professionalId):', booking.professionalId);
+    console.log('  - channel:', channel);
+    console.log('  - paymentConfirmationData:', booking.confirmationData ? 'EXISTS' : 'UNDEFINED');
+    if (booking.confirmationData) {
+      console.log('  - paymentConfirmationData.paid:', booking.confirmationData.paid);
+      console.log('  - paymentConfirmationData.paymentAmount:', booking.confirmationData.paymentAmount);
+      console.log('  - paymentConfirmationData.professionalCommissionAmount:', booking.confirmationData.professionalCommissionAmount);
+    }
+    console.log('  - bookingId:', id);
+    console.log('🔥🔥🔥 [CRITICAL DEBUG] FIN DATOS');
+
     const attention = await this.attentionService.createAttention(
       queueId,
       booking.professionalId, // Pasar el professionalId del booking como collaboratorId
