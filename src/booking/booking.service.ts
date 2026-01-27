@@ -1201,6 +1201,8 @@ export class BookingService {
       this.logger.log(`[BookingService.getBookingDetails] Booking ID: ${booking.id}`);
       this.logger.log(`[BookingService.getBookingDetails] Professional ID: ${booking.professionalId}`);
       this.logger.log(`[BookingService.getBookingDetails] Professional Name: ${booking.professionalName}`);
+      this.logger.log(`[BookingService.getBookingDetails] Commission Type: ${booking.professionalCommissionType}`);
+      this.logger.log(`[BookingService.getBookingDetails] Commission Value: ${booking.professionalCommissionValue}`);
 
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
@@ -1238,6 +1240,11 @@ export class BookingService {
       bookingDetailsDto.telemedicineConfig = booking.telemedicineConfig;
       bookingDetailsDto.professionalId = booking.professionalId;
       bookingDetailsDto.professionalName = booking.professionalName;
+      // Map professional commission fields
+      bookingDetailsDto.professionalCommissionType = booking.professionalCommissionType;
+      bookingDetailsDto.professionalCommissionValue = booking.professionalCommissionValue;
+      bookingDetailsDto.professionalCommissionAmount = booking.professionalCommissionAmount;
+      bookingDetailsDto.professionalCommissionNotes = booking.professionalCommissionNotes;
       if (booking.queueId) {
         bookingDetailsDto.queue = await this.queueService.getQueueById(booking.queueId);
         bookingDetailsDto.commerce = await this.commerceService.getCommerceById(
@@ -2409,33 +2416,63 @@ export class BookingService {
         this.logger.log(`[BookingService] Using professional default commission: ${commissionValueToUse} (${commissionTypeToUse})`);
       }
 
-      // Si hay tipo y valor de comisión, calcular el monto (solo si existe confirmationData)
-      if (booking.confirmationData && commissionTypeToUse && commissionValueToUse && commissionValueToUse > 0) {
-        // Calculate commission amount based on type
+      // Si hay tipo y valor de comisión, guardarla en el booking
+      if (commissionTypeToUse && commissionValueToUse && commissionValueToUse > 0) {
+        this.logger.log(`[BookingService] Processing commission - Type: ${commissionTypeToUse}, Value: ${commissionValueToUse}`);
+        
+        // Calculate commission amount based on type (if totalAmount is available from existing confirmationData)
         let commissionAmount = 0;
-        let commissionPercentage = 0;
-
-        if (commissionTypeToUse === 'PERCENTAGE') {
-          commissionPercentage = commissionValueToUse;
-          commissionAmount = (booking.confirmationData.totalAmount * commissionValueToUse) / 100;
-        } else if (commissionTypeToUse === 'FIXED') {
-          commissionAmount = commissionValueToUse;
-          commissionPercentage = (commissionValueToUse / booking.confirmationData.totalAmount) * 100;
+        if (booking.confirmationData?.totalAmount) {
+          if (commissionTypeToUse === 'PERCENTAGE') {
+            commissionAmount = (booking.confirmationData.totalAmount * commissionValueToUse) / 100;
+          } else if (commissionTypeToUse === 'FIXED') {
+            commissionAmount = commissionValueToUse;
+          }
         }
 
-        // Update confirmation data with professional commission data
-        booking.confirmationData.professionalId = professionalId;
-        booking.confirmationData.professionalCommissionType = commissionTypeToUse;
-        booking.confirmationData.professionalCommissionValue = commissionValueToUse;
-        booking.confirmationData.professionalCommissionAmount = commissionAmount;
-        booking.confirmationData.professionalCommissionPercentage = commissionPercentage;
-        booking.confirmationData.professionalCommissionNotes = customCommission !== undefined && customCommission !== null
+        // Save commission data directly in booking fields
+        booking.professionalCommissionType = commissionTypeToUse;
+        booking.professionalCommissionValue = commissionValueToUse;
+        booking.professionalCommissionAmount = commissionAmount;
+        booking.professionalCommissionNotes = customCommission !== undefined && customCommission !== null
           ? `Comisión personalizada: ${commissionValueToUse}${commissionTypeToUse === 'PERCENTAGE' ? '%' : ' BRL'}`
           : `Comisión auto-sugerida del profesional ${professional.personalInfo?.name || professionalId}`;
+        
+        this.logger.log(`[BookingService] Commission data set in booking fields:`, JSON.stringify({
+          professionalCommissionType: booking.professionalCommissionType,
+          professionalCommissionValue: booking.professionalCommissionValue,
+          professionalCommissionAmount: booking.professionalCommissionAmount,
+          professionalCommissionNotes: booking.professionalCommissionNotes
+        }));
+
+        // También guardar en confirmationData si existe (para mantener compatibilidad)
+        if (booking.confirmationData) {
+          booking.confirmationData.professionalId = professionalId;
+          booking.confirmationData.professionalCommissionType = commissionTypeToUse;
+          booking.confirmationData.professionalCommissionValue = commissionValueToUse;
+          booking.confirmationData.professionalCommissionAmount = commissionAmount;
+          booking.confirmationData.professionalCommissionPercentage = commissionTypeToUse === 'PERCENTAGE' ? commissionValueToUse : 0;
+          booking.confirmationData.professionalCommissionNotes = booking.professionalCommissionNotes;
+          this.logger.log(`[BookingService] Also saved commission in confirmationData for compatibility`);
+        }
+      } else {
+        this.logger.log(`[BookingService] No commission to process - Type: ${commissionTypeToUse}, Value: ${commissionValueToUse}`);
       }
 
       // Update booking
+      this.logger.log(`[BookingService] About to update booking with commission data:`, {
+        professionalId: booking.professionalId,
+        professionalName: booking.professionalName,
+        professionalCommissionType: booking.professionalCommissionType,
+        professionalCommissionValue: booking.professionalCommissionValue,
+        confirmationData: booking.confirmationData ? 'exists' : 'null'
+      });
       const updatedBooking = await this.update(user, booking);
+      this.logger.log(`[BookingService] After update - commission data:`, {
+        professionalCommissionType: updatedBooking.professionalCommissionType,
+        professionalCommissionValue: updatedBooking.professionalCommissionValue,
+        professionalCommissionAmount: updatedBooking.professionalCommissionAmount
+      });
 
       // Debug: Log what we're getting back
       this.logger.log(`[BookingService] Before update - ID: ${booking.professionalId}, Name: ${booking.professionalName}`);

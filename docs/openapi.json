@@ -24097,6 +24097,22 @@
           "professionalName": {
             "type": "string",
             "description": "Professional name assigned to booking"
+          },
+          "professionalCommissionType": {
+            "type": "string",
+            "description": "Professional commission type: PERCENTAGE or FIXED"
+          },
+          "professionalCommissionValue": {
+            "type": "number",
+            "description": "Professional commission value (percentage or amount)"
+          },
+          "professionalCommissionAmount": {
+            "type": "number",
+            "description": "Professional commission calculated amount"
+          },
+          "professionalCommissionNotes": {
+            "type": "string",
+            "description": "Professional commission notes"
           }
         },
         "required": [

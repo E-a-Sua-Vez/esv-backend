@@ -93,4 +93,16 @@ export class BookingDetailsDto {
 
   @ApiPropertyOptional({ description: 'Professional name assigned to booking' })
   professionalName?: string;
+
+  @ApiPropertyOptional({ description: 'Professional commission type: PERCENTAGE or FIXED' })
+  professionalCommissionType?: string;
+
+  @ApiPropertyOptional({ description: 'Professional commission value (percentage or amount)' })
+  professionalCommissionValue?: number;
+
+  @ApiPropertyOptional({ description: 'Professional commission calculated amount' })
+  professionalCommissionAmount?: number;
+
+  @ApiPropertyOptional({ description: 'Professional commission notes' })
+  professionalCommissionNotes?: string;
 }

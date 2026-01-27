@@ -173,6 +173,7 @@
       "dashboard.attention-origin-avg.view": true,
       "dashboard.attention-client-contact.view": true,
       "dashboard.attention-days-since-clients.view": true,
+      "dashboard.collection-details.view": true,
       "dashboard.bookings-management.view": true,
       "dashboard.reports.bookings-management": true,
       "dashboard.client-data-management.view": true,
@@ -386,6 +387,7 @@
       "messages.admin.send": true,
       "messages.admin.view": true,
       "messages.admin.read": true,
+      "messages.admin.delete": true,
 
       "chats.admin.start": true,
       "chats.admin.view": true,

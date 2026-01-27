@@ -45,6 +45,10 @@ export class Booking {
   block?: Block;
   professionalId?: string; // ID del profesional asignado a la reserva
   professionalName?: string; // Nombre del profesional asignado (desnormalizado para consultas rápidas)
+  professionalCommissionType?: string; // Tipo de comisión del profesional: 'PERCENTAGE' o 'FIXED'
+  professionalCommissionValue?: number; // Valor de comisión del profesional (% o monto)
+  professionalCommissionAmount?: number; // Monto calculado de comisión
+  professionalCommissionNotes?: string; // Notas sobre la comisión
   confirmedAt: Date;
   servicesId: string[];
   confirmed: boolean;
