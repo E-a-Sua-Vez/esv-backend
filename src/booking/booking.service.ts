@@ -1197,12 +1197,6 @@ export class BookingService {
     try {
       const booking = await this.getBookingById(id);
 
-      // Debug: Log what booking data we have
-      this.logger.log(`[BookingService.getBookingDetails] Booking ID: ${booking.id}`);
-      this.logger.log(`[BookingService.getBookingDetails] Professional ID: ${booking.professionalId}`);
-      this.logger.log(`[BookingService.getBookingDetails] Professional Name: ${booking.professionalName}`);
-      this.logger.log(`[BookingService.getBookingDetails] Commission Type: ${booking.professionalCommissionType}`);
-      this.logger.log(`[BookingService.getBookingDetails] Commission Value: ${booking.professionalCommissionValue}`);
 
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
@@ -1740,13 +1734,13 @@ export class BookingService {
 
     const attention = await this.attentionService.createAttention(
       queueId,
-      undefined,
+      booking.professionalId, // Pasar el professionalId del booking como collaboratorId
       channel,
       user,
       attentionType,
       block,
-      undefined,
-      confirmationData,
+      new Date(booking.date), // Pasar la fecha del booking
+      booking.confirmationData, // Pasar los datos de confirmación del booking
       id,
       servicesId,
       servicesDetails,
@@ -2419,7 +2413,7 @@ export class BookingService {
       // Si hay tipo y valor de comisión, guardarla en el booking
       if (commissionTypeToUse && commissionValueToUse && commissionValueToUse > 0) {
         this.logger.log(`[BookingService] Processing commission - Type: ${commissionTypeToUse}, Value: ${commissionValueToUse}`);
-        
+
         // Calculate commission amount based on type (if totalAmount is available from existing confirmationData)
         let commissionAmount = 0;
         if (booking.confirmationData?.totalAmount) {
@@ -2437,7 +2431,7 @@ export class BookingService {
         booking.professionalCommissionNotes = customCommission !== undefined && customCommission !== null
           ? `Comisión personalizada: ${commissionValueToUse}${commissionTypeToUse === 'PERCENTAGE' ? '%' : ' BRL'}`
           : `Comisión auto-sugerida del profesional ${professional.personalInfo?.name || professionalId}`;
-        
+
         this.logger.log(`[BookingService] Commission data set in booking fields:`, JSON.stringify({
           professionalCommissionType: booking.professionalCommissionType,
           professionalCommissionValue: booking.professionalCommissionValue,
