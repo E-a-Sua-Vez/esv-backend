@@ -1,0 +1,93 @@
+{
+  "id": "96PQoBU877aifJA6ChPc",
+
+  "// DATOS BÁSICOS - Transferidos del booking": "",
+  "queueId": "AAPenh6A8hZGcQbTH67m",
+  "commerceId": "O5OCUgN5wodYI5knlqdL",
+  "channel": "MINISITE",
+  "clientId": "apKkxb2RSowe1Dn5SPrh",
+  "bookingId": "lK8RUYF3fGNOEYcGoPpZ",
+  "status": "PENDING",
+  "type": "STANDARD",
+
+  "// PROFESIONAL - CRÍTICO: Debe estar asignado": "",
+  "collaboratorId": "sTQzdZUUgxXcMdZg0a4X",
+  "professionalName": "Manuela Lopez",
+  "professionalCommissionType": "PERCENTAGE",
+  "professionalCommissionValue": 30,
+
+  "// FECHA Y HORARIO - Del block del booking": "",
+  "date": "2026-01-27T00:00:00.000Z",
+  "block": {
+    "hourFrom": "13:00",
+    "hourTo": "13:30",
+    "number": 11
+  },
+
+  "// SERVICIOS - Transferidos del booking": "",
+  "servicesId": ["eCNAaS7dtNjyDcGAgChs"],
+  "servicesDetails": [{
+    "id": "eCNAaS7dtNjyDcGAgChs",
+    "name": "Corte Masculino",
+    "procedures": 1,
+    "tag": "Corte"
+  }],
+
+  "// USUARIO - Del booking": "",
+  "userId": "RS600CDlXuglQ1ADStq9h7Lrphp2",
+  "user": {
+    "acceptTermsAndConditions": true,
+    "clientId": "apKkxb2RSowe1Dn5SPrh",
+    "commerceId": "O5OCUgN5wodYI5knlqdL",
+    "email": "juliocas65@gmail.com",
+    "idNumber": "90208801871",
+    "lastName": "Castillo",
+    "name": "Julio",
+    "notificationEmailOn": true,
+    "notificationOn": true,
+    "personalInfo": {
+      "birthday": "1989-07-04",
+      "phone": "5511919931589"
+    }
+  },
+
+  "// ESTADO DE PAGO - CRÍTICO: Debe ser true porque está pagado": "",
+  "paid": true,
+  "confirmed": true,
+  "paidAt": "2026-01-27T01:18:33.974Z",
+  "confirmedAt": "2026-01-27T18:01:01.572Z",
+
+  "// DATOS COMPLETOS DE PAGO - CRÍTICO: Toda la info del pago": "",
+  "paymentConfirmationData": {
+    "confirmInstallments": true,
+    "installments": 1,
+    "packagePaid": false,
+    "paid": true,
+    "paymentAmount": 500,
+    "paymentCommission": 150,
+    "paymentDate": "2026-01-27T01:18:33.974Z",
+    "paymentFiscalNote": "NOTA_FISCAL",
+    "paymentMethod": "CREDIT_CARD",
+    "paymentType": "TOTALLY",
+    "procedureNumber": 1,
+    "proceduresTotalNumber": 1,
+    "processPaymentNow": true,
+    "professionalCommissionAmount": 150,
+    "professionalId": "sTQzdZUUgxXcMdZg0a4X",
+    "totalAmount": 500,
+    "user": {
+      "email": "beleza@beleza.com.br",
+      "id": "RS600CDlXuglQ1ADStq9h7Lrphp2",
+      "userId": "RS600CDlXuglQ1ADStq9h7Lrphp2"
+    }
+  },
+
+  "// TIMESTAMPS - Creación y modificación": "",
+  "createdAt": "2026-01-27T18:01:01.572Z",
+  "updatedAt": "2026-01-27T18:01:01.572Z",
+
+  "// METADATOS ADICIONALES": "",
+  "version": "1.0",
+  "source": "BOOKING_PROCESSOR",
+  "processed": true
+}

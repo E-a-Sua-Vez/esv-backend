@@ -192,9 +192,9 @@ export class AttentionReserveBuilder implements BuilderInterface {
     });
 
     if (paymentConfirmationData !== undefined) {
-      if (paymentConfirmationData.paid && paymentConfirmationData.paid === true) {
-        console.log('[AttentionReserveBuilder] Transferring payment confirmation data to attention');
-        attention.paymentConfirmationData = paymentConfirmationData;
+      console.log('[AttentionReserveBuilder] Payment data found, transferring regardless of paid status');
+      attention.paymentConfirmationData = paymentConfirmationData;
+      if (paymentConfirmationData.paid === true) {
         attention.paid = paymentConfirmationData.paid;
         // Handle paymentDate conversion from string to Date if necessary
         attention.paidAt = paymentConfirmationData.paymentDate instanceof Date
@@ -202,6 +202,10 @@ export class AttentionReserveBuilder implements BuilderInterface {
           : new Date(paymentConfirmationData.paymentDate);
         attention.confirmed = true;
         attention.confirmedAt = new Date();
+        console.log('[AttentionReserveBuilder] Payment marked as confirmed');
+      } else {
+        console.log('[AttentionReserveBuilder] Payment data transferred but not marked as paid:', paymentConfirmationData.paid);
+      }
         console.log('[AttentionReserveBuilder] Payment data transfer completed:', {
           paid: attention.paid,
           confirmed: attention.confirmed,
