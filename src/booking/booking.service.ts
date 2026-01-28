@@ -2093,11 +2093,29 @@ export class BookingService {
     const errors = [];
     const emails = [];
     const messages = [];
+    const skipped = []; // Track skipped bookings due to duplicate check
+
     if (bookings && bookings.length > 0) {
       for (let i = 0; i < bookings.length; i++) {
         const booking = bookings[i];
         limiter.schedule(async () => {
           try {
+            // CRITICAL: Skip if notifications were already sent today
+            const today = new DateModel().toString();
+            const lastNotificationDate = booking.lastConfirmNotificationDate
+              ? new DateModel(booking.lastConfirmNotificationDate).toString()
+              : null;
+
+            if (lastNotificationDate === today) {
+              this.logger.info('Skipping confirmation notification - already sent today', {
+                bookingId: booking.id,
+                lastNotificationDate,
+                today,
+              });
+              skipped.push(booking.id);
+              return; // Skip this booking
+            }
+
             const bookingCommerces = commerces.filter(
               commerce => commerce.id === booking.commerceId
             );
@@ -2129,9 +2147,9 @@ export class BookingService {
                 minDaysBefore = Math.min(...numericDays);
               }
             }
-            const today = new DateModel();
+            const todayModel = new DateModel();
             const bookingDateModel = new DateModel(booking.date);
-            const daysUntilBooking = bookingDateModel.daysDiff(today);
+            const daysUntilBooking = bookingDateModel.daysDiff(todayModel);
 
             const email = await this.bookingConfirmEmail(bookingCommerce, booking);
             const message = await this.bookingConfirmWhatsapp(bookingCommerce, booking);
@@ -2148,7 +2166,19 @@ export class BookingService {
             if (daysUntilBooking === minDaysBefore) {
               booking.confirmNotified = true;
             }
+
+            // CRITICAL: Always update lastConfirmNotificationDate to prevent duplicates
+            booking.lastConfirmNotificationDate = new Date().toISOString();
+
             await this.update('ett', booking);
+
+            this.logger.info('Confirmation notification sent successfully', {
+              bookingId: booking.id,
+              emailSent: !!email,
+              whatsappSent: !!message,
+              daysUntilBooking,
+              lastNotificationDate: booking.lastConfirmNotificationDate,
+            });
           } catch (error) {
             errors.push(error.message);
           }
@@ -2160,6 +2190,7 @@ export class BookingService {
     const response = {
       toProcess,
       processed: responses.length,
+      skipped: skipped.length,
       emails: emails.length,
       messages: messages.length,
       errors: errors.length,
@@ -2167,6 +2198,8 @@ export class BookingService {
     this.logger.info('Bookings confirmation notifications processed', {
       toProcess,
       processed: responses.length,
+      skipped: skipped.length,
+      skippedBookingIds: skipped,
       emails: emails.length,
       messages: messages.length,
       errors: errors.length,

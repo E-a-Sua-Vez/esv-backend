@@ -57,6 +57,7 @@ export class Booking {
   confirmNotified = false;
   confirmNotifiedEmail = false;
   confirmNotifiedWhatsapp = false;
+  lastConfirmNotificationDate?: string; // ISO date string to track last notification sent (prevents duplicates)
   servicesDetails: object[];
   packageId?: string;
   packageProcedureNumber?: number;
