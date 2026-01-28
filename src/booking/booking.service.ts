@@ -2036,7 +2036,16 @@ export class BookingService {
           ) {
             let daysBefore = ['1'];
             if (commerce.serviceInfo && commerce.serviceInfo.confirmNotificationDaysBefore) {
-              const rawDays = commerce.serviceInfo.confirmNotificationDaysBefore.split(',');
+              // Ensure confirmNotificationDaysBefore is a string before calling split
+              const daysBefereValue = commerce.serviceInfo.confirmNotificationDaysBefore;
+              let rawDays: string[];
+              if (typeof daysBefereValue === 'string') {
+                rawDays = daysBefereValue.split(',');
+              } else if (Array.isArray(daysBefereValue)) {
+                rawDays = (daysBefereValue as any[]).map(d => String(d));
+              } else {
+                rawDays = [String(daysBefereValue)];
+              }
               const numericDays = rawDays
                 .map(day => parseInt(day, 10))
                 .filter(day => !isNaN(day) && day > 0)
@@ -2103,8 +2112,16 @@ export class BookingService {
               bookingCommerce.serviceInfo &&
               bookingCommerce.serviceInfo.confirmNotificationDaysBefore
             ) {
-              const rawDays =
-                bookingCommerce.serviceInfo.confirmNotificationDaysBefore.split(',');
+              // Ensure confirmNotificationDaysBefore is a string before calling split
+              const daysBefereValue = bookingCommerce.serviceInfo.confirmNotificationDaysBefore;
+              let rawDays: string[];
+              if (typeof daysBefereValue === 'string') {
+                rawDays = daysBefereValue.split(',');
+              } else if (Array.isArray(daysBefereValue)) {
+                rawDays = (daysBefereValue as any[]).map(d => String(d));
+              } else {
+                rawDays = [String(daysBefereValue)];
+              }
               const numericDays = rawDays
                 .map(day => parseInt(day, 10))
                 .filter(day => !isNaN(day) && day > 0);
