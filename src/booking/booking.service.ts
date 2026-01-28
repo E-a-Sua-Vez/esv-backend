@@ -2022,6 +2022,21 @@ export class BookingService {
     return booking;
   }
 
+  /**
+   * Sends confirmation notifications for bookings based on configured schedule.
+   * 
+   * DUPLICATE PREVENTION STRATEGY:
+   * - Uses 'lastConfirmNotificationDate' to prevent sending notifications multiple times on the same day
+   * - Preserves original 'confirmNotified' flag behavior for backward compatibility
+   * 
+   * FIELD USAGE:
+   * - confirmNotified: Legacy flag set only when booking reaches final notification day (e.g., 1 day before)
+   * - lastConfirmNotificationDate: New field to track when last notification was sent (prevents duplicates)
+   * 
+   * BACKWARD COMPATIBILITY:
+   * - getConfirmedBookingsByCommerceIdDates() continues to use confirmNotified filter as before
+   * - No impact on existing queries or booking flow
+   */
   public async confirmNotifyBookings(): Promise<any> {
     let bookings = [];
     const commerces = await this.commerceService.getCommercesDetails();
@@ -2101,7 +2116,8 @@ export class BookingService {
         limiter.schedule(async () => {
           try {
             // CRITICAL: Skip if notifications were already sent today
-            const today = new DateModel().toString();
+            const todayModel = new DateModel();
+            const today = todayModel.toString();
             const lastNotificationDate = booking.lastConfirmNotificationDate
               ? new DateModel(booking.lastConfirmNotificationDate).toString()
               : null;
@@ -2123,6 +2139,7 @@ export class BookingService {
             if (bookingCommerces && bookingCommerces.length > 0) {
               bookingCommerce = bookingCommerces[0];
             }
+            
             // Calcular en cuántos días más es la reserva y el mínimo configurado
             let minDaysBefore = 1;
             if (
@@ -2147,7 +2164,7 @@ export class BookingService {
                 minDaysBefore = Math.min(...numericDays);
               }
             }
-            const todayModel = new DateModel();
+            
             const bookingDateModel = new DateModel(booking.date);
             const daysUntilBooking = bookingDateModel.daysDiff(todayModel);
 
@@ -2161,13 +2178,16 @@ export class BookingService {
               booking.confirmNotifiedWhatsapp = true;
               messages.push(message[0]);
             }
-            // Solo marcar como "confirmNotified" cuando estemos en el menor
+            
+            // IMPORTANT: Solo marcar como "confirmNotified" cuando estemos en el menor
             // número de días configurado antes de la reserva (por ejemplo, 1 día).
+            // Esto mantiene la compatibilidad con la consulta getConfirmedBookingsByCommerceIdDates
             if (daysUntilBooking === minDaysBefore) {
               booking.confirmNotified = true;
             }
 
             // CRITICAL: Always update lastConfirmNotificationDate to prevent duplicates
+            // This field is independent of confirmNotified and serves solely for duplicate prevention
             booking.lastConfirmNotificationDate = new Date().toISOString();
 
             await this.update('ett', booking);
@@ -2177,6 +2197,8 @@ export class BookingService {
               emailSent: !!email,
               whatsappSent: !!message,
               daysUntilBooking,
+              minDaysBefore,
+              confirmNotified: booking.confirmNotified,
               lastNotificationDate: booking.lastConfirmNotificationDate,
             });
           } catch (error) {
