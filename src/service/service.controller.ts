@@ -140,11 +140,12 @@ export class ServiceController {
     @Body() body: Service
   ): Promise<Service> {
     const { id } = params;
-    const { name, tag, order, active, available, online, serviceInfo } = body;
+    const { name, type, tag, order, active, available, online, serviceInfo } = body;
     return this.serviceService.updateServiceConfigurations(
       user,
       id,
       name,
+      type,
       tag,
       order,
       active,

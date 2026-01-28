@@ -73,6 +73,7 @@ export class ServiceService {
     user: string,
     id: string,
     name: string,
+    type: ServiceType,
     tag: string,
     order: number,
     active: boolean,
@@ -84,6 +85,9 @@ export class ServiceService {
       const service = await this.serviceRepository.findById(id);
       if (name) {
         service.name = name;
+      }
+      if (type) {
+        service.type = type;
       }
       if (tag) {
         service.tag = tag;

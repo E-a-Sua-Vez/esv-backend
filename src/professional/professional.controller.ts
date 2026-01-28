@@ -209,7 +209,21 @@ export class ProfessionalController {
     @Param('id') id: string,
     @Body() body: UpdateProfessionalDto
   ): Promise<Professional> {
-    return this.professionalService.updateProfessional(user, id, body);
+    console.log(`🔄 [ProfessionalController] Updating professional ${id}:`, {
+      userId: user,
+      medicalData: body.medicalData,
+      personalInfo: body.personalInfo,
+      professionalInfo: body.professionalInfo
+    });
+
+    const result = await this.professionalService.updateProfessional(user, id, body);
+
+    console.log(`✅ [ProfessionalController] Professional updated:`, {
+      id: result.id,
+      medicalData: result.medicalData
+    });
+
+    return result;
   }
 
   @UseGuards(AuthGuard)

@@ -1200,6 +1200,24 @@ export class BookingService {
 
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
+      // Assign basic booking fields that were missing
+      bookingDetailsDto.id = booking.id;
+      bookingDetailsDto.commerceId = booking.commerceId;
+      bookingDetailsDto.queueId = booking.queueId;
+      bookingDetailsDto.number = booking.number;
+      bookingDetailsDto.date = booking.date;
+      bookingDetailsDto.createdAt = booking.createdAt;
+      bookingDetailsDto.type = booking.type;
+      bookingDetailsDto.channel = booking.channel;
+      bookingDetailsDto.status = booking.status;
+      bookingDetailsDto.userId = booking.userId;
+      bookingDetailsDto.comment = booking.comment;
+      bookingDetailsDto.processedAt = booking.processedAt;
+      bookingDetailsDto.processed = booking.processed;
+      bookingDetailsDto.cancelledAt = booking.cancelledAt;
+      bookingDetailsDto.cancelled = booking.cancelled;
+      bookingDetailsDto.attentionId = booking.attentionId;
+
       // Explicitly assign block - ensure it's included even if undefined
       bookingDetailsDto.block = booking.block || undefined;
 
@@ -1218,6 +1236,10 @@ export class BookingService {
           bookingDetailsDto.queue.commerceId
         );
         delete bookingDetailsDto.commerce.queues;
+      }
+      // Get user information if userId exists
+      if (booking.userId) {
+        bookingDetailsDto.user = await this.userService.getUserById(booking.userId);
       }
       const booked = await this.getBookingsBeforeYouByDate(
         booking.number,
@@ -2024,15 +2046,15 @@ export class BookingService {
 
   /**
    * Sends confirmation notifications for bookings based on configured schedule.
-   * 
+   *
    * DUPLICATE PREVENTION STRATEGY:
    * - Uses 'lastConfirmNotificationDate' to prevent sending notifications multiple times on the same day
    * - Preserves original 'confirmNotified' flag behavior for backward compatibility
-   * 
+   *
    * FIELD USAGE:
    * - confirmNotified: Legacy flag set only when booking reaches final notification day (e.g., 1 day before)
    * - lastConfirmNotificationDate: New field to track when last notification was sent (prevents duplicates)
-   * 
+   *
    * BACKWARD COMPATIBILITY:
    * - getConfirmedBookingsByCommerceIdDates() continues to use confirmNotified filter as before
    * - No impact on existing queries or booking flow
@@ -2139,7 +2161,7 @@ export class BookingService {
             if (bookingCommerces && bookingCommerces.length > 0) {
               bookingCommerce = bookingCommerces[0];
             }
-            
+
             // Calcular en cuántos días más es la reserva y el mínimo configurado
             let minDaysBefore = 1;
             if (
@@ -2164,7 +2186,7 @@ export class BookingService {
                 minDaysBefore = Math.min(...numericDays);
               }
             }
-            
+
             const bookingDateModel = new DateModel(booking.date);
             const daysUntilBooking = bookingDateModel.daysDiff(todayModel);
 
@@ -2178,7 +2200,7 @@ export class BookingService {
               booking.confirmNotifiedWhatsapp = true;
               messages.push(message[0]);
             }
-            
+
             // IMPORTANT: Solo marcar como "confirmNotified" cuando estemos en el menor
             // número de días configurado antes de la reserva (por ejemplo, 1 día).
             // Esto mantiene la compatibilidad con la consulta getConfirmedBookingsByCommerceIdDates
