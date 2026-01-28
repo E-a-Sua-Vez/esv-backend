@@ -318,6 +318,42 @@ export class AttentionController {
     return this.attentionService.cancellAtentions();
   }
 
+  @UseGuards(SimpleGuard)
+  @Get('/cancell/preview')
+  public async previewCancellations(): Promise<{oldCount: number, recentCount: number, totalPending: number, preview: any[], recentPreview: any[]}> {
+    // Preview what would be cancelled without actually cancelling
+    const cutoffDate = new Date();
+    cutoffDate.setHours(cutoffDate.getHours() - 24);
+
+    const oldAttentions = await this.attentionService.getAttentionsToCancel(cutoffDate);
+
+    // Also get recent attentions for comparison
+    const allPending = await this.attentionService.getAllPendingAttentions();
+    const recentAttentions = allPending.filter(att =>
+      att.createdAt && new Date(att.createdAt) >= cutoffDate
+    );
+
+    return {
+      oldCount: oldAttentions.length,
+      recentCount: recentAttentions.length,
+      totalPending: allPending.length,
+      preview: oldAttentions.slice(0, 5).map(att => ({
+        id: att.id,
+        status: att.status,
+        createdAt: att.createdAt,
+        commerceId: att.commerceId,
+        hoursOld: Math.round((Date.now() - new Date(att.createdAt).getTime()) / (1000 * 60 * 60))
+      })),
+      recentPreview: recentAttentions.slice(0, 5).map(att => ({
+        id: att.id,
+        status: att.status,
+        createdAt: att.createdAt,
+        commerceId: att.commerceId,
+        hoursOld: Math.round((Date.now() - new Date(att.createdAt).getTime()) / (1000 * 60 * 60))
+      }))
+    };
+  }
+
   @UseGuards(AuthGuard)
   @Patch('/cancel/:id')
   public async cancelAttention(@User() user, @Param() params: any): Promise<Attention> {

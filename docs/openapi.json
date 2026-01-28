@@ -5433,6 +5433,20 @@
         ]
       }
     },
+    "/attention/cancell/preview": {
+      "get": {
+        "operationId": "AttentionController_previewCancellations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "attention"
+        ]
+      }
+    },
     "/attention/cancel/{id}": {
       "patch": {
         "operationId": "AttentionController_cancelAttention",

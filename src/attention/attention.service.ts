@@ -1369,6 +1369,10 @@ export class AttentionService {
         let dateAt = attention.createdAt;
         if (attention.processedAt !== undefined) {
           dateAt = attention.processedAt;
+        } else {
+          // If processedAt is missing, set it to now for duration calculation
+          attention.processedAt = attention.endAt;
+          dateAt = attention.processedAt;
         }
         const diff = attention.endAt.getTime() - dateAt.getTime();
         attention.duration = diff / (1000 * 60);
@@ -1592,6 +1596,10 @@ export class AttentionService {
     if (!attention.reactivated && !attention.duration) {
       let dateAt = attention.createdAt;
       if (attention.processedAt !== undefined) {
+        dateAt = attention.processedAt;
+      } else {
+        // If processedAt is missing, set it to endAt for duration calculation
+        attention.processedAt = attention.endAt;
         dateAt = attention.processedAt;
       }
       const diff = attention.endAt.getTime() - dateAt.getTime();
@@ -2431,41 +2439,86 @@ export class AttentionService {
 
   public async cancellAtentions(): Promise<string> {
     try {
-      const attentions = await this.attentionRepository
-        .whereIn('status', [AttentionStatus.PENDING, AttentionStatus.PROCESSING])
-        .find();
+      // Calculate cutoff date: 24 hours ago
+      const cutoffDate = new Date();
+      cutoffDate.setHours(cutoffDate.getHours() - 24);
+
+      this.logger.log(`[AttentionService] Starting automatic cancellation of attentions older than ${cutoffDate.toISOString()}`);
+
+      // Use the helper method to avoid Firestore index issues
+      const attentions = await this.getAttentionsToCancel(cutoffDate);
+
+      this.logger.log(`[AttentionService] Found ${attentions.length} attentions to cancel`);
+
+      if (attentions.length === 0) {
+        return 'No hay atenciones pendientes antiguas para cancelar';
+      }
 
       // Cancel telemedicine sessions for all cancelled attentions
-      for (const attention of attentions) {
-        attention.status = AttentionStatus.CANCELLED;
-        const attentionCancelled = await this.update('ett', attention);
+      let cancelledCount = 0;
+      let failedCount = 0;
 
-        // Cancel telemedicine session if exists
-        if (attentionCancelled.telemedicineSessionId) {
-          try {
-            await this.telemedicineService.cancelSession(
-              attentionCancelled.telemedicineSessionId,
-              'ett'
-            );
-            this.logger.log(
-              `[AttentionService] Cancelled telemedicine session ${attentionCancelled.telemedicineSessionId} for cancelled attention ${attentionCancelled.id}`
-            );
-          } catch (error) {
-            this.logger.error(
-              `[AttentionService] Failed to cancel telemedicine session ${attentionCancelled.telemedicineSessionId}: ${error.message}`
-            );
-            // Don't throw, continue with attention cancellation
+      for (const attention of attentions) {
+        try {
+          attention.status = AttentionStatus.CANCELLED;
+          attention.cancelledAt = new Date(); // Add cancellation timestamp
+          const attentionCancelled = await this.update('ett', attention);
+          cancelledCount++;
+
+          this.logger.log(`[AttentionService] Cancelled attention ${attention.id} (created at ${attention.createdAt})`);
+
+          // Cancel telemedicine session if exists
+          if (attentionCancelled.telemedicineSessionId) {
+            try {
+              await this.telemedicineService.cancelSession(
+                attentionCancelled.telemedicineSessionId,
+                'ett'
+              );
+              this.logger.log(
+                `[AttentionService] Cancelled telemedicine session ${attentionCancelled.telemedicineSessionId} for cancelled attention ${attentionCancelled.id}`
+              );
+            } catch (error) {
+              this.logger.error(
+                `[AttentionService] Failed to cancel telemedicine session ${attentionCancelled.telemedicineSessionId}: ${error.message}`
+              );
+              // Don't throw, continue with attention cancellation
+            }
           }
+        } catch (error) {
+          failedCount++;
+          this.logger.error(`[AttentionService] Failed to cancel attention ${attention.id}: ${error.message}`);
+          // Continue with other attentions
         }
       }
 
-      return 'Las atenciones pendientes fueron canceladas exitosamente';
+      const resultMessage = `Cancelación automática completada: ${cancelledCount} atenciones canceladas, ${failedCount} fallos`;
+      this.logger.log(`[AttentionService] ${resultMessage}`);
+      return resultMessage;
     } catch (error) {
+      this.logger.error(`[AttentionService] Error crítico durante cancelación automática: ${error.message}`, error.stack);
       throw new HttpException(
-        `Hubo un poblema al cancelar las atenciones: ${error.message}`,
+        `Hubo un problema crítico al cancelar las atenciones: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  public async getAllPendingAttentions(): Promise<Attention[]> {
+    return this.attentionRepository
+      .whereIn('status', [AttentionStatus.PENDING, AttentionStatus.PROCESSING])
+      .find();
+  }
+
+  public async getAttentionsToCancel(cutoffDate: Date): Promise<Attention[]> {
+    // First get all PENDING and PROCESSING attentions
+    const allPendingAttentions = await this.attentionRepository
+      .whereIn('status', [AttentionStatus.PENDING, AttentionStatus.PROCESSING])
+      .find();
+
+    // Then filter by date in memory to avoid Firestore composite index requirement
+    return allPendingAttentions.filter(attention =>
+      attention.createdAt && new Date(attention.createdAt) < cutoffDate
+    );
   }
 
   public async attentionPaymentConfirm(
