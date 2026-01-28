@@ -65,4 +65,8 @@ export class AttentionDetailsDto {
   notificationCheckInSent?: boolean;
   professionalId?: string;
   professionalName?: string;
+  professionalCommissionType?: string;
+  professionalCommissionValue?: number;
+  professionalCommissionAmount?: number;
+  professionalCommissionNotes?: string;
 }

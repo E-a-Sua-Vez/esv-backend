@@ -33,7 +33,8 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     date?: Date,
     servicesId?: string[],
     servicesDetails?: object[],
-    clientId?: string
+    clientId?: string,
+    paymentConfirmationData?: any // Agregar parámetro de datos de pago
   ): Promise<Attention> {
     const currentNumber = queue.currentNumber;
     const attention = new Attention();
@@ -80,21 +81,35 @@ export class AttentionDefaultBuilder implements BuilderInterface {
         firstServiceDetails: servicesDetails?.[0],
         proceduresInDetails: servicesDetails?.[0]?.['procedures'],
         serviceProcedures: service?.serviceInfo?.procedures,
-        serviceProceduresList: service?.serviceInfo?.proceduresList
+        serviceProceduresList: service?.serviceInfo?.proceduresList,
       });
 
       if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
-        proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
-        console.log('[AttentionDefaultBuilder] Using procedures from servicesDetails:', proceduresAmount);
+        proceduresAmount =
+          parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
+        console.log(
+          '[AttentionDefaultBuilder] Using procedures from servicesDetails:',
+          proceduresAmount
+        );
       } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
         proceduresAmount = service.serviceInfo.procedures;
-        console.log('[AttentionDefaultBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
+        console.log(
+          '[AttentionDefaultBuilder] Using procedures from service.serviceInfo:',
+          proceduresAmount
+        );
       } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
         // Use first value from proceduresList as fallback
-        const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
+        const proceduresList = service.serviceInfo.proceduresList
+          .trim()
+          .split(',')
+          .map(p => parseInt(p.trim(), 10))
+          .filter(p => !isNaN(p) && p > 0);
         if (proceduresList.length > 0) {
           proceduresAmount = proceduresList[0];
-          console.log('[AttentionDefaultBuilder] Using first value from proceduresList:', proceduresAmount);
+          console.log(
+            '[AttentionDefaultBuilder] Using first value from proceduresList:',
+            proceduresAmount
+          );
         }
       }
 
@@ -110,7 +125,11 @@ export class AttentionDefaultBuilder implements BuilderInterface {
           if (packs && packs.length > 0) {
             // Associate attention to existing active package with sessions remaining
             const activePackage = packs.find(pkg => {
-              const isActive = [PackageStatus.ACTIVE, PackageStatus.CONFIRMED, PackageStatus.REQUESTED].includes(pkg.status);
+              const isActive = [
+                PackageStatus.ACTIVE,
+                PackageStatus.CONFIRMED,
+                PackageStatus.REQUESTED,
+              ].includes(pkg.status);
               const hasPendingSessions = (pkg.proceduresLeft || 0) > 0;
               return isActive && hasPendingSessions;
             });

@@ -1,4 +1,11 @@
-import { HttpException, HttpStatus, Injectable, Inject, Optional, forwardRef } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Inject,
+  Optional,
+  forwardRef,
+} from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
@@ -17,6 +24,7 @@ import { PaymentConfirmation } from 'src/payment/model/payment-confirmation';
 import { PaymentMethod } from 'src/payment/model/payment-method.enum';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 
+import { BookingService } from '../booking/booking.service';
 import { CollaboratorService } from '../collaborator/collaborator.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
@@ -26,20 +34,19 @@ import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
 import { ModuleService } from '../module/module.service';
 import { NotificationType } from '../notification/model/notification-type.enum';
 import { NotificationService } from '../notification/notification.service';
+import { ProfessionalService } from '../professional/professional.service';
 import { QueueService } from '../queue/queue.service';
 import { ServiceService } from '../service/service.service';
+import TermsAccepted from '../shared/events/TermsAccepted';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
+import { ConsentRequestTiming } from '../shared/model/consent-requirement.entity';
 import { AuditLogService } from '../shared/services/audit-log.service';
 import { ConsentOrchestrationService } from '../shared/services/consent-orchestration.service';
 import { ConsentTriggersService } from '../shared/services/consent-triggers.service';
-import { ConsentRequestTiming } from '../shared/model/consent-requirement.entity';
-import TermsAccepted from '../shared/events/TermsAccepted';
 import { DateModel } from '../shared/utils/date.model';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { PersonalInfo, User } from '../user/model/user.entity';
 import { UserService } from '../user/user.service';
-import { BookingService } from '../booking/booking.service';
-import { ProfessionalService } from '../professional/professional.service';
 
 import { AttentionDefaultBuilder } from './builders/attention-default';
 import { AttentionNoDeviceBuilder } from './builders/attention-no-device';
@@ -51,8 +58,8 @@ import AttentionStageChanged from './events/AttentionStageChanged';
 import AttentionUpdated from './events/AttentionUpdated';
 import ProfessionalAssignedToAttention from './events/ProfessionalAssignedToAttention';
 import { AttentionChannel } from './model/attention-channel.enum';
-import { AttentionStage } from './model/attention-stage.enum';
 import { AttentionStageHistory } from './model/attention-stage-history.entity';
+import { AttentionStage } from './model/attention-stage.enum';
 import { AttentionStatus } from './model/attention-status.enum';
 import { AttentionType } from './model/attention-type.enum';
 import { Attention, Block } from './model/attention.entity';
@@ -90,7 +97,8 @@ export class AttentionService {
     private professionalService: ProfessionalService,
     @Inject(forwardRef(() => ConsentOrchestrationService))
     private consentOrchestrationService?: ConsentOrchestrationService,
-    @Optional() @Inject(forwardRef(() => ConsentTriggersService))
+    @Optional()
+    @Inject(forwardRef(() => ConsentTriggersService))
     private consentTriggersService?: ConsentTriggersService
   ) {
     this.logger.setContext('AttentionService');
@@ -105,14 +113,19 @@ export class AttentionService {
     const defaultLogoUrl = `${frontendBaseUrl}/images/hub/logo/hub-color-transparente.png`;
     try {
       // Try to get S3 signed URL (expires in 7 days for emails)
-      const signedUrl = await this.commerceLogoService.getCommerceLogoS3SignedUrl(commerceId, 60 * 60 * 24 * 7);
+      const signedUrl = await this.commerceLogoService.getCommerceLogoS3SignedUrl(
+        commerceId,
+        60 * 60 * 24 * 7
+      );
       if (signedUrl) {
         return signedUrl;
       }
       // Fallback to default logo if no logo exists
       return defaultLogoUrl;
     } catch (error) {
-      this.logger.error(`Error getting commerce logo for email: commerceId=${commerceId}, error=${error}`);
+      this.logger.error(
+        `Error getting commerce logo for email: commerceId=${commerceId}, error=${error}`
+      );
       return defaultLogoUrl;
     }
   }
@@ -141,8 +154,12 @@ export class AttentionService {
 
       // Debug: Log what attention data we have
       this.logger.log(`[AttentionService.getAttentionDetails] Attention ID: ${attention.id}`);
-      this.logger.log(`[AttentionService.getAttentionDetails] Professional ID: ${attention.professionalId}`);
-      this.logger.log(`[AttentionService.getAttentionDetails] Professional Name: ${attention.professionalName}`);
+      this.logger.log(
+        `[AttentionService.getAttentionDetails] Professional ID: ${attention.professionalId}`
+      );
+      this.logger.log(
+        `[AttentionService.getAttentionDetails] Professional Name: ${attention.professionalName}`
+      );
 
       // Optional: Validate collaborator access to commerce if collaboratorId is provided
       if (collaboratorId) {
@@ -155,10 +172,7 @@ export class AttentionService {
               (collaborator.commercesId && collaborator.commercesId.includes(attention.commerceId));
 
             if (!hasAccess) {
-              throw new HttpException(
-                'No tiene acceso a esta atención',
-                HttpStatus.FORBIDDEN
-              );
+              throw new HttpException('No tiene acceso a esta atención', HttpStatus.FORBIDDEN);
             }
           }
         } catch (error) {
@@ -210,6 +224,11 @@ export class AttentionService {
       attentionDetailsDto.stageHistory = attention.stageHistory;
       attentionDetailsDto.professionalId = attention.professionalId;
       attentionDetailsDto.professionalName = attention.professionalName;
+      // Add professional commission fields
+      attentionDetailsDto.professionalCommissionType = attention.professionalCommissionType;
+      attentionDetailsDto.professionalCommissionValue = attention.professionalCommissionValue;
+      attentionDetailsDto.professionalCommissionAmount = attention.professionalCommissionAmount;
+      attentionDetailsDto.professionalCommissionNotes = attention.professionalCommissionNotes;
       // Propagar flag de notificación de check-in enviada (si existe)
       (attentionDetailsDto as any).notificationCheckInSent =
         (attention as any).notificationCheckInSent ?? false;
@@ -280,6 +299,11 @@ export class AttentionService {
       attentionDetailsDto.stageHistory = attention.stageHistory;
       attentionDetailsDto.professionalId = attention.professionalId;
       attentionDetailsDto.professionalName = attention.professionalName;
+      // Add professional commission fields
+      attentionDetailsDto.professionalCommissionType = attention.professionalCommissionType;
+      attentionDetailsDto.professionalCommissionValue = attention.professionalCommissionValue;
+      attentionDetailsDto.professionalCommissionAmount = attention.professionalCommissionAmount;
+      attentionDetailsDto.professionalCommissionNotes = attention.professionalCommissionNotes;
       if (attention.userId !== undefined) {
         attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
       }
@@ -487,7 +511,8 @@ export class AttentionService {
       scheduledAt: Date | string;
       recordingEnabled?: boolean;
       notes?: string;
-    }
+    },
+    professionalName?: string
   ): Promise<Attention> {
     try {
       let attentionCreated;
@@ -571,37 +596,37 @@ export class AttentionService {
             notes: telemedicineConfig.notes,
           }
         );
+      } else if (block && block.number) {
+        // PRIORIZAR EL BLOCK - SI HAY BLOCK, USAR SIEMPRE AttentionReserveBuilder
+        attentionCreated = await this.attentionReserveBuilder.create(
+          queue,
+          collaboratorId,
+          type || AttentionType.STANDARD, // Usar el type o STANDARD por defecto
+          channel,
+          userId,
+          block,
+          date,
+          paymentConfirmationData,
+          bookingId,
+          servicesId,
+          servicesDetails,
+          clientId,
+          termsConditionsToAcceptCode,
+          termsConditionsAcceptedCode,
+          termsConditionsToAcceptedAt,
+          professionalName
+        );
       } else if (type && type === AttentionType.NODEVICE) {
-        if (block && block.number) {
-          attentionCreated = await this.attentionReserveBuilder.create(
-            queue,
-            collaboratorId,
-            type,
-            channel,
-            userId,
-            block,
-            date,
-            paymentConfirmationData,
-            bookingId,
-            servicesId,
-            servicesDetails,
-            clientId,
-            termsConditionsToAcceptCode,
-            termsConditionsAcceptedCode,
-            termsConditionsToAcceptedAt
-          );
-        } else {
-          attentionCreated = await this.attentionNoDeviceBuilder.create(
-            queue,
-            collaboratorId,
-            channel,
-            userId,
-            date,
-            servicesId,
-            servicesDetails,
-            clientId
-          );
-        }
+        attentionCreated = await this.attentionNoDeviceBuilder.create(
+          queue,
+          collaboratorId,
+          channel,
+          userId,
+          date,
+          servicesId,
+          servicesDetails,
+          clientId
+        );
       } else if (onlySurvey) {
         if (onlySurvey.active) {
           const collaboratorBot = await this.collaboratorService.getCollaboratorBot(
@@ -640,47 +665,6 @@ export class AttentionService {
             clientId
           );
         }
-      } else if (block && block.number) {
-        console.log('[AttentionService.createAttention] Using AttentionReserveBuilder with payment data:', {
-          hasPaymentConfirmationData: !!paymentConfirmationData,
-          paymentDataPaid: paymentConfirmationData?.paid,
-          collaboratorId,
-          bookingId
-        });
-
-        console.log('🔥🔥🔥 [CRITICAL ATTENTION DEBUG] DATOS RECIBIDOS EN AttentionService:');
-        console.log('  - queueId:', queueId);
-        console.log('  - collaboratorId:', collaboratorId);
-        console.log('  - channel:', channel);
-        console.log('  - block:', JSON.stringify(block));
-        console.log('  - date:', date);
-        console.log('  - paymentConfirmationData:', paymentConfirmationData ? 'EXISTS' : 'UNDEFINED');
-        if (paymentConfirmationData) {
-          console.log('  - paymentConfirmationData.paid:', paymentConfirmationData.paid);
-          console.log('  - paymentConfirmationData.paymentAmount:', paymentConfirmationData.paymentAmount);
-          console.log('  - paymentConfirmationData.professionalCommissionAmount:', paymentConfirmationData.professionalCommissionAmount);
-          console.log('  - paymentConfirmationData COMPLETO:', JSON.stringify(paymentConfirmationData, null, 2));
-        }
-        console.log('  - bookingId:', bookingId);
-        console.log('🔥🔥🔥 [CRITICAL ATTENTION DEBUG] ENVIANDO A AttentionReserveBuilder');
-
-        attentionCreated = await this.attentionReserveBuilder.create(
-          queue,
-          collaboratorId,
-          AttentionType.STANDARD,
-          channel,
-          userId,
-          block,
-          date,
-          paymentConfirmationData,
-          bookingId,
-          servicesId,
-          servicesDetails,
-          clientId,
-          termsConditionsToAcceptCode,
-          termsConditionsAcceptedCode,
-          termsConditionsToAcceptedAt
-        );
       } else {
         attentionCreated = await this.attentionDefaultBuilder.create(
           queue,
@@ -723,11 +707,7 @@ export class AttentionService {
       });
 
       // Hook: Solicitar consentimientos pendientes automáticamente
-      if (
-        this.consentOrchestrationService &&
-        clientId &&
-        queue.commerceId
-      ) {
+      if (this.consentOrchestrationService && clientId && queue.commerceId) {
         try {
           // Verificar si es la primera atención del cliente
           const existingAttentions = await this.attentionRepository
@@ -895,11 +875,17 @@ export class AttentionService {
   }
 
   public async update(user: string, attention: Attention): Promise<Attention> {
-    this.logger.log(`[AttentionService.update] BEFORE REPOSITORY UPDATE - ID: ${attention.id}, ProfessionalID: ${attention.professionalId}, ProfessionalName: ${attention.professionalName}`);
+    this.logger.log(
+      `[AttentionService.update] BEFORE REPOSITORY UPDATE - ID: ${attention.id}, ProfessionalID: ${attention.professionalId}, ProfessionalName: ${attention.professionalName}`
+    );
     const attentionUpdated = await this.attentionRepository.update(attention);
-    this.logger.log(`[AttentionService.update] AFTER REPOSITORY UPDATE - ID: ${attentionUpdated.id}, ProfessionalID: ${attentionUpdated.professionalId}, ProfessionalName: ${attentionUpdated.professionalName}`);
+    this.logger.log(
+      `[AttentionService.update] AFTER REPOSITORY UPDATE - ID: ${attentionUpdated.id}, ProfessionalID: ${attentionUpdated.professionalId}, ProfessionalName: ${attentionUpdated.professionalName}`
+    );
     const attentionUpdatedEvent = new AttentionUpdated(new Date(), attentionUpdated, { user });
-    this.logger.log(`[AttentionService] Publishing AttentionUpdated event for attention ${attentionUpdated.id} with status ${attentionUpdated.status}`);
+    this.logger.log(
+      `[AttentionService] Publishing AttentionUpdated event for attention ${attentionUpdated.id} with status ${attentionUpdated.status}`
+    );
     publish(attentionUpdatedEvent);
     return attentionUpdated;
   }
@@ -1001,14 +987,21 @@ export class AttentionService {
         skipConsentBlocking = false;
       }
 
-      if (!skipConsentBlocking && this.consentTriggersService && attention.clientId && attention.commerceId) {
+      if (
+        !skipConsentBlocking &&
+        this.consentTriggersService &&
+        attention.clientId &&
+        attention.commerceId
+      ) {
         const blockingCheck = await this.consentTriggersService.checkBlockingConsents(
           attention.clientId,
           attention.commerceId
         );
         if (blockingCheck.blocked) {
           throw new HttpException(
-            `No se puede avanzar etapa: faltan consentimientos obligatorios: ${blockingCheck.missingConsents.join(', ')}`,
+            `No se puede avanzar etapa: faltan consentimientos obligatorios: ${blockingCheck.missingConsents.join(
+              ', '
+            )}`,
             HttpStatus.PRECONDITION_FAILED
           );
         }
@@ -1110,16 +1103,12 @@ export class AttentionService {
 
       return attentionUpdated;
     } catch (error) {
-      this.logger.logError(
-        error instanceof Error ? error : new Error(String(error)),
-        undefined,
-        {
-          attentionId,
-          newStage,
-          user,
-          operation: 'advanceStage',
-        }
-      );
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        attentionId,
+        newStage,
+        user,
+        operation: 'advanceStage',
+      });
       if (error instanceof HttpException) {
         throw error;
       }
@@ -1168,17 +1157,13 @@ export class AttentionService {
 
       return await query.orderByAscending('createdAt').find();
     } catch (error) {
-      this.logger.logError(
-        error instanceof Error ? error : new Error(String(error)),
-        undefined,
-        {
-          commerceId,
-          queueId,
-          stage,
-          date,
-          operation: 'getAttentionsByStage',
-        }
-      );
+      this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+        commerceId,
+        queueId,
+        stage,
+        date,
+        operation: 'getAttentionsByStage',
+      });
       throw new HttpException(
         `Hubo un problema al obtener atenciones por etapa: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -1215,14 +1200,21 @@ export class AttentionService {
             skipConsentBlocking = false;
           }
 
-          if (!skipConsentBlocking && this.consentTriggersService && attention.clientId && attention.commerceId) {
+          if (
+            !skipConsentBlocking &&
+            this.consentTriggersService &&
+            attention.clientId &&
+            attention.commerceId
+          ) {
             const blockingCheck = await this.consentTriggersService.checkBlockingConsents(
               attention.clientId,
               attention.commerceId
             );
             if (blockingCheck.blocked) {
               throw new HttpException(
-                `No se puede atender la atención: faltan consentimientos obligatorios: ${blockingCheck.missingConsents.join(', ')}`,
+                `No se puede atender la atención: faltan consentimientos obligatorios: ${blockingCheck.missingConsents.join(
+                  ', '
+                )}`,
                 HttpStatus.PRECONDITION_FAILED
               );
             }
@@ -1364,12 +1356,7 @@ export class AttentionService {
       if (isStagesEnabled && isCheckoutEnabled && !skipCheckout) {
         // Use advanceStage to move to CHECKOUT stage
         // This will handle stage history, events, etc.
-        return await this.advanceStage(
-          user,
-          attentionId,
-          AttentionStage.CHECKOUT,
-          comment
-        );
+        return await this.advanceStage(user, attentionId, AttentionStage.CHECKOUT, comment);
       }
 
       // Otherwise, terminate directly (backward compatibility)
@@ -1402,7 +1389,11 @@ export class AttentionService {
       const attentionFinished = await this.update(user, attention);
 
       // Trigger AFTER_ATTENTION consent request
-      if (this.consentTriggersService && attentionFinished.clientId && attentionFinished.commerceId) {
+      if (
+        this.consentTriggersService &&
+        attentionFinished.clientId &&
+        attentionFinished.commerceId
+      ) {
         try {
           await this.consentTriggersService.triggerAfterAttention(
             attentionFinished.commerceId,
@@ -1611,10 +1602,7 @@ export class AttentionService {
     const attentionDetails = await this.getAttentionDetails(attentionId);
 
     // Schedule survey or send CSAT notifications
-    if (
-      commerce.serviceInfo &&
-      commerce.serviceInfo.surveyPostAttentionDaysAfter
-    ) {
+    if (commerce.serviceInfo && commerce.serviceInfo.surveyPostAttentionDaysAfter) {
       const daysToAdd = commerce.serviceInfo.surveyPostAttentionDaysAfter || 0;
       const surveyPostAttentionDateScheduled = new DateModel().addDays(+daysToAdd).toString();
       attention.surveyPostAttentionDateScheduled = surveyPostAttentionDateScheduled;
@@ -1656,16 +1644,12 @@ export class AttentionService {
         });
       } catch (error) {
         // Log error but don't fail the checkout finish process
-        this.logger.logError(
-          error instanceof Error ? error : new Error(String(error)),
-          undefined,
-          {
-            packageId: attentionUpdated.packageId,
-            attentionId: attentionUpdated.id,
-            operation: 'consumePackageSession',
-            user,
-          }
-        );
+        this.logger.logError(error instanceof Error ? error : new Error(String(error)), undefined, {
+          packageId: attentionUpdated.packageId,
+          attentionId: attentionUpdated.id,
+          operation: 'consumePackageSession',
+          user,
+        });
       }
     }
 
@@ -1835,7 +1819,7 @@ export class AttentionService {
                   const langVariant =
                     commerceLanguage && commerceLanguage.toLowerCase() === 'br'
                       ? 'pt'
-                      : (commerceLanguage || 'es');
+                      : commerceLanguage || 'es';
                   const scheduledDate = telemedicineSession.scheduledAt
                     ? new Date(telemedicineSession.scheduledAt).toLocaleString(
                         langVariant === 'pt' ? 'pt-BR' : 'es-ES',
@@ -2217,9 +2201,7 @@ export class AttentionService {
 
     // Determinar idioma del comercio
     const language =
-      commerceLanguage ||
-      (attentionDetails.commerce as any)?.localeInfo?.language ||
-      'es';
+      commerceLanguage || (attentionDetails.commerce as any)?.localeInfo?.language || 'es';
 
     // Determinar módulo y nombre del colaborador si es necesario
     let moduleNumber = attentionDetails.module?.name;
@@ -2533,7 +2515,7 @@ export class AttentionService {
             }
           } catch (error) {
             this.logger.warn(
-              `[AttentionService] Could not verify package payment status for package ${attention.packageId}: ${error.message}`,
+              `[AttentionService] Could not verify package payment status for package ${attention.packageId}: ${error.message}`
             );
             // If we can't load the package, do not block the operation based on this flag
           }
@@ -2616,7 +2598,8 @@ export class AttentionService {
                   paymentPercentage: 0,
                   paymentDate: new Date(),
                   paymentCommission: 0,
-                  paymentComment: confirmationData?.paymentComment || 'Pago incluido en paquete prepagado',
+                  paymentComment:
+                    confirmationData?.paymentComment || 'Pago incluido en paquete prepagado',
                   paymentFiscalNote: confirmationData?.paymentFiscalNote || '',
                   promotionalCode: '',
                   paymentDiscountAmount: 0,
@@ -2630,13 +2613,16 @@ export class AttentionService {
               } else {
                 // Actualizar campos existentes
                 attention.paymentConfirmationData.paid = true;
-                attention.paymentConfirmationData.packageId = attention.packageId || attention.paymentConfirmationData.packageId || '';
+                attention.paymentConfirmationData.packageId =
+                  attention.packageId || attention.paymentConfirmationData.packageId || '';
                 attention.paymentConfirmationData.paymentAmount = 0;
                 attention.paymentConfirmationData.totalAmount = 0;
                 if (confirmationData?.paymentComment) {
-                  attention.paymentConfirmationData.paymentComment = confirmationData.paymentComment;
+                  attention.paymentConfirmationData.paymentComment =
+                    confirmationData.paymentComment;
                 } else if (!attention.paymentConfirmationData.paymentComment) {
-                  attention.paymentConfirmationData.paymentComment = 'Pago incluido en paquete prepagado';
+                  attention.paymentConfirmationData.paymentComment =
+                    'Pago incluido en paquete prepagado';
                 }
               }
             }
@@ -2729,18 +2715,29 @@ export class AttentionService {
 
             if (confirmationData.professionalId) {
               try {
-                const professional = await this.professionalService.getProfessionalById(confirmationData.professionalId);
+                const professional = await this.professionalService.getProfessionalById(
+                  confirmationData.professionalId
+                );
                 if (professional) {
-                  professionalName = professional.personalInfo?.name || attention.professionalName || null;
-                  professionalCommissionType = confirmationData.professionalCommissionType ||
-                    professional.financialInfo?.commissionType || null;
-                  professionalCommissionValue = confirmationData.professionalCommissionValue ||
-                    professional.financialInfo?.commissionValue || null;
-                  professionalCommissionNotes = confirmationData.professionalCommissionNotes ||
-                    `Comisión del profesional ${professionalName}` || null;
+                  professionalName =
+                    professional.personalInfo?.name || attention.professionalName || null;
+                  professionalCommissionType =
+                    confirmationData.professionalCommissionType ||
+                    professional.financialInfo?.commissionType ||
+                    null;
+                  professionalCommissionValue =
+                    confirmationData.professionalCommissionValue ||
+                    professional.financialInfo?.commissionValue ||
+                    null;
+                  professionalCommissionNotes =
+                    confirmationData.professionalCommissionNotes ||
+                    `Comisión del profesional ${professionalName}` ||
+                    null;
                 }
               } catch (error) {
-                this.logger.warn(`No se pudo obtener datos del profesional ${confirmationData.professionalId}: ${error.message}`);
+                this.logger.warn(
+                  `No se pudo obtener datos del profesional ${confirmationData.professionalId}: ${error.message}`
+                );
                 // Usar datos disponibles en confirmationData
                 professionalName = attention.professionalName || null;
                 professionalCommissionType = confirmationData.professionalCommissionType || null;
@@ -2835,6 +2832,15 @@ export class AttentionService {
           }
         }
         attention = await this.update(user, attention);
+        this.logger.info('Attention payment confirmed successfully', {
+          attentionId: id,
+          commerceId: attention.commerceId,
+          queueId: attention.queueId,
+          clientId: attention.clientId,
+          hasPayment: !!confirmationData,
+          hasPackage: !!attention.packageId,
+          user,
+        });
         return attention;
       }
     } catch (error) {
@@ -2856,7 +2862,10 @@ export class AttentionService {
       const queueToTransfer = await this.queueService.getQueueById(queueId);
       if (attention && attention.id) {
         if (queueToTransfer && queueToTransfer.id) {
-          if (queueToTransfer.type === QueueType.SERVICE || queueToTransfer.type === QueueType.PROFESSIONAL) {
+          if (
+            queueToTransfer.type === QueueType.SERVICE ||
+            queueToTransfer.type === QueueType.PROFESSIONAL
+          ) {
             attention.transfered = true;
             attention.transferedAt = new Date();
             attention.transferedOrigin = attention.queueId;
@@ -2899,24 +2908,17 @@ export class AttentionService {
     customCommission?: number,
     customCommissionType?: string
   ): Promise<Attention> {
-    this.logger.log(`[AttentionService.assignProfessional] START - AttentionID: ${attentionId}, ProfessionalID: ${professionalId}, ProfessionalName: ${professionalName}`);
     try {
       // Get attention
       const attention = await this.getAttentionById(attentionId);
       if (!attention || !attention.id) {
-        throw new HttpException(
-          `Atención no existe: ${attentionId}`,
-          HttpStatus.NOT_FOUND
-        );
+        throw new HttpException(`Atención no existe: ${attentionId}`, HttpStatus.NOT_FOUND);
       }
 
       // Get professional
       const professional = await this.professionalService.getProfessionalById(professionalId);
       if (!professional || !professional.id) {
-        throw new HttpException(
-          `Profesional no existe: ${professionalId}`,
-          HttpStatus.NOT_FOUND
-        );
+        throw new HttpException(`Profesional no existe: ${professionalId}`, HttpStatus.NOT_FOUND);
       }
 
       // Validate professional belongs to the same commerce
@@ -2936,9 +2938,11 @@ export class AttentionService {
       }
 
       // Validate professional can perform the service
-      if (attention.serviceId &&
-          professional.professionalInfo?.servicesId?.length > 0 &&
-          !professional.professionalInfo.servicesId.includes(attention.serviceId)) {
+      if (
+        attention.serviceId &&
+        professional.professionalInfo?.servicesId?.length > 0 &&
+        !professional.professionalInfo.servicesId.includes(attention.serviceId)
+      ) {
         throw new HttpException(
           `El profesional no está habilitado para realizar este servicio`,
           HttpStatus.BAD_REQUEST
@@ -2949,62 +2953,87 @@ export class AttentionService {
       attention.professionalId = professionalId;
       attention.professionalName = professionalName || professional.personalInfo?.name || 'N/I';
 
-      this.logger.log(`[AttentionService.assignProfessional] VALUES ASSIGNED - ID: ${attention.professionalId}, Name: ${attention.professionalName}`);
+      this.logger.log(
+        `[AttentionService.assignProfessional] VALUES ASSIGNED - ID: ${attention.professionalId}, Name: ${attention.professionalName}`
+      );
 
       // Si se proporciona una comisión personalizada, usarla; sino, usar la del profesional
       let commissionTypeToUse: string | undefined;
       let commissionValueToUse: number | undefined;
 
-      if (customCommission !== undefined && customCommission !== null && customCommissionType) {
+      if (customCommission !== undefined && customCommission !== null) {
         // Usar comisión personalizada del usuario
-        commissionTypeToUse = customCommissionType;
+        commissionTypeToUse = customCommissionType || 'FIXED'; // Default to FIXED if type not provided
         commissionValueToUse = customCommission;
-        this.logger.log(`[AttentionService] Using custom commission: ${customCommission} (${customCommissionType})`);
+        this.logger.log(
+          `[AttentionService] Using custom commission: ${customCommission} (${commissionTypeToUse}${customCommissionType ? '' : ' - defaulted to FIXED'})`
+        );
       } else if (professional.financialInfo) {
         // Usar comisión del profesional
-        commissionTypeToUse = professional.financialInfo.commissionType;
+        commissionTypeToUse = professional.financialInfo.commissionType || 'FIXED'; // Default to FIXED if undefined
         commissionValueToUse = professional.financialInfo.commissionValue;
-        this.logger.log(`[AttentionService] Using professional default commission: ${commissionValueToUse} (${commissionTypeToUse})`);
+        this.logger.log(
+          `[AttentionService] Using professional default commission: ${commissionValueToUse} (${commissionTypeToUse}${professional.financialInfo.commissionType ? '' : ' - defaulted to FIXED'})`
+        );
       }
 
-      // Si hay tipo y valor de comisión, calcular el monto (solo si existe paymentConfirmationData)
-      if (attention.paymentConfirmationData && commissionTypeToUse && commissionValueToUse && commissionValueToUse > 0) {
-        // Calculate commission amount based on type
-        let commissionAmount = 0;
-        let commissionPercentage = 0;
+      // Si hay tipo y valor de comisión, guardarla en la atención
+      if (commissionTypeToUse && commissionValueToUse && commissionValueToUse > 0) {
+        this.logger.log(
+          `[AttentionService] Processing commission - Type: ${commissionTypeToUse}, Value: ${commissionValueToUse}`
+        );
 
-        if (commissionTypeToUse === 'PERCENTAGE') {
-          commissionPercentage = commissionValueToUse;
-          commissionAmount = (attention.paymentConfirmationData.totalAmount * commissionValueToUse) / 100;
-        } else if (commissionTypeToUse === 'FIXED') {
-          commissionAmount = commissionValueToUse;
-          commissionPercentage = (commissionValueToUse / attention.paymentConfirmationData.totalAmount) * 100;
+        // Calculate commission amount based on type (if totalAmount is available from existing paymentConfirmationData)
+        let commissionAmount = 0;
+        if (attention.paymentConfirmationData?.totalAmount) {
+          if (commissionTypeToUse === 'PERCENTAGE') {
+            commissionAmount = (attention.paymentConfirmationData.totalAmount * commissionValueToUse) / 100;
+          } else if (commissionTypeToUse === 'FIXED') {
+            commissionAmount = commissionValueToUse;
+          }
         }
 
-        // Update paymentConfirmationData with professional commission data
-        attention.paymentConfirmationData.professionalId = professionalId;
-        attention.paymentConfirmationData.professionalCommissionType = commissionTypeToUse;
-        attention.paymentConfirmationData.professionalCommissionValue = commissionValueToUse;
-        attention.paymentConfirmationData.professionalCommissionAmount = commissionAmount;
-        attention.paymentConfirmationData.professionalCommissionPercentage = commissionPercentage;
-        attention.paymentConfirmationData.professionalCommissionNotes = customCommission !== undefined && customCommission !== null
+        // Save commission data directly in attention fields (similar to booking)
+        attention.professionalCommissionType = commissionTypeToUse;
+        attention.professionalCommissionValue = commissionValueToUse;
+        attention.professionalCommissionAmount = commissionAmount;
+        attention.professionalCommissionNotes = customCommission !== undefined && customCommission !== null
           ? `Comisión personalizada: ${commissionValueToUse}${commissionTypeToUse === 'PERCENTAGE' ? '%' : ' BRL'}`
           : `Comisión auto-sugerida del profesional ${professional.personalInfo?.name || professionalId}`;
+
+        this.logger.log(`[AttentionService] Commission data set in attention fields:`, JSON.stringify({
+          professionalCommissionType: attention.professionalCommissionType,
+          professionalCommissionValue: attention.professionalCommissionValue,
+          professionalCommissionAmount: attention.professionalCommissionAmount,
+          professionalCommissionNotes: attention.professionalCommissionNotes
+        }));
+
+        // También guardar en paymentConfirmationData si existe (para mantener compatibilidad)
+        if (attention.paymentConfirmationData) {
+          attention.paymentConfirmationData.professionalId = professionalId;
+          attention.paymentConfirmationData.professionalCommissionType = commissionTypeToUse;
+          attention.paymentConfirmationData.professionalCommissionValue = commissionValueToUse;
+          attention.paymentConfirmationData.professionalCommissionAmount = commissionAmount;
+          attention.paymentConfirmationData.professionalCommissionPercentage = commissionTypeToUse === 'PERCENTAGE' ? commissionValueToUse : 0;
+          attention.paymentConfirmationData.professionalCommissionNotes = attention.professionalCommissionNotes;
+          this.logger.log(`[AttentionService] Also saved commission in paymentConfirmationData for compatibility`);
+        }
+      } else {
+        this.logger.log(`[AttentionService] No commission to process - Type: ${commissionTypeToUse}, Value: ${commissionValueToUse}`);
       }
 
       // Update attention
       const updatedAttention = await this.update(user, attention);
 
-      // Debug: Log what we're getting back
-      this.logger.log(`[AttentionService] Before update - ID: ${attention.professionalId}, Name: ${attention.professionalName}`);
-      this.logger.log(`[AttentionService] After update - ID: ${updatedAttention.professionalId}, Name: ${updatedAttention.professionalName}`);
-
       // Ensure professionalId and professionalName are set in the response
-      this.logger.log(`[AttentionService] Professional assigned - ID: ${attention.professionalId}, Name: ${attention.professionalName}`);
       updatedAttention.professionalId = attention.professionalId;
       updatedAttention.professionalName = attention.professionalName;
 
-      this.logger.log(`[AttentionService] Final response - ID: ${updatedAttention.professionalId}, Name: ${updatedAttention.professionalName}`);
+      // Also ensure commission fields are set in the response
+      updatedAttention.professionalCommissionType = attention.professionalCommissionType;
+      updatedAttention.professionalCommissionValue = attention.professionalCommissionValue;
+      updatedAttention.professionalCommissionAmount = attention.professionalCommissionAmount;
+      updatedAttention.professionalCommissionNotes = attention.professionalCommissionNotes;
 
       // Get commerce to extract businessId
       const commerce = await this.commerceService.getCommerceById(attention.commerceId);
@@ -3028,7 +3057,7 @@ export class AttentionService {
         attentionId,
         professionalId,
         businessId,
-        commerceId: attention.commerceId
+        commerceId: attention.commerceId,
       });
 
       return updatedAttention;

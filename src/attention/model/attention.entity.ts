@@ -90,8 +90,14 @@ export class Attention {
   currentStage?: AttentionStage; // Etapa actual de la atención
   stageHistory?: AttentionStageHistory[]; // Historial de etapas por las que ha pasado
   originalQueueId?: string; // Referencia a la cola original (útil cuando se transfiere entre colas)
-  
+
   // Campo para asignar profesional que ejecuta el servicio
   professionalId?: string; // ID del profesional asignado
   professionalName?: string; // Nombre del profesional asignado (desnormalizado para consultas rápidas)
+
+  // Campos de comisión profesional (similar a booking)
+  professionalCommissionType?: string; // 'PERCENTAGE' | 'FIXED'
+  professionalCommissionValue?: number; // Valor de la comisión (% o BRL)
+  professionalCommissionAmount?: number; // Monto calculado de la comisión
+  professionalCommissionNotes?: string; // Notas sobre la comisión
 }

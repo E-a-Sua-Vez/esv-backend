@@ -52,7 +52,8 @@ export class AttentionReserveBuilder implements BuilderInterface {
     clientId?: string,
     termsConditionsToAcceptCode?: string,
     termsConditionsAcceptedCode?: string,
-    termsConditionsToAcceptedAt?: Date
+    termsConditionsToAcceptedAt?: Date,
+    professionalName?: string
   ): Promise<Attention> {
     if (!block) {
       throw new HttpException(
@@ -84,6 +85,13 @@ export class AttentionReserveBuilder implements BuilderInterface {
     }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
+    }
+    // Setear professionalId y professionalName si se proporcionan desde el booking
+    if (collaboratorId !== undefined) {
+      attention.professionalId = collaboratorId;
+    }
+    if (professionalName !== undefined) {
+      attention.professionalName = professionalName;
     }
     attention.channel = channel;
     if (userId !== undefined) {
@@ -163,6 +171,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
       attention.queueId,
       dateToCreate
     );
+
     if (existingAttention && existingAttention.length > 0) {
       throw new HttpException(
         `Ya existe una atención con este numero para esta fecha ${attention.number} ${attention.queueId} ${dateToCreate}´`,
@@ -179,20 +188,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
       attention.servicesDetails = servicesDetails;
     }
 
-    // Debug: Log payment confirmation data transfer
-    console.log('[AttentionReserveBuilder] Processing payment data:', {
-      hasPaymentData: paymentConfirmationData !== undefined,
-      paidValue: paymentConfirmationData?.paid,
-      paidType: typeof paymentConfirmationData?.paid,
-      paymentAmount: paymentConfirmationData?.paymentAmount,
-      professionalId: paymentConfirmationData?.professionalId,
-      professionalCommissionAmount: paymentConfirmationData?.professionalCommissionAmount,
-      paymentDate: paymentConfirmationData?.paymentDate,
-      paymentDateType: typeof paymentConfirmationData?.paymentDate
-    });
-
     if (paymentConfirmationData !== undefined) {
-      console.log('[AttentionReserveBuilder] Payment data found, transferring regardless of paid status');
       attention.paymentConfirmationData = paymentConfirmationData;
       if (paymentConfirmationData.paid === true) {
         attention.paid = paymentConfirmationData.paid;
@@ -202,20 +198,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
           : new Date(paymentConfirmationData.paymentDate);
         attention.confirmed = true;
         attention.confirmedAt = new Date();
-        console.log('[AttentionReserveBuilder] Payment marked as confirmed');
-      } else {
-        console.log('[AttentionReserveBuilder] Payment data transferred but not marked as paid:', paymentConfirmationData.paid);
       }
-      console.log('[AttentionReserveBuilder] Payment data transfer completed:', {
-        paid: attention.paid,
-        confirmed: attention.confirmed,
-        paidAt: attention.paidAt,
-        confirmedAt: attention.confirmedAt,
-        hasPaymentConfirmationData: !!attention.paymentConfirmationData,
-        professionalCommissionAmount: attention.paymentConfirmationData?.professionalCommissionAmount
-      });
-    } else {
-      console.log('[AttentionReserveBuilder] No payment confirmation data provided');
     }
     if (bookingId != undefined) {
       attention.bookingId = bookingId;
@@ -297,31 +280,18 @@ export class AttentionReserveBuilder implements BuilderInterface {
 
         // Determine procedures amount: from servicesDetails first, then service.serviceInfo.procedures, then service.serviceInfo.proceduresList
         let proceduresAmount = 0;
-        console.log('[AttentionReserveBuilder] Determining procedures amount:', {
-          servicesDetails: servicesDetails,
-          servicesDetailsLength: servicesDetails?.length,
-          firstServiceDetails: servicesDetails?.[0],
-          proceduresInDetails: servicesDetails?.[0]?.['procedures'],
-          serviceProcedures: service?.serviceInfo?.procedures,
-          serviceProceduresList: service?.serviceInfo?.proceduresList
-        });
 
         if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
           proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
-          console.log('[AttentionReserveBuilder] Using procedures from servicesDetails:', proceduresAmount);
         } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
           proceduresAmount = service.serviceInfo.procedures;
-          console.log('[AttentionReserveBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
         } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
           // Use first value from proceduresList as fallback
           const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
           if (proceduresList.length > 0) {
             proceduresAmount = proceduresList[0];
-            console.log('[AttentionReserveBuilder] Using first value from proceduresList:', proceduresAmount);
           }
         }
-
-        console.log('[AttentionReserveBuilder] Final proceduresAmount:', proceduresAmount);
 
         if (proceduresAmount > 1) {
           if (attentionCreated.clientId) {
@@ -418,8 +388,13 @@ export class AttentionReserveBuilder implements BuilderInterface {
     queueId: string,
     date: Date
   ): Promise<Attention[]> {
-    const startDate = date.toISOString().slice(0, 10);
-    const dateValue = new Date(startDate);
+    // Create start and end of day for the given date
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
     return await this.attentionRepository
       .whereEqualTo('queueId', queueId)
       .whereEqualTo('number', number)
@@ -430,8 +405,8 @@ export class AttentionReserveBuilder implements BuilderInterface {
         AttentionStatus.TERMINATED,
         AttentionStatus.REACTIVATED,
       ])
-      .whereGreaterOrEqualThan('createdAt', dateValue)
-      .whereLessOrEqualThan('createdAt', dateValue)
+      .whereGreaterOrEqualThan('createdAt', startDate)
+      .whereLessOrEqualThan('createdAt', endDate)
       .orderByDescending('createdAt')
       .find();
   }

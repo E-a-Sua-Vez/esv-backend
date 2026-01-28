@@ -1200,36 +1200,9 @@ export class BookingService {
 
       const bookingDetailsDto: BookingDetailsDto = new BookingDetailsDto();
 
-      // Debug: Log booking block
-      console.log('[BookingService.getBookingDetails] Booking ID:', id);
-      console.log('[BookingService.getBookingDetails] Booking block from repository:', JSON.stringify(booking.block, null, 2));
-
-      bookingDetailsDto.id = booking.id;
-      bookingDetailsDto.commerceId = booking.commerceId;
-      bookingDetailsDto.createdAt = booking.createdAt;
-      bookingDetailsDto.number = booking.number;
-      bookingDetailsDto.date = booking.date;
-      bookingDetailsDto.queueId = booking.queueId;
-      bookingDetailsDto.status = booking.status;
-      bookingDetailsDto.userId = booking.userId;
-      bookingDetailsDto.comment = booking.comment;
-      bookingDetailsDto.type = booking.type;
-      bookingDetailsDto.channel = booking.channel;
-      bookingDetailsDto.user = booking.user;
-      bookingDetailsDto.processedAt = booking.processedAt;
-      bookingDetailsDto.processed = booking.processed;
-      bookingDetailsDto.cancelledAt = booking.cancelledAt;
-      bookingDetailsDto.cancelled = booking.cancelled;
-      bookingDetailsDto.attentionId = booking.attentionId;
-
       // Explicitly assign block - ensure it's included even if undefined
       bookingDetailsDto.block = booking.block || undefined;
 
-      console.log('[BookingService.getBookingDetails] Booking object keys:', Object.keys(booking));
-      console.log('[BookingService.getBookingDetails] Booking has block property:', 'block' in booking);
-      console.log('[BookingService.getBookingDetails] Booking.block value:', booking.block);
-      console.log('[BookingService.getBookingDetails] Booking.block type:', typeof booking.block);
-      console.log('[BookingService.getBookingDetails] DTO block assigned:', JSON.stringify(bookingDetailsDto.block, null, 2));
       bookingDetailsDto.telemedicineSessionId = booking.telemedicineSessionId;
       bookingDetailsDto.telemedicineConfig = booking.telemedicineConfig;
       bookingDetailsDto.professionalId = booking.professionalId;
@@ -1732,30 +1705,6 @@ export class BookingService {
       };
     }
 
-    // Debug: Log booking data before creating attention
-    console.log('[BookingService.createAttention] Processing booking:', {
-      bookingId: id,
-      professionalId: booking.professionalId,
-      hasConfirmationData: !!booking.confirmationData,
-      confirmationDataPaid: booking.confirmationData?.paid,
-      confirmationDataAmount: booking.confirmationData?.paymentAmount,
-      professionalCommissionAmount: booking.confirmationData?.professionalCommissionAmount,
-      fullConfirmationData: JSON.stringify(booking.confirmationData, null, 2)
-    });
-
-    console.log('🔥🔥🔥 [CRITICAL DEBUG] DATOS ENVIADOS AL AttentionService.createAttention():');
-    console.log('  - queueId:', queueId);
-    console.log('  - collaboratorId (booking.professionalId):', booking.professionalId);
-    console.log('  - channel:', channel);
-    console.log('  - paymentConfirmationData:', booking.confirmationData ? 'EXISTS' : 'UNDEFINED');
-    if (booking.confirmationData) {
-      console.log('  - paymentConfirmationData.paid:', booking.confirmationData.paid);
-      console.log('  - paymentConfirmationData.paymentAmount:', booking.confirmationData.paymentAmount);
-      console.log('  - paymentConfirmationData.professionalCommissionAmount:', booking.confirmationData.professionalCommissionAmount);
-    }
-    console.log('  - bookingId:', id);
-    console.log('🔥🔥🔥 [CRITICAL DEBUG] FIN DATOS');
-
     const attention = await this.attentionService.createAttention(
       queueId,
       booking.professionalId, // Pasar el professionalId del booking como collaboratorId
@@ -1772,7 +1721,8 @@ export class BookingService {
       termsConditionsToAcceptCode,
       termsConditionsAcceptedCode,
       termsConditionsToAcceptedAt,
-      normalizedTelemedicineConfig
+      normalizedTelemedicineConfig,
+      booking.professionalName // Pasar el professionalName del booking
     );
 
     // Si se creó sesión de telemedicina, vincular con booking
@@ -1826,13 +1776,14 @@ export class BookingService {
       }
       await limiter.stop({ dropWaitingJobs: false });
     }
-    const response = { toProcess, processed: responses.length, errors: errors.length };
+    const errorDetails = errors.length > 0 ? errors.map(e => e.message || String(e)) : undefined;
+    const response = { toProcess, processed: responses.length, errors: errors.length, errorDetails };
     this.logger.info('Bookings processed', {
       date,
       toProcess,
       processed: responses.length,
       errors: errors.length,
-      errorDetails: errors.length > 0 ? errors.map(e => e.message || String(e)) : undefined,
+      errorDetails,
     });
     return response;
   }
