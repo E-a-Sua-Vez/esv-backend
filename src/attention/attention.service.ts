@@ -152,6 +152,12 @@ export class AttentionService {
     try {
       const attention = await this.getAttentionById(id);
 
+      // Validate attention exists
+      if (!attention) {
+        this.logger.error(`[AttentionService.getAttentionDetails] Attention not found: ${id}`);
+        throw new HttpException('Atención no encontrada', HttpStatus.NOT_FOUND);
+      }
+
       // Debug: Log what attention data we have
       this.logger.log(`[AttentionService.getAttentionDetails] Attention ID: ${attention.id}`);
       this.logger.log(
@@ -232,28 +238,66 @@ export class AttentionService {
       // Propagar flag de notificación de check-in enviada (si existe)
       (attentionDetailsDto as any).notificationCheckInSent =
         (attention as any).notificationCheckInSent ?? false;
+
+      // Load queue and commerce
       if (attention.queueId) {
+        this.logger.log(`[AttentionService.getAttentionDetails] Loading queue: ${attention.queueId}`);
         attentionDetailsDto.queue = await this.queueService.getQueueById(attention.queueId);
-        attentionDetailsDto.commerce = await this.commerceService.getCommerceById(
-          attentionDetailsDto.queue.commerceId
-        );
-        delete attentionDetailsDto.commerce.queues;
+        this.logger.log(`[AttentionService.getAttentionDetails] Queue loaded: ${attentionDetailsDto.queue ? 'yes' : 'no'}`);
+
+        if (attentionDetailsDto.queue) {
+          this.logger.log(`[AttentionService.getAttentionDetails] Queue commerceId: ${attentionDetailsDto.queue.commerceId}`);
+          attentionDetailsDto.commerce = await this.commerceService.getCommerceById(
+            attentionDetailsDto.queue.commerceId
+          );
+          this.logger.log(`[AttentionService.getAttentionDetails] Commerce loaded: ${attentionDetailsDto.commerce ? 'yes' : 'no'}`);
+
+          if (attentionDetailsDto.commerce) {
+            delete attentionDetailsDto.commerce.queues;
+          }
+        } else {
+          this.logger.warn(`[AttentionService.getAttentionDetails] Queue ${attention.queueId} not found for attention ${id}`);
+        }
       }
+
+      // Load user
       if (attention.userId !== undefined) {
+        this.logger.log(`[AttentionService.getAttentionDetails] Loading user: ${attention.userId}`);
         attentionDetailsDto.user = await this.userService.getUserById(attention.userId);
+        this.logger.log(`[AttentionService.getAttentionDetails] User loaded: ${attentionDetailsDto.user ? 'yes' : 'no'}`);
       }
+
+      // Load collaborator
       if (attention.collaboratorId !== undefined) {
+        this.logger.log(`[AttentionService.getAttentionDetails] Loading collaborator: ${attention.collaboratorId}`);
         attentionDetailsDto.collaborator = await this.collaboratorService.getCollaboratorById(
           attention.collaboratorId
         );
+        this.logger.log(`[AttentionService.getAttentionDetails] Collaborator loaded: ${attentionDetailsDto.collaborator ? 'yes' : 'no'}`);
       }
+
+      // Load module
       if (attention.moduleId !== undefined) {
+        this.logger.log(`[AttentionService.getAttentionDetails] Loading module: ${attention.moduleId}`);
         attentionDetailsDto.module = await this.moduleService.getModuleById(attention.moduleId);
+        this.logger.log(`[AttentionService.getAttentionDetails] Module loaded: ${attentionDetailsDto.module ? 'yes' : 'no'}`);
       }
+
+      this.logger.log(`[AttentionService.getAttentionDetails] Successfully loaded all details for attention ${id}`);
       return attentionDetailsDto;
     } catch (error) {
+      // Log the actual error for debugging
+      this.logger.error(`[AttentionService.getAttentionDetails] Error getting attention details for ID ${id}:`, error);
+      this.logger.error(`[AttentionService.getAttentionDetails] Error stack:`, error.stack);
+
+      // If it's already an HttpException, rethrow it
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      // Otherwise, wrap it with context
       throw new HttpException(
-        `Hubo un problema al obtener detalles de la atenci?n`,
+        `Hubo un problema al obtener detalles de la atenci?n: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -793,6 +837,18 @@ export class AttentionService {
             error.stack
           );
           // Don't throw - WhatsApp failure shouldn't break attention creation
+        }
+      }
+
+      // Auto-assign professional if queue has one configured
+      if (queue.professionalId) {
+        try {
+          this.logger.log(`[AttentionService] Queue has professionalId: ${queue.professionalId}, auto-assigning to attention ${attentionCreated.id}`);
+          await this.assignProfessional('system', attentionCreated.id, queue.professionalId);
+          this.logger.log(`[AttentionService] Professional auto-assigned successfully`);
+        } catch (error) {
+          this.logger.error(`[AttentionService] Error auto-assigning professional: ${error.message}`);
+          // Don't throw - professional assignment failure shouldn't break attention creation
         }
       }
 

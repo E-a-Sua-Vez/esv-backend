@@ -293,6 +293,8 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
         }
       }
     }
+
+    // Note: Professional auto-assignment is handled in BookingService after creation
     // Note: BookingCreated event is published in BookingService.createBooking()
     // to have access to user metadata
     return bookingCreated;

@@ -487,6 +487,18 @@ export class BookingService {
           // Don't throw - consent request failure shouldn't break booking creation
         }
       }
+
+      // Auto-assign professional if queue has one configured
+      if (queue.professionalId) {
+        try {
+          this.logger.log(`[BookingService] Queue has professionalId: ${queue.professionalId}, auto-assigning to booking ${bookingCreated.id}`);
+          await this.assignProfessional('system', bookingCreated.id, queue.professionalId);
+          this.logger.log(`[BookingService] Professional auto-assigned successfully`);
+        } catch (error) {
+          this.logger.error(`[BookingService] Error auto-assigning professional: ${error.message}`);
+          // Don't throw - professional assignment failure shouldn't break booking creation
+        }
+      }
     }
     return bookingCreated;
   }

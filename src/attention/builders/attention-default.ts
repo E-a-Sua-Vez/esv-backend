@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
@@ -198,6 +198,7 @@ export class AttentionDefaultBuilder implements BuilderInterface {
     }
     await this.queueService.updateQueue('', queue);
 
+    // Note: Professional auto-assignment is handled in AttentionService after creation
     // Note: userName/userLastName should be set in attention.service.ts after creation
     // before publishing the event to ensure they're included in Firebase
 

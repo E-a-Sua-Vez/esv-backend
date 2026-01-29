@@ -372,6 +372,9 @@ export class AttentionReserveBuilder implements BuilderInterface {
       queue.currentAttentionNumber = attentionCreated.number;
     }
     await this.queueService.updateQueue('', queue);
+
+    // Note: Professional auto-assignment is handled in AttentionService after creation
+
     // Use attention.createdAt for occurredOn to preserve historical dates
     // Falls back to new Date() for backward compatibility if createdAt is not set
     const attentionCreatedEvent = new AttentionCreated(

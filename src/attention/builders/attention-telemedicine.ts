@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Inject, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
@@ -238,6 +238,8 @@ export class AttentionTelemedicineBuilder {
         }
       }
     }
+
+    // Note: Professional auto-assignment is handled in AttentionService after creation
 
     // Publicar evento
     const attentionCreatedEvent = new AttentionCreated(

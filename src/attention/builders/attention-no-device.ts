@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
@@ -74,6 +74,8 @@ export class AttentionNoDeviceBuilder implements BuilderInterface {
       queue.currentAttentionNumber = attention.number;
     }
     await this.queueService.updateQueue('', queue);
+
+    // Note: Professional auto-assignment is handled in AttentionService after creation
 
     // Use attention.createdAt for occurredOn to preserve historical dates
     // Falls back to new Date() for backward compatibility if createdAt is not set
