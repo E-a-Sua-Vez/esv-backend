@@ -259,5 +259,9 @@
   {
     "name": "professional-commission-enabled",
     "type": "PRODUCT"
+  },
+  {
+    "name": "attention-multiple-service-selection",
+    "type": "PRODUCT"
   }
 ]
