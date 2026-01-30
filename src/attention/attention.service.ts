@@ -239,6 +239,20 @@ export class AttentionService {
       (attentionDetailsDto as any).notificationCheckInSent =
         (attention as any).notificationCheckInSent ?? false;
 
+      attentionDetailsDto.bookingId = attention.bookingId;
+
+      // Load booking scheduled time if bookingId exists
+      if (attention.bookingId) {
+        try {
+          const booking = await this.bookingService.getBookingById(attention.bookingId);
+          if (booking && booking.block) {
+            attentionDetailsDto.block = booking.block;
+          }
+        } catch (error) {
+          this.logger.warn(`[AttentionService.getAttentionDetails] Could not load booking ${attention.bookingId}: ${error.message}`);
+        }
+      }
+
       // Load queue and commerce
       if (attention.queueId) {
         this.logger.log(`[AttentionService.getAttentionDetails] Loading queue: ${attention.queueId}`);
@@ -2773,6 +2787,7 @@ export class AttentionService {
             attention.confirmed = true;
             attention.confirmedAt = attention.confirmedAt || new Date();
             attention.confirmedBy = attention.confirmedBy || user;
+            attention.status = AttentionStatus.CONFIRMED;
             return await this.update(user, attention);
           }
 
@@ -2811,6 +2826,7 @@ export class AttentionService {
           attention.confirmed = true;
           attention.confirmedAt = new Date();
           attention.confirmedBy = user;
+          attention.status = AttentionStatus.CONFIRMED;
           // GESTION DE ENTRADA EN CAJA
           // Si el paquete está pagado, NO crear Income (ya está pagado)
           if (confirmationData !== undefined && !packageAlreadyPaid) {

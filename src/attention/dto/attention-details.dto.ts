@@ -69,4 +69,6 @@ export class AttentionDetailsDto {
   professionalCommissionValue?: number;
   professionalCommissionAmount?: number;
   professionalCommissionNotes?: string;
+  bookingId?: string;
+  bookingScheduledTime?: Date | string;
 }

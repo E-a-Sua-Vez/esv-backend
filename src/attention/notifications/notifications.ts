@@ -76,7 +76,7 @@ export const getEsTuTunoMessage = (country, attention, moduleNumber, telemedicin
     const ESTUTURNO_TELEMEDICINE = {
       pt: `🎉 *É a sua vez!*
 
-🚨 *AGORA É SEU TURNO!*
+🚨 *É A SUA VEZ!*
 
 💻 *Sua consulta de telemedicina está pronta!*
 
@@ -112,7 +112,7 @@ ${scheduledDate ? `📅 *Fecha programada:* ${scheduledDate}\n\n` : ''}⚡ Haz c
   const ESTUTURNO = {
     pt: `🎉 *É a sua vez!*
 
-🚨 *AGORA É SEU TURNO!*
+🚨 *É A SUA VEZ!*
 
 🏃‍♂️ *Dirija-se ao módulo:* ${moduleNumber}
 
@@ -185,7 +185,7 @@ export const getCheckInCallMessage = (
 `;
 
   const CHECKIN = {
-    es: `👋 *Bienvenido${clientName ? ` ${clientName}` : ''}!* 
+    es: `👋 *Bienvenido${clientName ? ` ${clientName}` : ''}!*
 
 ✅ Tu atención en *${commerceName}* está lista para iniciar.
 
@@ -194,7 +194,7 @@ ${esCollaboratorLine}🎫 *Tu número de atención:* ${attention.number}
 ⚠️ Por favor acércate al módulo lo antes posible para no perder tu turno.
 
 🙏 *¡Gracias!*`,
-    pt: `👋 *Bem-vindo${clientName ? ` ${clientName}` : ''}!* 
+    pt: `👋 *Bem-vindo${clientName ? ` ${clientName}` : ''}!*
 
 ✅ Seu atendimento em *${commerceName}* está pronto para começar.
 
@@ -203,7 +203,7 @@ ${ptCollaboratorLine}🎫 *Seu número de atendimento:* ${attention.number}
 ⚠️ Por favor aproxime-se do módulo o quanto antes para não perder a sua vez.
 
 🙏 *Obrigado!*`,
-    en: `👋 *Welcome${clientName ? ` ${clientName}` : ''}!* 
+    en: `👋 *Welcome${clientName ? ` ${clientName}` : ''}!*
 
 ✅ Your service at *${commerceName}* is ready to start.
 
