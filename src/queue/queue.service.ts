@@ -78,10 +78,17 @@ export class QueueService {
   public async getGroupedQueueByCommerce(
     commerceId: string
   ): Promise<Record<string, QueueDetailsDto[]>> {
+    this.logger.log(`[getGroupedQueueByCommerce] Starting for commerceId: ${commerceId}`);
     let groupedQueues = {};
     const queues: QueueDetailsDto[] = [];
     const result = await this.getActiveOnlineQueuesByCommerce(commerceId);
+    this.logger.log(`[getGroupedQueueByCommerce] Found ${result?.length || 0} active online queues`);
     if (result && result.length > 0) {
+      const professionalQueues = result.filter(q => q.type === 'PROFESSIONAL');
+      this.logger.log(`[getGroupedQueueByCommerce] PROFESSIONAL queues: ${professionalQueues.length}`);
+      professionalQueues.forEach(q => {
+        this.logger.log(`[getGroupedQueueByCommerce] PROFESSIONAL queue: ${q.name} (id: ${q.id}, active: ${q.active}, available: ${q.available}, online: ${q.online})`);
+      });
       for (let i = 0; i < result.length; i++) {
         const queueDetailsDto: QueueDetailsDto = new QueueDetailsDto();
         const queue = result[i];
@@ -127,6 +134,10 @@ export class QueueService {
         }, {});
       }
     }
+    this.logger.log(`[getGroupedQueueByCommerce] Final groupedQueues:`, Object.keys(groupedQueues));
+    Object.keys(groupedQueues).forEach(type => {
+      this.logger.log(`[getGroupedQueueByCommerce] ${type}: ${groupedQueues[type].length} queues`);
+    });
     return groupedQueues;
   }
 
