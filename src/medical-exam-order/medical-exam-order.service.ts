@@ -26,7 +26,7 @@ import { MedicalExam } from './model/medical-exam.entity';
 @Injectable()
 export class MedicalExamOrderService {
   private readonly logger = new Logger(MedicalExamOrderService.name);
-  
+
   constructor(
     @InjectRepository(MedicalExamOrder)
     private examOrderRepository = getRepository(MedicalExamOrder),
@@ -122,7 +122,6 @@ export class MedicalExamOrderService {
         const collaborator = await this.collaboratorService.getCollaboratorById(createDto.collaboratorId);
         if (collaborator?.professionalId) {
           createDto.professionalId = collaborator.professionalId;
-          console.log(`Auto-resolved professionalId ${createDto.professionalId} from collaboratorId ${createDto.collaboratorId}`);
         }
       } catch (error) {
         console.warn(`Could not auto-resolve professionalId from collaboratorId ${createDto.collaboratorId}: ${error.message}`);

@@ -106,10 +106,6 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
     if (servicesId !== undefined) {
       booking.servicesId = servicesId;
     }
-    // Debug: Log incoming servicesDetails
-    if (servicesDetails !== undefined) {
-      console.log('[BookingDefaultBuilder] Incoming servicesDetails:', JSON.stringify(servicesDetails, null, 2));
-    }
 
     // Handle servicesDetails - clean to avoid nested arrays
     if (servicesDetails !== undefined) {
@@ -135,7 +131,6 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
           });
           return cleanDetail;
         });
-        console.log('[BookingDefaultBuilder] ServicesDetails assigned to booking:', JSON.stringify(booking.servicesDetails, null, 2));
       } else {
         // If explicitly provided but empty, set to empty array
         booking.servicesDetails = [];
@@ -186,45 +181,24 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
       validateNoNestedArrays(booking.servicesDetails, 'servicesDetails');
     }
 
-    // Debug: Log booking before creating
-    console.log('[BookingDefaultBuilder] Booking before create:');
-    console.log('  - block:', JSON.stringify(booking.block, null, 2));
-    console.log('  - servicesDetails:', JSON.stringify(booking.servicesDetails, null, 2));
     const bookingCreated = await this.bookingRepository.create(booking);
-    // Debug: Log booking after creating
-    console.log('[BookingDefaultBuilder] Booking after create:');
-    console.log('  - block:', JSON.stringify(bookingCreated.block, null, 2));
-    console.log('  - servicesDetails:', JSON.stringify(bookingCreated.servicesDetails, null, 2));
     if (bookingCreated.servicesId && bookingCreated.servicesId.length === 1) {
       const service = await this.serviceService.getServiceById(bookingCreated.servicesId[0]);
 
       // Determine procedures amount: from servicesDetails first, then service.serviceInfo.procedures, then service.serviceInfo.proceduresList
       let proceduresAmount = 0;
-      console.log('[BookingDefaultBuilder] Determining procedures amount:', {
-        servicesDetails: servicesDetails,
-        servicesDetailsLength: servicesDetails?.length,
-        firstServiceDetails: servicesDetails?.[0],
-        proceduresInDetails: servicesDetails?.[0]?.['procedures'],
-        serviceProcedures: service?.serviceInfo?.procedures,
-        serviceProceduresList: service?.serviceInfo?.proceduresList
-      });
 
       if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
         proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
-        console.log('[BookingDefaultBuilder] Using procedures from servicesDetails:', proceduresAmount);
       } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
         proceduresAmount = service.serviceInfo.procedures;
-        console.log('[BookingDefaultBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
       } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
         // Use first value from proceduresList as fallback
         const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
         if (proceduresList.length > 0) {
           proceduresAmount = proceduresList[0];
-          console.log('[BookingDefaultBuilder] Using first value from proceduresList:', proceduresAmount);
         }
       }
-
-      console.log('[BookingDefaultBuilder] Final proceduresAmount:', proceduresAmount);
 
       if (proceduresAmount > 1) {
         if (bookingCreated.clientId) {

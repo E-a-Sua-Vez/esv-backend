@@ -121,7 +121,6 @@ export class PatientPhotoController {
     const result = await this.patientPhotoService.getPatientPhoto(commerceId, clientId);
 
     if (!result) {
-      console.log(`🔍 PHOTO_DEBUG: Returning null/404 for no photo found`);
       console.error(`🔍 PHOTO_DEBUG: Returning null/404 for no photo found`);
       return null;
     }

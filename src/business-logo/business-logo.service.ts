@@ -354,8 +354,6 @@ export class BusinessLogoService {
 
       const savedLogo = await this.businessLogoRepository.create(businessLogo);
 
-      console.log(`✅ BusinessLogoService: Logo saved successfully - id: ${savedLogo.id}, businessId: ${businessId}, filename: ${filename}`);
-
       // Publish event
       const event = new BusinessLogoCreated(new Date(), savedLogo as any, { user });
       publish(event);

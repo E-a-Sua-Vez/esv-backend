@@ -318,17 +318,7 @@ export class ProfessionalService {
     dto: UpdateProfessionalDto
   ): Promise<Professional> {
     try {
-      console.log(`🔄 [ProfessionalService] Updating professional ${id}:`, {
-        medicalData: dto.medicalData,
-        hasMedicalData: !!dto.medicalData
-      });
-
       const professional = await this.getProfessionalById(id);
-
-      console.log(`📋 [ProfessionalService] Current professional data:`, {
-        id: professional.id,
-        currentMedicalData: professional.medicalData
-      });
 
       // Actualizar campos
       if (dto.commerceId !== undefined) professional.commerceId = dto.commerceId;
@@ -359,12 +349,10 @@ export class ProfessionalService {
       }
 
       if (dto.medicalData) {
-        console.log(`📋 [ProfessionalService] Updating medicalData:`, dto.medicalData);
         professional.medicalData = JSON.parse(JSON.stringify({
           ...professional.medicalData,
           ...dto.medicalData,
         }));
-        console.log(`📋 [ProfessionalService] Final medicalData:`, professional.medicalData);
       }
 
       professional.updatedAt = new Date();
@@ -375,11 +363,6 @@ export class ProfessionalService {
       // Publicar evento
       const event = new ProfessionalUpdated(new Date(), updated, { user });
       publish(event);
-
-      console.log(`✅ [ProfessionalService] Professional updated successfully:`, {
-        id: updated.id,
-        medicalData: updated.medicalData
-      });
 
       this.logger.log(`Professional updated: ${updated.id}`);
       return updated;

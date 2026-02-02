@@ -145,31 +145,18 @@ export class AttentionTelemedicineBuilder {
 
       // Determine procedures amount: from servicesDetails first, then service.serviceInfo.procedures, then service.serviceInfo.proceduresList
       let proceduresAmount = 0;
-      console.log('[AttentionTelemedicineBuilder] Determining procedures amount:', {
-        servicesDetails: servicesDetails,
-        servicesDetailsLength: servicesDetails?.length,
-        firstServiceDetails: servicesDetails?.[0],
-        proceduresInDetails: servicesDetails?.[0]?.['procedures'],
-        serviceProcedures: service?.serviceInfo?.procedures,
-        serviceProceduresList: service?.serviceInfo?.proceduresList
-      });
 
       if (servicesDetails && servicesDetails.length > 0 && servicesDetails[0]['procedures']) {
         proceduresAmount = parseInt(servicesDetails[0]['procedures'], 10) || servicesDetails[0]['procedures'];
-        console.log('[AttentionTelemedicineBuilder] Using procedures from servicesDetails:', proceduresAmount);
       } else if (service && service.serviceInfo && service.serviceInfo.procedures) {
         proceduresAmount = service.serviceInfo.procedures;
-        console.log('[AttentionTelemedicineBuilder] Using procedures from service.serviceInfo:', proceduresAmount);
       } else if (service && service.serviceInfo && service.serviceInfo.proceduresList) {
         // Use first value from proceduresList as fallback
         const proceduresList = service.serviceInfo.proceduresList.trim().split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
         if (proceduresList.length > 0) {
           proceduresAmount = proceduresList[0];
-          console.log('[AttentionTelemedicineBuilder] Using first value from proceduresList:', proceduresAmount);
         }
       }
-
-      console.log('[AttentionTelemedicineBuilder] Final proceduresAmount:', proceduresAmount);
 
       if (proceduresAmount > 1) {
         if (attentionCreated.clientId) {

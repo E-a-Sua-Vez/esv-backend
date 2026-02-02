@@ -349,9 +349,6 @@ export class CommerceLogoService {
       commerceLogo.metadata = imageMetadata;
 
       const savedLogo = await this.commerceLogoRepository.create(commerceLogo);
-
-      console.log(`✅ CommerceLogoService: Logo saved successfully - id: ${savedLogo.id}, commerceId: ${commerceId}, filename: ${filename}`);
-
       // Publish event
       const event = new CommerceLogoCreated(new Date(), savedLogo as any, { user });
       publish(event);
@@ -370,7 +367,6 @@ export class CommerceLogoService {
    */
   async getCommerceLogo(commerceId: string): Promise<CommerceLogo | null> {
     try {
-      console.log('🏪 CommerceLogoService: Searching for logo with commerceId:', commerceId);
       const logo = await this.commerceLogoRepository
         .whereEqualTo('commerceId' as any, commerceId)
         .whereEqualTo('active' as any, true)
@@ -378,10 +374,8 @@ export class CommerceLogoService {
         .findOne();
 
       if (logo) {
-        console.log('🏪 CommerceLogoService: Logo found:', { id: logo.id, filename: logo.filename });
         return logo as CommerceLogo;
       } else {
-        console.log('🏪 CommerceLogoService: No logo found for commerceId:', commerceId);
         return null;
       }
     } catch (error) {

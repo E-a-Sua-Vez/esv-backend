@@ -85,13 +85,6 @@ describe('BookingService - Payment Data Transfer Test', () => {
       undefined,                              // termsConditionsToAcceptedAt
       undefined                               // normalizedTelemedicineConfig
     );
-
-    console.log('✅ PRUEBA EXITOSA: Se transfirieron correctamente:', {
-      collaboratorId: expectedCollaboratorId,
-      hasPaymentData: !!expectedPaymentData,
-      paymentAmount: expectedPaymentData.paymentAmount,
-      professionalCommissionAmount: expectedPaymentData.professionalCommissionAmount
-    });
   });
 
   it('should verify AttentionReserveBuilder processes payment data correctly', () => {
@@ -110,12 +103,6 @@ describe('BookingService - Payment Data Transfer Test', () => {
 
     // Simular la lógica del builder
     if (mockPaymentData !== undefined) {
-      console.log('🔍 Processing payment data:', {
-        hasPaymentData: mockPaymentData !== undefined,
-        paidValue: mockPaymentData?.paid,
-        paidType: typeof mockPaymentData?.paid,
-        paymentAmount: mockPaymentData?.paymentAmount
-      });
 
       attention.paymentConfirmationData = mockPaymentData;
       if (mockPaymentData.paid === true) {
@@ -132,21 +119,9 @@ describe('BookingService - Payment Data Transfer Test', () => {
     expect(attention.confirmed).toBe(true);
     expect(attention.paidAt).toBeInstanceOf(Date);
     expect(attention.confirmedAt).toBeInstanceOf(Date);
-
-    console.log('✅ BUILDER TEST EXITOSO: Attention creada con:', {
-      paid: attention.paid,
-      confirmed: attention.confirmed,
-      hasPaymentData: !!attention.paymentConfirmationData,
-      professionalCommissionAmount: attention.paymentConfirmationData?.professionalCommissionAmount
-    });
   });
 });
 
-// Ejecutar las pruebas directamente
-console.log('🚀 EJECUTANDO PRUEBAS FUNCIONALES...\n');
-
-// Test 1: Verificar lógica de AttentionReserveBuilder
-console.log('📋 Test 1: Lógica de AttentionReserveBuilder');
 const testPaymentData = {
   paid: true,
   paymentAmount: 500,
@@ -159,14 +134,6 @@ const testAttention: any = { id: 'test' };
 
 // Simular la lógica exacta del builder
 if (testPaymentData !== undefined) {
-  console.log('[TEST] Processing payment data:', {
-    hasPaymentData: testPaymentData !== undefined,
-    paidValue: testPaymentData?.paid,
-    paidType: typeof testPaymentData?.paid,
-    paymentAmount: testPaymentData?.paymentAmount,
-    paymentDate: testPaymentData?.paymentDate,
-    paymentDateType: typeof testPaymentData?.paymentDate
-  });
 
   testAttention.paymentConfirmationData = testPaymentData;
   if (testPaymentData.paid === true) {
@@ -177,26 +144,7 @@ if (testPaymentData !== undefined) {
       : testPaymentData.paymentDate;
     testAttention.confirmed = true;
     testAttention.confirmedAt = new Date();
-
-    console.log('[TEST] Payment data transfer completed:', {
-      paid: testAttention.paid,
-      confirmed: testAttention.confirmed,
-      paidAt: testAttention.paidAt,
-      confirmedAt: testAttention.confirmedAt,
-      hasPaymentConfirmationData: !!testAttention.paymentConfirmationData,
-      professionalCommissionAmount: testAttention.paymentConfirmationData?.professionalCommissionAmount
-    });
   }
 }
-
-console.log('\n🎯 RESULTADO FINAL:', {
-  'DEBERÍA TENER paid': true,
-  'TIENE paid': testAttention.paid,
-  'DEBERÍA TENER confirmed': true,
-  'TIENE confirmed': testAttention.confirmed,
-  'DEBERÍA TENER paymentConfirmationData': 'object',
-  'TIENE paymentConfirmationData': typeof testAttention.paymentConfirmationData,
-  'MATCH PERFECTO': testAttention.paid === true && testAttention.confirmed === true && !!testAttention.paymentConfirmationData
-});
 
 export { };

@@ -1261,12 +1261,6 @@ export class BookingService {
       if (booked) {
         bookingDetailsDto.beforeYou = booked.length || 0;
       }
-      console.log('[BookingService.getBookingDetails] Final DTO block:', JSON.stringify(bookingDetailsDto.block, null, 2));
-      console.log('[BookingService.getBookingDetails] Final DTO (full):', JSON.stringify({
-        id: bookingDetailsDto.id,
-        block: bookingDetailsDto.block,
-        date: bookingDetailsDto.date
-      }, null, 2));
       return bookingDetailsDto;
     } catch (error) {
       throw new HttpException(

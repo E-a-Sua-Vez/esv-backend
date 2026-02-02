@@ -52,8 +52,6 @@ export class InternalMessageController {
     @User() user: any,
     @Body() dto: SendMessageDto,
   ): Promise<InternalMessage> {
-    // DEBUG: Ver qué contiene el objeto user
-    console.log('[sendMessage] User object:', JSON.stringify(user, null, 2));
 
     // Extraer userId del objeto user (puede ser string o objeto con id/userId)
     const userId = typeof user === 'string' ? user : (user.id || user.userId || user.uid);
@@ -127,10 +125,8 @@ export class InternalMessageController {
     @User() userId: string,
     @Param('id') messageId: string,
   ): Promise<InternalMessage> {
-    console.log('[Archive] Attempting to archive message:', { messageId, userId });
     try {
       const result = await this.internalMessageService.archiveMessage(userId, messageId);
-      console.log('[Archive] Successfully archived');
       return result;
     } catch (error) {
       console.error('[Archive] Error:', error.message);

@@ -25,16 +25,15 @@ export class CIE10Service {
   private loadCIE10Codes() {
     try {
       const filePath = path.join(__dirname, 'data', 'cie10-codes.json');
-      
+
       if (fs.existsSync(filePath)) {
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         this.codes = JSON.parse(fileContent);
-        console.log(`✅ Loaded ${this.codes.length} CIE-10 codes from file`);
       } else {
         console.warn('⚠️ CIE-10 codes file not found, using default codes');
         this.codes = this.getDefaultCIE10Codes();
       }
-      
+
       this.codes.forEach(code => {
         this.codesByCode.set(code.code, code);
       });

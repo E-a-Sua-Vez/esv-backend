@@ -97,17 +97,6 @@ export class PatientJourneyService {
           }),
         ]);
 
-      console.log(`[PatientJourney] Data retrieved:`, {
-        commerceId,
-        clientId,
-        bookingsCount: bookings.length,
-        attentionsCount: attentions.length,
-        consultationsCount: consultations.length,
-        prescriptionsCount: prescriptions.length,
-        examOrdersCount: examOrders.length,
-        hasPatientHistory: !!patientHistory,
-      });
-
       // Extract controls from patientHistory
       const controls: Control[] = patientHistory?.control || [];
 
@@ -292,7 +281,6 @@ export class PatientJourneyService {
     // If no attentions found by clientId, try by userId (for backward compatibility)
     // Some older attentions might use userId instead of clientId
     if (attentions.length === 0) {
-      console.log(`[PatientJourney] No attentions found with clientId=${clientId}, trying userId...`);
       attentions = await this.attentionRepository
         .whereEqualTo('commerceId', commerceId)
         .whereEqualTo('userId', clientId)
@@ -300,7 +288,6 @@ export class PatientJourneyService {
         .find();
     }
 
-    console.log(`[PatientJourney] Found ${attentions.length} attentions for commerceId=${commerceId}, clientId=${clientId}`);
     return attentions;
   }
 

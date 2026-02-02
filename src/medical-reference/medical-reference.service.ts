@@ -56,7 +56,6 @@ export class MedicalReferenceService {
         const collaborator = await this.collaboratorService.getCollaboratorById(createDto.collaboratorId);
         if (collaborator?.professionalId) {
           createDto.professionalId = collaborator.professionalId;
-          console.log(`Auto-resolved professionalId ${createDto.professionalId} from collaboratorId ${createDto.collaboratorId}`);
         }
       } catch (error) {
         console.warn(`Could not auto-resolve professionalId from collaboratorId ${createDto.collaboratorId}: ${error.message}`);

@@ -48,9 +48,6 @@ export class DocumentsService {
   private extractUserId(user: any): string {
     if (!user) return '';
 
-    // Debug logging to understand user structure
-    console.log('User object received:', typeof user, user);
-
     // Handle different user object structures - prioritize ID fields
     if (typeof user === 'string') {
       // If it's already a string, return it (but ensure it's not empty)
@@ -569,16 +566,6 @@ export class DocumentsService {
 
     let uploadResult;
 
-    // Debug logging for parameters
-    console.log('Upload parameters:', {
-      collaboratorIdType: typeof collaboratorId,
-      collaboratorIdValue: collaboratorId,
-      userType: typeof user,
-      userValue: user,
-      tagsType: typeof tags,
-      tagsValue: tags
-    });
-
     // Extract and sanitize user ID first - MUST be a string
     const extractedUserId = this.extractUserId(user);
     let sanitizedUserId = this.sanitizeMetadata(extractedUserId);
@@ -595,19 +582,6 @@ export class DocumentsService {
       console.warn('sanitizedCollaboratorId is not a string, forcing conversion:', typeof sanitizedCollaboratorId, sanitizedCollaboratorId);
       sanitizedCollaboratorId = String(sanitizedCollaboratorId || '');
     }
-
-    console.log('Final metadata values (before S3):', {
-      sanitizedCollaboratorId: sanitizedCollaboratorId,
-      sanitizedCollaboratorIdType: typeof sanitizedCollaboratorId,
-      sanitizedUserId: sanitizedUserId,
-      sanitizedUserIdType: typeof sanitizedUserId,
-      collaboratorIdOriginal: collaboratorId,
-      collaboratorIdOriginalType: typeof collaboratorId,
-      userOriginal: user,
-      userOriginalType: typeof user,
-      extractedUserId: extractedUserId,
-      extractedUserIdType: typeof extractedUserId
-    });
 
     // Prepare all metadata values - ensure ALL are strings with explicit conversion
     const s3Metadata: { [key: string]: string } = {};
@@ -660,8 +634,6 @@ export class DocumentsService {
       }
     }
 
-    console.log('✅ Final S3 metadata (all strings):', Object.entries(finalMetadata).map(([k, v]) => `${k}: ${typeof v}="${v.substring(0, 50)}"`).join(', '));
-
     // Create a completely fresh plain object for AWS S3 (no prototypes, no references)
     const awsMetadata: { [key: string]: string } = {};
     for (const key in finalMetadata) {
@@ -671,13 +643,6 @@ export class DocumentsService {
         awsMetadata[key] = String(value).trim();
       }
     }
-
-    // One final check before sending to AWS
-    console.log('🔍 Pre-AWS metadata check:', {
-      collaboratorId: { value: awsMetadata.collaboratorId, type: typeof awsMetadata.collaboratorId },
-      user: { value: awsMetadata.user, type: typeof awsMetadata.user },
-      allKeys: Object.keys(awsMetadata)
-    });
 
     try {
       uploadResult = await new Promise((resolve, reject) => {

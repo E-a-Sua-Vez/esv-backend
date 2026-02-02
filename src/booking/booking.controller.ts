@@ -139,9 +139,7 @@ export class BookingController {
 
     try {
       if (block) {
-        console.log('[BookingController] Incoming block from request:', JSON.stringify(block, null, 2));
         plainBlock = JSON.parse(JSON.stringify(block));
-        console.log('[BookingController] Serialized block:', JSON.stringify(plainBlock, null, 2));
       }
     } catch (error) {
       throw new HttpException(
@@ -189,19 +187,6 @@ export class BookingController {
         HttpStatus.BAD_REQUEST
       );
     }
-    // Debug: Log what we're sending to service
-    console.log('[BookingController] Sending to service:', {
-      queueId,
-      channel,
-      date,
-      hasBlock: !!plainBlock,
-      block: plainBlock ? JSON.stringify(plainBlock, null, 2) : null,
-      hasServicesId: !!servicesId,
-      servicesId,
-      hasServicesDetails: !!servicesDetails,
-      servicesDetails: servicesDetails ? JSON.stringify(servicesDetails, null, 2) : null,
-      clientId,
-    });
 
     return this.bookingService.createBooking(
       queueId,
