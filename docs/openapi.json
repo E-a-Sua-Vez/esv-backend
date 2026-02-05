@@ -10516,21 +10516,23 @@
         "operationId": "DocumentsController_getDocument",
         "parameters": [
           {
-            "name": "reportType",
-            "required": true,
-            "in": "path",
-            "description": "Report type",
-            "schema": {
-              "example": "PDF"
-            }
-          },
-          {
             "name": "documentKey",
             "required": true,
             "in": "path",
             "description": "Document key",
             "schema": {
-              "example": "doc-key-123"
+              "example": "doc-key-123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportType",
+            "required": true,
+            "in": "path",
+            "description": "Report type",
+            "schema": {
+              "example": "PDF",
+              "type": "string"
             }
           }
         ],
@@ -10550,42 +10552,46 @@
         ]
       }
     },
-    "/documents/client/{documentKey}/{reportType}/{name}": {
+    "/documents/client/{commerceId}/{clientId}/{reportType}/{name}": {
       "get": {
-        "description": "Retrieves and streams a client document file",
         "operationId": "DocumentsController_getDocumentById",
         "parameters": [
           {
-            "name": "name",
+            "name": "commerceId",
             "required": true,
             "in": "path",
-            "description": "Document name",
             "schema": {
-              "example": "document.pdf"
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
             }
           },
           {
             "name": "reportType",
             "required": true,
             "in": "path",
-            "description": "Report type",
             "schema": {
-              "example": "PDF"
+              "type": "string"
             }
           },
           {
-            "name": "documentKey",
+            "name": "name",
             "required": true,
             "in": "path",
-            "description": "Document key",
             "schema": {
-              "example": "doc-key-123"
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Client document file stream"
+            "description": ""
           }
         },
         "security": [
@@ -10593,7 +10599,6 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Get client document file",
         "tags": [
           "documents"
         ]
@@ -10605,21 +10610,23 @@
         "operationId": "DocumentsController_getDocumentList",
         "parameters": [
           {
-            "name": "documentKey",
-            "required": true,
-            "in": "path",
-            "description": "Document key prefix",
-            "schema": {
-              "example": "doc-key"
-            }
-          },
-          {
             "name": "reportType",
             "required": true,
             "in": "path",
             "description": "Report type",
             "schema": {
-              "example": "PDF"
+              "example": "PDF",
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentKey",
+            "required": true,
+            "in": "path",
+            "description": "Document key prefix",
+            "schema": {
+              "example": "doc-key",
+              "type": "string"
             }
           }
         ],
@@ -11002,6 +11009,122 @@
           }
         ],
         "summary": "Update document tags",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{id}/category": {
+      "patch": {
+        "description": "Updates the category of a document",
+        "operationId": "DocumentsController_updateDocumentCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "example": "document-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "string",
+                    "example": "LABORATORY_RESULTS"
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update document category",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/documents/{id}/urgency": {
+      "patch": {
+        "description": "Updates the urgency level of a document",
+        "operationId": "DocumentsController_updateDocumentUrgency",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "example": "document-123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "urgency": {
+                    "type": "string",
+                    "example": "HIGH"
+                  }
+                },
+                "required": [
+                  "urgency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document urgency updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update document urgency",
         "tags": [
           "documents"
         ]

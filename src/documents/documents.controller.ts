@@ -14,6 +14,7 @@ import {
   UseInterceptors,
   HttpCode,
   HttpStatus,
+  StreamableFile,
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -194,45 +195,18 @@ export class DocumentsController {
   @ApiParam({ name: 'documentKey', description: 'Document key', example: 'doc-key-123' })
   @ApiParam({ name: 'reportType', description: 'Report type', example: 'PDF' })
   @ApiResponse({ status: 200, description: 'Document file stream' })
-  public getDocument(@Param() params: GetDocumentsParamsDto, @Res() response): Readable {
-    const { documentKey, reportType } = params;
-    const readable = this.documentsService.getDocument(documentKey, reportType);
-    readable.on('error', (error: any) => {
-      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
-      const message =
-        error?.code === 'NoSuchKey' ? 'Documento no encontrado' : 'Error al obtener el documento';
-
-      if (!response.headersSent) {
-        response.status(status).send({ message });
-      }
-    });
-    return readable.pipe(response);
+  public async getDocument(@Param('documentKey') documentKey: string, @Param('reportType') reportType: string): Promise<StreamableFile> {
+    const readable = await this.documentsService.getDocument(documentKey, reportType);
+    return new StreamableFile(readable);
   }
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @Get('client/:documentKey/:reportType/:name')
-  @ApiOperation({
-    summary: 'Get client document file',
-    description: 'Retrieves and streams a client document file',
-  })
-  @ApiParam({ name: 'documentKey', description: 'Document key', example: 'doc-key-123' })
-  @ApiParam({ name: 'reportType', description: 'Report type', example: 'PDF' })
-  @ApiParam({ name: 'name', description: 'Document name', example: 'document.pdf' })
-  @ApiResponse({ status: 200, description: 'Client document file stream' })
-  public getDocumentById(@Param() params: GetDocumentsParamsDto, @Res() response): Readable {
-    const { documentKey, reportType, name } = params;
-    const readable = this.documentsService.getClientDocument(documentKey, reportType, name);
-    readable.on('error', (error: any) => {
-      const status = error?.code === 'NoSuchKey' ? HttpStatus.NOT_FOUND : HttpStatus.INTERNAL_SERVER_ERROR;
-      const message =
-        error?.code === 'NoSuchKey' ? 'Documento no encontrado' : 'Error al obtener el documento';
-
-      if (!response.headersSent) {
-        response.status(status).send({ message });
-      }
-    });
-    return readable.pipe(response);
+  @Get('client/:commerceId/:clientId/:reportType/*name')
+  public async getDocumentById(@Param('commerceId') commerceId: string, @Param('clientId') clientId: string, @Param('reportType') reportType: string, @Param('name') name: string): Promise<StreamableFile> {
+    const documentKey = `${commerceId}/${clientId}`;
+    const readable = await this.documentsService.getClientDocument(documentKey, reportType, name);
+    return new StreamableFile(readable);
   }
 
   @UseGuards(AuthGuard)
@@ -245,8 +219,7 @@ export class DocumentsController {
   @ApiParam({ name: 'reportType', description: 'Report type', example: 'PDF' })
   @ApiParam({ name: 'documentKey', description: 'Document key prefix', example: 'doc-key' })
   @ApiResponse({ status: 200, description: 'List of documents', schema: { type: 'object' } })
-  public getDocumentList(@Param() params: GetDocumentsParamsDto): Promise<ObjectList> {
-    const { reportType, documentKey } = params;
+  public getDocumentList(@Param('reportType') reportType: string, @Param('documentKey') documentKey: string): Promise<ObjectList> {
     return this.documentsService.getDocumentsList(reportType, documentKey);
   }
 
@@ -402,6 +375,58 @@ export class DocumentsController {
     @Body() body: { tags: string[] }
   ): Promise<Document> {
     return this.documentsService.updateDocumentTags(id, body.tags, user);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/category')
+  @ApiOperation({
+    summary: 'Update document category',
+    description: 'Updates the category of a document',
+  })
+  @ApiParam({ name: 'id', description: 'Document ID', example: 'document-123' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        category: { type: 'string', example: 'LABORATORY_RESULTS' },
+      },
+      required: ['category'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Document category updated successfully', type: Document })
+  public async updateDocumentCategory(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { category: string }
+  ): Promise<Document> {
+    return this.documentsService.updateDocumentCategory(id, body.category, user);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('/:id/urgency')
+  @ApiOperation({
+    summary: 'Update document urgency',
+    description: 'Updates the urgency level of a document',
+  })
+  @ApiParam({ name: 'id', description: 'Document ID', example: 'document-123' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        urgency: { type: 'string', example: 'HIGH' },
+      },
+      required: ['urgency'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Document urgency updated successfully', type: Document })
+  public async updateDocumentUrgency(
+    @User() user,
+    @Param('id') id: string,
+    @Body() body: { urgency: string }
+  ): Promise<Document> {
+    return this.documentsService.updateDocumentUrgency(id, body.urgency, user);
   }
 
   @UseGuards(AuthGuard)

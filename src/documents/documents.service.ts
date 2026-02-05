@@ -17,7 +17,7 @@ import DocumentUpdated from './events/DocumentUpdated';
 import DocumentAccessed from './events/DocumentAccessed';
 import DocumentDownloaded from './events/DocumentDownloaded';
 import { Document, DocumentMetadata, DocumentOption } from './model/document.entity';
-import { DocumentType } from './model/document.enum';
+import { DocumentType, DocumentCategory, DocumentUrgency } from './model/document.enum';
 import * as documents from './model/documents.json';
 
 @Injectable()
@@ -223,6 +223,30 @@ export class DocumentsService {
     return await this.update(user, document);
   }
 
+  public async updateDocumentCategory(
+    documentId: string,
+    category: string,
+    user: string
+  ): Promise<Document> {
+    const document = await this.getDocumentById(documentId);
+    document.category = category as DocumentCategory;
+    document.modifiedBy = user;
+    document.lastModifiedAt = new Date();
+    return await this.update(user, document);
+  }
+
+  public async updateDocumentUrgency(
+    documentId: string,
+    urgency: string,
+    user: string
+  ): Promise<Document> {
+    const document = await this.getDocumentById(documentId);
+    document.urgency = urgency as DocumentUrgency;
+    document.modifiedBy = user;
+    document.lastModifiedAt = new Date();
+    return await this.update(user, document);
+  }
+
   public async getDocumentById(id: string): Promise<Document> {
     return await this.documentRepository.findById(id);
   }
@@ -376,52 +400,71 @@ export class DocumentsService {
     return documentUpdated;
   }
 
-  public getDocument(documentKey: string, reportType: string): Readable {
+  public async getDocument(documentKey: string, reportType: string): Promise<Readable> {
     const S3 = new AWS.S3();
     const bucketAndPath = this.getBucketPath(reportType);
     const key = documentKey;
     const getObjectRequest: AWS.S3.GetObjectRequest = { Bucket: bucketAndPath, Key: key };
+
+    // Check if the object exists
+    const headParams: AWS.S3.HeadObjectRequest = { Bucket: bucketAndPath, Key: key };
     try {
-      const stream = S3.getObject(getObjectRequest).createReadStream();
-
-      // Evita que un NoSuchKey sin handler tumbe el proceso
-      stream.on('error', (error: any) => {
-        console.error('Error leyendo documento de S3', {
-          key,
-          bucket: bucketAndPath,
-          code: error?.code,
-          message: error?.message,
-        });
-      });
-
-      return stream;
-    } catch (error) {
-      throw new HttpException('Objeto no encontrado', HttpStatus.NOT_FOUND);
+      await S3.headObject(headParams).promise();
+    } catch (error: any) {
+      if (error.code === 'NotFound' || error.code === 'NoSuchKey') {
+        throw new HttpException('Documento no encontrado', HttpStatus.NOT_FOUND);
+      }
+      throw new HttpException('Error al obtener el documento', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    const stream = S3.getObject(getObjectRequest).createReadStream();
+
+    // Evita que un NoSuchKey sin handler tumbe el proceso
+    stream.on('error', (error: any) => {
+      console.error('Error leyendo documento de S3', {
+        key,
+        bucket: bucketAndPath,
+        code: error?.code,
+        message: error?.message,
+      });
+    });
+
+    return stream;
   }
 
-  public getClientDocument(documentKey: string, reportType: string, name: string): Readable {
+  public async getClientDocument(documentKey: string, reportType: string, name: string): Promise<Readable> {
     const S3 = new AWS.S3();
     const bucketAndPath = this.getBucketPath(reportType);
-    const key = `${documentKey}/${name}`;
+    // Check if documentKey already includes the full path structure
+    const key = documentKey.includes('/') && documentKey.split('/').length >= 2
+      ? `${documentKey}/${reportType}/${name}`
+      : `${documentKey}/${reportType}/${name}`;
     const getObjectRequest: AWS.S3.GetObjectRequest = { Bucket: bucketAndPath, Key: key };
+
+    // Check if the object exists
+    const headParams: AWS.S3.HeadObjectRequest = { Bucket: bucketAndPath, Key: key };
     try {
-      const stream = S3.getObject(getObjectRequest).createReadStream();
-
-      // Manejo defensivo de errores de S3
-      stream.on('error', (error: any) => {
-        console.error('Error leyendo documento de cliente de S3', {
-          key,
-          bucket: bucketAndPath,
-          code: error?.code,
-          message: error?.message,
-        });
-      });
-
-      return stream;
-    } catch (error) {
-      throw new HttpException('Objeto no encontrado', HttpStatus.NOT_FOUND);
+      await S3.headObject(headParams).promise();
+    } catch (error: any) {
+      if (error.code === 'NotFound' || error.code === 'NoSuchKey') {
+        throw new HttpException('Documento no encontrado', HttpStatus.NOT_FOUND);
+      }
+      throw new HttpException('Error al obtener el documento', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    const stream = S3.getObject(getObjectRequest).createReadStream();
+
+    // Manejo defensivo de errores de S3
+    stream.on('error', (error: any) => {
+      console.error('Error leyendo documento de cliente de S3', {
+        key,
+        bucket: bucketAndPath,
+        code: error?.code,
+        message: error?.message,
+      });
+    });
+
+    return stream;
   }
 
   public async uploadDocument(

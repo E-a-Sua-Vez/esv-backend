@@ -1,6 +1,7 @@
 export class GetDocumentsParamsDto {
   id: string;
-  documentKey: string;
+  commerceId: string;
+  clientId: string;
   reportType: string;
   name: string;
 }
