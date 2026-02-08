@@ -152,5 +152,12 @@ export default {
   'lgpd.admin.update': true,
   'lgpd.admin.add': true,
   'lgpd.admin.delete': true,
-  'lgpd.admin.limit': 100
+  'lgpd.admin.limit': 100,
+  'business.lead-pipeline.view': true,
+  'business.lead-pipeline.add': true,
+  'business.lead-pipeline.edit': true,
+  'business.lead-pipeline.delete': true,
+  'business.lead-pipeline.convert': true,
+  'business.lead-pipeline.limit': 1000,
+  'business.main-menu.lead-pipeline': true
 };

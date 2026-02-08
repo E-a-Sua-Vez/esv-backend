@@ -56,6 +56,14 @@
       "business.main-menu.medical-templates-admin": true,
       "business.main-menu.pdf-templates-admin": true,
       "business.main-menu.audit-log": true,
+      "business.main-menu.lead-pipeline": true,
+
+      "business.lead-pipeline.view": true,
+      "business.lead-pipeline.add": true,
+      "business.lead-pipeline.edit": true,
+      "business.lead-pipeline.delete": true,
+      "business.lead-pipeline.convert": true,
+      "business.lead-pipeline.limit": 1000,
 
       "businesses.admin.add": true,
       "businesses.admin.update": true,
@@ -90,6 +98,12 @@
       "collaborator.main-menu.booking-manage": true,
       "collaborator.main-menu.product-stock": true,
       "collaborator.main-menu.tracing": true,
+      "collaborator.main-menu.lead-pipeline": true,
+
+      "collaborator.lead-pipeline.view": true,
+      "collaborator.lead-pipeline.add": true,
+      "collaborator.lead-pipeline.edit": true,
+
       "collaborator.waitlists.book": true,
 
       "collaborators.admin.update": true,
@@ -455,6 +469,14 @@
       "business.main-menu.medical-templates-admin": true,
       "business.main-menu.pdf-templates-admin": true,
       "business.main-menu.audit-log": true,
+      "business.main-menu.lead-pipeline": true,
+
+      "business.lead-pipeline.view": true,
+      "business.lead-pipeline.add": true,
+      "business.lead-pipeline.edit": true,
+      "business.lead-pipeline.delete": true,
+      "business.lead-pipeline.convert": true,
+      "business.lead-pipeline.limit": 1000,
 
       "businesses.admin.add": false,
       "businesses.admin.update": false,
@@ -808,6 +830,9 @@
   {
     "id": "bFFO1RWHfr7pBmQ1prg2",
     "createdAt": "2023-09-08T16:59:51.253Z",
+    "name": "collaborator",
+    "description": "Permisos para el rol COLLABORATOR",
+    "active": true,
     "permissions": {
       "collaborator.module.update": true,
       "collaborator.attention.finish": true,
@@ -914,10 +939,7 @@
       "chats.admin.start": true,
       "chats.admin.view": true,
       "chats.admin.participate": true
-    },
-    "name": "collaborator",
-    "description": "Permisos para el rol COLLABORATOR",
-    "active": true
+    }
   },
   {
     "id": "epDMhN8naqZij5nAodDW",

@@ -42,4 +42,7 @@ export class Client {
   clientContacts?: ClientContact[];
   firstAttentionForm?: boolean;
   conditionsAccepted?: boolean;
+  // Business Lead conversion tracking - BIDIRECTIONAL REFERENCE
+  convertedFromBusinessLeadId?: string;
+  convertedFromLeadAt?: Date;
 }

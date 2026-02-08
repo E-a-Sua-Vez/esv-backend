@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { FireormModule } from 'nestjs-fireorm';
 
 import { AdministratorModule } from './administrator/administrator.module';
@@ -13,12 +13,16 @@ import { AuthModule } from './auth/auth.module';
 import { BlockModule } from './block/block.module';
 import { BookingModule } from './booking/booking.module';
 import { BusinessModule } from './business/business.module';
+import { BusinessLeadModule } from './business-lead/business-lead.module';
+import { BusinessLogoModule } from './business-logo/business-logo.module';
 import { CIE10Module } from './cie10/cie10.module';
 import { ClientModule } from './client/client.module';
 import { ClientContactModule } from './client-contact/client-contact.module';
+import { ClientPortalModule } from './client-portal/client-portal.module';
 import { ClinicalAlertsModule } from './clinical-alerts/clinical-alerts.module';
 import { CollaboratorModule } from './collaborator/collaborator.module';
 import { CommerceModule } from './commerce/commerce.module';
+import { CommerceLogoModule } from './commerce-logo/commerce-logo.module';
 import { CompanyModule } from './company/company.module';
 import { configValidationSchema } from './config/config.schema';
 import { DocumentsModule } from './documents/documents.module';
@@ -43,8 +47,6 @@ import { PackageModule } from './package/package.module';
 import { PatientHistoryModule } from './patient-history/patient-history.module';
 import { PatientHistoryItemModule } from './patient-history-item/patient-history-item.module';
 import { PatientPhotoModule } from './patient-photo/patient-photo.module';
-import { BusinessLogoModule } from './business-logo/business-logo.module';
-import { CommerceLogoModule } from './commerce-logo/commerce-logo.module';
 import { PaymentModule } from './payment/payment.module';
 import { PlanModule } from './plan/plan.module';
 import { PlanActivationModule } from './plan-activation/plan-activation.module';
@@ -56,24 +58,23 @@ import { QueueModule } from './queue/queue.module';
 import { RolModule } from './rol/rol.module';
 import { ServiceModule } from './service/service.module';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { AuditInterceptor } from './shared/interceptors/audit.interceptor';
 import { LoggerModule } from './shared/logger/logger.module';
 import { LoggingInterceptor } from './shared/logger/logging.interceptor';
-import { SecurityModule } from './shared/security/security.module';
 import { AuditLogModule } from './shared/modules/audit-log.module';
-import { DigitalSignatureModule } from './shared/modules/digital-signature.module';
-import { CrmValidationModule } from './shared/modules/crm-validation.module';
-import { LgpdConsentModule } from './shared/modules/lgpd-consent.module';
 import { ConsentOrchestrationModule } from './shared/modules/consent-orchestration.module';
+import { CrmValidationModule } from './shared/modules/crm-validation.module';
 import { DataRetentionModule } from './shared/modules/data-retention.module';
+import { DigitalSignatureModule } from './shared/modules/digital-signature.module';
+import { LgpdConsentModule } from './shared/modules/lgpd-consent.module';
 import { PdfTemplateModule } from './shared/modules/pdf-template.module';
-import { AuditInterceptor } from './shared/interceptors/audit.interceptor';
+import { SecurityModule } from './shared/security/security.module';
 import { SuggestionModule } from './suggestion/suggestion.module';
 import { SurveyModule } from './survey/survey.module';
 import { SurveyPersonalizedModule } from './survey-personalized/survey-personalized.module';
 import { TelemedicineModule } from './telemedicine/telemedicine.module';
 import { UserModule } from './user/user.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
-import { ClientPortalModule } from './client-portal/client-portal.module';
 
 @Module({
   imports: [
@@ -114,6 +115,7 @@ import { ClientPortalModule } from './client-portal/client-portal.module';
     ClientModule,
     ClientContactModule,
     LeadModule,
+    BusinessLeadModule,
     ProductModule,
     ProfessionalModule,
     ProfessionalCommissionPaymentModule,

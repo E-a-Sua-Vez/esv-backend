@@ -15328,6 +15328,332 @@
         ]
       }
     },
+    "/business-lead": {
+      "post": {
+        "description": "Creates a new lead for a business/commerce",
+        "operationId": "BusinessLeadController_createBusinessLead",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create new business lead",
+        "tags": [
+          "business-lead"
+        ]
+      },
+      "get": {
+        "description": "Returns all business leads filtered by business, commerce, or collaborator",
+        "operationId": "BusinessLeadController_getAllBusinessLeads",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collaboratorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all business leads with filters",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
+    "/business-lead/stage/{stage}": {
+      "get": {
+        "description": "Returns business leads in a specific pipeline stage with filters",
+        "operationId": "BusinessLeadController_getBusinessLeadsByStage",
+        "parameters": [
+          {
+            "name": "stage",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "NEW",
+                "IN_CONTACT",
+                "WAITLIST",
+                "IN_DEAL",
+                "CLOSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commerceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collaboratorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get business leads by pipeline stage",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
+    "/business-lead/{id}": {
+      "get": {
+        "description": "Returns a specific business lead",
+        "operationId": "BusinessLeadController_getBusinessLeadById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Business Lead ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get business lead by ID",
+        "tags": [
+          "business-lead"
+        ]
+      },
+      "put": {
+        "description": "Updates business lead information",
+        "operationId": "BusinessLeadController_updateBusinessLead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Business Lead ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update business lead",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
+    "/business-lead/{id}/stage": {
+      "put": {
+        "description": "Moves a business lead to a different pipeline stage",
+        "operationId": "BusinessLeadController_updateBusinessLeadStage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Business Lead ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update business lead pipeline stage",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
+    "/business-lead/{id}/contact": {
+      "post": {
+        "description": "Records a contact attempt with a business lead",
+        "operationId": "BusinessLeadController_addBusinessLeadContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Business Lead ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Add contact to business lead",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
+    "/business-lead/{id}/contacts": {
+      "get": {
+        "description": "Returns all contact history for a business lead",
+        "operationId": "BusinessLeadController_getBusinessLeadContacts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Business Lead ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get business lead contacts",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
+    "/business-lead/{id}/convert": {
+      "post": {
+        "description": "Converts a business lead into a client with bidirectional reference",
+        "operationId": "BusinessLeadController_convertBusinessLeadToClient",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Business Lead ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Convert business lead to client",
+        "tags": [
+          "business-lead"
+        ]
+      }
+    },
     "/product/{id}": {
       "get": {
         "description": "Retrieves a product by its unique identifier",
