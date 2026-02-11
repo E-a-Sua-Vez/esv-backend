@@ -67,15 +67,12 @@ export class AccountingPeriodService {
     // Filtro por año
     if (year) {
       const yearNum = parseInt(year);
-      console.log('🔍 Filtering by year:', yearNum);
       periods = periods.filter((p) => {
         const startYear = new Date(p.startDate).getFullYear();
         const endYear = new Date(p.endDate).getFullYear();
         const matches = startYear === yearNum || endYear === yearNum;
-        console.log(`  Period ${p.name}: startYear=${startYear}, endYear=${endYear}, matches=${matches}`);
         return matches;
       });
-      console.log(`✅ After year filter: ${periods.length} periods`);
     }
 
     // Filtro por rango de fechas
@@ -343,6 +340,39 @@ export class AccountingPeriodService {
   }
 
   /**
+   * Obtiene todas las transacciones de un período
+   */
+  public async getPeriodTransactions(id: string): Promise<{
+    incomes: any[];
+    outcomes: any[];
+  }> {
+    const period = await this.getPeriodById(id);
+
+    const allIncomes = await this.incomeService.getIncomeByCommerce(period.commerceId);
+    const allOutcomes = await this.outcomeService.getOutcomeByCommerce(period.commerceId);
+
+    // Filtrar transacciones del período
+    const periodIncomes = allIncomes
+      .filter(income =>
+        income.paidAt >= period.startDate &&
+        income.paidAt <= period.endDate
+      )
+      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
+
+    const periodOutcomes = allOutcomes
+      .filter(outcome =>
+        outcome.paidAt >= period.startDate &&
+        outcome.paidAt <= period.endDate
+      )
+      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
+
+    return {
+      incomes: periodIncomes,
+      outcomes: periodOutcomes,
+    };
+  }
+
+  /**
    * Verifica si una transacción pertenece a un período cerrado
    */
   public async isTransactionInClosedPeriod(
@@ -466,21 +496,44 @@ export class AccountingPeriodService {
   }
 
   private async calculatePeriodTotals(period: AccountingPeriod): Promise<PeriodTotals> {
+    console.log('📊 Calculating period totals for:', {
+      periodId: period.id,
+      periodName: period.name,
+      commerceId: period.commerceId,
+      startDate: period.startDate,
+      endDate: period.endDate,
+    });
+
     const allIncomes = await this.incomeService.getIncomeByCommerce(period.commerceId);
     const allOutcomes = await this.outcomeService.getOutcomeByCommerce(period.commerceId);
 
+    console.log('📥 Total transactions:', {
+      totalIncomes: allIncomes.length,
+      totalOutcomes: allOutcomes.length,
+    });
+
     // Filtrar transacciones del período
     const periodIncomes = allIncomes.filter(income =>
-      income.createdAt >= period.startDate &&
-      income.createdAt <= period.endDate &&
+      income.paidAt >= period.startDate &&
+      income.paidAt <= period.endDate &&
       income.status === IncomeStatus.CONFIRMED
     );
 
+    console.log('✅ Filtered incomes:', {
+      count: periodIncomes.length,
+      sample: periodIncomes.slice(0, 2).map(i => ({ id: i.id, paidAt: i.paidAt, amount: i.amount, status: i.status })),
+    });
+
     const periodOutcomes = allOutcomes.filter(outcome =>
-      outcome.createdAt >= period.startDate &&
-      outcome.createdAt <= period.endDate &&
+      outcome.paidAt >= period.startDate &&
+      outcome.paidAt <= period.endDate &&
       outcome.status === OutcomeStatus.CONFIRMED
     );
+
+    console.log('✅ Filtered outcomes:', {
+      count: periodOutcomes.length,
+      sample: periodOutcomes.slice(0, 2).map(o => ({ id: o.id, paidAt: o.paidAt, amount: o.amount, status: o.status })),
+    });
 
     // Calcular totales
     let totalIncomes = 0;
@@ -517,6 +570,17 @@ export class AccountingPeriodService {
 
     const netAmount = totalIncomes - totalOutcomes - totalCommissions - totalRefunds + totalCommissionReversals;
 
+    console.log('💰 Calculated totals:', {
+      totalIncomes,
+      totalOutcomes,
+      totalCommissions,
+      totalRefunds,
+      totalCommissionReversals,
+      netAmount,
+      incomesCount,
+      outcomesCount,
+    });
+
     return {
       totalIncomes,
       totalOutcomes,
@@ -535,8 +599,8 @@ export class AccountingPeriodService {
 
     // Marcar incomes
     const periodIncomes = allIncomes.filter(income =>
-      income.createdAt >= period.startDate &&
-      income.createdAt <= period.endDate
+      income.paidAt >= period.startDate &&
+      income.paidAt <= period.endDate
     );
 
     for (const income of periodIncomes) {
@@ -548,8 +612,8 @@ export class AccountingPeriodService {
 
     // Marcar outcomes
     const periodOutcomes = allOutcomes.filter(outcome =>
-      outcome.createdAt >= period.startDate &&
-      outcome.createdAt <= period.endDate
+      outcome.paidAt >= period.startDate &&
+      outcome.paidAt <= period.endDate
     );
 
     for (const outcome of periodOutcomes) {

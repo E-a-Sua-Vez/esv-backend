@@ -17241,6 +17241,38 @@
         ]
       }
     },
+    "/accounting-period/{id}/transactions": {
+      "get": {
+        "description": "Retrieves all transactions (incomes and outcomes) for a period",
+        "operationId": "AccountingPeriodController_getPeriodTransactions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Period ID",
+            "schema": {
+              "example": "period-123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transactions retrieved"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get period transactions",
+        "tags": [
+          "accounting-period"
+        ]
+      }
+    },
     "/accounting-period": {
       "post": {
         "description": "Creates a new accounting period. Only one period can be OPEN at a time.",

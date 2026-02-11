@@ -1932,7 +1932,7 @@ export class BookingService {
           const processBooking = await this.processBooking('ett', booking, attention.id);
           response.processBooking = processBooking;
           const attend = await this.attentionService.attend(
-            'ETT-MIGRATION',
+            'HUB-MIGRATION',
             number,
             queueId,
             collaboratorId,

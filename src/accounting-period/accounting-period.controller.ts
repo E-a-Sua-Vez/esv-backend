@@ -51,16 +51,6 @@ export class AccountingPeriodController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ): Promise<AccountingPeriod[]> {
-    console.log('🔍 GET /accounting-period/commerce/:commerceId - Filters received:', {
-      commerceId,
-      searchText,
-      status,
-      year,
-      startDate,
-      endDate,
-      limit,
-      offset,
-    });
     return this.accountingPeriodService.getPeriodsByCommerce(
       commerceId,
       searchText,
@@ -114,6 +104,19 @@ export class AccountingPeriodController {
   @ApiResponse({ status: 200, description: 'Summary calculated' })
   public async getPeriodSummary(@Param('id') id: string) {
     return this.accountingPeriodService.getPeriodSummary(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('/:id/transactions')
+  @ApiOperation({
+    summary: 'Get period transactions',
+    description: 'Retrieves all transactions (incomes and outcomes) for a period',
+  })
+  @ApiParam({ name: 'id', description: 'Period ID', example: 'period-123' })
+  @ApiResponse({ status: 200, description: 'Transactions retrieved' })
+  public async getPeriodTransactions(@Param('id') id: string) {
+    return this.accountingPeriodService.getPeriodTransactions(id);
   }
 
   @UseGuards(AuthGuard)
