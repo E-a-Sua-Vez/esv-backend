@@ -75,6 +75,7 @@ import { SurveyPersonalizedModule } from './survey-personalized/survey-personali
 import { TelemedicineModule } from './telemedicine/telemedicine.module';
 import { UserModule } from './user/user.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
+import { AccountingPeriodModule } from './accounting-period/accounting-period.module';
 
 @Module({
   imports: [
@@ -124,6 +125,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     OutcomeTypeModule,
     PackageModule,
     OutcomeModule,
+    AccountingPeriodModule,
     PatientHistoryModule,
     CompanyModule,
     PatientHistoryItemModule,

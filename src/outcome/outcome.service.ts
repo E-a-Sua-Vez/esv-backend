@@ -81,7 +81,29 @@ export class OutcomeService {
     }
   }
 
-  public async updateOutcome(user: string, outcome: Outcome): Promise<Outcome> {
+  public async updateOutcome(userOrId: string, outcomeOrUndefined?: Outcome): Promise<Outcome> {
+    let outcome: Outcome;
+    let user: string;
+
+    // Soportar ambas firmas: updateOutcome(user, outcome) y updateOutcome(id, outcome) para retrocompatibilidad
+    if (outcomeOrUndefined) {
+      user = userOrId;
+      outcome = outcomeOrUndefined;
+    } else {
+      // Si solo se pasa un argumento, es el id y outcome debe ser cargado
+      const id = userOrId;
+      outcome = await this.getOutcomeById(id);
+      user = 'system';
+    }
+
+    // Validar que no esté en un período cerrado
+    if (outcome.isClosed) {
+      throw new HttpException(
+        'No se puede modificar un outcome de un período cerrado',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     const outcomeUpdated = await await this.outcomeRepository.update(outcome);
     const outcomeUpdatedEvent = new OutcomeUpdated(new Date(), outcomeUpdated, { user });
     publish(outcomeUpdatedEvent);

@@ -57,4 +57,17 @@ export class Income {
   commissionPaymentId?: string; // ID del pago de comisión asociado
   servicesId?: string[]; // IDs de los servicios pagados en esta income
   servicesDetails?: object[]; // Detalles completos de los servicios pagados
+
+  // Campos de contabilidad
+  accountingPeriodId?: string; // ID del período contable
+  isClosed?: boolean; // true si pertenece a un período cerrado
+  closedAt?: Date; // Cuándo se cerró el período
+
+  // Metadata de refund
+  refundMetadata?: {
+    isRefunded?: boolean;
+    refundedAmount?: number;
+    refundDate?: Date;
+    isPartialRefund?: boolean;
+  };
 }

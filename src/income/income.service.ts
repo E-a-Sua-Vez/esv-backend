@@ -157,7 +157,29 @@ export class IncomeService {
     }
   }
 
-  public async updateIncome(user: string, income: Income): Promise<Income> {
+  public async updateIncome(userOrId: string, incomeOrUndefined?: Income): Promise<Income> {
+    let income: Income;
+    let user: string;
+
+    // Soportar ambas firmas: updateIncome(user, income) y updateIncome(id, income) para retrocompatibilidad
+    if (incomeOrUndefined) {
+      user = userOrId;
+      income = incomeOrUndefined;
+    } else {
+      // Si solo se pasa un argumento, es el id y income debe ser cargado
+      const id = userOrId;
+      income = await this.getIncomeById(id);
+      user = 'system';
+    }
+
+    // Validar que no esté en un período cerrado
+    if (income.isClosed) {
+      throw new HttpException(
+        'No se puede modificar un income de un período cerrado',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     const incomeUpdated = await await this.incomeRepository.update(income);
     const incomeUpdatedEvent = new IncomeUpdated(new Date(), incomeUpdated, { user });
     publish(incomeUpdatedEvent);

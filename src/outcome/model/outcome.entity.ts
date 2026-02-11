@@ -52,4 +52,14 @@ export class Outcome {
   date: Date;
   code: string;
   expireDate: Date;
+
+  // Campos de contabilidad
+  accountingPeriodId?: string; // ID del período contable
+  isClosed?: boolean; // true si pertenece a un período cerrado
+  closedAt?: Date; // Cuándo se cerró el período
+
+  // Campos para refunds
+  conceptType?: string; // 'PAYMENT_REFUND', 'COMMISSION_REVERSAL', 'REGULAR'
+  auxiliaryId?: string; // ID de la transacción original (income/outcome)
+  description?: string; // Descripción del egreso/refund
 }
