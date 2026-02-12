@@ -1,6 +1,6 @@
 import { Collection } from 'fireorm';
-import { PaymentMethod } from 'src/payment/model/payment-method.enum';
-import { PaymentType } from 'src/payment/model/payment-type.enum';
+import { PaymentMethod } from '../../payment/model/payment-method.enum';
+import { PaymentType } from '../../payment/model/payment-type.enum';
 
 import { PaymentConfirmation } from '../../payment/model/payment-confirmation';
 
