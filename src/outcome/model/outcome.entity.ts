@@ -48,6 +48,7 @@ export class Outcome {
   productId: string;
   productName: string;
   beneficiary: string;
+  beneficiaryName: string;
   companyBeneficiaryId: string;
   date: Date;
   code: string;

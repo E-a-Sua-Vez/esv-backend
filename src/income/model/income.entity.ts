@@ -69,5 +69,6 @@ export class Income {
     refundedAmount?: number;
     refundDate?: Date;
     isPartialRefund?: boolean;
+    originalAmount?: number;
   };
 }

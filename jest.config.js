@@ -1,12 +1,12 @@
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: 'src',
+  rootDir: '.',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   collectCoverageFrom: [
-    '**/*.(t|j)s',
+    'src/**/*.(t|j)s',
     '!**/*.spec.ts',
     '!**/*.interface.ts',
     '!**/*.enum.ts',
@@ -14,13 +14,13 @@ module.exports = {
     '!**/main.ts',
     '!**/*.module.ts',
   ],
-  coverageDirectory: '../coverage',
+  coverageDirectory: './coverage',
   testEnvironment: 'node',
-  cacheDirectory: '<rootDir>/../.jest-cache',
+  cacheDirectory: './.jest-cache',
   moduleNameMapper: {
-    '^src/(.*)$': '<rootDir>/$1',
+    '^src/(.*)$': '<rootDir>/src/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   transformIgnorePatterns: ['node_modules/(?!(fireorm|@firebase)/)'],
 };
 

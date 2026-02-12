@@ -137,6 +137,7 @@ export class OutcomeService {
     productId: string,
     productName: string,
     beneficiary: string,
+    beneficiaryName: string,
     companyBeneficiaryId: string,
     date: Date,
     code: string,
@@ -173,6 +174,7 @@ export class OutcomeService {
     outcome.productId = productId;
     outcome.productName = productName;
     outcome.beneficiary = beneficiary;
+    outcome.beneficiaryName = beneficiaryName;
     outcome.companyBeneficiaryId = companyBeneficiaryId;
     outcome.date = date;
     outcome.code = code;

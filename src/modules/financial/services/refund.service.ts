@@ -25,24 +25,34 @@ export class RefundService {
     // private eventsService: EventsService
   ) {}
 
-  async processRefund(createRefundDto: CreateRefundDto, commerceId: string): Promise<ProcessRefundResult> {
-    // 1. Validar transacción original
+  async processRefund(createRefundDto: CreateRefundDto, userCommerceId?: string): Promise<ProcessRefundResult> {
+    // 1. Buscar la transacción original primero (sin filtrar por commerceId)
     const originalTransaction = await this.findOriginalTransaction(
-      createRefundDto.originalTransactionId,
-      commerceId
+      createRefundDto.originalTransactionId
     );
 
     if (!originalTransaction) {
-      throw new NotFoundException('Transacción original no encontrada');
+      throw new NotFoundException(
+        `Transacción original no encontrada. ID: ${createRefundDto.originalTransactionId}`
+      );
     }
 
-    // 2. Validar monto del refund
+    // 2. Usar el commerceId de la transacción original
+    const commerceId = originalTransaction.data.commerceId;
+
+    if (!commerceId) {
+      throw new NotFoundException(
+        `La transacción original no tiene commerceId asociado. ID: ${createRefundDto.originalTransactionId}`
+      );
+    }
+
+    // 3. Validar monto del refund
     await this.validateRefundAmount(createRefundDto, originalTransaction);
 
-    // 3. Crear registro del refund como outcome
+    // 4. Crear registro del refund como outcome
     const refundOutcome = await this.createRefundOutcome(createRefundDto, commerceId, originalTransaction);
 
-    // 4. Procesar reversión automática de comisión si aplica
+    // 5. Procesar reversión automática de comisión si aplica
     await this.processCommissionReversal(createRefundDto, originalTransaction);
 
     // 5. Enviar evento para notificaciones y auditoría
@@ -55,6 +65,7 @@ export class RefundService {
       commerceId,
       refundOutcome.clientId,
       refundOutcome.beneficiary,
+      refundOutcome.beneficiaryName || '',
       createRefundDto.reason || '',
       { refundOutcome, originalTransaction }
     );
@@ -192,19 +203,29 @@ export class RefundService {
     };
   }
 
-  private async findOriginalTransaction(transactionId: string, commerceId: string) {
-    // Buscar en ingresos
-    let transaction = await this.incomeRepository.findById(transactionId);
+  private async findOriginalTransaction(transactionId: string) {
+    try {
+      // Buscar en ingresos
+      const income = await this.incomeRepository.findById(transactionId);
 
-    if (transaction && transaction.commerceId === commerceId) {
-      return { type: 'income', data: transaction };
+      if (income) {
+        return { type: 'income', data: income };
+      }
+    } catch (error) {
+      // Si falla la búsqueda en income, continuar con outcome
+      console.log(`Income not found: ${transactionId}`);
     }
 
-    // Buscar en egresos
-    const outcome = await this.outcomeRepository.findById(transactionId);
+    try {
+      // Buscar en egresos
+      const outcome = await this.outcomeRepository.findById(transactionId);
 
-    if (outcome && outcome.commerceId === commerceId) {
-      return { type: 'outcome', data: outcome };
+      if (outcome) {
+        return { type: 'outcome', data: outcome };
+      }
+    } catch (error) {
+      // Si falla la búsqueda en outcome, retornar null
+      console.log(`Outcome not found: ${transactionId}`);
     }
 
     return null;
@@ -238,6 +259,13 @@ export class RefundService {
   }
 
   private async createRefundOutcome(createRefundDto: CreateRefundDto, commerceId: string, originalTransaction: any): Promise<Outcome> {
+    // Obtener nombre del beneficiario del income original
+    let beneficiaryName = '';
+    if (originalTransaction.type === 'income') {
+      const income = originalTransaction.data as Income;
+      beneficiaryName = income.professionalName || '';
+    }
+
     // Crear outcome con todos los campos requeridos
     const refundOutcome = new Outcome();
     refundOutcome.commerceId = commerceId;
@@ -247,8 +275,9 @@ export class RefundService {
     refundOutcome.description = this.buildRefundDescription(createRefundDto);
     refundOutcome.clientId = createRefundDto.clientId || originalTransaction.data.clientId;
     refundOutcome.beneficiary = createRefundDto.professionalId || originalTransaction.data.professionalId || '';
+    refundOutcome.beneficiaryName = beneficiaryName;
     refundOutcome.auxiliaryId = createRefundDto.originalTransactionId;
-    refundOutcome.type = 'OTHER';
+    refundOutcome.type = 'payment-refund';
     refundOutcome.status = OutcomeStatus.CONFIRMED;
     refundOutcome.createdAt = new Date();
     refundOutcome.bookingId = '';
@@ -289,39 +318,52 @@ export class RefundService {
     const income = originalTransaction.data as Income;
     let incomeUpdated = false;
 
+    // Calcular total refunded (previos + actual)
+    const allOutcomes = await this.outcomeRepository
+      .whereEqualTo('auxiliaryId', income.id)
+      .find();
+    const previousRefunds = allOutcomes.filter(outcome =>
+      outcome.conceptType?.includes('refund')
+    );
+    const previousRefundedAmount = previousRefunds.reduce((sum, refund) => sum + refund.amount, 0);
+    const totalRefunded = previousRefundedAmount + createRefundDto.amount;
+    const originalAmount = income.amount || income.totalAmount || 0;
+
     // Verificar si ya se pagó comisión
     if (income.commissionPaid === true && income.professionalCommission && income.professionalCommission > 0) {
       try {
-        // Crear outcome para revertir la comisión pagada
+        // Crear outcome para revertir la comisión pagada (proporcional al refund)
         await this.createCommissionReversalOutcome(income, createRefundDto.amount);
 
-        // Marcar la comisión como no pagada para evitar futuros pagos
-        income.commissionPaid = false;
-        income.commissionPaymentId = null; // Limpiar referencia al pago de comisión
-        incomeUpdated = true;
+        // Si es reembolso total, marcar comisión como no pagada
+        if (totalRefunded >= originalAmount) {
+          income.commissionPaid = false;
+          income.commissionPaymentId = null;
+        }
 
-        console.log(`[RefundService] Comisión revertida automáticamente para income ${income.id}`);
+        incomeUpdated = true;
       } catch (error) {
         console.error(`[RefundService] Error al revertir comisión para income ${income.id}:`, error);
         // No fallar el refund por error en la reversión de comisión
       }
+    } else if (income.professionalCommission && income.professionalCommission > 0) {
+      // Comisión NO pagada aún - marcar que no debe pagarse si hay refund
+      // Esto previene que aparezca en reportes de comisiones pendientes
+      income.commissionPaid = false;
+      income.commissionPaymentId = null;
+      incomeUpdated = true;
     }
 
     // Marcar el income como refunded (parcial o total)
     try {
-      // Calcular total refunded incluyendo este refund
-      const totalRefunded = createRefundDto.amount;
-      const originalAmount = income.amount || income.totalAmount || 0;
-
-      // Marcar como refunded si se reembolsa el total o agregar metadata
-      if (!income.refundMetadata) {
-        income.refundMetadata = {
-          isRefunded: true,
-          refundedAmount: totalRefunded,
-          refundDate: new Date(),
-          isPartialRefund: totalRefunded < originalAmount
-        };
-      }
+      // Actualizar metadata con el total acumulado
+      income.refundMetadata = {
+        isRefunded: true,
+        refundedAmount: totalRefunded,
+        refundDate: new Date(),
+        isPartialRefund: totalRefunded < originalAmount,
+        originalAmount: originalAmount
+      };
 
       incomeUpdated = true;
     } catch (error) {
@@ -351,7 +393,7 @@ export class RefundService {
     reversalOutcome.clientId = income.clientId;
     reversalOutcome.beneficiary = income.professionalId;
     reversalOutcome.auxiliaryId = income.id;
-    reversalOutcome.type = 'PROFESSIONAL_COMMISSION';
+    reversalOutcome.type = 'commission-reversal';
     reversalOutcome.status = OutcomeStatus.CONFIRMED;
     reversalOutcome.createdAt = new Date();
     reversalOutcome.bookingId = '';

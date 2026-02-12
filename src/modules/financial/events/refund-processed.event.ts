@@ -12,6 +12,7 @@ export class RefundProcessed extends DomainEvent {
     public readonly commerceId: string,
     public readonly clientId: string,
     public readonly beneficiary: string,
+    public readonly beneficiaryName: string,
     public readonly reason: string,
     metadata?: object
   ) {
@@ -23,6 +24,7 @@ export class RefundProcessed extends DomainEvent {
       commerceId,
       clientId,
       beneficiary,
+      beneficiaryName,
       reason,
     } as DomainEventDataAttributes;
     if (metadata) {

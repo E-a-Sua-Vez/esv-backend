@@ -281,6 +281,19 @@ export class ProfessionalCommissionPaymentService {
         );
       }
 
+      // Obtener el nombre del profesional desde los incomes
+      let professionalName = '';
+      if (payment.incomeIds && payment.incomeIds.length > 0) {
+        try {
+          const incomes = await this.incomeService.getIncomesById(payment.incomeIds);
+          if (incomes.length > 0 && incomes[0].professionalName) {
+            professionalName = incomes[0].professionalName;
+          }
+        } catch (error) {
+          this.logger.warn(`Could not fetch professional name: ${error.message}`);
+        }
+      }
+
       // Crear outcome automático
       const outcome = await this.outcomeService.createOutcome(
         user,
@@ -309,6 +322,7 @@ export class ProfessionalCommissionPaymentService {
         '', // productId
         '', // productName
         payment.professionalId, // beneficiary
+        professionalName, // beneficiaryName
         '', // companyBeneficiaryId
         new Date(), // date
         payment.id, // code (referencia al commission payment)
