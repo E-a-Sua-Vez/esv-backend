@@ -63,12 +63,44 @@ export class Income {
   isClosed?: boolean; // true si pertenece a un período cerrado
   closedAt?: Date; // Cuándo se cerró el período
 
-  // Metadata de refund
+  // Metadata de refund - información completa sobre reembolsos y reversiones de comisión
   refundMetadata?: {
-    isRefunded?: boolean;
+    isRefunded?: boolean; // true si tiene algún refund
+    totalRefunded?: number; // monto total reembolsado
+    refundCount?: number; // número de refunds
+    originalAmount?: number; // monto original del income
+    
+    // 📊 Commission Reversal Fields
+    totalCommissionReversed?: number; // monto total de comisiones revertidas
+    commissionReversalCount?: number; // número de reversiones de comisión
+    
+    // 📋 Detailed Histories
+    refundHistory?: Array<{
+      refundId: string;
+      amount: number;
+      type: string;
+      category: 'refund';
+      reason: string;
+      date: Date;
+      code: string;
+    }>; // historial de refunds del pago
+    
+    commissionReversalHistory?: Array<{
+      reversalId: string;
+      amount: number;
+      type: string;
+      category: 'commission-reversal';
+      reason: string;
+      date: Date;
+      code: string;
+    }>; // historial de reversiones de comisión
+    
+    lastRefundAt?: Date; // fecha del último refund
+    lastRefundId?: string; // ID del último refund
+    
+    // Campos legacy para compatibilidad
     refundedAmount?: number;
     refundDate?: Date;
     isPartialRefund?: boolean;
-    originalAmount?: number;
   };
 }

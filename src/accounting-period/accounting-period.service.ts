@@ -350,20 +350,64 @@ export class AccountingPeriodService {
     const allIncomes = await this.incomeService.getIncomeByCommerce(period.commerceId);
     const allOutcomes = await this.outcomeService.getOutcomeByCommerce(period.commerceId);
 
+    this.logger.log(`📋 Period transactions for ${id}: Found ${allIncomes.length} total incomes, ${allOutcomes.length} total outcomes`);
+
     // Filtrar transacciones del período
     const periodIncomes = allIncomes
       .filter(income =>
         income.paidAt >= period.startDate &&
-        income.paidAt <= period.endDate
+        income.paidAt <= period.endDate &&
+        income.status === IncomeStatus.CONFIRMED
       )
       .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
 
-    const periodOutcomes = allOutcomes
-      .filter(outcome =>
-        outcome.paidAt >= period.startDate &&
-        outcome.paidAt <= period.endDate
-      )
-      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
+    // Filtrar outcomes - incluir refunds/commission reversals con lógica especial de fechas
+    const periodOutcomes = allOutcomes.filter(outcome => {
+      const conceptType = outcome.conceptType || outcome.type || '';
+      const isRefund = conceptType === 'PAYMENT_REFUND' || 
+                      conceptType === 'SERVICE_REFUND' || 
+                      conceptType === 'CANCELLATION_REFUND' ||
+                      conceptType === 'payment-refund' || 
+                      conceptType === 'service-refund' || 
+                      conceptType === 'cancellation-refund';
+      const isCommissionReversal = conceptType === 'COMMISSION_REVERSAL' || conceptType === 'commission-reversal';
+      const isConfirmed = outcome.status === OutcomeStatus.CONFIRMED;
+      
+      // Para refunds/reversals con PaidAt undefined, usar createdAt como respaldo
+      let inDateRange = false;
+      if (outcome.paidAt) {
+        inDateRange = outcome.paidAt >= period.startDate && outcome.paidAt <= period.endDate;
+      } else if (isRefund || isCommissionReversal) {
+        // Si es refund/reversal sin paidAt, usar createdAt como respaldo
+        const dateToCheck = outcome.createdAt;
+        if (dateToCheck) {
+          inDateRange = dateToCheck >= period.startDate && dateToCheck <= period.endDate;
+        } else {
+          // Si no hay fecha válida, incluir el refund (asumimos que pertenece al período)
+          inDateRange = true;
+        }
+      } else {
+        inDateRange = outcome.paidAt >= period.startDate && outcome.paidAt <= period.endDate;
+      }
+
+      // Incluir si está confirmado O si es un refund/reversal (que siempre deben contarse)
+      return inDateRange && (isConfirmed || isRefund || isCommissionReversal);
+    }).sort((a, b) => {
+      const dateA = a.paidAt || a.createdAt;
+      const dateB = b.paidAt || b.createdAt;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    this.logger.log(`📊 Filtered results: ${periodIncomes.length} incomes, ${periodOutcomes.length} outcomes`);
+    this.logger.log('📝 Outcomes details:', periodOutcomes.map(o => ({
+      id: o.id,
+      conceptType: o.conceptType,
+      type: o.type,
+      amount: o.amount,
+      paidAt: o.paidAt,
+      createdAt: o.createdAt,
+      status: o.status
+    })));
 
     return {
       incomes: periodIncomes,
@@ -498,6 +542,31 @@ export class AccountingPeriodService {
     const allIncomes = await this.incomeService.getIncomeByCommerce(period.commerceId);
     const allOutcomes = await this.outcomeService.getOutcomeByCommerce(period.commerceId);
 
+    console.log('🔍 DEBUG: Accounting Period Calculation');
+    console.log('Period:', period.id, 'Commerce:', period.commerceId);
+    console.log('Date Range:', period.startDate, 'to', period.endDate);
+    console.log('Period Status:', period.status);
+    console.log('Total incomes in DB:', allIncomes.length);
+    console.log('Total outcomes in DB:', allOutcomes.length);
+    
+    // COMPARACIÓN CON QUERY STACK - mostrar qué deberíamos tener
+    console.log('🎯 EXPECTED FROM QUERY STACK:');
+    console.log('- Should have 7 incomes totaling 3000 with 980 commission');
+    console.log('- Should have 2 refunds: PAYMENT_REFUND(500) + CANCELLATION_REFUND(200) = 700');
+    console.log('');
+
+    console.log('📋 ALL INCOMES IN DB:');
+    allIncomes.forEach((income, idx) => {
+      const inPeriod = income.paidAt >= period.startDate && income.paidAt <= period.endDate && income.status === IncomeStatus.CONFIRMED;
+      console.log(`${idx + 1}. ID: ${income.id}, Amount: ${income.amount}, Commission: ${income.professionalCommission}, PaidAt: ${income.paidAt}, Status: ${income.status}, InPeriod: ${inPeriod ? '✅' : '❌'}`);
+    });
+
+    console.log('📋 ALL OUTCOMES IN DB:');
+    allOutcomes.forEach((outcome, idx) => {
+      const inPeriod = outcome.paidAt >= period.startDate && outcome.paidAt <= period.endDate;
+      console.log(`${idx + 1}. ID: ${outcome.id}, Amount: ${outcome.amount}, ConceptType: ${outcome.conceptType}, Type: ${outcome.type}, PaidAt: ${outcome.paidAt}, Status: ${outcome.status}, InPeriod: ${inPeriod ? '✅' : '❌'}`);
+    });
+
     // Filtrar transacciones del período
     const periodIncomes = allIncomes.filter(income =>
       income.paidAt >= period.startDate &&
@@ -505,16 +574,58 @@ export class AccountingPeriodService {
       income.status === IncomeStatus.CONFIRMED
     );
 
+    console.log('Filtered period incomes:', periodIncomes.length);
+    console.log('Period incomes details:', periodIncomes.map(i => ({
+      id: i.id,
+      amount: i.amount,
+      paidAt: i.paidAt,
+      status: i.status,
+      refundMetadata: i.refundMetadata
+    })));
+
     // Filtrar outcomes - incluir refunds independientemente del status
     const periodOutcomes = allOutcomes.filter(outcome => {
-      const inDateRange = outcome.paidAt >= period.startDate && outcome.paidAt <= period.endDate;
-      const isRefund = outcome.conceptType === 'payment-refund';
-      const isCommissionReversal = outcome.conceptType === 'commission-reversal';
+      const conceptType = outcome.conceptType || outcome.type || '';
+      const isRefund = conceptType === 'PAYMENT_REFUND' || 
+                      conceptType === 'SERVICE_REFUND' || 
+                      conceptType === 'CANCELLATION_REFUND' ||
+                      conceptType === 'payment-refund' || 
+                      conceptType === 'service-refund' || 
+                      conceptType === 'cancellation-refund';
+      const isCommissionReversal = conceptType === 'COMMISSION_REVERSAL' || conceptType === 'commission-reversal';
       const isConfirmed = outcome.status === OutcomeStatus.CONFIRMED;
+      
+      // Para refunds/reversals con PaidAt undefined, usar createdAt o considerar que están en el período
+      let inDateRange = false;
+      if (outcome.paidAt) {
+        inDateRange = outcome.paidAt >= period.startDate && outcome.paidAt <= period.endDate;
+      } else if (isRefund || isCommissionReversal) {
+        // Si es refund/reversal sin paidAt, usar createdAt como respaldo o incluir automáticamente
+        const dateToCheck = outcome.createdAt;
+        if (dateToCheck) {
+          inDateRange = dateToCheck >= period.startDate && dateToCheck <= period.endDate;
+        } else {
+          // Si no hay fecha válida, incluir el refund (asumimos que pertenece al período)
+          console.log(`⚠️  Refund/Reversal ${outcome.id} has no paidAt or createdAt - including in period`);
+          inDateRange = true;
+        }
+      } else {
+        inDateRange = outcome.paidAt >= period.startDate && outcome.paidAt <= period.endDate;
+      }
 
       // Incluir si está confirmado O si es un refund/reversal (que siempre deben contarse)
       return inDateRange && (isConfirmed || isRefund || isCommissionReversal);
     });
+
+    console.log('Filtered period outcomes:', periodOutcomes.length);
+    console.log('Period outcomes details:', periodOutcomes.map(o => ({
+      id: o.id,
+      amount: o.amount,
+      paidAt: o.paidAt,
+      conceptType: o.conceptType,
+      type: o.type, // También mostrar el campo type
+      status: o.status
+    })));
 
     // Calcular totales
     let totalIncomes = 0;
@@ -522,12 +633,14 @@ export class AccountingPeriodService {
     let incomesCount = 0;
 
     periodIncomes.forEach(income => {
-      // Los refunds son incomes negativos o con metadata de refund
-      if (!income.refundMetadata || !income.refundMetadata.isRefunded) {
-        totalIncomes += income.amount || 0;
-        totalCommissions += income.professionalCommission || 0;
-        incomesCount++;
-      }
+      // NUEVO ENFOQUE: Incluir TODOS los incomes para metodología bruta/completa
+      // Los refunds se manejan por separado, no restamos de incomes
+      totalIncomes += income.amount || 0;
+      totalCommissions += income.professionalCommission || 0;
+      incomesCount++;
+      
+      const refundMeta = income.refundMetadata;
+      console.log(`💰 INCLUDING Income ${income.id}: Amount ${income.amount}, Commission ${income.professionalCommission}, RefundMeta: ${refundMeta ? 'HAS_REFUNDS' : 'NO_REFUNDS'}`);
     });
 
     let totalOutcomes = 0;
@@ -536,14 +649,23 @@ export class AccountingPeriodService {
     let outcomesCount = 0;
 
     periodOutcomes.forEach(outcome => {
-      const isRefund = outcome.conceptType === 'payment-refund';
-      const isCommissionReversal = outcome.conceptType === 'commission-reversal';
+      const conceptType = outcome.conceptType || outcome.type || '';
+      const isRefund = conceptType === 'PAYMENT_REFUND' || 
+                      conceptType === 'SERVICE_REFUND' || 
+                      conceptType === 'CANCELLATION_REFUND' ||
+                      conceptType === 'payment-refund' || 
+                      conceptType === 'service-refund' || 
+                      conceptType === 'cancellation-refund';
+      const isCommissionReversal = conceptType === 'COMMISSION_REVERSAL' || conceptType === 'commission-reversal';
 
       if (isRefund) {
+        console.log('💰 Found REFUND:', outcome.id, 'Type:', conceptType, 'Amount:', outcome.amount);
         totalRefunds += Math.abs(outcome.amount || 0);
       } else if (isCommissionReversal) {
+        console.log('🔄 Found COMMISSION_REVERSAL:', outcome.id, 'Type:', conceptType, 'Amount:', outcome.amount);
         totalCommissionReversals += Math.abs(outcome.amount || 0);
       } else {
+        console.log('📝 Found OTHER OUTCOME:', outcome.id, 'Type:', conceptType, 'Amount:', outcome.amount);
         totalOutcomes += Math.abs(outcome.amount || 0);
         outcomesCount++;
       }
@@ -551,7 +673,7 @@ export class AccountingPeriodService {
 
     const netAmount = totalIncomes - totalOutcomes - totalCommissions - totalRefunds + totalCommissionReversals;
 
-    return {
+    const result = {
       totalIncomes,
       totalOutcomes,
       totalCommissions,
@@ -561,6 +683,19 @@ export class AccountingPeriodService {
       incomesCount,
       outcomesCount,
     };
+
+    console.log('📊 Calculated totals:', result);
+    console.log('');
+    console.log('🔍 COMPARISON WITH EXPECTED:');
+    console.log(`Incomes: ${totalIncomes} (expected 3000) - Count: ${incomesCount} (expected 7)`);
+    console.log(`Commissions: ${totalCommissions} (expected 980)`);
+    console.log(`Refunds: ${totalRefunds} (expected 700)`);
+    console.log(`Commission Reversals: ${totalCommissionReversals} (expected 180)`);
+    console.log(`Outcomes: ${totalOutcomes} (expected 180 - only non-refunds)`);
+    console.log(`Net Amount: ${result.netAmount} (calculated as incomes - outcomes - commissions - refunds + reversals)`);
+    console.log('🔚 DEBUG END\n');
+
+    return result;
   }
 
   private async markTransactionsAsClosed(period: AccountingPeriod): Promise<void> {
