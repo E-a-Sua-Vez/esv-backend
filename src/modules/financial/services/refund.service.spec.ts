@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from 'nestjs-fireorm';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RefundService } from './refund.service';
 import { Outcome } from '../../../outcome/model/outcome.entity';
 import { Income } from '../../../income/model/income.entity';
@@ -9,7 +8,6 @@ import { IncomeService } from '../../../income/income.service';
 import { OutcomeService } from '../../../outcome/outcome.service';
 import { CreateRefundDto, RefundType, RefundReason } from '../dto/create-refund.dto';
 import { OutcomeStatus } from '../../../outcome/model/outcome-status.enum';
-import { IncomeUpdated } from '../../../income/events/income-updated.event';
 
 describe('RefundService - Pruebas Financieras Exhaustivas Actualizadas', () => {
   let service: RefundService;
@@ -17,7 +15,6 @@ describe('RefundService - Pruebas Financieras Exhaustivas Actualizadas', () => {
   let incomeRepository: any;
   let incomeService: any;
   let outcomeService: any;
-  let eventEmitter: any;
 
   const mockIncomeRepository = {
     findById: jest.fn(),
@@ -39,10 +36,6 @@ describe('RefundService - Pruebas Financieras Exhaustivas Actualizadas', () => {
 
   const mockOutcomeService = {};
 
-  const mockEventEmitter = {
-    emit: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -62,10 +55,6 @@ describe('RefundService - Pruebas Financieras Exhaustivas Actualizadas', () => {
         {
           provide: OutcomeService,
           useValue: mockOutcomeService,
-        },
-        {
-          provide: EventEmitter2,
-          useValue: mockEventEmitter,
         },
       ],
     }).compile();
