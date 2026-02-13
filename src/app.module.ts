@@ -34,6 +34,7 @@ import { HealthModule } from './health/health.module';
 import { HL7Module } from './hl7/hl7.module';
 import { IncomeModule } from './income/income.module';
 import { InternalMessageModule } from './internal-message/internal-message.module';
+import { InventoryNotificationsModule } from './inventory-notifications/inventory-notifications.module';
 import { LaboratoryModule } from './laboratory/laboratory.module';
 import { LeadModule } from './lead/lead.module';
 import { MedicalExamOrderModule } from './medical-exam-order/medical-exam-order.module';
@@ -144,6 +145,7 @@ import { AccountingPeriodModule } from './accounting-period/accounting-period.mo
     FormModule,
     FormPersonalizedModule,
     InternalMessageModule,
+    InventoryNotificationsModule,
     AuditLogModule,
     DigitalSignatureModule,
     CrmValidationModule,

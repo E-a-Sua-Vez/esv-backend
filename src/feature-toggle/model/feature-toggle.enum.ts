@@ -4,4 +4,5 @@ export enum FeatureToggleName {
   EMAIL = 'EMAIL',
   SMS = 'SMS',
   USER = 'USER',
+  SYSTEM_NOTIFICATIONS = 'SYSTEM_NOTIFICATIONS',
 }

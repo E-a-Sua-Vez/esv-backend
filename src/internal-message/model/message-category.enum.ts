@@ -13,6 +13,7 @@ export enum MessageCategory {
   STOCK = 'stock',
   LOW_STOCK = 'low_stock',
   OUT_OF_STOCK = 'out_of_stock',
+  EXPIRING_BATCH = 'expiring_batch',
 
   // Pagos
   PAYMENT_RECEIVED = 'payment_received',

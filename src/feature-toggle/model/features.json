@@ -263,5 +263,13 @@
   {
     "name": "attention-multiple-service-selection",
     "type": "PRODUCT"
+  },
+  {
+    "name": "system-notifications-low-stock",
+    "type": "SYSTEM_NOTIFICATIONS"
+  },
+  {
+    "name": "system-notifications-expiring-batches",
+    "type": "SYSTEM_NOTIFICATIONS"
   }
 ]

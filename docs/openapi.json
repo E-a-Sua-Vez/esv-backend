@@ -23606,6 +23606,82 @@
         ]
       }
     },
+    "/inventory-notifications/check-low-stock": {
+      "post": {
+        "description": "Scheduled endpoint called by GCP Scheduler to check products with low stock levels",
+        "operationId": "InventoryNotificationsController_checkLowStock",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Check completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "processed": {
+                      "type": "number",
+                      "example": 150
+                    },
+                    "notificationsSent": {
+                      "type": "number",
+                      "example": 12
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "simple-auth": []
+          }
+        ],
+        "summary": "Check low stock products and send notifications",
+        "tags": [
+          "inventory-notifications"
+        ]
+      }
+    },
+    "/inventory-notifications/check-expiring-batches": {
+      "post": {
+        "description": "Scheduled endpoint called by GCP Scheduler to check batches expiring soon",
+        "operationId": "InventoryNotificationsController_checkExpiringBatches",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Check completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "processed": {
+                      "type": "number",
+                      "example": 85
+                    },
+                    "notificationsSent": {
+                      "type": "number",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "simple-auth": []
+          }
+        ],
+        "summary": "Check expiring product batches and send notifications",
+        "tags": [
+          "inventory-notifications"
+        ]
+      }
+    },
     "/data-retention/check": {
       "get": {
         "description": "Retorna contagem de documentos que estão próximos ou passaram do prazo de retenção",
@@ -24085,6 +24161,7 @@
               "stock",
               "low_stock",
               "out_of_stock",
+              "expiring_batch",
               "payment_received",
               "payment_pending",
               "payment_overdue",
