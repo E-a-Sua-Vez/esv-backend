@@ -183,7 +183,7 @@ export class BookingController {
       }
     } catch (error) {
       throw new HttpException(
-        `Error serializando configuración de telemedicina: ${error.message}`,
+        `Error serializando configuración de teleconsulta: ${error.message}`,
         HttpStatus.BAD_REQUEST
       );
     }

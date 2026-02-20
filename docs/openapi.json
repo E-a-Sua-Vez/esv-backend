@@ -14030,7 +14030,7 @@
     },
     "/client-portal/telemedicine/{commerceId}/{clientId}": {
       "get": {
-        "description": "Retorna as sessões de telemedicina do cliente. Requiere token JWT.",
+        "description": "Retorna as sessões de teleconsulta do cliente. Requiere token JWT.",
         "operationId": "ClientPortalController_getTelemedicineSessions",
         "parameters": [
           {
@@ -14054,7 +14054,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Lista de sessões de telemedicina",
+            "description": "Lista de sessões de teleconsulta",
             "content": {
               "application/json": {
                 "schema": {
@@ -14067,7 +14067,7 @@
             }
           }
         },
-        "summary": "Obter sessões de telemedicina do cliente (Protegido)",
+        "summary": "Obter sessões de teleconsulta do cliente (Protegido)",
         "tags": [
           "client-portal"
         ]

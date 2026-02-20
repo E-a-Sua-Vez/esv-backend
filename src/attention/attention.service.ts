@@ -25,6 +25,7 @@ import { PaymentMethod } from 'src/payment/model/payment-method.enum';
 import { QueueType } from 'src/queue/model/queue-type.enum';
 
 import { BookingService } from '../booking/booking.service';
+import { BusinessService } from '../business/business.service';
 import { CollaboratorService } from '../collaborator/collaborator.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
@@ -81,6 +82,7 @@ export class AttentionService {
     private attentionNoDeviceBuilder: AttentionNoDeviceBuilder,
     private attentionReserveBuilder: AttentionReserveBuilder,
     private attentionTelemedicineBuilder: AttentionTelemedicineBuilder,
+    private businessService: BusinessService,
     private commerceService: CommerceService,
     private commerceLogoService: CommerceLogoService,
     @Inject(forwardRef(() => PackageService))
@@ -575,6 +577,56 @@ export class AttentionService {
     try {
       let attentionCreated;
       const queue = await this.queueService.getQueueById(queueId);
+      const commerce = await this.commerceService.getCommerceById(queue.commerceId);
+      const business = await this.businessService.getBusinessById(commerce.businessId);
+
+      // Validate date is not a non-working date if date is provided
+      if (date) {
+        const dateFormatted = date instanceof Date ? date.toISOString().slice(0, 10) : String(date).slice(0, 10);
+        const nonWorkingDates: string[] = [
+          ...(business.serviceInfo?.nonWorkingDates || []),
+          ...(commerce.serviceInfo?.nonWorkingDates || []),
+          ...(queue.serviceInfo?.nonWorkingDates || [])
+        ];
+        const uniqueNonWorkingDates = [...new Set(nonWorkingDates)];
+
+        if (uniqueNonWorkingDates.includes(dateFormatted)) {
+          throw new HttpException(
+            `La fecha ${dateFormatted} está marcada como día no laborable`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+
+      // Validate services compatibility with attention channel
+      if (servicesId && servicesId.length > 0) {
+        const services = await this.serviceService.getServicesById(servicesId);
+
+        if (channel === AttentionChannel.TELEMEDICINE) {
+          // For telemedicine, all services must have telemedicineEnabled = true
+          const incompatibleServices = services.filter(s => s.telemedicineEnabled !== true);
+
+          if (incompatibleServices.length > 0) {
+            const serviceNames = incompatibleServices.map(s => s.name).join(', ');
+            throw new HttpException(
+              `Los siguientes servicios no están habilitados para teleconsulta: ${serviceNames}`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+        } else {
+          // For presential attention, all services must have presentialEnabled !== false
+          const incompatibleServices = services.filter(s => s.presentialEnabled === false);
+
+          if (incompatibleServices.length > 0) {
+            const serviceNames = incompatibleServices.map(s => s.name).join(', ');
+            throw new HttpException(
+              `Los siguientes servicios no están habilitados para atención presencial: ${serviceNames}`,
+              HttpStatus.BAD_REQUEST
+            );
+          }
+        }
+      }
+
       if (
         userIn &&
         (userIn.acceptTermsAndConditions === false || !userIn.acceptTermsAndConditions)

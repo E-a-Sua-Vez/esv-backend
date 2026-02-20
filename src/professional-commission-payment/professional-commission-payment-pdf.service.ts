@@ -721,7 +721,6 @@ export class ProfessionalCommissionPaymentPdfService {
               Key: fileName,
               Body: pdfBuffer,
               ContentType: 'application/pdf',
-              ACL: 'private',
               Metadata: {
                 'generated-at': new Date().toISOString(),
                 'payment-id': paymentId,
@@ -740,7 +739,6 @@ export class ProfessionalCommissionPaymentPdfService {
               Key: fileName,
               Body: pdfBuffer,
               ContentType: 'application/pdf',
-              ACL: 'private',
               Metadata: {
                 'generated-at': new Date().toISOString(),
                 'payment-id': paymentId,

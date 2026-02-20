@@ -79,7 +79,9 @@ export class ServiceService {
     active: boolean,
     available: boolean,
     online: boolean,
-    serviceInfo: ServiceInfo
+    serviceInfo: ServiceInfo,
+    telemedicineEnabled?: boolean,
+    presentialEnabled?: boolean
   ): Promise<Service> {
     try {
       const service = await this.serviceRepository.findById(id);
@@ -107,6 +109,12 @@ export class ServiceService {
       if (serviceInfo !== undefined) {
         service.serviceInfo = serviceInfo;
       }
+      if (telemedicineEnabled !== undefined) {
+        service.telemedicineEnabled = telemedicineEnabled;
+      }
+      if (presentialEnabled !== undefined) {
+        service.presentialEnabled = presentialEnabled;
+      }
       return await this.updateService(user, service);
     } catch (error) {
       throw new HttpException(
@@ -131,7 +139,9 @@ export class ServiceService {
     tag: string,
     online: boolean,
     order: number,
-    serviceInfo: ServiceInfo
+    serviceInfo: ServiceInfo,
+    telemedicineEnabled?: boolean,
+    presentialEnabled?: boolean
   ): Promise<Service> {
     const service = new Service();
     service.commerceId = commerceId;
@@ -144,6 +154,9 @@ export class ServiceService {
     service.createdAt = new Date();
     service.order = order;
     service.serviceInfo = serviceInfo;
+    // Set telemedicineEnabled and presentialEnabled with backward compatible defaults
+    service.telemedicineEnabled = telemedicineEnabled || false; // Default to false for backward compatibility
+    service.presentialEnabled = presentialEnabled === undefined || presentialEnabled === null ? true : presentialEnabled; // Default to true for backward compatibility
     const serviceCreated = await this.serviceRepository.create(service);
     const serviceCreatedEvent = new ServiceCreated(new Date(), serviceCreated, { user });
     publish(serviceCreatedEvent);

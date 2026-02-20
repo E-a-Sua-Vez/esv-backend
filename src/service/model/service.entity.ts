@@ -30,4 +30,6 @@ export class Service {
   order: number;
   serviceInfo: ServiceInfo;
   available: boolean;
+  telemedicineEnabled?: boolean; // Enable/disable telemedicine for this service (default: false for backward compatibility)
+  presentialEnabled?: boolean;   // Enable/disable presential attention for this service (default: true for backward compatibility)
 }

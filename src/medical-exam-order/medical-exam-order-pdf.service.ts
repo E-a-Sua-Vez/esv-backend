@@ -870,7 +870,6 @@ export class MedicalExamOrderPdfService {
           Key: fileName,
           Body: pdfBuffer,
           ContentType: 'application/pdf',
-          ACL: 'private',
         })
         .promise();
 

@@ -1,10 +1,10 @@
 /**
  * Enum unificado para roles de Colaboradores y Profesionales
- * 
+ *
  * Este enum reemplaza:
  * - CollaboratorRole (de collaborator-roles.enum.ts)
  * - ProfessionalType (de professional-type.enum.ts)
- * 
+ *
  * Unifica los roles para mantener consistencia entre ambas entidades
  */
 export enum ProfessionalRole {
@@ -87,7 +87,7 @@ export interface MedicalProfessionalData {
   consultationDuration?: number; // Duración promedio de consulta (minutos)
   acceptsEmergencies?: boolean; // Acepta emergencias
   homeVisits?: boolean; // Hace visitas domiciliarias
-  telemedicine?: boolean; // Ofrece telemedicina
+  telemedicine?: boolean; // Ofrece teleconsulta
   languages?: string[]; // Idiomas que habla
   insuranceProviders?: string[]; // Planes de salud aceptados
 }

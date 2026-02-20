@@ -111,7 +111,7 @@ export class AttentionTelemedicineBuilder {
       recordingEnabled = false;
     }
 
-    // Crear sesión de telemedicina
+    // Crear sesión de teleconsulta
     const sessionDto: CreateTelemedicineSessionDto = {
       commerceId: queue.commerceId,
       clientId: clientId || attentionCreated.clientId,

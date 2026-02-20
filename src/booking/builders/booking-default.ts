@@ -75,7 +75,7 @@ export class BookingDefaultBuilder implements BookingBuilderInterface {
         : new Date();
       const now = new Date();
       if (scheduledAt <= now) {
-        throw new Error(`La fecha de telemedicina debe ser en el futuro. Fecha proporcionada: ${scheduledAt.toISOString()}`);
+        throw new Error(`La fecha de teleconsulta debe ser en el futuro. Fecha proporcionada: ${scheduledAt.toISOString()}`);
       }
 
       booking.telemedicineConfig = {

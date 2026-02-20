@@ -32,6 +32,7 @@
       "business.main-menu.administrators-admin": false,
       "business.main-menu.dashboard": true,
       "business.main-menu.manage-admin": true,
+      "business.main-menu.business-info": true,
       "business.main-menu.your-plan": true,
       "business.main-menu.commerce-admin": true,
       "business.main-menu.configuration": true,

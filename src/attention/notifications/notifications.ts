@@ -78,7 +78,7 @@ export const getEsTuTunoMessage = (country, attention, moduleNumber, telemedicin
 
 🚨 *É A SUA VEZ!*
 
-💻 *Sua consulta de telemedicina está pronta!*
+💻 *Sua consulta de teleconsulta está pronta!*
 
 🎫 *Seu número de atendimento:* ${attention.number}
 
@@ -93,7 +93,7 @@ ${scheduledDate ? `📅 *Data programada:* ${scheduledDate}\n\n` : ''}⚡ Clique
 
 🚨 *¡AHORA ES TU TURNO!*
 
-💻 *¡Tu consulta de telemedicina está lista!*
+💻 *¡Tu consulta de teleconsulta está lista!*
 
 🎫 *Tu número de atención:* ${attention.number}
 
@@ -410,8 +410,8 @@ export const getTelemedicineAccessKeyEmail = (country, accessKey, accessLink, sc
   const variant = normalizeCountry(country);
   const TELEMEDICINE_EMAIL = {
     pt: {
-      subject: `Chave de acesso - Consulta de telemedicina`,
-      title: `🔐 Chave de acesso para sua consulta de telemedicina`,
+      subject: `Chave de acesso - Consulta de teleconsulta`,
+      title: `🔐 Chave de acesso para sua consulta de teleconsulta`,
       codeLabel: `📋 Código:`,
       linkLabel: `🔗 Link:`,
       dateLabel: `📅 Data programada:`,
@@ -425,8 +425,8 @@ export const getTelemedicineAccessKeyEmail = (country, accessKey, accessLink, sc
       footer: `Se tiver problemas para acessar, entre em contato conosco.`
     },
     es: {
-      subject: `Clave de acceso - Consulta de telemedicina`,
-      title: `🔐 Clave de acceso para tu consulta de telemedicina`,
+      subject: `Clave de acceso - Consulta de teleconsulta`,
+      title: `🔐 Clave de acceso para tu consulta de teleconsulta`,
       codeLabel: `📋 Código:`,
       linkLabel: `🔗 Enlace:`,
       dateLabel: `📅 Fecha programada:`,

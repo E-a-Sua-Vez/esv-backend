@@ -523,7 +523,6 @@ export class DocumentsService {
           Bucket: this.getBucketPath(reportType),
           Body: files[0].buffer,
           Key: name,
-          ACL: 'private',
         },
         (error, result) => {
           if (error) {
@@ -694,7 +693,6 @@ export class DocumentsService {
             Bucket: this.getBucketPath(reportType),
             Body: files[0].buffer,
             Key: s3Key,
-            ACL: 'private',
             ContentType: format,
             Metadata: awsMetadata, // Use the fresh plain object
           },

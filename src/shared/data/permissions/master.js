@@ -70,6 +70,7 @@ export default {
   'business.main-menu.permissions-admin': true,
   'business.main-menu.administrators-admin': true,
   'business.main-menu.manage-admin': true,
+  'business.main-menu.business-info': true,
   'business.main-menu.service-admin': true,
   'business.main-menu.tracing': true,
   'business.main-menu.product-admin': true,

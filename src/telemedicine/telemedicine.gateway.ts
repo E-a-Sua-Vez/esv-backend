@@ -463,7 +463,7 @@ export class TelemedicineGateway
   }
 
   /**
-   * Unirse a una sala de telemedicina
+   * Unirse a una sala de teleconsulta
    */
   @SubscribeMessage('join-room')
   async handleJoinRoom(
@@ -578,7 +578,7 @@ export class TelemedicineGateway
         sessionId,
         roomId,
         timestamp: new Date(),
-        message: 'La sesión de telemedicina ha finalizado',
+        message: 'La sesión de teleconsulta ha finalizado',
       });
 
       this.logger.log(`Notified room ${roomId} that session ${sessionId} has completed`);

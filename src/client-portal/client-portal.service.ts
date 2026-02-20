@@ -31,7 +31,7 @@ import { ClientPortalSession } from './model/client-portal-session.entity';
 
 /**
  * Serviço de autenticação do portal do cliente
- * Gerencia acesso via código (similar a telemedicina)
+ * Gerencia acesso via código (similar a teleconsulta)
  */
 @Injectable()
 export class ClientPortalService {
@@ -778,7 +778,7 @@ export class ClientPortalService {
   }
 
   /**
-   * Obtém sessões de telemedicina do cliente
+   * Obtém sessões de teleconsulta do cliente
    */
   async getClientTelemedicineSessions(
     commerceId: string,
@@ -798,7 +798,7 @@ export class ClientPortalService {
         error.stack
       );
       throw new HttpException(
-        `Erro ao buscar sessões de telemedicina: ${error.message}`,
+        `Erro ao buscar sessões de teleconsulta: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

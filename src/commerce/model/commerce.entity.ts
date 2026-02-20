@@ -43,7 +43,8 @@ export class ServiceInfo {
   personalized: boolean;
   personalizedHours: Record<number, PersonalizedHour>;
   holiday: boolean;
-  holidays: Record<string, string[]>;
+  holidays: Record<string, string[]>; // @deprecated: Use nonWorkingDates instead
+  nonWorkingDates: string[]; // NEW: List of non-working dates in YYYY-MM-DD format
   specificCalendar: boolean;
   specificCalendarDays: Record<string, PersonalizedHour>;
   confirmNotificationDaysBefore: string;

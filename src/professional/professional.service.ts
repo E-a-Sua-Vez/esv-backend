@@ -53,7 +53,6 @@ export class ProfessionalService {
           Key: key,
           Body: buffer,
           ContentType: mimeType,
-          ACL: 'public-read',
           Metadata: meta,
         },
         (error, result) => {

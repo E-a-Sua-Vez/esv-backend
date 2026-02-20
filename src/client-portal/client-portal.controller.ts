@@ -452,14 +452,14 @@ export class ClientPortalController {
   @UseGuards(ClientPortalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Obter sessões de telemedicina do cliente (Protegido)',
-    description: 'Retorna as sessões de telemedicina do cliente. Requiere token JWT.',
+    summary: 'Obter sessões de teleconsulta do cliente (Protegido)',
+    description: 'Retorna as sessões de teleconsulta do cliente. Requiere token JWT.',
   })
   @ApiParam({ name: 'commerceId', description: 'ID do comércio' })
   @ApiParam({ name: 'clientId', description: 'ID do cliente' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de sessões de telemedicina',
+    description: 'Lista de sessões de teleconsulta',
     schema: {
       type: 'array',
       items: {

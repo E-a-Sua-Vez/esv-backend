@@ -110,7 +110,7 @@ export class ServiceController {
   @ApiResponse({ status: 201, description: 'Service created successfully', type: Service })
   @ApiResponse({ status: 400, description: 'Bad request' })
   public async createService(@User() user, @Body() body: Service): Promise<Service> {
-    const { commerceId, name, type, tag, online, order, serviceInfo } = body;
+    const { commerceId, name, type, tag, online, order, serviceInfo, telemedicineEnabled, presentialEnabled } = body;
     return this.serviceService.createService(
       user,
       commerceId,
@@ -119,7 +119,9 @@ export class ServiceController {
       tag,
       online,
       order,
-      serviceInfo
+      serviceInfo,
+      telemedicineEnabled,
+      presentialEnabled
     );
   }
 
@@ -140,7 +142,7 @@ export class ServiceController {
     @Body() body: Service
   ): Promise<Service> {
     const { id } = params;
-    const { name, type, tag, order, active, available, online, serviceInfo } = body;
+    const { name, type, tag, order, active, available, online, serviceInfo, telemedicineEnabled, presentialEnabled } = body;
     return this.serviceService.updateServiceConfigurations(
       user,
       id,
@@ -151,7 +153,9 @@ export class ServiceController {
       active,
       available,
       online,
-      serviceInfo
+      serviceInfo,
+      telemedicineEnabled,
+      presentialEnabled
     );
   }
 }

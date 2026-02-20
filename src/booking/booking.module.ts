@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { FireormModule } from 'nestjs-fireorm';
 import { AttentionModule } from 'src/attention/attention.module';
 import { BookingBlockNumberUsedModule } from 'src/booking-block-number-used/booking-block-number-used.module';
+import { BusinessModule } from 'src/business/business.module';
 import { ServiceModule } from 'src/service/service.module';
 
 import { ClientModule } from '../client/client.module';
@@ -33,6 +34,7 @@ import { Booking } from './model/booking.entity';
     FireormModule.forFeature([Booking]),
     forwardRef(() => QueueModule),
     forwardRef(() => CollaboratorModule),
+    forwardRef(() => BusinessModule),
     forwardRef(() => CommerceModule),
     forwardRef(() => CommerceLogoModule),
     forwardRef(() => NotificationModule),

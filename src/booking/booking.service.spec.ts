@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { AttentionService } from '../attention/attention.service';
 import { BookingBlockNumberUsedService } from '../booking-block-number-used/booking-block-number-used.service';
+import { BusinessService } from '../business/business.service';
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
@@ -14,6 +15,7 @@ import { NotificationService } from '../notification/notification.service';
 import { PackageService } from '../package/package.service';
 import { ProfessionalService } from '../professional/professional.service';
 import { QueueService } from '../queue/queue.service';
+import { ServiceService } from '../service/service.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
 import { UserService } from '../user/user.service';
@@ -150,6 +152,7 @@ describe('BookingService', () => {
             queueService: QueueService,
             notificationService: NotificationService,
             featureToggleService: FeatureToggleService,
+            businessService: BusinessService,
             commerceService: CommerceService,
             commerceLogoService: CommerceLogoService,
             bookingDefaultBuilder: BookingDefaultBuilder,
@@ -162,6 +165,7 @@ describe('BookingService', () => {
             documentsService: DocumentsService,
             bookingBlockNumbersUsedService: BookingBlockNumberUsedService,
             telemedicineService: TelemedicineService,
+            serviceService: ServiceService,
             logger: GcpLoggerService,
             professionalService: ProfessionalService
           ) => {
@@ -170,6 +174,7 @@ describe('BookingService', () => {
               queueService,
               notificationService,
               featureToggleService,
+              businessService,
               commerceService,
               commerceLogoService,
               bookingDefaultBuilder,
@@ -182,6 +187,7 @@ describe('BookingService', () => {
               documentsService,
               bookingBlockNumbersUsedService,
               telemedicineService,
+              serviceService,
               logger,
               professionalService
             );
@@ -191,6 +197,7 @@ describe('BookingService', () => {
             QueueService,
             NotificationService,
             FeatureToggleService,
+            BusinessService,
             CommerceService,
             CommerceLogoService,
             BookingDefaultBuilder,
@@ -203,6 +210,7 @@ describe('BookingService', () => {
             DocumentsService,
             BookingBlockNumberUsedService,
             TelemedicineService,
+            ServiceService,
             GcpLoggerService,
             ProfessionalService,
           ],
@@ -211,6 +219,12 @@ describe('BookingService', () => {
           provide: QueueService,
           useValue: {
             getQueueById: jest.fn(),
+          },
+        },
+        {
+          provide: BusinessService,
+          useValue: {
+            getBusinessById: jest.fn(),
           },
         },
         {
@@ -308,6 +322,12 @@ describe('BookingService', () => {
           provide: TelemedicineService,
           useValue: {
             cancelSession: jest.fn(),
+          },
+        },
+        {
+          provide: ServiceService,
+          useValue: {
+            getServicesById: jest.fn().mockResolvedValue([]),
           },
         },
         {

@@ -10,7 +10,7 @@ export enum ConsentType {
   RESEARCH = 'RESEARCH', // Pesquisa científica
   THIRD_PARTY = 'THIRD_PARTY', // Compartilhamento com terceiros
   DATA_EXPORT = 'DATA_EXPORT', // Exportação de dados
-  TELEMEDICINE = 'TELEMEDICINE', // Telemedicina
+  TELEMEDICINE = 'TELEMEDICINE', // Teleconsulta
   BIOMETRIC = 'BIOMETRIC', // Dados biométricos
   TERMS_ACCEPTANCE = 'TERMS_ACCEPTANCE', // Aceitação de termos e condições
 }

@@ -188,7 +188,6 @@ export class CommerceLogoService {
           Key: key,
           Body: buffer,
           ContentType: mimeType,
-          ACL: 'private',
           Metadata: metadata || {},
         },
         (error, result) => {

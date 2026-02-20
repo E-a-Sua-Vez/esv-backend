@@ -14,7 +14,7 @@ export const getBookingMessage = (country, bookingCommerce, booking, bookingDate
       : '';
 
   const telemedicineInfo = isTelemedicine
-    ? `\n\n💻 *Consulta por Telemedicina*\n📋 Tipo: ${telemedicineType}${
+    ? `\n\n💻 *Consulta por Teleconsulta*\n📋 Tipo: ${telemedicineType}${
         booking.telemedicineConfig?.scheduledAt
           ? `\n📅 Fecha y Hora: ${new Date(booking.telemedicineConfig.scheduledAt).toLocaleString()}`
           : ''
@@ -26,7 +26,7 @@ export const getBookingMessage = (country, bookingCommerce, booking, bookingDate
 
 🎉 Sua reserva em *${bookingCommerce.name}* foi realizada com sucesso!${
       isTelemedicine
-        ? ' 💻 Esta é uma consulta por telemedicina.'
+        ? ' 💻 Esta é uma consulta por teleconsulta.'
         : ` 📅 Você deve vir no dia *${bookingDate}*${
             booking.block && booking.block.hourFrom ? ` às *${booking.block.hourFrom}*.` : `.`
           }`
@@ -49,7 +49,7 @@ ${linkWs}
 
 🎉 Tu reserva en *${bookingCommerce.name}* fue generada con éxito!${
       isTelemedicine
-        ? ' 💻 Esta es una consulta por telemedicina.'
+        ? ' 💻 Esta es una consulta por teleconsulta.'
         : ` 📅 Debes venir el día *${bookingDate}*${
             booking.block && booking.block.hourFrom ? ` a las *${booking.block.hourFrom}*.` : `.`
           }`
@@ -85,7 +85,7 @@ export const getBookingConfirmMessage = (country, bookingCommerce, booking, book
       : '';
 
   const telemedicineInfo = isTelemedicine
-    ? `\n\n💻 *Consulta por Telemedicina*\n📋 Tipo: ${telemedicineType}${
+    ? `\n\n💻 *Consulta por Teleconsulta*\n📋 Tipo: ${telemedicineType}${
         booking.telemedicineConfig?.scheduledAt
           ? `\n📅 Fecha y Hora: ${new Date(booking.telemedicineConfig.scheduledAt).toLocaleString()}`
           : ''
@@ -97,7 +97,7 @@ export const getBookingConfirmMessage = (country, bookingCommerce, booking, book
 
 ⏰ Lembre-se da sua reserva em *${bookingCommerce.name}*!${
       isTelemedicine
-        ? ' 💻 Esta é uma consulta por telemedicina.'
+        ? ' 💻 Esta é uma consulta por teleconsulta.'
         : ` 📅 Você deve vir no dia *${bookingDate}*${
             booking.block && booking.block.hourFrom ? ` às *${booking.block.hourFrom}*.` : `.`
           }`
@@ -115,7 +115,7 @@ ${link}
 
 ⏰ Recuerda tu reserva en *${bookingCommerce.name}*!${
       isTelemedicine
-        ? ' 💻 Esta es una consulta por telemedicina.'
+        ? ' 💻 Esta es una consulta por teleconsulta.'
         : ` 📅 Debes venir el día *${bookingDate}*${
             booking.block && booking.block.hourFrom ? ` a las *${booking.block.hourFrom}*.` : `.`
           }`

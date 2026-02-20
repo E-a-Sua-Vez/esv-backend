@@ -21,6 +21,7 @@ import { DateModel } from 'src/shared/utils/date.model';
 import { Waitlist } from 'src/waitlist/model/waitlist.entity';
 
 import { Block } from '../booking/model/booking.entity';
+import { BusinessService } from '../business/business.service';
 import { ClientService } from '../client/client.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { CommerceLogoService } from '../commerce-logo/commerce-logo.service';
@@ -35,6 +36,7 @@ import { NotificationService } from '../notification/notification.service';
 import { PackageType } from '../package/model/package-type.enum';
 import { PackageService } from '../package/package.service';
 import { QueueService } from '../queue/queue.service';
+import { ServiceService } from '../service/service.service';
 import { GcpLoggerService } from '../shared/logger/gcp-logger.service';
 import { AuditLogService } from '../shared/services/audit-log.service';
 import { TelemedicineService } from '../telemedicine/telemedicine.service';
@@ -69,6 +71,7 @@ export class BookingService {
     private queueService: QueueService,
     private notificationService: NotificationService,
     private featureToggleService: FeatureToggleService,
+    private businessService: BusinessService,
     private commerceService: CommerceService,
     private commerceLogoService: CommerceLogoService,
     private bookingDefaultBuilder: BookingDefaultBuilder,
@@ -84,6 +87,7 @@ export class BookingService {
     private bookingBlockNumbersUsedService: BookingBlockNumberUsedService,
     @Inject(forwardRef(() => TelemedicineService))
     private telemedicineService: TelemedicineService,
+    private serviceService: ServiceService,
     @Inject(GcpLoggerService)
     private readonly logger: GcpLoggerService,
     private professionalService: ProfessionalService,
@@ -142,6 +146,8 @@ export class BookingService {
     let bookingCreated;
     const queue = await this.queueService.getQueueById(queueId);
     const commerce = await this.commerceService.getCommerceById(queue.commerceId);
+    const business = await this.businessService.getBusinessById(commerce.businessId);
+
     if (user && (user.acceptTermsAndConditions === false || !user.acceptTermsAndConditions)) {
       throw new HttpException(
         `No ha aceptado los terminos y condiciones`,
@@ -196,6 +202,50 @@ export class BookingService {
       );
     }
     const newDateFormatted = dateFormatted.toISOString().slice(0, 10);
+
+    // Validate date is not a non-working date (accumulate from business, commerce, queue)
+    const nonWorkingDates: string[] = [
+      ...(business.serviceInfo?.nonWorkingDates || []),
+      ...(commerce.serviceInfo?.nonWorkingDates || []),
+      ...(queue.serviceInfo?.nonWorkingDates || [])
+    ];
+    const uniqueNonWorkingDates = [...new Set(nonWorkingDates)];
+
+    if (uniqueNonWorkingDates.includes(newDateFormatted)) {
+      throw new HttpException(
+        `La fecha ${newDateFormatted} está marcada como día no laborable`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Validate services compatibility with booking channel
+    if (servicesId && servicesId.length > 0) {
+      const services = await this.serviceService.getServicesById(servicesId);
+
+      if (telemedicineConfig) {
+        // For telemedicine bookings, all services must have telemedicineEnabled = true
+        const incompatibleServices = services.filter(s => s.telemedicineEnabled !== true);
+
+        if (incompatibleServices.length > 0) {
+          const serviceNames = incompatibleServices.map(s => s.name).join(', ');
+          throw new HttpException(
+            `Los siguientes servicios no están habilitados para teleconsulta: ${serviceNames}`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      } else {
+        // For presential bookings, all services must have presentialEnabled !== false
+        const incompatibleServices = services.filter(s => s.presentialEnabled === false);
+
+        if (incompatibleServices.length > 0) {
+          const serviceNames = incompatibleServices.map(s => s.name).join(', ');
+          throw new HttpException(
+            `Los siguientes servicios no están habilitados para atención presencial: ${serviceNames}`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+    }
 
     // Validate queue is active and available
     if (!queue.active) {
@@ -1716,7 +1766,7 @@ export class BookingService {
       telemedicineConfig,
     } = booking;
 
-    // Determinar tipo de atención basado en telemedicina
+    // Determinar tipo de atención basado en teleconsulta
     const attentionType = telemedicineConfig ? AttentionType.TELEMEDICINE : undefined;
 
     // Normalizar telemedicineConfig si existe para asegurar formato correcto
@@ -1753,7 +1803,7 @@ export class BookingService {
       booking.professionalName // Pasar el professionalName del booking
     );
 
-    // Si se creó sesión de telemedicina, vincular con booking
+    // Si se creó sesión de teleconsulta, vincular con booking
     if (attention.telemedicineSessionId) {
       booking.telemedicineSessionId = attention.telemedicineSessionId;
       await this.update(userIn, booking);
@@ -1889,7 +1939,7 @@ export class BookingService {
         const { queueId, channel, user, block, date, telemedicineConfig } = booking;
         const dateOfAttention = new Date(date);
 
-        // Determinar tipo de atención basado en telemedicina
+        // Determinar tipo de atención basado en teleconsulta
         const attentionType = telemedicineConfig
           ? AttentionType.TELEMEDICINE
           : AttentionType.STANDARD;
@@ -2688,7 +2738,7 @@ export class BookingService {
             const now = new Date();
             if (scheduledAt <= now) {
               throw new HttpException(
-                `La fecha de telemedicina debe ser en el futuro. Fecha proporcionada: ${scheduledAt.toISOString()}`,
+                `La fecha de teleconsulta debe ser en el futuro. Fecha proporcionada: ${scheduledAt.toISOString()}`,
                 HttpStatus.BAD_REQUEST
               );
             }
@@ -2714,7 +2764,7 @@ export class BookingService {
               const now = new Date();
               if (scheduledDateTime <= now) {
                 throw new HttpException(
-                  `La fecha de telemedicina debe ser en el futuro. Fecha calculada: ${scheduledDateTime.toISOString()}`,
+                  `La fecha de teleconsulta debe ser en el futuro. Fecha calculada: ${scheduledDateTime.toISOString()}`,
                   HttpStatus.BAD_REQUEST
                 );
               }

@@ -95,7 +95,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Crear sesión de telemedicina
+   * Crear sesión de teleconsulta
    */
   async createSession(
     user: string,
@@ -225,7 +225,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
       // No lanzar error, la sesión ya se completó
     }
 
-    // Actualizar la atención con la información de telemedicina
+    // Actualizar la atención con la información de teleconsulta
     if (updated.attentionId) {
       try {
         const { AttentionService } = await import('../attention/attention.service');
@@ -468,7 +468,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
       const commerce = await this.commerceService.getCommerce(session.commerceId);
       if (!commerce.telemedicineRecordingEnabled) {
         throw new HttpException(
-          'La grabación de sesiones de telemedicina está deshabilitada para este comercio',
+          'La grabación de sesiones de teleconsulta está deshabilitada para este comercio',
           HttpStatus.FORBIDDEN
         );
       }
@@ -576,7 +576,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
       const commerce = await this.commerceService.getCommerce(session.commerceId);
       if (!commerce.telemedicineRecordingEnabled) {
         throw new HttpException(
-          'La grabación de sesiones de telemedicina está deshabilitada para este comercio',
+          'La grabación de sesiones de teleconsulta está deshabilitada para este comercio',
           HttpStatus.FORBIDDEN
         );
       }
@@ -609,7 +609,6 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
           Key: filename,
           Body: file.buffer,
           ContentType: 'video/webm',
-          ACL: 'private',
           ServerSideEncryption: 'AES256', // Enable encryption at rest
           Metadata: {
             sessionId: sessionId,
@@ -736,7 +735,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
       throw new HttpException('Invalid or expired portal session', HttpStatus.UNAUTHORIZED);
     }
 
-    // Verificar que el cliente de la sesión del portal coincide con el de telemedicina
+    // Verificar que el cliente de la sesión del portal coincide con el de teleconsulta
     if (
       portalSession.client?.id !== session.clientId ||
       portalSession.commerce?.id !== session.commerceId
@@ -922,7 +921,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
       dateStyle: 'long',
       timeStyle: 'short',
     });
-    const message = `🔐 *Clave de acceso para tu consulta de telemedicina*\n\n📋 *Código:* ${session.accessKey}\n\n🔗 *Enlace:* ${accessLink}\n\n📅 *Fecha programada:* ${scheduledDate}\n\nIngresa el código cuando se te solicite para acceder a tu consulta.`;
+    const message = `🔐 *Clave de acceso para tu consulta de teleconsulta*\n\n📋 *Código:* ${session.accessKey}\n\n🔗 *Enlace:* ${accessLink}\n\n📅 *Fecha programada:* ${scheduledDate}\n\nIngresa el código cuando se te solicite para acceder a tu consulta.`;
 
     try {
       let whatsappSent = false;
@@ -1253,7 +1252,7 @@ export class TelemedicineService implements OnModuleInit, OnModuleDestroy {
           userId: session.clientId,
           commerceId: session.commerceId,
           type: NotificationType.TELEMEDICINE_ACCESS_KEY,
-          title: 'Clave de acceso para tu consulta de telemedicina',
+          title: 'Clave de acceso para tu consulta de teleconsulta',
           message: `Tu clave de acceso es: ${session.accessKey}`,
           data: {
             sessionId: session.id,

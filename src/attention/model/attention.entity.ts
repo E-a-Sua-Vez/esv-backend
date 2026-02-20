@@ -72,20 +72,20 @@ export class Attention {
   surveyPostAttentionDateScheduled?: string;
   notificationSurveySent = false;
   notificationCheckInSent = false;
-  telemedicineSessionId?: string; // ID de la sesión de telemedicina asociada
+  telemedicineSessionId?: string; // ID de la sesión de teleconsulta asociada
   telemedicineConfig?: {
     type: string;
     scheduledAt: Date | string;
     recordingEnabled?: boolean;
     notes?: string;
-  }; // Configuración de telemedicina para mostrar en detalles
+  }; // Configuración de teleconsulta para mostrar en detalles
   telemedicineInfo?: {
     patientConnectedAt?: Date | string;
     doctorConnectedAt?: Date | string;
     endedAt?: Date | string;
     endedBy?: string;
     duration?: number; // Duración en minutos
-  }; // Información de tracking de la sesión de telemedicina
+  }; // Información de tracking de la sesión de teleconsulta
   // Campos opcionales para sistema de etapas (feature flag: attentionStagesEnabled)
   currentStage?: AttentionStage; // Etapa actual de la atención
   stageHistory?: AttentionStageHistory[]; // Historial de etapas por las que ha pasado

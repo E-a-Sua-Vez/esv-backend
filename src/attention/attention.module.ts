@@ -5,6 +5,7 @@ import { PackageModule } from 'src/package/package.module';
 import { ServiceModule } from 'src/service/service.module';
 
 import { BookingModule } from '../booking/booking.module';
+import { BusinessModule } from '../business/business.module';
 import { CollaboratorModule } from '../collaborator/collaborator.module';
 import { CommerceModule } from '../commerce/commerce.module';
 import { CommerceLogoModule } from '../commerce-logo/commerce-logo.module';
@@ -34,6 +35,7 @@ import { Attention } from './model/attention.entity';
     FireormModule.forFeature([Attention]),
     forwardRef(() => QueueModule),
     forwardRef(() => CollaboratorModule),
+    forwardRef(() => BusinessModule),
     forwardRef(() => CommerceModule),
     forwardRef(() => CommerceLogoModule),
     forwardRef(() => NotificationModule),

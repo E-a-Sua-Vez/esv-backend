@@ -1201,7 +1201,7 @@ export class ConsentOrchestrationService {
       [ConsentType.RESEARCH]: 'Uso de dados para pesquisa científica',
       [ConsentType.THIRD_PARTY]: 'Compartilhamento com terceiros',
       [ConsentType.DATA_EXPORT]: 'Exportação de dados',
-      [ConsentType.TELEMEDICINE]: 'Telemedicina e consultas remotas',
+      [ConsentType.TELEMEDICINE]: 'Teleconsulta e consultas remotas',
       [ConsentType.BIOMETRIC]: 'Processamento de dados biométricos',
       [ConsentType.TERMS_ACCEPTANCE]: 'Aceitação de termos e condições',
     };
