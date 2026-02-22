@@ -1,17 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as admin from 'firebase-admin';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 
+import { AdministratorService } from '../administrator/administrator.service';
 import { CommerceService } from '../commerce/commerce.service';
 import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
-import { FeatureToggleName } from '../feature-toggle/model/feature-toggle.enum';
 import { InternalMessageService } from '../internal-message/internal-message.service';
 import { MessageCategory } from '../internal-message/model/message-category.enum';
 import { MessagePriority } from '../internal-message/model/message-priority.enum';
 import { Product } from '../product/model/product.entity';
 import { ProductService } from '../product/product.service';
-import { User } from '../user/model/user.entity';
-import { UserType } from '../user/model/user-type.enum';
 
 import { SystemNotificationTracking } from './model/system-notification-tracking.entity';
 
@@ -24,12 +23,11 @@ export class InventoryNotificationsService {
     private trackingRepository = getRepository(SystemNotificationTracking),
     @InjectRepository(Product)
     private productRepository = getRepository(Product),
-    @InjectRepository(User)
-    private userRepository = getRepository(User),
+    private administratorService: AdministratorService,
     private commerceService: CommerceService,
     private featureToggleService: FeatureToggleService,
     private internalMessageService: InternalMessageService,
-    private productService: ProductService,
+    private productService: ProductService
   ) {}
 
   /**
@@ -51,7 +49,7 @@ export class InventoryNotificationsService {
           // 2. Verificar si tiene el toggle activo para LOW_STOCK
           const featureToggle = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(
             commerce.id,
-            'system-notifications-low-stock',
+            'system-notifications-low-stock'
           );
 
           if (!featureToggle || !featureToggle.active) {
@@ -65,11 +63,14 @@ export class InventoryNotificationsService {
 
           // 4. Filtrar productos con stock bajo (actualLevel < replacementLevel)
           const lowStockProducts = products.filter(
-            p => p.actualLevel !== undefined && p.replacementLevel !== undefined && p.actualLevel < p.replacementLevel,
+            p =>
+              p.actualLevel !== undefined &&
+              p.replacementLevel !== undefined &&
+              p.actualLevel < p.replacementLevel
           );
 
           this.logger.log(
-            `Commerce ${commerce.id}: ${lowStockProducts.length}/${products.length} products with low stock`,
+            `Commerce ${commerce.id}: ${lowStockProducts.length}/${products.length} products with low stock`
           );
 
           // 5. Para cada producto verificar si debemos notificar
@@ -82,7 +83,9 @@ export class InventoryNotificationsService {
         }
       }
 
-      this.logger.log(`✅ Low stock check complete: ${processed} products checked, ${notificationsSent} notifications sent`);
+      this.logger.log(
+        `✅ Low stock check complete: ${processed} products checked, ${notificationsSent} notifications sent`
+      );
       return { processed, notificationsSent };
     } catch (error) {
       this.logger.error('Error in checkLowStockProducts:', error.stack);
@@ -97,8 +100,8 @@ export class InventoryNotificationsService {
   async checkExpiringBatches(): Promise<{ processed: number; notificationsSent: number }> {
     this.logger.log('🔔 Starting expiring batches check...');
 
-    let processed = 0;
-    let notificationsSent = 0;
+    const processed = 0;
+    const notificationsSent = 0;
 
     try {
       const commerces = await this.commerceService.getCommerces();
@@ -107,7 +110,7 @@ export class InventoryNotificationsService {
         try {
           const featureToggle = await this.featureToggleService.getFeatureToggleByNameAndCommerceId(
             commerce.id,
-            'system-notifications-expiring-batches',
+            'system-notifications-expiring-batches'
           );
 
           if (!featureToggle || !featureToggle.active) continue;
@@ -126,7 +129,9 @@ export class InventoryNotificationsService {
         }
       }
 
-      this.logger.log(`✅ Expiring batches check complete: ${processed} batches checked, ${notificationsSent} notifications sent`);
+      this.logger.log(
+        `✅ Expiring batches check complete: ${processed} batches checked, ${notificationsSent} notifications sent`
+      );
       return { processed, notificationsSent };
     } catch (error) {
       this.logger.error('Error in checkExpiringBatches:', error.stack);
@@ -197,7 +202,7 @@ export class InventoryNotificationsService {
       };
       tracking.nextAllowedSendAt = this.calculateNextAllowedSend(
         tracking.sentCount,
-        tracking.firstDetectedAt,
+        tracking.firstDetectedAt
       );
       tracking.maxSent = tracking.sentCount >= 6;
       tracking.updatedAt = now;
@@ -221,33 +226,41 @@ export class InventoryNotificationsService {
    */
   private async sendLowStockNotifications(commerceId: string, product: Product): Promise<void> {
     try {
-      // Obtener todos los usuarios del commerce con tipo ADMIN o BUSINESS
-      // Obtener todos los usuarios activos del commerce
-      // TODO: Filtrar por tipo cuando existan roles ADMIN/BUSINESS
-      const adminUsers = await this.userRepository
-        .whereEqualTo('commerceId', commerceId)
-        .find();
+      const commerce = await this.commerceService.getCommerce(commerceId);
 
-      if (adminUsers.length === 0) {
-        this.logger.warn(`No admin users found for commerce ${commerceId}`);
+      const administrators = await this.administratorService.getAdministratorsByCommerce(
+        commerce.businessId,
+        commerceId
+      );
+
+      if (administrators.length === 0) {
+        this.logger.warn(`No administrators found for commerce ${commerceId}`);
         return;
       }
 
-      const commerce = await this.commerceService.getCommerce(commerceId);
+      const language = commerce.localeInfo?.language || 'pt';
 
-      for (const user of adminUsers) {
+      const messages = this.getTranslatedMessages(language, 'LOW_STOCK', {
+        productName: product.name,
+        currentStock: product.actualLevel,
+        reorderLevel: product.replacementLevel,
+      });
+
+      for (const administrator of administrators) {
         try {
-          // Obtener idioma del usuario o del commerce
-          const language = commerce.localeInfo?.language || 'pt';
+          if (!administrator.email) {
+            this.logger.warn(`Administrator ${administrator.id} has no email, skipping`);
+            continue;
+          }
 
-          // Traducir mensaje
-          const messages = this.getTranslatedMessages(language, 'LOW_STOCK', {
-            productName: product.name,
-            currentStock: product.actualLevel,
-            reorderLevel: product.replacementLevel,
-          });
+          const authUid = await this.resolveAuthUid(administrator.email);
+          if (!authUid) {
+            this.logger.warn(
+              `Could not resolve Auth UID for administrator ${administrator.id} (${administrator.email})`
+            );
+            continue;
+          }
 
-          // Enviar usando InternalMessage
           await this.internalMessageService.sendSystemNotification({
             category: MessageCategory.LOW_STOCK,
             priority: MessagePriority.HIGH,
@@ -256,15 +269,20 @@ export class InventoryNotificationsService {
             icon: 'inventory_2',
             actionLink: `/internal/inventory/products/${product.id}`,
             actionLabel: messages.actionLabel,
-            recipientId: user.id,
-            recipientType: 'collaborator',
+            recipientId: authUid,
+            recipientType: 'business',
             commerceId: commerceId,
             productId: product.id,
           });
 
-          this.logger.log(`Notification sent to user ${user.id} for product ${product.id}`);
+          this.logger.log(
+            `Notification sent to administrator ${administrator.id} (${authUid}) for product ${product.id}`
+          );
         } catch (error) {
-          this.logger.error(`Error sending notification to user ${user.id}:`, error.stack);
+          this.logger.error(
+            `Error sending notification to administrator ${administrator.id}:`,
+            error.stack
+          );
         }
       }
     } catch (error) {
@@ -303,7 +321,7 @@ export class InventoryNotificationsService {
   private getTranslatedMessages(
     language: string,
     type: string,
-    data: any,
+    data: any
   ): { title: string; content: string; actionLabel: string } {
     const translations = {
       LOW_STOCK: {
@@ -343,5 +361,19 @@ export class InventoryNotificationsService {
     };
 
     return translations[type]?.[language] || translations[type]?.['en'];
+  }
+
+  /**
+   * Resolve Firebase Auth UID from email.
+   * The inbox queries by Auth UID, so we must use it as recipientId.
+   */
+  private async resolveAuthUid(email: string): Promise<string | null> {
+    try {
+      const userRecord = await admin.auth().getUserByEmail(email);
+      return userRecord.uid;
+    } catch (error) {
+      this.logger.error(`Could not resolve Auth UID for email ${email}:`, error.message);
+      return null;
+    }
   }
 }
