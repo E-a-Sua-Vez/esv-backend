@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as admin from 'firebase-admin';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
 
@@ -181,12 +180,20 @@ export class InventoryNotificationsService {
 
       // Verificar si ya llegó al máximo de envíos
       if (tracking.maxSent) {
+        this.logger.log(
+          `Product ${product.id}: max notifications reached (${tracking.sentCount}/6), skipping`
+        );
         return false;
       }
 
       // Verificar si ya es tiempo de enviar
       if (tracking.nextAllowedSendAt && now < tracking.nextAllowedSendAt) {
-        return false; // Todavía no es tiempo
+        this.logger.log(
+          `Product ${
+            product.id
+          }: next notification allowed at ${tracking.nextAllowedSendAt.toISOString()}, skipping`
+        );
+        return false;
       }
 
       // 🚀 ENVIAR NOTIFICACIÓN
@@ -248,19 +255,6 @@ export class InventoryNotificationsService {
 
       for (const administrator of administrators) {
         try {
-          if (!administrator.email) {
-            this.logger.warn(`Administrator ${administrator.id} has no email, skipping`);
-            continue;
-          }
-
-          const authUid = await this.resolveAuthUid(administrator.email);
-          if (!authUid) {
-            this.logger.warn(
-              `Could not resolve Auth UID for administrator ${administrator.id} (${administrator.email})`
-            );
-            continue;
-          }
-
           await this.internalMessageService.sendSystemNotification({
             category: MessageCategory.LOW_STOCK,
             priority: MessagePriority.HIGH,
@@ -269,14 +263,14 @@ export class InventoryNotificationsService {
             icon: 'inventory_2',
             actionLink: `/internal/inventory/products/${product.id}`,
             actionLabel: messages.actionLabel,
-            recipientId: authUid,
+            recipientId: administrator.id,
             recipientType: 'business',
             commerceId: commerceId,
             productId: product.id,
           });
 
           this.logger.log(
-            `Notification sent to administrator ${administrator.id} (${authUid}) for product ${product.id}`
+            `Notification sent to administrator ${administrator.id} for product ${product.id}`
           );
         } catch (error) {
           this.logger.error(
@@ -361,19 +355,5 @@ export class InventoryNotificationsService {
     };
 
     return translations[type]?.[language] || translations[type]?.['en'];
-  }
-
-  /**
-   * Resolve Firebase Auth UID from email.
-   * The inbox queries by Auth UID, so we must use it as recipientId.
-   */
-  private async resolveAuthUid(email: string): Promise<string | null> {
-    try {
-      const userRecord = await admin.auth().getUserByEmail(email);
-      return userRecord.uid;
-    } catch (error) {
-      this.logger.error(`Could not resolve Auth UID for email ${email}:`, error.message);
-      return null;
-    }
   }
 }
