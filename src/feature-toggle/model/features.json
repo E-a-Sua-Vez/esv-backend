@@ -220,10 +220,6 @@
     "type": "EMAIL"
   },
   {
-    "name": "stock-product-recharge",
-    "type": "MESSAGE"
-  },
-  {
     "name": "telemedicine-active",
     "type": "PRODUCT"
   },
@@ -266,10 +262,10 @@
   },
   {
     "name": "system-notifications-low-stock",
-    "type": "SYSTEM_NOTIFICATIONS"
+    "type": "MESSAGE"
   },
   {
     "name": "system-notifications-expiring-batches",
-    "type": "SYSTEM_NOTIFICATIONS"
+    "type": "MESSAGE"
   }
 ]
