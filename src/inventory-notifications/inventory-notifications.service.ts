@@ -8,7 +8,7 @@ import { FeatureToggleService } from '../feature-toggle/feature-toggle.service';
 import { InternalMessageService } from '../internal-message/internal-message.service';
 import { MessageCategory } from '../internal-message/model/message-category.enum';
 import { MessagePriority } from '../internal-message/model/message-priority.enum';
-import { Product } from '../product/model/product.entity';
+import { Product, ProductReplacement } from '../product/model/product.entity';
 import { ProductService } from '../product/product.service';
 
 import { SystemNotificationTracking } from './model/system-notification-tracking.entity';
@@ -99,8 +99,8 @@ export class InventoryNotificationsService {
   async checkExpiringBatches(): Promise<{ processed: number; notificationsSent: number }> {
     this.logger.log('🔔 Starting expiring batches check...');
 
-    const processed = 0;
-    const notificationsSent = 0;
+    let processed = 0;
+    let notificationsSent = 0;
 
     try {
       const commerces = await this.commerceService.getCommerces();
@@ -112,17 +112,39 @@ export class InventoryNotificationsService {
             'system-notifications-expiring-batches'
           );
 
-          if (!featureToggle || !featureToggle.active) continue;
+          if (!featureToggle || !featureToggle.active) {
+            this.logger.log(
+              `Skipping commerce ${commerce.id}: expiring-batches notifications disabled`
+            );
+            continue;
+          }
 
-          // Obtener todos los product-replacement del commerce
-          // Filtrar los que vencen en los próximos 30 días
+          const replacements = await this.productService.getActiveReplacementsByCommerce(
+            commerce.id
+          );
+          processed += replacements.length;
+
           const now = new Date();
           const thirtyDaysFromNow = new Date();
           thirtyDaysFromNow.setDate(now.getDate() + 30);
 
-          // TODO: Implementar query cuando tengas los batches/replacements
-          // Por ahora solo log
-          this.logger.log(`Commerce ${commerce.id}: expiring batches check (not implemented yet)`);
+          const expiringReplacements = replacements.filter(r => {
+            if (!r.replacementExpirationDate) return false;
+            const expDate =
+              r.replacementExpirationDate instanceof Date
+                ? r.replacementExpirationDate
+                : new Date(r.replacementExpirationDate);
+            return expDate <= thirtyDaysFromNow && expDate >= now;
+          });
+
+          this.logger.log(
+            `Commerce ${commerce.id}: ${expiringReplacements.length}/${replacements.length} batches expiring within 30 days`
+          );
+
+          for (const replacement of expiringReplacements) {
+            const sent = await this.processExpiringBatch(commerce.id, replacement);
+            if (sent) notificationsSent++;
+          }
         } catch (error) {
           this.logger.error(`Error processing commerce ${commerce.id}:`, error.stack);
         }
@@ -281,6 +303,166 @@ export class InventoryNotificationsService {
       }
     } catch (error) {
       this.logger.error(`Error in sendLowStockNotifications:`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Procesar un lote próximo a vencer
+   */
+  private async processExpiringBatch(
+    commerceId: string,
+    replacement: ProductReplacement
+  ): Promise<boolean> {
+    const trackingId = `${commerceId}_EXPIRING_BATCH_${replacement.id}`;
+
+    try {
+      let tracking = await this.trackingRepository.findById(trackingId).catch(() => null);
+
+      const now = new Date();
+
+      if (!tracking) {
+        tracking = new SystemNotificationTracking();
+        tracking.id = trackingId;
+        tracking.commerceId = commerceId;
+        tracking.category = MessageCategory.EXPIRING_BATCH;
+        tracking.entityType = 'product-replacement';
+        tracking.entityId = replacement.id;
+        tracking.firstDetectedAt = now;
+        tracking.sentCount = 0;
+        tracking.resolved = false;
+        tracking.maxSent = false;
+        tracking.lastKnownData = {};
+        tracking.createdAt = now;
+      }
+
+      if (tracking.maxSent) {
+        this.logger.log(
+          `Batch ${replacement.id}: max notifications reached (${tracking.sentCount}/6), skipping`
+        );
+        return false;
+      }
+
+      if (tracking.nextAllowedSendAt && now < tracking.nextAllowedSendAt) {
+        this.logger.log(
+          `Batch ${
+            replacement.id
+          }: next notification allowed at ${tracking.nextAllowedSendAt.toISOString()}, skipping`
+        );
+        return false;
+      }
+
+      const expDate =
+        replacement.replacementExpirationDate instanceof Date
+          ? replacement.replacementExpirationDate
+          : new Date(replacement.replacementExpirationDate);
+      const daysToExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      let product: Product;
+      try {
+        product = await this.productRepository.findById(replacement.productId);
+      } catch {
+        this.logger.warn(`Product ${replacement.productId} not found for batch ${replacement.id}`);
+        return false;
+      }
+
+      await this.sendExpiringBatchNotifications(
+        commerceId,
+        product,
+        replacement,
+        daysToExpiry,
+        expDate
+      );
+
+      tracking.lastSentAt = now;
+      tracking.sentCount += 1;
+      tracking.lastKnownData = {
+        productName: product.name,
+        batchCode: replacement.code,
+        daysToExpiry,
+        expirationDate: expDate.toISOString(),
+      };
+      tracking.nextAllowedSendAt = this.calculateNextAllowedSend(
+        tracking.sentCount,
+        tracking.firstDetectedAt
+      );
+      tracking.maxSent = tracking.sentCount >= 6;
+      tracking.updatedAt = now;
+
+      if (tracking.sentCount === 1) {
+        await this.trackingRepository.create(tracking);
+      } else {
+        await this.trackingRepository.update(tracking);
+      }
+
+      this.logger.log(`Notification sent for batch ${replacement.id} (${tracking.sentCount}/6)`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Error processing batch ${replacement.id}:`, error.stack);
+      return false;
+    }
+  }
+
+  /**
+   * Enviar notificaciones de lotes por vencer a los administradores del commerce
+   */
+  private async sendExpiringBatchNotifications(
+    commerceId: string,
+    product: Product,
+    replacement: ProductReplacement,
+    daysToExpiry: number,
+    expirationDate: Date
+  ): Promise<void> {
+    try {
+      const commerce = await this.commerceService.getCommerce(commerceId);
+
+      const administrators = await this.administratorService.getAdministratorsByCommerce(
+        commerce.businessId,
+        commerceId
+      );
+
+      if (administrators.length === 0) {
+        this.logger.warn(`No administrators found for commerce ${commerceId}`);
+        return;
+      }
+
+      const language = commerce.localeInfo?.language || 'pt';
+
+      const messages = this.getTranslatedMessages(language, 'EXPIRING_BATCH', {
+        productName: product.name,
+        batchNumber: replacement.code || replacement.id,
+        daysToExpiry,
+        expiryDate: expirationDate.toLocaleDateString(),
+      });
+
+      for (const administrator of administrators) {
+        try {
+          await this.internalMessageService.sendSystemNotification({
+            category: MessageCategory.EXPIRING_BATCH,
+            priority: daysToExpiry <= 7 ? MessagePriority.HIGH : MessagePriority.NORMAL,
+            title: messages.title,
+            content: messages.content,
+            icon: 'event_busy',
+            actionLink: `/internal/inventory/products/${product.id}`,
+            actionLabel: messages.actionLabel,
+            recipientId: administrator.id,
+            recipientType: 'business',
+            commerceId: commerceId,
+            productId: product.id,
+          });
+
+          this.logger.log(
+            `Expiring batch notification sent to administrator ${administrator.id} for batch ${replacement.id}`
+          );
+        } catch (error) {
+          this.logger.error(
+            `Error sending expiring batch notification to administrator ${administrator.id}:`,
+            error.stack
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Error in sendExpiringBatchNotifications:`, error.stack);
       throw error;
     }
   }

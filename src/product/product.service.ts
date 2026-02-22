@@ -30,7 +30,7 @@ export class ProductService {
     private productReplacementRepository = getRepository(ProductReplacement),
     @InjectRepository(ProductConsumption)
     private productConsumptionRepository = getRepository(ProductConsumption),
-    private internalMessageService: InternalMessageService,
+    private internalMessageService: InternalMessageService
   ) {}
 
   public async getProductById(id: string): Promise<Product> {
@@ -323,9 +323,7 @@ export class ProductService {
       category,
       priority,
       title:
-        product.actualLevel === 0
-          ? `Sin Stock - ${product.name}`
-          : `Stock Bajo - ${product.name}`,
+        product.actualLevel === 0 ? `Sin Stock - ${product.name}` : `Stock Bajo - ${product.name}`,
       content:
         product.actualLevel === 0
           ? `El producto ${product.name} está sin stock. Reabastecer urgentemente.`
@@ -423,6 +421,16 @@ export class ProductService {
       .orderByAscending('replacementExpirationDateFormatted')
       .find();
     return products;
+  }
+
+  public async getActiveReplacementsByCommerce(commerceId: string): Promise<ProductReplacement[]> {
+    return await this.productReplacementRepository
+      .whereEqualTo('commerceId', commerceId)
+      .whereGreaterThan('replacementActualLevel', 0)
+      .whereEqualTo('active', true)
+      .whereEqualTo('available', true)
+      .orderByAscending('replacementExpirationDateFormatted')
+      .find();
   }
 
   public async getConsumptionsByProductReplacement(
