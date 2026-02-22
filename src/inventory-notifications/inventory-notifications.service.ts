@@ -134,11 +134,11 @@ export class InventoryNotificationsService {
               r.replacementExpirationDate instanceof Date
                 ? r.replacementExpirationDate
                 : new Date(r.replacementExpirationDate);
-            return expDate <= thirtyDaysFromNow && expDate >= now;
+            return expDate <= thirtyDaysFromNow;
           });
 
           this.logger.log(
-            `Commerce ${commerce.id}: ${expiringReplacements.length}/${replacements.length} batches expiring within 30 days`
+            `Commerce ${commerce.id}: ${expiringReplacements.length}/${replacements.length} batches expired or expiring within 30 days`
           );
 
           for (const replacement of expiringReplacements) {
@@ -439,7 +439,8 @@ export class InventoryNotificationsService {
         try {
           await this.internalMessageService.sendSystemNotification({
             category: MessageCategory.EXPIRING_BATCH,
-            priority: daysToExpiry <= 7 ? MessagePriority.HIGH : MessagePriority.NORMAL,
+            priority:
+              daysToExpiry <= 7 || daysToExpiry < 0 ? MessagePriority.HIGH : MessagePriority.NORMAL,
             title: messages.title,
             content: messages.content,
             icon: 'event_busy',
@@ -519,18 +520,33 @@ export class InventoryNotificationsService {
       },
       EXPIRING_BATCH: {
         pt: {
-          title: 'Lote Próximo ao Vencimento',
-          content: `O lote "${data.batchNumber}" do produto "${data.productName}" vence em ${data.daysToExpiry} dias (${data.expiryDate}).`,
+          title: data.daysToExpiry < 0 ? 'Lote Vencido' : 'Lote Próximo ao Vencimento',
+          content:
+            data.daysToExpiry < 0
+              ? `O lote "${data.batchNumber}" do produto "${data.productName}" venceu há ${Math.abs(
+                  data.daysToExpiry
+                )} dias (${data.expiryDate}).`
+              : `O lote "${data.batchNumber}" do produto "${data.productName}" vence em ${data.daysToExpiry} dias (${data.expiryDate}).`,
           actionLabel: 'Ver Lote',
         },
         es: {
-          title: 'Lote Próximo a Vencer',
-          content: `El lote "${data.batchNumber}" del producto "${data.productName}" vence en ${data.daysToExpiry} días (${data.expiryDate}).`,
+          title: data.daysToExpiry < 0 ? 'Lote Vencido' : 'Lote Próximo a Vencer',
+          content:
+            data.daysToExpiry < 0
+              ? `El lote "${data.batchNumber}" del producto "${
+                  data.productName
+                }" venció hace ${Math.abs(data.daysToExpiry)} días (${data.expiryDate}).`
+              : `El lote "${data.batchNumber}" del producto "${data.productName}" vence en ${data.daysToExpiry} días (${data.expiryDate}).`,
           actionLabel: 'Ver Lote',
         },
         en: {
-          title: 'Expiring Batch',
-          content: `Batch "${data.batchNumber}" of product "${data.productName}" expires in ${data.daysToExpiry} days (${data.expiryDate}).`,
+          title: data.daysToExpiry < 0 ? 'Expired Batch' : 'Expiring Batch',
+          content:
+            data.daysToExpiry < 0
+              ? `Batch "${data.batchNumber}" of product "${data.productName}" expired ${Math.abs(
+                  data.daysToExpiry
+                )} days ago (${data.expiryDate}).`
+              : `Batch "${data.batchNumber}" of product "${data.productName}" expires in ${data.daysToExpiry} days (${data.expiryDate}).`,
           actionLabel: 'View Batch',
         },
       },
