@@ -44,7 +44,9 @@ export class AttentionTelemedicineBuilder {
       scheduledAt: Date;
       recordingEnabled?: boolean;
       notes?: string;
-    }
+    },
+    professionalId?: string,
+    professionalName?: string
   ): Promise<Attention> {
     if (!telemedicineConfig) {
       throw new HttpException('Telemedicine configuration is required', HttpStatus.BAD_REQUEST);
@@ -62,13 +64,21 @@ export class AttentionTelemedicineBuilder {
     attention.channel = channel;
 
     if (queue.professionalId !== undefined) {
-      attention.collaboratorId = queue.professionalId; // Attention usa collaboratorId para referirse al profesional que registra
+      attention.collaboratorId = queue.professionalId;
+      if (professionalId === undefined) {
+        attention.professionalId = queue.professionalId;
+      }
     } else if (queue.collaboratorId !== undefined) {
-      // Compatibilidad temporal: si aún no migrado, usar collaboratorId del queue
       attention.collaboratorId = queue.collaboratorId;
     }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
+    }
+    if (professionalId !== undefined) {
+      attention.professionalId = professionalId;
+    }
+    if (professionalName !== undefined) {
+      attention.professionalName = professionalName;
     }
     if (userId !== undefined) {
       attention.userId = userId;

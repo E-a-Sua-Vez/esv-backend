@@ -53,6 +53,7 @@ export class AttentionReserveBuilder implements BuilderInterface {
     termsConditionsToAcceptCode?: string,
     termsConditionsAcceptedCode?: string,
     termsConditionsToAcceptedAt?: Date,
+    professionalId?: string,
     professionalName?: string
   ): Promise<Attention> {
     if (!block) {
@@ -78,17 +79,18 @@ export class AttentionReserveBuilder implements BuilderInterface {
       attention.block = block;
     }
     if (queue.professionalId !== undefined) {
-      attention.collaboratorId = queue.professionalId; // Attention usa collaboratorId para referirse al profesional que registra
+      attention.collaboratorId = queue.professionalId;
+      if (professionalId === undefined) {
+        attention.professionalId = queue.professionalId;
+      }
     } else if (queue.collaboratorId !== undefined) {
-      // Compatibilidad temporal: si aún no migrado, usar collaboratorId del queue
       attention.collaboratorId = queue.collaboratorId;
     }
     if (collaboratorId !== undefined) {
       attention.collaboratorId = collaboratorId;
     }
-    // Setear professionalId y professionalName si se proporcionan desde el booking
-    if (collaboratorId !== undefined) {
-      attention.professionalId = collaboratorId;
+    if (professionalId !== undefined) {
+      attention.professionalId = professionalId;
     }
     if (professionalName !== undefined) {
       attention.professionalName = professionalName;

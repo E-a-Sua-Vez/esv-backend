@@ -1808,15 +1808,36 @@ export class BookingService {
       };
     }
 
+    let collaboratorIdForAttention: string | undefined = undefined;
+    if (booking.professionalId) {
+      try {
+        const professional = await this.professionalService.getProfessionalById(booking.professionalId);
+        if (professional?.collaboratorId) {
+          collaboratorIdForAttention = professional.collaboratorId;
+          this.logger.log(
+            `[BookingService] Resolved professional ${booking.professionalId} -> collaborator ${collaboratorIdForAttention}`
+          );
+        } else {
+          this.logger.warn(
+            `[BookingService] Professional ${booking.professionalId} has no collaboratorId, attention will not show collaborator`
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `[BookingService] Could not resolve professional ${booking.professionalId} to collaborator: ${error.message}`
+        );
+      }
+    }
+
     const attention = await this.attentionService.createAttention(
       queueId,
-      booking.professionalId, // Pasar el professionalId del booking como collaboratorId
+      collaboratorIdForAttention,
       channel,
       user,
       attentionType,
       block,
-      new Date(booking.date), // Pasar la fecha del booking
-      booking.confirmationData, // Pasar los datos de confirmación del booking
+      new Date(booking.date),
+      booking.confirmationData,
       id,
       servicesId,
       servicesDetails,
@@ -1825,7 +1846,8 @@ export class BookingService {
       termsConditionsAcceptedCode,
       termsConditionsToAcceptedAt,
       normalizedTelemedicineConfig,
-      booking.professionalName // Pasar el professionalName del booking
+      booking.professionalId,
+      booking.professionalName
     );
 
     // Si se creó sesión de teleconsulta, vincular con booking
@@ -1999,7 +2021,9 @@ export class BookingService {
           undefined,
           undefined,
           undefined,
-          normalizedTelemedicineConfig
+          normalizedTelemedicineConfig,
+          booking.professionalId,
+          booking.professionalName
         );
         response.attention = attention;
         if (attention && attention.id) {

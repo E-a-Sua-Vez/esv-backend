@@ -147,6 +147,8 @@ export class AttentionController {
       clientId,
       createdAt,
       telemedicineConfig,
+      professionalId,
+      professionalName,
     } = body;
     // Convert createdAt string to Date if provided (for historical data generation)
     // If not provided, undefined will be passed and service will use current date (backward compatible)
@@ -171,7 +173,9 @@ export class AttentionController {
       undefined,
       undefined,
       undefined,
-      plainTelemedicineConfig
+      plainTelemedicineConfig,
+      professionalId,
+      professionalName
     );
   }
 

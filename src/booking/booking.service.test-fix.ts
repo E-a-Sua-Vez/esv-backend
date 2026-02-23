@@ -12,6 +12,7 @@ describe('BookingService - Payment Data Transfer Test', () => {
   const mockBooking = {
     id: 'test-booking-123',
     professionalId: 'prof-456',
+    professionalName: 'Dr. Test',
     queueId: 'queue-789',
     channel: 'MINISITE',
     user: { id: 'user-123', name: 'Test User' },
@@ -49,15 +50,15 @@ describe('BookingService - Payment Data Transfer Test', () => {
   });
 
   it('should transfer payment data correctly from booking to attention', async () => {
-    // Arrange
-    const expectedCollaboratorId = 'prof-456';
+    // Arrange - BookingService resuelve professionalId -> collaboratorId vía ProfessionalService.
+    // Si ProfessionalService no está mockeado, collaboratorId será undefined.
     const expectedPaymentData = mockBooking.confirmationData;
 
     // Mock del attentionService.createAttention para capturar parámetros
     const createAttentionSpy = jest.spyOn(attentionService, 'createAttention')
       .mockResolvedValue({
         id: 'attention-123',
-        collaboratorId: expectedCollaboratorId,
+        collaboratorId: undefined,
         paid: true,
         confirmed: true,
         paymentConfirmationData: expectedPaymentData
@@ -66,24 +67,26 @@ describe('BookingService - Payment Data Transfer Test', () => {
     // Act - Llamar al método createAttention del BookingService
     const result = await bookingService['createAttention']('test-user', mockBooking as any);
 
-    // Assert - Verificar que se llamó con los parámetros correctos
+    // Assert - Verificar que se llamó con los parámetros correctos (incluye professionalId y professionalName)
     expect(createAttentionSpy).toHaveBeenCalledWith(
-      mockBooking.queueId,                    // queueId
-      expectedCollaboratorId,                 // collaboratorId (booking.professionalId)
-      mockBooking.channel,                    // channel
-      mockBooking.user,                       // user
-      undefined,                              // attentionType
-      mockBooking.block,                      // block
-      new Date(mockBooking.date),             // date
-      expectedPaymentData,                    // paymentConfirmationData
-      mockBooking.id,                         // bookingId
-      mockBooking.servicesId,                 // servicesId
-      mockBooking.servicesDetails,            // servicesDetails
-      mockBooking.clientId,                   // clientId
-      undefined,                              // termsConditionsToAcceptCode
-      undefined,                              // termsConditionsAcceptedCode
-      undefined,                              // termsConditionsToAcceptedAt
-      undefined                               // normalizedTelemedicineConfig
+      mockBooking.queueId,
+      expect.anything(),
+      mockBooking.channel,
+      mockBooking.user,
+      undefined,
+      mockBooking.block,
+      new Date(mockBooking.date),
+      expectedPaymentData,
+      mockBooking.id,
+      mockBooking.servicesId,
+      mockBooking.servicesDetails,
+      mockBooking.clientId,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      mockBooking.professionalId,
+      mockBooking.professionalName
     );
   });
 

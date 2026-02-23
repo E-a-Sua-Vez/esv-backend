@@ -291,6 +291,19 @@ export class AttentionService {
         );
         this.logger.log(`[AttentionService.getAttentionDetails] Collaborator loaded: ${attentionDetailsDto.collaborator ? 'yes' : 'no'}`);
       }
+      if (!attentionDetailsDto.collaborator && attention.professionalId) {
+        try {
+          const professional = await this.professionalService.getProfessionalById(attention.professionalId);
+          if (professional?.collaboratorId) {
+            attentionDetailsDto.collaborator = await this.collaboratorService.getCollaboratorById(
+              professional.collaboratorId
+            );
+            this.logger.log(`[AttentionService.getAttentionDetails] Collaborator loaded via professionalId: ${attentionDetailsDto.collaborator ? 'yes' : 'no'}`);
+          }
+        } catch (e) {
+          this.logger.warn(`[AttentionService.getAttentionDetails] Could not resolve collaborator via professionalId: ${e.message}`);
+        }
+      }
 
       // Load module
       if (attention.moduleId !== undefined) {
@@ -572,6 +585,7 @@ export class AttentionService {
       recordingEnabled?: boolean;
       notes?: string;
     },
+    professionalId?: string,
     professionalName?: string
   ): Promise<Attention> {
     try {
@@ -706,7 +720,9 @@ export class AttentionService {
             scheduledAt: scheduledAtDate,
             recordingEnabled: telemedicineConfig.recordingEnabled,
             notes: telemedicineConfig.notes,
-          }
+          },
+          professionalId,
+          professionalName
         );
       } else if (block && block.number) {
         // PRIORIZAR EL BLOCK - SI HAY BLOCK, USAR SIEMPRE AttentionReserveBuilder
@@ -726,6 +742,7 @@ export class AttentionService {
           termsConditionsToAcceptCode,
           termsConditionsAcceptedCode,
           termsConditionsToAcceptedAt,
+          professionalId,
           professionalName
         );
       } else if (type && type === AttentionType.NODEVICE) {
