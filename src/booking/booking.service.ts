@@ -3,6 +3,7 @@ import Bottleneck from 'bottleneck';
 import { publish } from 'ett-events-lib';
 import { getRepository } from 'fireorm';
 import { InjectRepository } from 'nestjs-fireorm';
+import { AttentionChannel } from 'src/attention/model/attention-channel.enum';
 import { AttentionService } from 'src/attention/attention.service';
 import { AttentionType } from 'src/attention/model/attention-type.enum';
 import { Attention } from 'src/attention/model/attention.entity';
@@ -1753,7 +1754,7 @@ export class BookingService {
     const {
       id,
       queueId,
-      channel,
+      channel: bookingChannel,
       user,
       block,
       confirmationData,
@@ -1766,20 +1767,44 @@ export class BookingService {
       telemedicineConfig,
     } = booking;
 
-    // Determinar tipo de atención basado en teleconsulta
-    const attentionType = telemedicineConfig ? AttentionType.TELEMEDICINE : undefined;
+    let channel = bookingChannel;
 
-    // Normalizar telemedicineConfig si existe para asegurar formato correcto
+    // Inferir canal correcto según los servicios: si todos son solo online (presentialEnabled=false),
+    // usar TELEMEDICINE para poder crear la atención indistintamente
+    if (servicesId && servicesId.length > 0) {
+      const services = await this.serviceService.getServicesById(servicesId);
+      const allOnlineOnly = services.every(s => s.presentialEnabled === false);
+      if (allOnlineOnly && channel !== AttentionChannel.TELEMEDICINE) {
+        channel = AttentionChannel.TELEMEDICINE;
+        this.logger.log(
+          `Booking ${id}: services are online-only, using TELEMEDICINE channel (was ${bookingChannel})`
+        );
+      }
+    }
+
+    // Determinar tipo de atención basado en teleconsulta
+    const attentionType =
+      telemedicineConfig || channel === AttentionChannel.TELEMEDICINE
+        ? AttentionType.TELEMEDICINE
+        : undefined;
+
+    // Normalizar telemedicineConfig si existe, o crear uno mínimo cuando usamos canal TELEMEDICINE
     let normalizedTelemedicineConfig = undefined;
     if (telemedicineConfig) {
       normalizedTelemedicineConfig = {
-        type: telemedicineConfig.type || 'video', // Asegurar que siempre sea 'video' (único tipo permitido ahora)
+        type: telemedicineConfig.type || 'video',
         scheduledAt:
           telemedicineConfig.scheduledAt instanceof Date
             ? telemedicineConfig.scheduledAt
             : new Date(telemedicineConfig.scheduledAt),
         recordingEnabled: telemedicineConfig.recordingEnabled,
         notes: telemedicineConfig.notes,
+      };
+    } else if (channel === AttentionChannel.TELEMEDICINE && attentionType === AttentionType.TELEMEDICINE) {
+      normalizedTelemedicineConfig = {
+        type: 'video',
+        scheduledAt: new Date(booking.date),
+        recordingEnabled: false,
       };
     }
 

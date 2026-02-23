@@ -603,8 +603,10 @@ export class AttentionService {
         const services = await this.serviceService.getServicesById(servicesId);
 
         if (channel === AttentionChannel.TELEMEDICINE) {
-          // For telemedicine, all services must have telemedicineEnabled = true
-          const incompatibleServices = services.filter(s => s.telemedicineEnabled !== true);
+          // Compatible with telemedicine: telemedicineEnabled=true OR online-only (presentialEnabled=false)
+          const incompatibleServices = services.filter(
+            s => s.telemedicineEnabled !== true && s.presentialEnabled !== false
+          );
 
           if (incompatibleServices.length > 0) {
             const serviceNames = incompatibleServices.map(s => s.name).join(', ');
