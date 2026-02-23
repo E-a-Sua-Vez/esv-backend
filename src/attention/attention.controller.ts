@@ -436,12 +436,12 @@ export class AttentionController {
   @ApiResponse({ status: 200, description: 'Stage advanced successfully', type: Attention })
   @ApiResponse({ status: 400, description: 'Feature not enabled or invalid transition' })
   @ApiResponse({ status: 404, description: 'Attention not found' })
-  public async advanceStage(@User() user, @Param() params: any, @Body() body: any): Promise<Attention> {
+  public async advanceStage(@User() user: any, @Param() params: any, @Body() body: any): Promise<Attention> {
     const { id } = params;
     const { stage, notes, collaboratorId } = body;
-    // Use collaboratorId from body if provided, otherwise fallback to user (for backward compatibility)
-    const collaboratorIdToUse = collaboratorId || user;
-    return this.attentionService.advanceStage(user, id, stage, notes, collaboratorIdToUse);
+    const userId = typeof user === 'string' ? user : (user?.id || user?.userId);
+    const collaboratorIdToUse = collaboratorId || userId;
+    return this.attentionService.advanceStage(userId, id, stage, notes, collaboratorIdToUse);
   }
 
   @UseGuards(AuthGuard)
