@@ -2209,54 +2209,68 @@ export class AttentionService {
     }
     const notified = [];
     const commerceLanguage = attentionCommerce.localeInfo.language;
+    const self = this;
     toNotify.forEach(async attention => {
       if (attention !== undefined) {
         if (attention.user.email) {
-          let documentAttachament: Attachment;
-          const document = await this.documentsService.getDocument(
-            `${attentionCommerce.id}.pdf`,
-            'post_attention'
-          );
-          if (document) {
-            const chunks = [];
-            document.on('data', function (chunk) {
-              chunks.push(chunk);
-            });
-            let content;
-            await document.on('end', async () => {
-              content = Buffer.concat(chunks);
-              documentAttachament = {
-                content,
-                filename: `post_attention-${attentionCommerce.name}.pdf`,
-                encoding: 'base64',
-              };
-              const from = process.env.EMAIL_SOURCE;
-              const to = [attention.user.email];
-              const emailData = NOTIFICATIONS.getPostAttetionCommerce(
-                commerceLanguage,
-                attentionCommerce
+          let attachments: Attachment[] = [];
+          try {
+            const document = await self.documentsService.getDocument(
+              `${attentionCommerce.id}.pdf`,
+              'post_attention'
+            );
+            if (document) {
+              const content = await new Promise<Buffer>((resolve, reject) => {
+                const chunks: Buffer[] = [];
+                document.on('data', (chunk: Buffer) => chunks.push(chunk));
+                document.on('end', () => resolve(Buffer.concat(chunks)));
+                document.on('error', reject);
+              });
+              attachments = [
+                {
+                  content: content.toString('base64'),
+                  filename: `post_attention-${attentionCommerce.name}.pdf`,
+                  encoding: 'base64',
+                },
+              ];
+            }
+          } catch (err: any) {
+            // Document not found (404) or other error: send email without attachment
+            if (err?.status === 404 || err?.response === 'Documento no encontrado') {
+              self.logger.warn(
+                `[postAttentionEmail] Document post_attention not found for commerce ${attentionCommerce.id}, sending email without attachment`
               );
-              const subject = emailData.subject;
-              const htmlTemplate = emailData.html;
-              const attachments = [documentAttachament];
-              const logo = await this.getCommerceLogoForEmail(attentionCommerce.id);
-              const commerce = attentionCommerce.name;
-              const html = htmlTemplate
-                .replace(/\{\{logo\}\}/g, logo)
-                .replace(/\{\{commerce\}\}/g, commerce);
-              await this.notificationService.createAttentionRawEmailNotification(
-                NotificationType.POST_ATTENTION,
-                attention.id,
-                attentionCommerce.id,
-                from,
-                to,
-                subject,
-                attachments,
-                html
+            } else {
+              self.logger.error(
+                `[postAttentionEmail] Error loading document for commerce ${attentionCommerce.id}:`,
+                err?.message || err
               );
-              notified.push(attention);
-            });
+            }
           }
+          const from = process.env.EMAIL_SOURCE;
+          const to = [attention.user.email];
+          const emailData = NOTIFICATIONS.getPostAttetionCommerce(
+            commerceLanguage,
+            attentionCommerce
+          );
+          const subject = emailData.subject;
+          const htmlTemplate = emailData.html;
+          const logo = await self.getCommerceLogoForEmail(attentionCommerce.id);
+          const commerce = attentionCommerce.name;
+          const html = htmlTemplate
+            .replace(/\{\{logo\}\}/g, logo)
+            .replace(/\{\{commerce\}\}/g, commerce);
+          await self.notificationService.createAttentionRawEmailNotification(
+            NotificationType.POST_ATTENTION,
+            attention.id,
+            attentionCommerce.id,
+            from,
+            to,
+            subject,
+            attachments,
+            html
+          );
+          notified.push(attention);
         }
       }
     });
